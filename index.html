@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>अपनी तस्वीरें खोजें</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --primary: #c2410c; /* dark orange */
+            --primary-light: #fb923c; /* light orange */
+            --danger: #dc2626; /* dark red */
+            --bg-light: #fff7ed;
+            --bg-dark: #1c1917;
+            --text-dark: #292524;
+            --text-light: #fafaf9;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-light); }
+        .card { background-color: white; border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
+        .btn-primary { background-color: var(--primary); transition: background-color 0.3s; }
+        .btn-primary:hover { background-color: #9a3412; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+        .photo-checkbox { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; accent-color: var(--primary); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 bg-gray-100">
+
+    <div id="main-card" class="card w-full max-w-2xl p-6 sm:p-10 text-center">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">भारतीय जनता पार्टी, जिला मंदसौर द्वारा आपका हार्दिक स्वागत है।</h1>
+        <p class="text-gray-500 mb-8">अपने फोटो प्राप्त करने के लिए सेल्फी लें।</p>
+        <div id="action-buttons" class="space-y-4 sm:flex sm:flex-row sm:space-x-4 justify-center">
+            <label for="selfieUploader" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 text-white font-semibold rounded-lg shadow-md cursor-pointer btn-primary">सेल्फ़ी अपलोड करें</label>
+            <input type="file" id="selfieUploader" accept="image/jpeg, image/png" class="hidden">
+            <button id="cameraBtn" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700">कैमरा खोलें</button>
+        </div>
+        <div id="status" class="mt-8 min-h-[2.5rem]"></div>
+        <div id="loader-container" class="hidden flex justify-center items-center mt-6"><div class="loader"></div></div>
+    </div>
+    
+    <div id="details-card" class="card w-full max-w-2xl p-6 sm:p-10 text-center hidden">
+        <h2 class="text-2xl sm:text-3xl font-bold text-green-600">बधाई!</h2>
+        <p id="details-subtitle" class="text-gray-600 mt-2 mb-6"></p>
+        <div class="space-y-4 text-left">
+            <div>
+                <label for="guestName" class="block text-sm font-medium text-gray-700">आपका नाम *</label>
+                <input type="text" id="guestName" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500" placeholder="पूरा नाम लिखें">
+            </div>
+            <div>
+                <label for="guestPhone" class="block text-sm font-medium text-gray-700">व्हाट्सप्प मोबाइल नंबर *</label>
+                <input type="tel" id="guestPhone" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500" placeholder="मोबाइल नंबर लिखें">
+            </div>
+        </div>
+        <button id="showPhotosBtn" class="mt-8 w-full flex items-center justify-center px-6 py-3 text-white font-semibold rounded-lg shadow-md btn-primary">मेरी तस्वीरें देखें</button>
+        <div id="details-loader" class="hidden mt-4 flex justify-center items-center"><div class="loader"></div> <p class="ml-4 text-gray-500">आपकी तस्वीरें लोड हो रही हैं...</p></div>
+    </div>
+
+    <div id="results-card" class="card w-full max-w-7xl p-6 sm:p-10 text-center hidden">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 flex-wrap">
+            <h2 id="results-title" class="text-2xl sm:text-3xl font-bold text-gray-800">आपकी तस्वीरें</h2>
+            <div id="event-filter-container" class="flex items-center"></div>
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button id="downloadSelectedBtn" class="hidden px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">चुनी हुई डाउनलोड करें</button>
+                <button id="downloadAllBtn" class="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700">सभी डाउनलोड करें (.zip)</button>
+                <button id="searchAgainBtn" class="px-5 py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">फिर से खोजें</button>
+            </div>
+        </div>
+        <div id="results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        <div id="pagination-controls" class="mt-8 flex justify-center items-center space-x-2"></div>
+    </div>
+    
+    <div id="camera-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center p-4 z-50">
+        <video id="video" class="rounded-lg shadow-xl" style="max-width: 90%; max-height: 70%;" autoplay playsinline></video>
+        <button id="snapBtn" class="mt-4 px-8 py-3 bg-red-600 text-white font-bold rounded-full text-lg shadow-lg hover:bg-red-700 transition">तस्वीर खींचें</button>
+        <canvas id="canvas" class="hidden"></canvas>
+        <button id="closeCameraBtn" class="absolute top-4 right-4 text-white text-4xl">&times;</button>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+<script>
+    // --- API Endpoints ---
+    const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
+    const GET_PHOTOS_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
+
+    // --- DOM Elements ---
+    const mainCard = document.getElementById('main-card'), detailsCard = document.getElementById('details-card'), resultsCard = document.getElementById('results-card');
+    const selfieUploader = document.getElementById('selfieUploader'), statusDiv = document.getElementById('status'), resultsDiv = document.getElementById('results');
+    const resultsTitle = document.getElementById('results-title'), loaderContainer = document.getElementById('loader-container');
+    const downloadAllBtn = document.getElementById('downloadAllBtn'), downloadSelectedBtn = document.getElementById('downloadSelectedBtn'), searchAgainBtn = document.getElementById('searchAgainBtn');
+    const cameraBtn = document.getElementById('cameraBtn'), cameraModal = document.getElementById('camera-modal');
+    const video = document.getElementById('video'), snapBtn = document.getElementById('snapBtn'), canvas = document.getElementById('canvas'), closeCameraBtn = document.getElementById('closeCameraBtn');
+
+    // --- Global State ---
+    let lightbox, originalSelfieData = null, allPhotos = [], currentPage = 1, currentFilter = 'all';
+    const PHOTOS_PER_PAGE = 20;
+    const urlParams = new URLSearchParams(window.location.search), linkId = urlParams.get('linkId');
+
+    // --- Core Functions ---
+
+    // 1. Initial Search (to get count)
+    async function findPhotoCount(base64ImageDataUrl) {
+        if (!linkId) { statusDiv.innerHTML = '<p class="text-red-500">त्रुटि: यह एक वैध सर्च लिंक नहीं है।</p>'; return; }
+        originalSelfieData = base64ImageDataUrl;
+        statusDiv.textContent = 'आपकी तस्वीरें खोजी जा रही हैं...';
+        loaderContainer.classList.remove('hidden');
+        document.getElementById('action-buttons').classList.add('hidden');
+        try {
+            const response = await fetch(SEARCH_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ linkId: linkId, selfie_image: base64ImageDataUrl }) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'खोज विफल।');
+            loaderContainer.classList.add('hidden');
+            if (data.photoCount > 0) {
+                document.getElementById('details-subtitle').textContent = `डेटाबेस में आपकी ${data.photoCount} तस्वीरें मिली हैं। उन्हें देखने के लिए कृपया नीचे दी गई जानकारी भरें।`;
+                mainCard.classList.add('hidden');
+                detailsCard.classList.remove('hidden');
+            } else {
+                statusDiv.innerHTML = `<p class="text-lg text-gray-700">कोई मिलती-जुलती तस्वीर नहीं मिली।</p><p class="text-gray-500">अधिक सहायता के लिए कृपया <a href="https://wa.me/91XXXXXXXXXX" target="_blank" class="text-blue-600 hover:underline">व्हाट्सप्प पर संपर्क करें</a>।</p>`; // Apna WhatsApp number daalein
+                document.getElementById('action-buttons').classList.remove('hidden');
+            }
+        } catch (error) {
+            statusDiv.innerHTML = `<p class="text-red-500">एक एरर हुई: ${error.message}</p>`;
+            document.getElementById('action-buttons').classList.remove('hidden');
+            loaderContainer.classList.add('hidden');
+        }
+    }
+
+    // 2. Get Photos after getting user details
+    async function getPhotosAndSaveDetails() {
+        const name = document.getElementById('guestName').value.trim(), phone = document.getElementById('guestPhone').value.trim();
+        if (!name || !phone) { alert('कृपया नाम और मोबाइल नंबर भरें।'); return; }
+        
+        document.getElementById('showPhotosBtn').classList.add('hidden');
+        document.getElementById('details-loader').classList.remove('hidden');
+        try {
+            const response = await fetch(GET_PHOTOS_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ linkId: linkId, name: name, mobile: phone, selfie_image: originalSelfieData }) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'तस्वीरें प्राप्त करने में विफल।');
+            allPhotos = data.matches;
+            detailsCard.classList.add('hidden');
+            resultsCard.classList.remove('hidden');
+            displayResultsPage();
+        } catch (error) {
+            document.getElementById('details-loader').classList.add('hidden');
+            document.getElementById('showPhotosBtn').classList.remove('hidden');
+            alert(`एक एरर हुई: ${error.message}`);
+        }
+    }
+
+    // 3. Display Results (Photos, Filter, Pagination)
+    function displayResultsPage() {
+        resultsTitle.textContent = `आपकी तस्वीरें (${allPhotos.length})`;
+        setupEventFilter();
+        setupPagination();
+        renderPage(1);
+        if (lightbox) lightbox.destroy();
+        lightbox = GLightbox({ selector: '.glightbox' });
+    }
+
+    // 4. Render a single page of photos
+    function renderPage(page) {
+        currentPage = page;
+        resultsDiv.innerHTML = '';
+        const filteredPhotos = allPhotos.filter(p => currentFilter === 'all' || p.eventId === currentFilter);
+        const start = (page - 1) * PHOTOS_PER_PAGE, end = start + PHOTOS_PER_PAGE;
+        const photosToDisplay = filteredPhotos.slice(start, end);
+        photosToDisplay.forEach(photo => {
+            const container = document.createElement('div');
+            container.className = 'relative photo-item transition-transform transform hover:scale-105';
+            container.dataset.eventId = photo.eventId;
+            container.innerHTML = `
+                <input type="checkbox" class="photo-checkbox" data-url="${photo.url}">
+                <a href="${photo.url}" class="glightbox">
+                    <img src="${photo.url}" class="w-full h-48 object-cover rounded-lg shadow-md" alt="Event Photo">
+                </a>`;
+            resultsDiv.appendChild(container);
+        });
+        updatePaginationUI(filteredPhotos.length);
+        if (lightbox) lightbox.reload();
+        updateSelectedCount();
+    }
+
+    // 5. Setup UI Components
+    function setupEventFilter() {
+        const events = [...new Map(allPhotos.map(p => [p.eventId, {id: p.eventId, name: p.eventName}])).values()];
+        const filterContainer = document.getElementById('event-filter-container');
+        if (events.length > 1) {
+            let dropdownHTML = `<label for="event-filter" class="mr-2 font-semibold text-gray-600">इवेंट फिल्टर:</label>
+                                <select id="event-filter" class="px-4 py-2 border border-gray-300 rounded-lg"><option value="all">All Events (${allPhotos.length})</option>`;
+            events.forEach(event => {
+                const count = allPhotos.filter(p => p.eventId === event.id).length;
+                dropdownHTML += `<option value="${event.id}">${event.name} (${count})</option>`;
+            });
+            dropdownHTML += `</select>`;
+            filterContainer.innerHTML = dropdownHTML;
+            document.getElementById('event-filter').addEventListener('change', (e) => {
+                currentFilter = e.target.value;
+                renderPage(1);
+            });
+        } else { filterContainer.innerHTML = ''; }
+    }
+
+    function setupPagination() {
+        const filteredPhotos = allPhotos.filter(p => currentFilter === 'all' || p.eventId === currentFilter);
+        const pageCount = Math.ceil(filteredPhotos.length / PHOTOS_PER_PAGE);
+        const controls = document.getElementById('pagination-controls');
+        controls.innerHTML = '';
+        if (pageCount <= 1) return;
+        for (let i = 1; i <= pageCount; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = 'px-3 py-1 border rounded-md text-gray-700 bg-white';
+            btn.dataset.page = i;
+            btn.addEventListener('click', () => renderPage(i));
+            controls.appendChild(btn);
+        }
+    }
+    
+    function updatePaginationUI(totalItems) {
+        const pageCount = Math.ceil(totalItems / PHOTOS_PER_PAGE);
+        const controls = document.getElementById('pagination-controls');
+        controls.innerHTML = '';
+        if (pageCount <= 1) return;
+
+        for (let i = 1; i <= pageCount; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = 'px-4 py-2 border rounded-lg text-sm font-semibold transition';
+            if (i === currentPage) {
+                btn.className += ' bg-orange-500 text-white border-orange-500';
+            } else {
+                btn.className += ' text-gray-700 bg-white hover:bg-gray-50';
+            }
+            btn.dataset.page = i;
+            btn.addEventListener('click', () => renderPage(i));
+            controls.appendChild(btn);
+        }
+    }
+    
+    function updateSelectedCount() {
+        const selectedCount = document.querySelectorAll('.photo-checkbox:checked').length;
+        if (selectedCount > 0) {
+            downloadSelectedBtn.classList.remove('hidden');
+            downloadSelectedBtn.textContent = `${selectedCount} चुनी हुई डाउनलोड करें`;
+        } else {
+            downloadSelectedBtn.classList.add('hidden');
+        }
+    }
+
+    // 6. Download Logic
+    async function downloadFilesAsZip(urlsToDownload, buttonElement) {
+        if (urlsToDownload.length === 0) return;
+        const zip = new JSZip();
+        const btn = buttonElement;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        let downloadedCount = 0;
+        const updateProgress = () => {
+            downloadedCount++;
+            btn.textContent = `डाउनलोड हो रही है... (${downloadedCount}/${urlsToDownload.length})`;
+        };
+        btn.textContent = `तैयार हो रहा है... (0/${urlsToDownload.length})`;
+        try {
+            const batchSize = 5;
+            for (let i = 0; i < urlsToDownload.length; i += batchSize) {
+                const batch = urlsToDownload.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (url) => {
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        const blob = await response.blob();
+                        const filename = new URL(url).pathname.split('/').pop();
+                        zip.file(filename, blob);
+                        updateProgress();
+                    } catch (error) { console.error(`Failed to download ${url}:`, error); }
+                }));
+            }
+            btn.textContent = 'ज़िप बनाई जा रही है...';
+            const content = await zip.generateAsync({ type: 'blob' });
+            saveAs(content, "event_photos.zip");
+        } catch (error) {
+             alert('फ़ाइलें डाउनलोड करने में कोई समस्या हुई।');
+             console.error("Zipping failed:", error);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    // --- Event Listeners ---
+    // --- YAHAN GALTI THI, ISE AB THEEK KAR DIYA GAYA HAI ---
+    selfieUploader.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => findPhotoCount(e.target.result); // e.target.result contains the full data URL
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('showPhotosBtn').addEventListener('click', getPhotosAndSaveDetails);
+    searchAgainBtn.addEventListener('click', () => window.location.reload());
+    
+    // Camera listeners
+    cameraBtn.addEventListener('click', async () => {
+        cameraModal.classList.remove('hidden');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+            video.srcObject = stream;
+        } catch (err) {
+            alert(`कैमरा खोलने में विफल: ${err.message}`);
+            cameraModal.classList.add('hidden');
+        }
+    });
+    snapBtn.addEventListener('click', () => {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        closeCamera();
+        findPhotoCount(canvas.toDataURL('image/jpeg'));
+    });
+    closeCameraBtn.addEventListener('click', closeCamera);
+    function closeCamera() {
+        cameraModal.classList.add('hidden');
+        const stream = video.srcObject;
+        if (stream) { stream.getTracks().forEach(track => track.stop()); video.srcObject = null; }
+    }
+    
+    // Download listeners
+    downloadAllBtn.addEventListener('click', () => {
+        const visiblePhotoUrls = allPhotos
+                                    .filter(p => currentFilter === 'all' || p.eventId === currentFilter)
+                                    .map(p => p.url);
+        downloadFilesAsZip(visiblePhotoUrls, downloadAllBtn);
+    });
+    downloadSelectedBtn.addEventListener('click', () => {
+        const selectedUrls = Array.from(document.querySelectorAll('.photo-checkbox:checked')).map(cb => cb.dataset.url);
+        downloadFilesAsZip(selectedUrls, downloadSelectedBtn);
+    });
+    resultsDiv.addEventListener('change', e => {
+        if (e.target.classList.contains('photo-checkbox')) {
+            updateSelectedCount();
+        }
+    });
+</script>
+</body>
+</html>
