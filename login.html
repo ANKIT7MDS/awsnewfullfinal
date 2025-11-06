@@ -1,39 +1,48 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>एडमिन लॉगिन</title>
-    <style>
-        body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #f0f0f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .card { background: #2c2c2c; border: 1px solid #444; border-radius: 14px; padding: 40px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        h1 { color: #ff6a00; font-size: 24px; margin: 0 0 20px; }
-        .btn { background: #ff6a00; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; cursor: pointer; font-size: 16px; font-weight: 600; transition: background-color 0.2s; }
-        .btn:hover { background-color: #e65c00; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>एडमिन लॉगिन</title>
+  <style>
+    body{font-family:system-ui,sans-serif;background:#1a1a1a;color:#f0f0f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+    .card{background:#2c2c2c;border:1px solid #444;border-radius:14px;padding:40px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,.3)}
+    h1{color:#ff6a00;font-size:24px;margin:0 0 20px}
+    .btn{background:#ff6a00;color:#fff;border:none;border-radius:8px;padding:12px 24px;cursor:pointer;font-size:16px;font-weight:600;transition:background-color .2s}
+    .btn:hover{background:#e65c00}
+    .muted{opacity:.7;font-size:12px;margin-top:12px}
+  </style>
 </head>
 <body>
-    <div class="card">
-        <h1>एडमिन डैशबोर्ड लॉगिन</h1>
-        <button id="loginButton" class="btn">लॉगिन करें</button>
-    </div>
+  <div class="card">
+    <h1>एडमिन डैशबोर्ड लॉगिन</h1>
+    <button id="loginButton" class="btn">लॉगिन करें</button>
+    <div class="muted" id="dbg"></div>
+  </div>
 
-<script>
-    const loginButton = document.getElementById('loginButton');
+  <script>
+    const COGNITO_DOMAIN = "ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com"; // आपका डोमेन (ठीक है)
+    const CLIENT_ID      = "6j3gec3kk0q0ktkals8cr8s367";                               // आपका client id (ठीक है)
 
-    loginButton.addEventListener('click', () => {
-        const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
-        const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-        const REDIRECT_URI = "https://staging.d9fw7yzrfzuja.amplifyapp.com/dashboard.html";
+    // ✅ सबसे ज़रूरी: redirect हमेशा वर्तमान origin (Netlify/Amplify जो भी हो) पर
+    const REDIRECT_URI = `${window.location.origin}/dashboard.html`;
+    const SCOPES = "openid email";
 
-        // --- YEH HAI SABSE ZAROORI HISSA ---
-        // Hum Cognito se saaf-saaf admin scope maang rahe hain
-        const SCOPES = "openid profile email aws.cognito.signin.user.admin";
+    // 👉 Implicit flow: dashboard.html पर hash में token आता है (client-side apps के लिए आसान)
+    const loginUrl =
+      `https://${COGNITO_DOMAIN}/login` +
+      `?client_id=${encodeURIComponent(CLIENT_ID)}` +
+      `&response_type=token` +
+      `&scope=${encodeURIComponent(SCOPES)}` +
+      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
 
-        const loginUrl = `${COGNITO_DOMAIN}/login?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
-        
-        window.location.href = loginUrl;
+    document.getElementById("loginButton").addEventListener("click", () => {
+      window.location.href = loginUrl;
     });
-</script>
+
+    // छोटी debug info (पहले लोड पर आप देख सकें कि कहाँ redirect होगा)
+    document.getElementById("dbg").textContent = `Redirect: ${REDIRECT_URI}`;
+    console.log("LOGIN USING:", { COGNITO_DOMAIN, CLIENT_ID, REDIRECT_URI });
+  </script>
 </body>
 </html>
