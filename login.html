@@ -5,44 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>एडमिन लॉगिन</title>
   <style>
-    body{font-family:system-ui,sans-serif;background:#1a1a1a;color:#f0f0f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
-    .card{background:#2c2c2c;border:1px solid #444;border-radius:14px;padding:40px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,.3)}
-    h1{color:#ff6a00;font-size:24px;margin:0 0 20px}
-    .btn{background:#ff6a00;color:#fff;border:none;border-radius:8px;padding:12px 24px;cursor:pointer;font-size:16px;font-weight:600;transition:background-color .2s}
+    :root { color-scheme: dark; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+         background:#111;color:#eee;display:flex;align-items:center;justify-content:center;
+         min-height:100vh;margin:0}
+    .card{background:#1f1f1f;border:1px solid #333;border-radius:14px;padding:40px;text-align:center;
+          box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:560px}
+    h1{color:#ff6a00;font-size:26px;margin:0 0 18px}
+    .btn{background:#ff6a00;color:#fff;border:none;border-radius:10px;padding:12px 26px;
+         cursor:pointer;font-size:16px;font-weight:700;letter-spacing:.2px}
     .btn:hover{background:#e65c00}
-    .muted{opacity:.7;font-size:12px;margin-top:12px}
+    .muted{opacity:.7;font-size:12px;margin-top:12px;word-break:break-all}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>एडमिन डैशबोर्ड लॉगिन</h1>
-    <button id="loginButton" class="btn">लॉगिन करें</button>
-    <div class="muted" id="dbg"></div>
+    <button id="loginBtn" class="btn">लॉगिन करें</button>
+    <div id="hint" class="muted"></div>
   </div>
 
   <script>
-    const COGNITO_DOMAIN = "ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com"; // आपका डोमेन (ठीक है)
-    const CLIENT_ID      = "6j3gec3kk0q0ktkals8cr8s367";                               // आपका client id (ठीक है)
+    // === आपकी Cognito settings (यही Amplify में भी हैं) ===
+    const COGNITO_DOMAIN = "ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com"; // अलग हो तो बदलें
+    const CLIENT_ID      = "6j3gec3kk0q0ktkals8cr8s367";                              // आपका app client id
+    const REDIRECT_URI   = `${window.location.origin}/dashboard.html`;               // ← Netlify पर यहीं वापस
 
-    // ✅ सबसे ज़रूरी: redirect हमेशा वर्तमान origin (Netlify/Amplify जो भी हो) पर
-    const REDIRECT_URI = `${window.location.origin}/dashboard.html`;
-    const SCOPES = "openid email";
-
-    // 👉 Implicit flow: dashboard.html पर hash में token आता है (client-side apps के लिए आसान)
-    const loginUrl =
-      `https://${COGNITO_DOMAIN}/login` +
-      `?client_id=${encodeURIComponent(CLIENT_ID)}` +
-      `&response_type=token` +
-      `&scope=${encodeURIComponent(SCOPES)}` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-
-    document.getElementById("loginButton").addEventListener("click", () => {
-      window.location.href = loginUrl;
+    // === Authorization Code Grant (Amplify जैसा) ===
+    // नोट: PKCE के बिना भी आपका Amplify वर्क कर रहा है, इसलिए वही path follow कर रहे हैं।
+    // (अगर बाद में PKCE चाहिए तो code_challenge जोड़कर कर सकते हैं)
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      response_type: "code",               // ← यहीं मुख्य बदलाव
+      scope: "openid email",
+      redirect_uri: REDIRECT_URI
     });
 
-    // छोटी debug info (पहले लोड पर आप देख सकें कि कहाँ redirect होगा)
-    document.getElementById("dbg").textContent = `Redirect: ${REDIRECT_URI}`;
-    console.log("LOGIN USING:", { COGNITO_DOMAIN, CLIENT_ID, REDIRECT_URI });
+    const LOGIN_URL  = `https://${COGNITO_DOMAIN}/login?${params.toString()}`;
+    const LOGOUT_URL = `https://${COGNITO_DOMAIN}/logout?client_id=${encodeURIComponent(CLIENT_ID)}&logout_uri=${encodeURIComponent(window.location.origin + "/login.html")}`;
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      window.location.href = LOGIN_URL;
+    });
+
+    // Debug hint (देखने में मदद)
+    document.getElementById("hint").textContent = `Redirect after login: ${REDIRECT_URI}`;
+
+    // अगर कभी logout करना हो तो helper (optional):
+    window.doLogout = () => { window.location.href = LOGOUT_URL; };
   </script>
 </body>
 </html>
