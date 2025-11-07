@@ -1,58 +1,79 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>एडमिन लॉगिन</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>एडमिन डैशबोर्ड लॉगिन</title>
   <style>
-    :root { color-scheme: dark; }
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
-         background:#111;color:#eee;display:flex;align-items:center;justify-content:center;
-         min-height:100vh;margin:0}
-    .card{background:#1f1f1f;border:1px solid #333;border-radius:14px;padding:40px;text-align:center;
-          box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:560px}
-    h1{color:#ff6a00;font-size:26px;margin:0 0 18px}
-    .btn{background:#ff6a00;color:#fff;border:none;border-radius:10px;padding:12px 26px;
-         cursor:pointer;font-size:16px;font-weight:700;letter-spacing:.2px}
-    .btn:hover{background:#e65c00}
-    .muted{opacity:.7;font-size:12px;margin-top:12px;word-break:break-all}
+    body{margin:0;background:#0f0f0f;color:#ff6a00;font-family:system-ui,Segoe UI,Roboto,Arial}
+    .card{max-width:520px;margin:12vh auto;padding:32px;background:#1a1a1a;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:center}
+    button{background:#ff6a00;border:0;color:#fff;font-weight:700;padding:12px 22px;border-radius:10px;cursor:pointer;font-size:18px}
+    small{display:block;color:#aaa;margin-top:12px}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>एडमिन डैशबोर्ड लॉगिन</h1>
-    <button id="loginBtn" class="btn">लॉगिन करें</button>
-    <div id="hint" class="muted"></div>
+    <button id="loginBtn">लॉगिन करें</button>
+    <small>Redirect after login: https://selfiphotos.netlify.app/dashboard.html</small>
   </div>
 
-  <script>
-    // === आपकी Cognito settings (यही Amplify में भी हैं) ===
-    const COGNITO_DOMAIN = "ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com"; // अलग हो तो बदलें
-    const CLIENT_ID      = "6j3gec3kk0q0ktkals8cr8s367";                              // आपका app client id
-    const REDIRECT_URI   = `${window.location.origin}/dashboard.html`;               // ← Netlify पर यहीं वापस
+<script>
+/** ========= YOUR COGNITO DETAILS (from screenshot) ========= */
+const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
+const CLIENT_ID      = "6j3gec3kk0q0ktkals8cr8s367";
+const REDIRECT_URI   = "https://selfiphotos.netlify.app/dashboard.html"; // must match in Cognito callback list
+const LOGOUT_URI     = "https://selfiphotos.netlify.app/login.html";
+const SCOPES         = "openid email profile";
 
-    // === Authorization Code Grant (Amplify जैसा) ===
-    // नोट: PKCE के बिना भी आपका Amplify वर्क कर रहा है, इसलिए वही path follow कर रहे हैं।
-    // (अगर बाद में PKCE चाहिए तो code_challenge जोड़कर कर सकते हैं)
-    const params = new URLSearchParams({
-      client_id: CLIENT_ID,
-      response_type: "code",               // ← यहीं मुख्य बदलाव
-      scope: "openid email",
-      redirect_uri: REDIRECT_URI
-    });
+/** ========= PKCE helpers ========= */
+async function sha256(buffer){ return crypto.subtle.digest("SHA-256", buffer); }
+function base64UrlEncode(bytes){
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function randomString(len=64){
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b=>("0"+b.toString(16)).slice(-2)).join("");
+}
 
-    const LOGIN_URL  = `https://${COGNITO_DOMAIN}/login?${params.toString()}`;
-    const LOGOUT_URL = `https://${COGNITO_DOMAIN}/logout?client_id=${encodeURIComponent(CLIENT_ID)}&logout_uri=${encodeURIComponent(window.location.origin + "/login.html")}`;
+async function buildAuthorizeUrl(){
+  // create a code_verifier and code_challenge (PKCE)
+  const code_verifier = randomString(64);
+  localStorage.setItem("pkce_verifier", code_verifier);
 
-    document.getElementById("loginBtn").addEventListener("click", () => {
-      window.location.href = LOGIN_URL;
-    });
+  const encoder = new TextEncoder();
+  const challengeBytes = await sha256(encoder.encode(code_verifier));
+  const code_challenge = base64UrlEncode(challengeBytes);
 
-    // Debug hint (देखने में मदद)
-    document.getElementById("hint").textContent = `Redirect after login: ${REDIRECT_URI}`;
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: "code",
+    scope: SCOPES,
+    redirect_uri: REDIRECT_URI,
+    code_challenge_method: "S256",
+    code_challenge
+  });
 
-    // अगर कभी logout करना हो तो helper (optional):
-    window.doLogout = () => { window.location.href = LOGOUT_URL; };
-  </script>
+  return `${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`;
+}
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  window.location.href = await buildAuthorizeUrl();
+});
+
+// If user came back here after logout, clean old tokens
+(function cleanIfComingFromLogout(){
+  const p = new URLSearchParams(location.search);
+  if (p.get("loggedout")) {
+    localStorage.removeItem("id_token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("pkce_verifier");
+    history.replaceState({}, "", "login.html");
+  }
+})();
+</script>
 </body>
 </html>
