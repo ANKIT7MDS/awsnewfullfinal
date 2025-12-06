@@ -24,10 +24,11 @@
     loginButton.addEventListener('click', () => {
         const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
         const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-        const REDIRECT_URI = "https://staging.d9fw7yzrfzuja.amplifyapp.com/dashboard.html";
 
-        // --- YEH HAI SABSE ZAROORI HISSA ---
-        // Hum Cognito se saaf-saaf admin scope maang rahe hain
+        // ✅ अब Netlify वाला redirect
+        const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html";
+
+        // --- यहीं से Cognito Login शुरू होगा ---
         const SCOPES = "openid profile email aws.cognito.signin.user.admin";
 
         const loginUrl = `${COGNITO_DOMAIN}/login?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
