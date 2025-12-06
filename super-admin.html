@@ -158,10 +158,13 @@
   </div>
 
 <script>
-/*** --- CONFIG (Filled with your values) --- ***/
+/*** --- CONFIG (UPDATED HOST) --- ***/
 const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
 const COGNITO_CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-const REDIRECT_URI = "https://staging.d9fw7yzrfzuja.amplifyapp.com/super-admin.html";
+
+// ✅ अब Netlify वाला redirect
+const REDIRECT_URI = "https://selfiphotos.netlify.app/super-admin.html";
+
 const SCOPES = "openid+email+profile+aws.cognito.signin.user.admin";
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 
@@ -199,7 +202,6 @@ function logout() {
 function authHeader() {
   const a = getAuth();
   if (!a) return {};
-  // Prefer id_token (contains groups for authorizer)
   const token = a.id_token || a.access_token;
   return { 'Authorization': `Bearer ${token}` };
 }
@@ -353,7 +355,7 @@ async function openDetails(user){
   openModal('#detailsModal');
 }
 
-/*** create flow — modal auto-close + double-click prevention ***/
+/*** create flow ***/
 document.getElementById('btnCreate').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnCreate');
   if(btn.disabled) return; btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Creating...';
@@ -362,9 +364,8 @@ document.getElementById('btnCreate').addEventListener('click', async ()=>{
   try{
     const r = await api('/master/photographer', { method:'POST', body:{ email }});
     if(!r.ok){ const t = await r.text(); alert('Create failed: '+t); return; }
-    // storage limit (optional)
     if (limitGb>0) {
-      const created = await r.json(); // has user_id & username
+      const created = await r.json(); 
       await api(`/master/photographer/${created.user_id}`, { method:'POST', body:{ username: created.username, storage_limit_gb: limitGb }});
     }
     closeModal('#createModal');
@@ -380,7 +381,6 @@ document.getElementById('who').textContent = 'लॉगिन: ' + (auth ? '-' :
 if (!auth) {
   document.getElementById('errorBox').textContent = 'Login required. ऊपर “लॉगिन” पर क्लिक करें.';
 } else {
-  // Try to show email from token (best-effort)
   try {
     const parts = (auth.id_token||auth.access_token).split('.');
     const payload = JSON.parse(atob(parts[1].replaceAll('-', '+').replaceAll('_','/')));
