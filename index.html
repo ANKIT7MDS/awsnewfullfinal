@@ -3,28 +3,204 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EventLens Platform</title>
+    <title>EventLens – Find Your Photos</title>
+
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
         body {
             background-color: #1a1a1a;
-            color: #f0f0f0;
+            color: #ffffff;
             font-family: 'Inter', sans-serif;
+        }
+
+        .upload-box {
+            border: 2px dashed #ff6a00;
+            padding: 40px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .upload-box:hover {
+            background: rgba(255, 106, 0, 0.1);
         }
     </style>
 </head>
 
-<body class="bg-[#1a1a1a]">
-    <div id="root">
-        <!-- यहां तुम्हारा guest search UI सीधे लिखा जाएगा 
-             या नीचे JS से generate किया जाएगा -->
+<body class="min-h-screen flex flex-col items-center justify-center px-4">
+
+    <!-- LOGO / HEADER -->
+    <h1 class="text-3xl font-bold text-white mb-6">
+        EventLens – अपनी फोटो खोजें
+    </h1>
+
+    <!-- Upload Section -->
+    <div id="upload-area" class="w-full max-w-md upload-box text-center">
+        <p class="text-lg">अपना Selfie अपलोड करें</p>
+        <p class="text-sm text-gray-300 mt-2">(JPG/PNG)</p>
+
+        <input 
+            id="selfieInput" 
+            type="file" 
+            accept="image/*" 
+            class="hidden"
+        />
     </div>
 
-    <!-- कोई index.js नहीं, कोई react नहीं -->
+    <!-- Searching UI -->
+    <div id="searching" class="hidden mt-10 text-center">
+        <div class="text-xl font-semibold text-orange-400">फोटो खोजी जा रही है...</div>
+        <div class="mt-4 text-sm text-gray-300">कृपया इंतज़ार करें</div>
+    </div>
+
+    <!-- Result UI -->
+    <div id="resultArea" class="hidden mt-10 text-center">
+        <div id="resultText" class="text-xl font-semibold"></div>
+
+        <div id="formArea" class="mt-6 hidden">
+            <input 
+                id="guestName" 
+                type="text" 
+                placeholder="आपका नाम" 
+                class="w-full max-w-xs p-3 rounded bg-gray-800 text-white border border-gray-600"
+            >
+            <input 
+                id="guestMobile" 
+                type="tel" 
+                placeholder="मोबाइल नंबर" 
+                class="w-full max-w-xs mt-4 p-3 rounded bg-gray-800 text-white border border-gray-600"
+            >
+
+            <button 
+                id="saveDetailsBtn" 
+                class="mt-5 bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded text-white font-semibold"
+            >
+                आगे बढ़ें
+            </button>
+        </div>
+    </div>
+
+
+<script>
+/* -------------------- CONFIG -------------------- */
+const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+const GET_LINK_API = `${API_BASE}/selfie-search-get-links`;
+const FIND_MATCHES_API = `${API_BASE}/selfie-search-find-matches`;
+const SAVE_DETAILS_API = `${API_BASE}/selfie-search-save-details`;
+
+/* -------------------- ELEMENTS -------------------- */
+const uploadArea = document.getElementById("upload-area");
+const selfieInput = document.getElementById("selfieInput");
+const searching = document.getElementById("searching");
+const resultArea = document.getElementById("resultArea");
+const resultText = document.getElementById("resultText");
+const formArea = document.getElementById("formArea");
+
+/* -------------------- Extract linkId -------------------- */
+const urlParams = new URLSearchParams(window.location.search);
+const linkId = urlParams.get("linkId") || urlParams.get("linkid");
+
+if (!linkId) {
+    alert("Invalid Link: linkId missing");
+}
+
+/* -------------------- Select Selfie UI -------------------- */
+uploadArea.addEventListener("click", () => selfieInput.click());
+
+selfieInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const selfieBase64 = reader.result;
+
+        uploadArea.classList.add("hidden");
+        searching.classList.remove("hidden");
+
+        await processSearch(selfieBase64);
+    };
+    reader.readAsDataURL(file);
+});
+
+/* -------------------- MAIN SEARCH FUNCTION -------------------- */
+async function processSearch(selfieBase64) {
+    try {
+        // STEP 1 — get collection + event info
+        const linkRes = await fetch(GET_LINK_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ linkId })
+        });
+        const linkData = await linkRes.json();
+
+        // STEP 2 — search for matches
+        const matchRes = await fetch(FIND_MATCHES_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                linkId,
+                selfie_image: selfieBase64
+            })
+        });
+
+        const matchData = await matchRes.json();
+        searching.classList.add("hidden");
+        resultArea.classList.remove("hidden");
+
+        if (matchData.photoCount === 0) {
+            resultText.textContent = "क्षमा करें, आपकी कोई फोटो नहीं मिली।";
+            return;
+        }
+
+        resultText.textContent = `बधाई! आपकी ${matchData.photoCount} फोटो मिली हैं`;
+        formArea.classList.remove("hidden");
+
+    } catch (err) {
+        console.error(err);
+        alert("त्रुटि: Search request failed");
+    }
+}
+
+/* -------------------- SAVE DETAILS -------------------- */
+document.getElementById("saveDetailsBtn").addEventListener("click", async () => {
+    const name = guestName.value.trim();
+    const mobile = guestMobile.value.trim();
+
+    if (!name || !mobile) {
+        alert("कृपया नाम और मोबाइल नंबर भरें");
+        return;
+    }
+
+    try {
+        const res = await fetch(SAVE_DETAILS_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                linkId,
+                guestName: name,
+                guestMobile: mobile
+            })
+        });
+
+        const data = await res.json();
+        if (data.galleryUrl) {
+            window.location.href = data.galleryUrl;
+        } else {
+            alert("आपके विवरण सुरक्षित कर दिए गए। गैलरी का लिंक अभी उपलब्ध नहीं है।");
+        }
+
+    } catch (err) {
+        alert("Error saving details");
+    }
+});
+</script>
+
 </body>
 </html>
