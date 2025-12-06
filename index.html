@@ -88,13 +88,17 @@
 
 <script>
 /* ----------------------------------------------------------
-   CORRECT API PATHS – MATCHING EXACTLY WITH YOUR API GATEWAY
-   ---------------------------------------------------------- */
+   CORRECT API PATHS – MATCHING EXACTLY WITH API GATEWAY
+---------------------------------------------------------- */
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 
-const GET_LINK_API = `${API_BASE}/get-links`;      // Correct
-const FIND_MATCHES_API = `${API_BASE}/search`;      // Correct
-const SAVE_DETAILS_API = `${API_BASE}/save-details`; // Correct
+const GET_LINK_API = `${API_BASE}/get-links`;      
+const FIND_MATCHES_API = `${API_BASE}/search`;     
+const SAVE_DETAILS_API = `${API_BASE}/save-details`; 
+
+
+/* -------------------- GLOBAL SELFIE STORE -------------------- */
+let userSelfieBase64 = null;
 
 
 /* -------------------- HTML ELEMENTS -------------------- */
@@ -106,7 +110,7 @@ const resultText = document.getElementById("resultText");
 const formArea = document.getElementById("formArea");
 
 
-/* -------------------- FETCH linkId from URL -------------------- */
+/* -------------------- linkId from URL -------------------- */
 const urlParams = new URLSearchParams(window.location.search);
 const linkId = urlParams.get("linkId") || urlParams.get("linkid");
 
@@ -124,12 +128,12 @@ selfieInput.addEventListener("change", async (e) => {
 
     const reader = new FileReader();
     reader.onload = async () => {
-        const selfieBase64 = reader.result;
+        userSelfieBase64 = reader.result;   // ⭐ STORE SELFIE HERE
 
         uploadArea.classList.add("hidden");
         searching.classList.remove("hidden");
 
-        await processSearch(selfieBase64);
+        await processSearch(userSelfieBase64);
     };
     reader.readAsDataURL(file);
 });
@@ -138,7 +142,7 @@ selfieInput.addEventListener("change", async (e) => {
 /* -------------------- MAIN SEARCH FUNCTION -------------------- */
 async function processSearch(selfieBase64) {
     try {
-        /* Step 1 → Resolve link / collection */
+        /* Step 1 → Resolve link */
         const linkRes = await fetch(GET_LINK_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -164,17 +168,17 @@ async function processSearch(selfieBase64) {
         resultArea.classList.remove("hidden");
 
 
-        if (matchData.photoCount === 0) {
+        if (!matchData.matches || matchData.matches.length === 0) {
             resultText.textContent = "क्षमा करें, आपकी कोई फोटो नहीं मिली।";
             return;
         }
 
-        resultText.textContent = `बधाई! आपकी ${matchData.photoCount} फोटो मिली हैं`;
+        resultText.textContent = `बधाई! आपकी ${matchData.matches.length} फोटो मिली हैं`;
         formArea.classList.remove("hidden");
 
     } catch (err) {
         console.error(err);
-        alert("Error: Server unreachable or CORS issue");
+        alert("Error searching photos");
     }
 }
 
@@ -194,22 +198,22 @@ document.getElementById("saveDetailsBtn").addEventListener("click", async () => 
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                linkId,
-                guestName: name,
-                guestMobile: mobile
+                linkId: linkId,
+                name: name,               // ⭐ CORRECT FIELD NAME
+                mobile: mobile,           // ⭐ CORRECT FIELD NAME
+                selfie_image: userSelfieBase64   // ⭐ REQUIRED FIELD
             })
         });
 
         const data = await res.json();
 
-        if (data.galleryUrl) {
-            window.location.href = data.galleryUrl;
-        } else {
-            alert("फोटो तैयार हैं, लेकिन gallery link अभी नहीं मिला।");
+        if (data.matches) {
+            alert("फोटो तैयार हैं! Gallery page बनाने के लिए backend में URL जोड़ें।");
         }
 
     } catch (err) {
         alert("Error saving details");
+        console.error(err);
     }
 });
 </script>
