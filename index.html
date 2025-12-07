@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="hi">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EventLens – अपनी फोटो खोजें</title>
 
-    <!-- STYLES -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,63 +12,22 @@
             color: white;
             text-align: center;
             margin: 0;
-            padding: 0;
         }
 
         h1 {
-            margin-top: 40px;
-            font-size: 36px;
+            margin-top: 30px;
+            font-size: 34px;
         }
 
         #preview {
             width: 260px;
-            border-radius: 10px;
+            border-radius: 12px;
             display: none;
             margin: 20px auto;
         }
 
-        #photos-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 15px;
-            padding: 20px;
-            margin-top: 25px;
-            width: 90%;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .photo-box {
-            border: 3px solid rgb(0, 255, 0);
-            border-radius: 15px;
-            padding: 5px;
-            cursor: pointer;
-            position: relative;
-            background: #111;
-        }
-
-        .photo-box img {
-            width: 100%;
-            border-radius: 12px;
-        }
-
-        .selected-check {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            background: #00c3ff;
-            padding: 5px 7px;
-            border-radius: 50%;
-            font-size: 16px;
-            display: none;
-        }
-
-        .selected .selected-check {
-            display: block;
-        }
-
         .btn {
-            padding: 14px 28px;
+            padding: 14px 26px;
             font-size: 20px;
             background: #00c853;
             border: none;
@@ -80,43 +37,85 @@
             color: black;
         }
 
-        #zip-btn {
+        #zip-btn, #selectAllBtn {
             background: #ffc400;
             color: black;
+            margin: 10px;
+        }
+
+        #photos-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            width: 94%;
+            margin: auto;
+        }
+
+        .photo-box {
+            border: 3px solid #00ff15;
+            border-radius: 12px;
+            background: #111;
+            padding: 5px;
+            cursor: pointer;
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;   /* ✔ PHOTO UNIFORM FRAME */
+            border-radius: 10px;
+        }
+
+        .selected-check {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #00c3ff;
+            padding: 5px 7px;
+            border-radius: 50%;
+            font-size: 17px;
+            display: none;
+        }
+
+        .selected .selected-check {
+            display: block;
         }
 
         #message {
-            margin-top: 20px;
+            margin-top: 15px;
             font-size: 20px;
         }
 
-        /* LIGHTBOX MODAL */
+        /* LIGHTBOX */
         #lightbox {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
+            inset: 0;
+            background: rgba(0,0,0,0.9);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 999;
+            z-index: 50;
         }
 
         #lightbox img {
             max-width: 90%;
             max-height: 90vh;
-            border-radius: 10px;
+            border-radius: 12px;
         }
 
         #closeLightbox {
             position: absolute;
-            top: 30px;
-            right: 30px;
+            top: 20px;
+            right: 25px;
             font-size: 40px;
             cursor: pointer;
-            color: white;
         }
     </style>
 
@@ -126,164 +125,167 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 </head>
-
 <body>
 
-    <h1>EventLens – अपनी फोटो खोजें</h1>
+<h1>EventLens – अपनी फोटो खोजें</h1>
 
-    <input type="file" id="selfie" accept="image/*" />
-    <br>
-    <img id="preview" />
+<input type="file" id="selfie" accept="image/*" />
+<br>
+<img id="preview" />
 
-    <button class="btn" onclick="searchPhotos()">फोटो खोजें</button>
-    <p id="message"></p>
+<button class="btn" onclick="searchPhotos()">फोटो खोजें</button>
 
-    <button class="btn" id="zip-btn" onclick="downloadZip()" style="display:none">चयनित फोटो ZIP डाउनलोड</button>
+<p id="message"></p>
 
-    <div id="photos-container"></div>
+<button class="btn" id="selectAllBtn" onclick="toggleSelectAll()" style="display:none">सभी चुनें</button>
+<button class="btn" id="zip-btn" onclick="downloadZip()" style="display:none">चयनित फोटो ZIP डाउनलोड</button>
 
-    <!-- LIGHTBOX -->
-    <div id="lightbox">
-        <span id="closeLightbox">×</span>
-        <img id="lightbox-img" />
-    </div>
+<div id="photos-container"></div>
 
-    <script>
-        let selectedPhotos = [];
-        let apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
+<!-- Lightbox -->
+<div id="lightbox">
+    <span id="closeLightbox">×</span>
+    <img id="lightbox-img" />
+</div>
 
-        // Load preview
-        document.getElementById("selfie").addEventListener("change", function () {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    document.getElementById("preview").src = e.target.result;
-                    document.getElementById("preview").style.display = "block";
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+<script>
+let selectedPhotos = [];
+let allPhotos = [];
 
-        // SEARCH PHOTOS
-        async function searchPhotos() {
-            const file = document.getElementById("selfie").files[0];
-            if (!file) {
-                alert("पहले अपनी फोटो चुनें!");
-                return;
-            }
+let apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
 
-            document.getElementById("message").innerHTML = "कृपया प्रतीक्षा करें...";
+// Preview Selfie
+document.getElementById("selfie").addEventListener("change", function () {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    }
+});
 
-            const reader = new FileReader();
-            reader.onload = async function () {
-                const selfieBase64 = reader.result;
+// SEARCH PHOTOS
+async function searchPhotos() {
+    const file = selfie.files[0];
+    if (!file) return alert("पहले अपनी फोटो चुनें!");
 
-                const linkId = new URLSearchParams(window.location.search).get("linkId") || "";
-                const body = {
-                    linkId,
-                    selfie_image: selfieBase64,
-                    name: "guest",
-                    mobile: "0000000000"
-                };
+    message.innerHTML = "कृपया प्रतीक्षा करें...";
 
-                const res = await fetch(apiURL, {
-                    method: "POST",
-                    body: JSON.stringify(body),
-                });
+    const reader = new FileReader();
+    reader.onload = async function () {
+        const selfie64 = reader.result;
 
-                const data = await res.json();
-                console.log("RESULT:", data);
-
-                if (!data.matches || data.matches.length === 0) {
-                    document.getElementById("message").innerHTML = "क्षमा करें, आपकी कोई फोटो नहीं मिली।";
-                    return;
-                }
-
-                renderPhotos(data.matches);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // RENDER GRID
-        function renderPhotos(list) {
-            const box = document.getElementById("photos-container");
-            box.innerHTML = "";
-            selectedPhotos = [];
-
-            document.getElementById("message").innerHTML = `${list.length} फोटो मिली!`;
-            document.getElementById("zip-btn").style.display = "inline-block";
-
-            list.forEach((item, index) => {
-                const div = document.createElement("div");
-                div.className = "photo-box";
-
-                div.innerHTML = `
-                    <img src="${item.url}" onclick="openLightbox('${item.url}')">
-                    <div class="selected-check">✔</div>
-                `;
-
-                div.onclick = () => toggleSelect(div, item.url);
-
-                box.appendChild(div);
-            });
-        }
-
-        // SELECT / UNSELECT
-        function toggleSelect(div, url) {
-            if (div.classList.contains("selected")) {
-                div.classList.remove("selected");
-                selectedPhotos = selectedPhotos.filter(u => u !== url);
-            } else {
-                div.classList.add("selected");
-                selectedPhotos.push(url);
-            }
-        }
-
-        // LIGHTBOX
-        function openLightbox(url) {
-            document.getElementById("lightbox-img").src = url;
-            document.getElementById("lightbox").style.display = "flex";
-        }
-
-        document.getElementById("closeLightbox").onclick = function () {
-            document.getElementById("lightbox").style.display = "none";
+        const linkId = new URLSearchParams(window.location.search).get("linkId") || "";
+        let body = {
+            linkId,
+            selfie_image: selfie64,
+            name: "guest",
+            mobile: "000"
         };
 
-        // ZIP DOWNLOAD
-        async function downloadZip() {
-            if (selectedPhotos.length === 0) {
-                alert("कोई फोटो चयनित नहीं है!");
-                return;
-            }
+        const res = await fetch(apiURL, { method: "POST", body: JSON.stringify(body) });
+        const data = await res.json();
 
-            const zip = new JSZip();
-            const folder = zip.folder("EventPhotos");
-
-            for (let i = 0; i < selectedPhotos.length; i++) {
-                let url = selectedPhotos[i];
-
-                try {
-                    const fileData = await new Promise((resolve, reject) => {
-                        JSZipUtils.getBinaryContent(url, function (err, data) {
-                            if (err) reject(err);
-                            else resolve(data);
-                        });
-                    });
-
-                    let fileName = url.split("/").pop().split("?")[0];
-                    folder.file(fileName, fileData, { binary: true });
-
-                } catch (err) {
-                    console.error("Download error:", err);
-                }
-            }
-
-            const content = await zip.generateAsync({ type: "blob" });
-            saveAs(content, "Selected_Photos.zip");
+        if (!data.matches?.length) {
+            message.innerHTML = "क्षमा करें, कोई फोटो नहीं मिली।";
+            return;
         }
-    </script>
+
+        allPhotos = data.matches;
+        selectedPhotos = [];
+
+        renderPhotos(allPhotos);
+
+        message.innerHTML = `${data.matches.length} फोटो मिली!`;
+
+        zip-btn.style.display = "inline-block";
+        selectAllBtn.style.display = "inline-block";
+    };
+    reader.readAsDataURL(file);
+}
+
+// Render Grid
+function renderPhotos(list) {
+    photos-container.innerHTML = "";
+
+    list.forEach(item => {
+        let box = document.createElement("div");
+        box.className = "photo-box";
+
+        box.innerHTML = `
+            <img src="${item.url}" onclick="openLightbox('${item.url}')">
+            <div class="selected-check">✔</div>
+        `;
+
+        box.onclick = () => toggleSelect(box, item.url);
+
+        photos-container.appendChild(box);
+    });
+}
+
+// Select Toggle
+function toggleSelect(div, url) {
+    if (div.classList.contains("selected")) {
+        div.classList.remove("selected");
+        selectedPhotos = selectedPhotos.filter(x => x !== url);
+    } else {
+        div.classList.add("selected");
+        selectedPhotos.push(url);
+    }
+}
+
+// SELECT ALL
+function toggleSelectAll() {
+    const boxes = document.querySelectorAll(".photo-box");
+
+    if (selectedPhotos.length === allPhotos.length) {
+        // unselect all
+        selectedPhotos = [];
+        boxes.forEach(b => b.classList.remove("selected"));
+        selectAllBtn.innerText = "सभी चुनें";
+    } else {
+        // select all
+        selectedPhotos = allPhotos.map(x => x.url);
+        boxes.forEach(b => b.classList.add("selected"));
+        selectAllBtn.innerText = "सभी हटाएँ";
+    }
+}
+
+// LIGHTBOX
+function openLightbox(url) {
+    lightbox-img.src = url;
+    lightbox.style.display = "flex";
+}
+closeLightbox.onclick = () => lightbox.style.display = "none";
+
+// ZIP DOWNLOAD
+async function downloadZip() {
+    if (selectedPhotos.length === 0) return alert("कोई फोटो चयनित नहीं है!");
+
+    const zip = new JSZip();
+    const folder = zip.folder("EventPhotos");
+
+    for (let url of selectedPhotos) {
+        try {
+            const data = await new Promise((resolve, reject) => {
+                JSZipUtils.getBinaryContent(url, (err, binary) =>
+                    err ? reject(err) : resolve(binary)
+                );
+            });
+            let filename = url.split("/").pop().split("?")[0];
+            folder.file(filename, data, { binary: true });
+        } catch (e) {
+            console.error("ZIP ERROR:", e);
+        }
+    }
+
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, "Selected_Photos.zip");
+}
+</script>
 
 </body>
-
 </html>
