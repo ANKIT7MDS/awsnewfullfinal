@@ -3,84 +3,62 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EventLens – Find Your Photos</title>
+    <title>EventLens – अपनी फोटो खोजें</title>
 
-    <!-- Tailwind -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
         body {
-            background-color: #1a1a1a;
-            color: #ffffff;
+            background: #1a1a1a;
+            color: white;
             font-family: 'Inter', sans-serif;
         }
-
         .upload-box {
             border: 2px dashed #ff6a00;
             padding: 40px;
             border-radius: 14px;
+            text-align: center;
             cursor: pointer;
-            transition: 0.2s;
         }
-        .upload-box:hover {
-            background: rgba(255, 106, 0, 0.1);
-        }
+        .upload-box:hover { background: rgba(255, 106, 0, 0.1); }
     </style>
 </head>
 
 <body class="min-h-screen flex flex-col items-center justify-center px-4">
 
-    <!-- HEADER -->
-    <h1 class="text-3xl font-bold text-white mb-6">
-        EventLens – अपनी फोटो खोजें
-    </h1>
+    <h1 class="text-3xl font-bold mb-6">EventLens – अपनी फोटो खोजें</h1>
 
-    <!-- Upload Box -->
-    <div id="upload-area" class="w-full max-w-md upload-box text-center">
+    <!-- Upload box -->
+    <div id="upload-area" class="upload-box w-full max-w-md">
         <p class="text-lg">अपना Selfie अपलोड करें</p>
-        <p class="text-sm text-gray-300 mt-2">(JPG/PNG)</p>
-        <input 
-            id="selfieInput" 
-            type="file" 
-            accept="image/*" 
-            class="hidden"
-        />
+        <p class="text-sm text-gray-300">(JPG/PNG)</p>
+        <input id="selfieInput" type="file" accept="image/*" class="hidden" />
     </div>
 
-    <!-- Searching State -->
-    <div id="searching" class="hidden mt-12 text-center">
-        <div class="text-xl font-semibold text-orange-400">फोटो खोजी जा रही है...</div>
-        <div class="mt-3 text-sm text-gray-300">कृपया इंतज़ार करें</div>
+    <!-- Loading Section -->
+    <div id="searching" class="hidden mt-10 text-center">
+        <div class="text-xl text-orange-400 font-semibold">फोटो खोजी जा रही है...</div>
+        <div class="text-sm text-gray-300 mt-2">कृपया इंतजार करें</div>
     </div>
 
     <!-- Result Section -->
-    <div id="resultArea" class="hidden mt-12 text-center">
+    <div id="resultArea" class="hidden mt-10 text-center">
         <div id="resultText" class="text-xl font-semibold"></div>
 
-        <!-- Guest Details Form -->
-        <div id="formArea" class="mt-6 hidden">
+        <div id="formArea" class="hidden mt-6">
             <input 
                 id="guestName" 
-                type="text" 
-                placeholder="आपका नाम" 
-                class="w-full max-w-xs p-3 rounded bg-[#111] text-white border border-gray-700"
-            >
+                class="w-full max-w-xs p-3 rounded bg-[#111] text-white border border-gray-600"
+                type="text" placeholder="आपका नाम">
+
             <input 
                 id="guestMobile" 
-                type="tel" 
-                placeholder="मोबाइल नंबर" 
-                class="w-full max-w-xs mt-4 p-3 rounded bg-[#111] text-white border border-gray-700"
-            >
+                class="w-full max-w-xs p-3 rounded bg-[#111] text-white mt-4 border border-gray-600"
+                type="tel" placeholder="मोबाइल नंबर">
 
-            <button 
-                id="saveDetailsBtn" 
-                class="mt-6 bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded text-white font-semibold"
-            >
+            <button id="saveDetailsBtn" 
+                class="mt-6 bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded text-white font-semibold">
                 आगे बढ़ें
             </button>
         </div>
@@ -88,85 +66,89 @@
 
 <script>
 /* ----------------------------------------------------------
-   CORRECT API PATHS – MATCHING EXACTLY WITH API GATEWAY
+   API ENDPOINTS (CORRECT & FINAL)
 ---------------------------------------------------------- */
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 
-const GET_LINK_API = `${API_BASE}/get-links`;      
-const FIND_MATCHES_API = `${API_BASE}/search`;     
-const SAVE_DETAILS_API = `${API_BASE}/save-details`; 
+const GET_LINK_API     = `${API_BASE}/get-links`;
+const FIND_MATCHES_API = `${API_BASE}/search`;
+const SAVE_DETAILS_API = `${API_BASE}/save-details`;
 
 
-/* -------------------- GLOBAL SELFIE STORE -------------------- */
+/* -------------------- GLOBAL STORAGE -------------------- */
 let userSelfieBase64 = null;
 
 
-/* -------------------- HTML ELEMENTS -------------------- */
-const uploadArea = document.getElementById("upload-area");
-const selfieInput = document.getElementById("selfieInput");
-const searching = document.getElementById("searching");
-const resultArea = document.getElementById("resultArea");
-const resultText = document.getElementById("resultText");
-const formArea = document.getElementById("formArea");
+/* -------------------- DOM ELEMENTS -------------------- */
+const uploadArea   = document.getElementById("upload-area");
+const selfieInput  = document.getElementById("selfieInput");
+const searching    = document.getElementById("searching");
+const resultArea   = document.getElementById("resultArea");
+const resultText   = document.getElementById("resultText");
+const formArea     = document.getElementById("formArea");
 
 
-/* -------------------- linkId from URL -------------------- */
+/* -------------------- linkId Fetch -------------------- */
 const urlParams = new URLSearchParams(window.location.search);
 const linkId = urlParams.get("linkId") || urlParams.get("linkid");
 
 if (!linkId) {
-    alert("Invalid guest link: linkId missing");
+    alert("Invalid link: linkId missing");
 }
 
 
-/* -------------------- Upload Click -------------------- */
+/* -------------------- File Upload Event -------------------- */
 uploadArea.addEventListener("click", () => selfieInput.click());
 
-selfieInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
+selfieInput.addEventListener("change", () => {
+    const file = selfieInput.files[0];
     if (!file) return;
 
     const reader = new FileReader();
+
     reader.onload = async () => {
-        userSelfieBase64 = reader.result;   // ⭐ STORE SELFIE HERE
+        userSelfieBase64 = reader.result; // contains: data:image/...;base64,XXXX
 
         uploadArea.classList.add("hidden");
         searching.classList.remove("hidden");
 
         await processSearch(userSelfieBase64);
     };
+
     reader.readAsDataURL(file);
 });
 
 
-/* -------------------- MAIN SEARCH FUNCTION -------------------- */
-async function processSearch(selfieBase64) {
+/* ----------------------------------------------------------
+   SEARCH PROCESS
+---------------------------------------------------------- */
+async function processSearch(selfieDataURL) {
     try {
-        /* Step 1 → Resolve link */
-        const linkRes = await fetch(GET_LINK_API, {
+        // STEP 1 → CLEAN BASE64 FOR BACKEND
+        const cleanSelfie = selfieDataURL.split(",")[1];  // ⭐ MOST IMPORTANT FIX
+
+        // STEP 2 → VERIFY LINK
+        await fetch(GET_LINK_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ linkId })
         });
 
-        const linkData = await linkRes.json();
-
-
-        /* Step 2 → Find matches */
+        // STEP 3 → RUN FACE SEARCH
         const matchRes = await fetch(FIND_MATCHES_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 linkId,
-                selfie_image: selfieBase64
+                selfie_image: cleanSelfie
             })
         });
 
         const matchData = await matchRes.json();
+        console.log("MATCH DATA:", matchData);
 
         searching.classList.add("hidden");
         resultArea.classList.remove("hidden");
-
 
         if (!matchData.matches || matchData.matches.length === 0) {
             resultText.textContent = "क्षमा करें, आपकी कोई फोटो नहीं मिली।";
@@ -183,37 +165,40 @@ async function processSearch(selfieBase64) {
 }
 
 
-/* -------------------- SAVE DETAILS + REDIRECT -------------------- */
+/* ----------------------------------------------------------
+   SAVE DETAILS + REDIRECT
+---------------------------------------------------------- */
 document.getElementById("saveDetailsBtn").addEventListener("click", async () => {
     const name = guestName.value.trim();
     const mobile = guestMobile.value.trim();
 
     if (!name || !mobile) {
-        alert("कृपया नाम और मोबाइल नंबर भरें");
+        alert("कृपया नाम और मोबाइल दर्ज करें");
         return;
     }
 
     try {
+        const cleanSelfie = userSelfieBase64.split(",")[1];
+
         const res = await fetch(SAVE_DETAILS_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                linkId: linkId,
-                name: name,               // ⭐ CORRECT FIELD NAME
-                mobile: mobile,           // ⭐ CORRECT FIELD NAME
-                selfie_image: userSelfieBase64   // ⭐ REQUIRED FIELD
+                linkId,
+                name,
+                mobile,
+                selfie_image: cleanSelfie
             })
         });
 
         const data = await res.json();
+        console.log("SAVE RESPONSE:", data);
 
-        if (data.matches) {
-            alert("फोटो तैयार हैं! Gallery page बनाने के लिए backend में URL जोड़ें।");
-        }
+        alert("फोटो तैयार हैं! जल्द ही gallery link दिखा दी जाएगी।");
 
     } catch (err) {
-        alert("Error saving details");
         console.error(err);
+        alert("Error saving details");
     }
 });
 </script>
