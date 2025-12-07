@@ -1,267 +1,180 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
-<title>EventLens – अपनी फोटो खोजें</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventLens – अपनी फोटो खोजें</title>
 
-<!-- Lightbox Gallery -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+    <!-- Lightbox for zoom view -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
 
-<style>
-    body {
-        background: #000;
-        color: white;
-        font-family: Arial;
-        text-align: center;
-        padding: 20px;
-    }
-    #previewImg {
-        width: 230px;
-        height: auto;
-        border-radius: 10px;
-        margin: 20px auto;
-        display: none;
-    }
-    #searchBtn {
-        background: #00c853;
-        padding: 12px 28px;
-        border: none;
-        font-size: 20px;
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 20px;
-    }
-    #searchBtn:hover { background: #009624; }
+    <style>
+        body {
+            background:#000;
+            color:#fff;
+            text-align:center;
+            font-family:Arial;
+            margin:0;
+            padding:0;
+        }
+        h1 { margin-top:40px; font-size:38px; }
 
-    #resultArea {
-        margin-top: 25px;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 15px;
-        padding-bottom: 50px;
-    }
+        #preview-img {
+            width:280px;
+            border-radius:10px;
+            display:none;
+            margin:20px auto;
+        }
 
-    .photoBox {
-        background: #111;
-        padding: 5px;
-        border-radius: 10px;
-        text-align: center;
-    }
-    .photoBox img {
-        width: 100%;
-        height: 150px;
-        border-radius: 10px;
-        cursor: pointer;
-        object-fit: cover;
-    }
-    .selectPhoto {
-        margin-top: 8px;
-        transform: scale(1.3);
-    }
+        .btn {
+            background:#00c04b;
+            padding:12px 25px;
+            border-radius:8px;
+            color:white;
+            font-size:22px;
+            cursor:pointer;
+            border:none;
+        }
 
-    #paginationArea button {
-        background: #ffaa00;
-        border: none;
-        padding: 10px 20px;
-        margin: 10px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 18px;
-    }
-    #paginationArea button:hover {
-        background: #ff9100;
-    }
+        .msg { margin-top:10px; font-size:20px; color:#ff4444; }
 
-    #downloadSelBtn {
-        background: #2979ff;
-        margin-top: 20px;
-        padding: 12px 20px;
-        font-size: 18px;
-        border-radius: 8px;
-        border: none;
-        color: white;
-        cursor: pointer;
-    }
-</style>
+        .grid {
+            margin-top:40px;
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            gap:25px;
+        }
+        .grid img {
+            width:230px;
+            height:230px;
+            object-fit:cover;
+            border-radius:12px;
+            border:3px solid #22ff88;
+            cursor:pointer;
+        }
+
+        #loader {
+            display:none;
+            font-size:20px;
+            color:#0ff;
+            margin-top:10px;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>EventLens – अपनी फोटो खोजें</h1>
+    <h1>EventLens – अपनी फोटो खोजें</h1>
 
-<input type="file" id="selfieInput" accept="image/*"><br>
+    <input type="file" id="selfieInput" accept="image/*">
+    <img id="preview-img">
 
-<img id="previewImg">
+    <br><br>
+    <button class="btn" onclick="searchPhotos()">फोटो खोजें</button>
 
-<button id="searchBtn" onclick="searchPhotos()">फोटो खोजें</button>
+    <div id="loader">🔄 खोज जारी है...</div>
+    <div id="msg" class="msg"></div>
 
-<h2 id="countText"></h2>
+    <h2 id="countText"></h2>
 
-<div id="paginationArea"></div>
+    <div class="grid" id="photoGrid"></div>
 
-<button id="downloadSelBtn" onclick="downloadSelected()" style="display:none;">
-चुनी हुई फोटो डाउनलोड करें
-</button>
-
-<div id="resultArea"></div>
+    <!-- Lightbox JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
 <script>
+const API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
 
-// ---------------- CONFIG ----------------
-const API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search
-";   // ← यहाँ अपना API URL डालना है
-// -----------------------------------------
+// Load linkId from URL
+const urlParams = new URLSearchParams(window.location.search);
+const linkId = urlParams.get("linkId");
 
-let allMatches = [];
-let page = 1;
-let perPage = 9;
-
-// ---------- Preview Selfie ----------
-document.getElementById("selfieInput").addEventListener("change", function () {
-    let file = this.files[0];
-    if (file) {
+// Show preview
+document.getElementById("selfieInput").addEventListener("change", function(e){
+    let file = e.target.files[0];
+    if(file){
         let reader = new FileReader();
-        reader.onload = e => {
-            previewImg.src = e.target.result;
-            previewImg.style.display = "block";
+        reader.onload = function(ev){
+            let img = document.getElementById("preview-img");
+            img.src = ev.target.result;
+            img.style.display = "block";
         };
         reader.readAsDataURL(file);
     }
 });
 
-// ---------- MAIN SEARCH ----------
 async function searchPhotos() {
+    let fileInput = document.getElementById("selfieInput");
+    let msg = document.getElementById("msg");
+    let loader = document.getElementById("loader");
+    let grid = document.getElementById("photoGrid");
 
-    let file = document.getElementById("selfieInput").files[0];
-    if (!file) {
-        alert("कृपया फोटो चुनें!");
+    msg.innerText = "";
+    grid.innerHTML = "";
+    loader.style.display = "block";
+
+    if (!fileInput.files.length) {
+        msg.innerText = "कृपया एक फोटो चुनें!";
+        loader.style.display = "none";
         return;
     }
 
-    let reader = new FileReader();
-    reader.onload = async function () {
+    let file = fileInput.files[0];
+    let base64 = await toBase64(file);
 
-        let body = {
-            linkId: getLinkId(),
-            name: "guest",
-            mobile: "0000000000",
-            selfie_image: reader.result
-        };
+    let payload = {
+        linkId: linkId,
+        name: "guest",
+        mobile: "0000000000",
+        selfie_image: base64
+    };
 
+    try {
         const res = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
+            body: JSON.stringify(payload)
         });
 
-        let data = await res.json();
+        const data = await res.json();
+        console.log("API Response:", data);
 
-        if (!data.matches) {
-            document.getElementById("countText").innerText = "❌ कोई फोटो नहीं मिली!";
+        loader.style.display = "none";
+
+        if (!data.matches || data.matches.length === 0) {
+            msg.innerText = "क्षमा करें, कोई फोटो नहीं मिली।";
             return;
         }
 
-        allMatches = data.matches;
-        page = 1;
-        showPage();
-    };
+        document.getElementById("countText").innerHTML = `${data.matches.length} फोटो मिली!`;
 
-    reader.readAsDataURL(file);
+        // Show grid
+        data.matches.forEach(item => {
+            let imgBox = `
+                <a href="${item.url}" data-lightbox="results">
+                    <img src="${item.url}">
+                </a>
+            `;
+            grid.innerHTML += imgBox;
+        });
+
+    } catch (err) {
+        console.error(err);
+        msg.innerText = "त्रुटि: फोटो खोजने में समस्या आई।";
+        loader.style.display = "none";
+    }
 }
 
-// --------- Pagination + Render ---------
-function showPage() {
-    let resultArea = document.getElementById("resultArea");
-    resultArea.innerHTML = "";
-
-    let start = (page - 1) * perPage;
-    let end = start + perPage;
-
-    let items = allMatches.slice(start, end);
-
-    items.forEach((m) => {
-        let box = document.createElement("div");
-        box.className = "photoBox";
-
-        let link = document.createElement("a");
-        link.href = m.url;
-        link.className = "glightbox";
-        link.setAttribute("data-gallery", "eventGallery");
-
-        let img = document.createElement("img");
-        img.src = m.url;
-
-        let cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.className = "selectPhoto";
-        cb.value = m.url;
-
-        link.appendChild(img);
-        box.appendChild(link);
-        box.appendChild(cb);
-
-        resultArea.appendChild(box);
+function toBase64(file){
+    return new Promise((resolve,reject)=>{
+        let reader = new FileReader();
+        reader.onload = ()=> resolve(reader.result);
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(file);
     });
-
-    GLightbox({ selector: ".glightbox" });
-
-    // Count Text
-    document.getElementById("countText").innerHTML =
-        `कुल ${allMatches.length} में से ${items.length} फोटो मिली!`;
-
-    // Pagination
-    document.getElementById("paginationArea").innerHTML = `
-        <button onclick="prevPage()">⬅ पिछला</button>
-        <button onclick="nextPage()">अगला ➡</button>
-    `;
-
-    // Show Multi Download Button
-    document.getElementById("downloadSelBtn").style.display = "block";
 }
-
-function nextPage() {
-    if (page * perPage < allMatches.length) {
-        page++;
-        showPage();
-    }
-}
-function prevPage() {
-    if (page > 1) {
-        page--;
-        showPage();
-    }
-}
-
-// ---------- MULTI DOWNLOAD ----------
-async function downloadSelected() {
-    let selected = [...document.querySelectorAll(".selectPhoto:checked")].map(c => c.value);
-
-    if (selected.length === 0) {
-        alert("कृपया कम से कम एक फोटो चुनें!");
-        return;
-    }
-
-    for (let url of selected) {
-        let a = document.createElement("a");
-        a.href = url;
-        a.download = "photo.jpg";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-}
-
-// --------- Helper: linkId पढ़ें ----------
-function getLinkId() {
-    let url = new URL(window.location.href);
-    return url.searchParams.get("linkId");
-}
-
 </script>
 
 </body>
 </html>
-
