@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventLens – अपनी फोटो खोजें</title>
 
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: #000;
+            font-family: Arial;
+            background: black;
             color: white;
             text-align: center;
             margin: 0;
@@ -16,34 +16,33 @@
 
         h1 {
             margin-top: 30px;
-            font-size: 34px;
+            font-size: 32px;
         }
 
         #preview {
-            width: 260px;
-            border-radius: 12px;
+            width: 240px;
             display: none;
-            margin: 20px auto;
+            margin-top: 10px;
+            border-radius: 10px;
         }
 
         .btn {
-            padding: 14px 26px;
+            background: #00e676;
+            padding: 14px 30px;
             font-size: 20px;
-            background: #00c853;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
             margin-top: 15px;
-            color: black;
         }
 
-        #zip-btn, #selectAllBtn {
-            background: #ffc400;
+        #zipBtn, #selectAllBtn {
+            background: #ffeb3b;
             color: black;
             margin: 10px;
         }
 
-        #photos-container {
+        #photos {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 15px;
@@ -52,48 +51,38 @@
             margin: auto;
         }
 
-        .photo-box {
+        .photoBox {
             border: 3px solid #00ff15;
-            border-radius: 12px;
-            background: #111;
+            border-radius: 10px;
             padding: 5px;
-            cursor: pointer;
             position: relative;
+            cursor: pointer;
             height: 200px;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .photo-box img {
+        .photoBox img {
             width: 100%;
             height: 100%;
-            object-fit: cover;   /* ✔ PHOTO UNIFORM FRAME */
-            border-radius: 10px;
+            object-fit: cover;
+            border-radius: 8px;
         }
 
-        .selected-check {
+        .tick {
             position: absolute;
             top: 6px;
             right: 6px;
             background: #00c3ff;
-            padding: 5px 7px;
+            padding: 6px 8px;
             border-radius: 50%;
-            font-size: 17px;
             display: none;
         }
 
-        .selected .selected-check {
+        .selected .tick {
             display: block;
         }
 
-        #message {
-            margin-top: 15px;
-            font-size: 20px;
-        }
-
-        /* LIGHTBOX */
+        /* Lightbox */
         #lightbox {
             position: fixed;
             inset: 0;
@@ -107,7 +96,6 @@
         #lightbox img {
             max-width: 90%;
             max-height: 90vh;
-            border-radius: 12px;
         }
 
         #closeLightbox {
@@ -129,161 +117,145 @@
 
 <h1>EventLens – अपनी फोटो खोजें</h1>
 
-<input type="file" id="selfie" accept="image/*" />
+<input type="file" id="selfie" accept="image/*">
 <br>
-<img id="preview" />
+<img id="preview">
 
 <button class="btn" onclick="searchPhotos()">फोटो खोजें</button>
 
-<p id="message"></p>
+<p id="msg"></p>
 
-<button class="btn" id="selectAllBtn" onclick="toggleSelectAll()" style="display:none">सभी चुनें</button>
-<button class="btn" id="zip-btn" onclick="downloadZip()" style="display:none">चयनित फोटो ZIP डाउनलोड</button>
+<button id="selectAllBtn" class="btn" style="display:none" onclick="toggleSelectAll()">सभी चुनें</button>
+<button id="zipBtn" class="btn" style="display:none" onclick="downloadZip()">ZIP डाउनलोड</button>
 
-<div id="photos-container"></div>
+<div id="photos"></div>
 
 <!-- Lightbox -->
 <div id="lightbox">
     <span id="closeLightbox">×</span>
-    <img id="lightbox-img" />
+    <img id="lightImg">
 </div>
 
 <script>
-let selectedPhotos = [];
 let allPhotos = [];
+let selected = [];
 
-let apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
+const API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
 
-// Preview Selfie
-document.getElementById("selfie").addEventListener("change", function () {
-    const file = this.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            preview.src = e.target.result;
-            preview.style.display = "block";
-        };
-        reader.readAsDataURL(file);
-    }
-});
+selfie.onchange = () => {
+    let f = selfie.files[0];
+    let r = new FileReader();
+    r.onload = e => {
+        preview.src = e.target.result;
+        preview.style.display = "block";
+    };
+    r.readAsDataURL(f);
+};
 
-// SEARCH PHOTOS
 async function searchPhotos() {
-    const file = selfie.files[0];
-    if (!file) return alert("पहले अपनी फोटो चुनें!");
+    let file = selfie.files[0];
+    if (!file) return alert("पहले फोटो चुनें!");
 
-    message.innerHTML = "कृपया प्रतीक्षा करें...";
+    msg.innerHTML = "कृपया प्रतीक्षा करें...";
 
-    const reader = new FileReader();
-    reader.onload = async function () {
-        const selfie64 = reader.result;
+    let r = new FileReader();
+    r.onload = async () => {
+        let selfie64 = r.result;
+        const linkId = new URLSearchParams(location.search).get("linkId") || "";
 
-        const linkId = new URLSearchParams(window.location.search).get("linkId") || "";
         let body = {
             linkId,
             selfie_image: selfie64,
             name: "guest",
-            mobile: "000"
+            mobile: "00"
         };
 
-        const res = await fetch(apiURL, { method: "POST", body: JSON.stringify(body) });
-        const data = await res.json();
+        let res = await fetch(API, { method: "POST", body: JSON.stringify(body) });
+        let data = await res.json();
 
         if (!data.matches?.length) {
-            message.innerHTML = "क्षमा करें, कोई फोटो नहीं मिली।";
+            msg.innerHTML = "कोई फोटो नहीं मिली।";
             return;
         }
 
+        msg.innerHTML = `${data.matches.length} फोटो मिली!`;
         allPhotos = data.matches;
-        selectedPhotos = [];
+        selected = [];
 
-        renderPhotos(allPhotos);
-
-        message.innerHTML = `${data.matches.length} फोटो मिली!`;
-
-        zip-btn.style.display = "inline-block";
+        render();
         selectAllBtn.style.display = "inline-block";
+        zipBtn.style.display = "inline-block";
     };
-    reader.readAsDataURL(file);
+
+    r.readAsDataURL(file);
 }
 
-// Render Grid
-function renderPhotos(list) {
-    photos-container.innerHTML = "";
+function render() {
+    photos.innerHTML = "";
 
-    list.forEach(item => {
+    allPhotos.forEach(p => {
         let box = document.createElement("div");
-        box.className = "photo-box";
+        box.className = "photoBox";
 
         box.innerHTML = `
-            <img src="${item.url}" onclick="openLightbox('${item.url}')">
-            <div class="selected-check">✔</div>
+            <img src="${p.url}" onclick="openLightbox('${p.url}')">
+            <div class="tick">✔</div>
         `;
 
-        box.onclick = () => toggleSelect(box, item.url);
-
-        photos-container.appendChild(box);
+        box.onclick = () => toggle(box, p.url);
+        photos.appendChild(box);
     });
 }
 
-// Select Toggle
-function toggleSelect(div, url) {
-    if (div.classList.contains("selected")) {
-        div.classList.remove("selected");
-        selectedPhotos = selectedPhotos.filter(x => x !== url);
+function toggle(box, url) {
+    if (box.classList.contains("selected")) {
+        box.classList.remove("selected");
+        selected = selected.filter(x => x !== url);
     } else {
-        div.classList.add("selected");
-        selectedPhotos.push(url);
+        box.classList.add("selected");
+        selected.push(url);
     }
 }
 
-// SELECT ALL
 function toggleSelectAll() {
-    const boxes = document.querySelectorAll(".photo-box");
+    let boxes = document.querySelectorAll(".photoBox");
 
-    if (selectedPhotos.length === allPhotos.length) {
-        // unselect all
-        selectedPhotos = [];
+    if (selected.length === allPhotos.length) {
+        selected = [];
         boxes.forEach(b => b.classList.remove("selected"));
         selectAllBtn.innerText = "सभी चुनें";
     } else {
-        // select all
-        selectedPhotos = allPhotos.map(x => x.url);
+        selected = allPhotos.map(x => x.url);
         boxes.forEach(b => b.classList.add("selected"));
         selectAllBtn.innerText = "सभी हटाएँ";
     }
 }
 
-// LIGHTBOX
 function openLightbox(url) {
-    lightbox-img.src = url;
+    lightImg.src = url;
     lightbox.style.display = "flex";
 }
+
 closeLightbox.onclick = () => lightbox.style.display = "none";
 
-// ZIP DOWNLOAD
 async function downloadZip() {
-    if (selectedPhotos.length === 0) return alert("कोई फोटो चयनित नहीं है!");
+    if (!selected.length) return alert("कोई फोटो चयनित नहीं है!");
 
     const zip = new JSZip();
     const folder = zip.folder("EventPhotos");
 
-    for (let url of selectedPhotos) {
+    for (let url of selected) {
         try {
-            const data = await new Promise((resolve, reject) => {
-                JSZipUtils.getBinaryContent(url, (err, binary) =>
-                    err ? reject(err) : resolve(binary)
-                );
+            let data = await new Promise((resolve, reject) => {
+                JSZipUtils.getBinaryContent(url, (e, bin) => e ? reject(e) : resolve(bin));
             });
-            let filename = url.split("/").pop().split("?")[0];
-            folder.file(filename, data, { binary: true });
-        } catch (e) {
-            console.error("ZIP ERROR:", e);
-        }
+            folder.file(url.split("/").pop(), data, { binary: true });
+        } catch {}
     }
 
-    const content = await zip.generateAsync({ type: "blob" });
-    saveAs(content, "Selected_Photos.zip");
+    zip.generateAsync({ type: "blob" }).then(content => {
+        saveAs(content, "SelectedPhotos.zip");
+    });
 }
 </script>
 
