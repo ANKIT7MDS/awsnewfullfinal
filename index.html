@@ -63,145 +63,57 @@
             </button>
         </div>
     </div>
-
 <script>
-/* ----------------------------------------------------------
-   API ENDPOINTS (CORRECT & FINAL)
----------------------------------------------------------- */
-const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+async function searchPhotos() {
+    const linkId = new URLSearchParams(window.location.search).get("linkId");
+    const fileInput = document.getElementById("selfieInput").files[0];
 
-const GET_LINK_API     = `${API_BASE}/get-links`;
-const FIND_MATCHES_API = `${API_BASE}/search`;
-const SAVE_DETAILS_API = `${API_BASE}/save-details`;
-
-
-/* -------------------- GLOBAL STORAGE -------------------- */
-let userSelfieBase64 = null;
-
-
-/* -------------------- DOM ELEMENTS -------------------- */
-const uploadArea   = document.getElementById("upload-area");
-const selfieInput  = document.getElementById("selfieInput");
-const searching    = document.getElementById("searching");
-const resultArea   = document.getElementById("resultArea");
-const resultText   = document.getElementById("resultText");
-const formArea     = document.getElementById("formArea");
-
-
-/* -------------------- linkId Fetch -------------------- */
-const urlParams = new URLSearchParams(window.location.search);
-const linkId = urlParams.get("linkId") || urlParams.get("linkid");
-
-if (!linkId) {
-    alert("Invalid link: linkId missing");
-}
-
-
-/* -------------------- File Upload Event -------------------- */
-uploadArea.addEventListener("click", () => selfieInput.click());
-
-selfieInput.addEventListener("change", () => {
-    const file = selfieInput.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-        userSelfieBase64 = reader.result; // contains: data:image/...;base64,XXXX
-
-        uploadArea.classList.add("hidden");
-        searching.classList.remove("hidden");
-
-        await processSearch(userSelfieBase64);
-    };
-
-    reader.readAsDataURL(file);
-});
-
-
-/* ----------------------------------------------------------
-   SEARCH PROCESS
----------------------------------------------------------- */
-async function processSearch(selfieDataURL) {
-    try {
-        // STEP 1 → CLEAN BASE64 FOR BACKEND
-        const cleanSelfie = selfieDataURL.split(",")[1];  // ⭐ MOST IMPORTANT FIX
-
-        // STEP 2 → VERIFY LINK
-        await fetch(GET_LINK_API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ linkId })
-        });
-
-        // STEP 3 → RUN FACE SEARCH
-        const matchRes = await fetch(FIND_MATCHES_API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                linkId,
-                selfie_image: cleanSelfie
-            })
-        });
-
-        const matchData = await matchRes.json();
-        console.log("MATCH DATA:", matchData);
-
-        searching.classList.add("hidden");
-        resultArea.classList.remove("hidden");
-
-        if (!matchData.matches || matchData.matches.length === 0) {
-            resultText.textContent = "क्षमा करें, आपकी कोई फोटो नहीं मिली।";
-            return;
-        }
-
-        resultText.textContent = `बधाई! आपकी ${matchData.matches.length} फोटो मिली हैं`;
-        formArea.classList.remove("hidden");
-
-    } catch (err) {
-        console.error(err);
-        alert("Error searching photos");
-    }
-}
-
-
-/* ----------------------------------------------------------
-   SAVE DETAILS + REDIRECT
----------------------------------------------------------- */
-document.getElementById("saveDetailsBtn").addEventListener("click", async () => {
-    const name = guestName.value.trim();
-    const mobile = guestMobile.value.trim();
-
-    if (!name || !mobile) {
-        alert("कृपया नाम और मोबाइल दर्ज करें");
+    if (!fileInput) {
+        alert("कृपया सेल्फी अपलोड करें");
         return;
     }
 
-    try {
-        const cleanSelfie = userSelfieBase64.split(",")[1];
+    // Convert → Base64
+    const reader = new FileReader();
+    reader.onload = async function() {
+        const selfie_b64 = reader.result;
 
-        const res = await fetch(SAVE_DETAILS_API, {
+        const payload = {
+            linkId: linkId,
+            name: "Guest",
+            mobile: "0000000000",
+            selfie_image: selfie_b64
+        };
+
+        console.log("🚀 Sending Payload:", payload);
+
+        const res = await fetch(YOUR_FIND_MATCH_ENDPOINT, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                linkId,
-                name,
-                mobile,
-                selfie_image: cleanSelfie
-            })
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
         });
 
         const data = await res.json();
-        console.log("SAVE RESPONSE:", data);
+        console.log("📌 RESPONSE:", data);
 
-        alert("फोटो तैयार हैं! जल्द ही gallery link दिखा दी जाएगी।");
+        if (!data.matches || data.matches.length === 0) {
+            document.getElementById("resultBox").innerText = "कोई फोटो नहीं मिली";
+            return;
+        }
 
-    } catch (err) {
-        console.error(err);
-        alert("Error saving details");
-    }
-});
+        // Show results
+        let html = "";
+        data.matches.forEach(m => {
+            html += `<img src="${m.url}" style="width:200px;margin:10px;">`;
+        });
+        document.getElementById("resultBox").innerHTML = html;
+    };
+
+    reader.readAsDataURL(fileInput);
+}
 </script>
+
 
 </body>
 </html>
+
