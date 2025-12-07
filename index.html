@@ -1,571 +1,152 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8" />
-    <title>EventLens – अपनी फोटो खोजें</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-        :root {
-            --bg: #000000;
-            --card: #111111;
-            --accent: #00c853;
-            --accent-dark: #00a043;
-            --text: #ffffff;
-            --muted: #bbbbbb;
-            --error: #ff5252;
-        }
+<meta charset="UTF-8">
+<title>EventLens – अपनी फोटो खोजें</title>
 
-        * {
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
+<style>
+    body {
+        background: #000;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+    }
+    #previewImg {
+        width: 260px;
+        border-radius: 10px;
+        display: none;
+        margin-top: 20px;
+    }
+    #resultArea img {
+        width: 160px;
+        margin: 10px;
+        border-radius: 10px;
+        border: 2px solid #00ff55;
+    }
+    #loader {
+        display: none;
+        margin-top: 20px;
+        font-size: 18px;
+        color: #00ff55;
+    }
+    #error {
+        color: red;
+        margin-top: 10px;
+        font-size: 18px;
+    }
+</style>
 
-        body {
-            margin: 0;
-            padding: 0;
-            background: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            max-width: 1100px;
-            width: 100%;
-            padding: 32px 16px 64px;
-        }
-
-        h1 {
-            font-size: 2.4rem;
-            margin-bottom: 24px;
-            text-align: left;
-        }
-
-        .upload-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 32px;
-            align-items: center;
-        }
-
-        .left-column {
-            flex: 1 1 280px;
-        }
-
-        .right-column {
-            flex: 0 0 230px;
-            display: flex;
-            justify-content: center;
-        }
-
-        #preview-box {
-            width: 220px;
-            height: 280px;
-            border-radius: 16px;
-            background: #222;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            box-shadow: 0 0 0 1px #333;
-        }
-
-        #preview-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .file-input {
-            margin-bottom: 16px;
-        }
-
-        .btn {
-            padding: 10px 32px;
-            font-size: 1.1rem;
-            border-radius: 999px;
-            border: none;
-            cursor: pointer;
-            background: var(--accent);
-            color: #000;
-            font-weight: 600;
-            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
-        }
-
-        .btn:hover {
-            background: var(--accent-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(0, 200, 83, 0.45);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: default;
-            box-shadow: none;
-            transform: none;
-        }
-
-        #status {
-            margin-top: 10px;
-            min-height: 22px;
-            font-size: 0.95rem;
-        }
-
-        #status.success {
-            color: var(--accent);
-        }
-
-        #status.error {
-            color: var(--error);
-        }
-
-        #status.info {
-            color: var(--muted);
-        }
-
-        .results-section {
-            margin-top: 36px;
-        }
-
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .results-header h2 {
-            margin: 0;
-            font-size: 1.4rem;
-        }
-
-        .results-header span {
-            font-size: 0.95rem;
-            color: var(--muted);
-        }
-
-        #results {
-            margin-top: 18px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-        }
-
-        .photo-card {
-            width: 180px;
-            border-radius: 12px;
-            overflow: hidden;
-            background: var(--card);
-            box-shadow: 0 0 0 1px #222;
-            cursor: pointer;
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-        }
-
-        .photo-card img {
-            display: block;
-            width: 100%;
-            height: 220px;
-            object-fit: cover;
-        }
-
-        .photo-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-        }
-
-        .photo-meta {
-            padding: 6px 10px 8px;
-            font-size: 0.85rem;
-            color: var(--muted);
-        }
-
-        .details-form {
-            margin-top: 32px;
-            padding: 18px 16px;
-            border-radius: 16px;
-            background: #111;
-            border: 1px solid #222;
-        }
-
-        .details-form h3 {
-            margin: 0 0 10px;
-            font-size: 1.1rem;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin: 12px 0 18px;
-        }
-
-        .form-group {
-            flex: 1 1 180px;
-        }
-
-        .form-group label {
-            font-size: 0.9rem;
-            color: var(--muted);
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 999px;
-            border: 1px solid #333;
-            background: #000;
-            color: var(--text);
-            outline: none;
-        }
-
-        .form-group input:focus {
-            border-color: var(--accent);
-        }
-
-        #details-status {
-            font-size: 0.9rem;
-            min-height: 20px;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8rem;
-                text-align: center;
-            }
-            .upload-row {
-                flex-direction: column-reverse;
-                align-items: center;
-            }
-            .left-column {
-                text-align: center;
-            }
-            .right-column {
-                justify-content: center;
-            }
-        }
-    </style>
 </head>
 <body>
-<div class="container">
-    <h1>EventLens – अपनी फोटो खोजें</h1>
 
-    <div class="upload-row">
-        <div class="left-column">
-            <div class="file-input">
-                <input type="file" id="selfieInput" accept="image/*" />
-            </div>
-            <button id="searchBtn" class="btn">फोटो खोजें</button>
-            <div id="status" class="info"></div>
-        </div>
+<h1>EventLens – अपनी फोटो खोजें</h1>
 
-        <div class="right-column">
-            <div id="preview-box">
-                <span style="color:#777;font-size:0.9rem;">अपनी सेल्फ़ी चुनें</span>
-            </div>
-        </div>
-    </div>
+<input type="file" id="fileInput" accept="image/*"><br>
 
-    <div class="results-section" id="results-section" style="display:none;">
-        <div class="results-header">
-            <h2>खोज परिणाम</h2>
-            <span id="matchSummary"></span>
-        </div>
-        <div id="results"></div>
-    </div>
+<img id="previewImg">
 
-    <div class="details-form" id="details-form" style="display:none;">
-        <h3>अपनी फोटो सेव करवाने के लिए नाम व मोबाइल भरें</h3>
-        <div class="form-row">
-            <div class="form-group">
-                <label for="guestName">नाम</label>
-                <input type="text" id="guestName" placeholder="जैसे – राम कुमार" />
-            </div>
-            <div class="form-group">
-                <label for="guestMobile">मोबाइल नंबर</label>
-                <input type="tel" id="guestMobile" placeholder="10 अंकों का मोबाइल नंबर" />
-            </div>
-        </div>
-        <button id="saveDetailsBtn" class="btn">कन्फर्म करें</button>
-        <div id="details-status"></div>
-    </div>
-</div>
+<button onclick="uploadSelfie()" 
+        style="margin-top:20px;padding:10px 25px;font-size:20px;background:#00c74f;color:white;border:0;border-radius:8px;">
+        फोटो खोजें
+</button>
+
+<div id="loader">⏳ कृपया प्रतीक्षा करें, हम आपकी फोटो खोज रहे हैं...</div>
+<div id="error"></div>
+<div id="resultMsg"></div>
+
+<h2 id="countText"></h2>
+
+<div id="resultArea"></div>
 
 <script>
-    // ====== CONFIG ======
-    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 
-    // ====== STATE ======
-    let selfieDataUrl = null;
-    let currentMatches = [];
-    let linkId = null;
+const API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
 
-    // ====== HELPERS ======
-    function logDebug(...args) {
-        console.log("🟢 [EventLens]", ...args);
+
+document.getElementById("fileInput").addEventListener("change", function () {
+    let f = this.files[0];
+    if (!f) return;
+
+    let reader = new FileReader();
+    reader.onload = function (e) {
+        previewImg.src = e.target.result;
+        previewImg.style.display = "block";
+    };
+    reader.readAsDataURL(f);
+});
+
+
+// ----------------- MAIN SEARCH FUNCTION ---------------------
+async function uploadSelfie() {
+
+    let file = document.getElementById("fileInput").files[0];
+    if (!file) {
+        alert("कृपया फोटो चुनें");
+        return;
     }
 
-    function setStatus(message, type = "info") {
-        const s = document.getElementById("status");
-        s.className = type;
-        s.textContent = message || "";
-    }
+    let reader = new FileReader();
 
-    function setDetailsStatus(message, type = "info") {
-        const s = document.getElementById("details-status");
-        s.style.color =
-            type === "error" ? "#ff5252" :
-            type === "success" ? "#00e676" :
-            "#bbbbbb";
-        s.textContent = message || "";
-    }
+    reader.onloadend = async function () {
 
-    function getLinkIdFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-        return params.get("linkId") || params.get("linkid") || params.get("linkID");
-    }
+        let base64Image = reader.result;
 
-    // ====== FILE HANDLING ======
-    document.getElementById("selfieInput").addEventListener("change", handleFileChange);
-
-    function handleFileChange(e) {
-        const file = e.target.files[0];
-        selfieDataUrl = null;
-
-        if (!file) {
-            setStatus("कृपया एक फोटो चुनें।", "error");
-            document.getElementById("preview-box").innerHTML =
-                '<span style="color:#777;font-size:0.9rem;">अपनी सेल्फ़ी चुनें</span>';
-            return;
-        }
-
-        if (!file.type.startsWith("image/")) {
-            setStatus("केवल इमेज फाइल चुनें।", "error");
-            e.target.value = "";
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            selfieDataUrl = evt.target.result;
-            const box = document.getElementById("preview-box");
-            box.innerHTML = "";
-            const img = document.createElement("img");
-            img.src = selfieDataUrl;
-            box.appendChild(img);
-            setStatus("फोटो तैयार है, अब 'फोटो खोजें' दबाएँ।", "info");
-            logDebug("Selfie loaded, size bytes ~", file.size);
-        };
-
-        reader.onerror = function(err) {
-            console.error("FileReader error:", err);
-            setStatus("फोटो लोड करने में समस्या आई।", "error");
-        };
-
-        reader.readAsDataURL(file);
-    }
-
-    // ====== SEARCH BUTTON ======
-    document.getElementById("searchBtn").addEventListener("click", searchPhotos);
-
-    async function searchPhotos() {
-        try {
-            linkId = getLinkIdFromUrl();
-            if (!linkId) {
-                setStatus("लिंक आईडी नहीं मिली (URL में linkId= नहीं है).", "error");
-                return;
-            }
-
-            if (!selfieDataUrl) {
-                setStatus("पहले कोई फोटो चुनें।", "error");
-                return;
-            }
-
-            setStatus("फोटो खोजी जा रही है, कृपया प्रतीक्षा करें…", "info");
-            document.getElementById("searchBtn").disabled = true;
-            currentMatches = [];
-            document.getElementById("results-section").style.display = "none";
-            document.getElementById("results").innerHTML = "";
-            document.getElementById("details-form").style.display = "none";
-            setDetailsStatus("");
-
-            const payload = {
-                linkId: linkId,
-                name: "guest",
-                mobile: "0000000000",
-                selfie_image: selfieDataUrl
-            };
-
-            logDebug("Sending /search payload", payload);
-
-            const resp = await fetch(API_BASE + "/search", {
-                method: "POST",
-                mode: "cors",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const text = await resp.text();
-            logDebug("Raw /search response:", text);
-
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.error("JSON parse error:", e);
-                setStatus("सर्वर से गलत डेटा मिला।", "error");
-                return;
-            }
-
-            if (!resp.ok) {
-                console.error("Search API error:", data);
-                setStatus("त्रुटि: " + (data.error || "सर्वर में समस्या है"), "error");
-                return;
-            }
-
-            if (!data.matches || !Array.isArray(data.matches)) {
-                setStatus("कोई फोटो नहीं मिली।", "error");
-                return;
-            }
-
-            currentMatches = data.matches;
-            renderResults();
-        } catch (err) {
-            console.error("searchPhotos fatal error:", err);
-            setStatus("अचानक कोई त्रुटि हुई। कंसोल में विवरण देखें।", "error");
-        } finally {
-            document.getElementById("searchBtn").disabled = false;
-        }
-    }
-
-    // ====== RENDER RESULTS ======
-    function renderResults() {
-        const count = currentMatches.length;
-        const resultsDiv = document.getElementById("results");
-        resultsDiv.innerHTML = "";
-
-        document.getElementById("results-section").style.display = "block";
-
-        const summary = document.getElementById("matchSummary");
-        summary.textContent = count === 0
-            ? "कोई फोटो नहीं मिली।"
-            : `${count} फोटो मिली!`;
-
-        if (count === 0) {
-            setStatus("क्षमा करें, आपकी कोई फोटो नहीं मिली।", "error");
-            return;
-        }
-
-        currentMatches.forEach((m, idx) => {
-            const card = document.createElement("div");
-            card.className = "photo-card";
-
-            const img = document.createElement("img");
-            img.src = m.url;
-            img.alt = "Matched photo " + (idx + 1);
-
-            const meta = document.createElement("div");
-            meta.className = "photo-meta";
-            meta.textContent = `फोटो #${idx + 1}`;
-
-            card.appendChild(img);
-            card.appendChild(meta);
-            resultsDiv.appendChild(card);
-        });
-
-        setStatus(`${count} फोटो मिली! नीचे गैलरी में देखें।`, "success");
-
-        // अब details form दिखाएँ
-        document.getElementById("details-form").style.display = "block";
-        setDetailsStatus("यदि फोटो पसंद आई हो तो अपना नाम और मोबाइल भरें।", "info");
-    }
-
-    // ====== SAVE DETAILS ======
-    document.getElementById("saveDetailsBtn").addEventListener("click", saveGuestDetails);
-
-    async function saveGuestDetails() {
-        try {
-            if (!linkId) {
-                linkId = getLinkIdFromUrl();
-            }
-
-            const name = document.getElementById("guestName").value.trim();
-            const mobile = document.getElementById("guestMobile").value.trim();
-
-            if (!name || !mobile) {
-                setDetailsStatus("कृपया नाम और मोबाइल दोनों भरें।", "error");
-                return;
-            }
-
-            if (!/^[0-9]{10}$/.test(mobile)) {
-                setDetailsStatus("कृपया वैध 10 अंकों का मोबाइल नंबर लिखें।", "error");
-                return;
-            }
-
-            if (!currentMatches || currentMatches.length === 0) {
-                setDetailsStatus("पहले फोटो खोजें, फिर विवरण सेव करें।", "error");
-                return;
-            }
-
-            const payload = {
-                linkId: linkId,
-                name: name,
-                mobile: mobile,
-                matchesCount: currentMatches.length,
-                submittedAt: new Date().toISOString()
-            };
-
-            logDebug("Sending /save-details payload", payload);
-            setDetailsStatus("विवरण सेव किए जा रहे हैं…", "info");
-            document.getElementById("saveDetailsBtn").disabled = true;
-
-            const resp = await fetch(API_BASE + "/save-details", {
-                method: "POST",
-                mode: "cors",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const text = await resp.text();
-            logDebug("Raw /save-details response:", text);
-
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                data = {};
-            }
-
-            if (!resp.ok) {
-                console.error("Save-details error:", data);
-                setDetailsStatus("डिटेल सेव नहीं हो पाईं: " + (data.error || "सर्वर त्रुटि"), "error");
-                document.getElementById("saveDetailsBtn").disabled = false;
-                return;
-            }
-
-            setDetailsStatus("धन्यवाद! आपके विवरण सेव कर लिए गए हैं।", "success");
-        } catch (err) {
-            console.error("saveGuestDetails fatal error:", err);
-            setDetailsStatus("अचानक कोई त्रुटि हुई। कंसोल में विवरण देखें।", "error");
-            document.getElementById("saveDetailsBtn").disabled = false;
-        }
-    }
-
-    // ====== INIT ======
-    window.addEventListener("DOMContentLoaded", () => {
-        linkId = getLinkIdFromUrl();
+        let linkId = new URLSearchParams(window.location.search).get("linkId");
         if (!linkId) {
-            setStatus("URL में linkId नहीं मिला। कृपया सही सर्च लिंक से पेज खोलें।", "error");
-        } else {
-            logDebug("Page loaded with linkId =", linkId);
+            alert("❌ Link ID नहीं मिला");
+            return;
         }
-    });
+
+        let body = {
+            linkId: linkId,
+            name: "guest",
+            mobile: "0000000000",
+            selfie_image: base64Image
+        };
+
+        document.getElementById("loader").style.display = "block";
+        document.getElementById("error").innerHTML = "";
+        document.getElementById("resultArea").innerHTML = "";
+        document.getElementById("countText").innerHTML = "";
+
+
+        try {
+            let res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            let data = await res.json();
+            document.getElementById("loader").style.display = "none";
+
+            if (!data.matches || data.matches.length === 0) {
+                document.getElementById("error").innerHTML = "क्षमा करें, कोई फोटो नहीं मिली।";
+                return;
+            }
+
+            document.getElementById("countText").innerHTML =
+                data.matches.length + " फोटो मिली!";
+
+            // RESULT GRID ------------------
+            data.matches.forEach(m => {
+                let img = document.createElement("img");
+                img.src = m.url;
+                document.getElementById("resultArea").appendChild(img);
+            });
+
+        } catch (err) {
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("error").innerHTML =
+                "त्रुटि: " + err.message;
+        }
+    };
+
+    reader.readAsDataURL(file);
+}
+
 </script>
+
 </body>
 </html>
