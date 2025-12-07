@@ -51,8 +51,8 @@
 <p id="msg" class="error"></p>
 
 <script>
-let apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search
-";  // ← यहाँ अपना API URL डालना है
+let apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";  
+// ⬆⬆⬆ यही आपका सही API URL है
 
 let selfieBase64 = "";
 
@@ -75,9 +75,6 @@ async function uploadSelfie() {
         return;
     }
 
-    document.getElementById("msg").innerText = "कृपया प्रतीक्षा करें...";
-
-    // URL के query parameter से linkId निकालना
     const urlParams = new URLSearchParams(window.location.search);
     const linkId = urlParams.get("linkId");
 
@@ -86,20 +83,27 @@ async function uploadSelfie() {
         return;
     }
 
+    // यह name/mobile अभी dummy है क्योंकि असली form बाद में आएगा
+    const payload = {
+        linkId: linkId,
+        name: "temp-user",
+        mobile: "0000000000",
+        selfie_image: selfieBase64
+    };
+
+    console.log("➡ Sending Payload:", payload);
+
+    document.getElementById("msg").innerText = "कृपया प्रतीक्षा करें...";
+
     try {
         let response = await fetch(apiURL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                linkId: linkId,
-                name: "temp",      // name बाद में लेंगे
-                mobile: "0",       // mobile बाद में
-                selfie_image: selfieBase64
-            })
+            body: JSON.stringify(payload)
         });
 
         let result = await response.json();
-        console.log("API Response:", result);
+        console.log("⬅ API Response:", result);
 
         if (result.error) {
             document.getElementById("msg").innerText = "Error: " + result.error;
@@ -111,7 +115,7 @@ async function uploadSelfie() {
         }
 
     } catch (err) {
-        console.error(err);
+        console.error("🔥 Network Error:", err);
         document.getElementById("msg").innerText = "सर्वर त्रुटि!";
     }
 }
