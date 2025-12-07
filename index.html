@@ -1,81 +1,122 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventLens – अपनी फोटो खोजें</title>
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
         body {
-            background: #1a1a1a;
+            background: #111;
             color: white;
-            font-family: 'Inter', sans-serif;
-        }
-        .upload-box {
-            border: 2px dashed #ff6a00;
-            padding: 40px;
-            border-radius: 14px;
+            font-family: Arial, sans-serif;
             text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-top: 80px;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        #uploadBox {
+            background: #222;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            margin: 20px auto;
+            border: 1px solid #444;
+        }
+
+        input[type=file] {
+            margin: 10px;
+            padding: 8px;
+            background: #333;
+            color: white;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        button {
+            padding: 12px 22px;
+            background: #ff6600;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 8px;
+            margin-top: 10px;
             cursor: pointer;
         }
-        .upload-box:hover { background: rgba(255, 106, 0, 0.1); }
+
+        button:hover {
+            background: #ff4500;
+        }
+
+        #resultBox {
+            margin-top: 30px;
+        }
+
+        .photo {
+            width: 200px;
+            border-radius: 10px;
+            margin: 10px;
+            border: 2px solid #444;
+        }
+
+        #loading {
+            display: none;
+            color: #ccc;
+            margin-top: 15px;
+        }
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col items-center justify-center px-4">
+<body>
 
-    <h1 class="text-3xl font-bold mb-6">EventLens – अपनी फोटो खोजें</h1>
+    <h1>EventLens – अपनी फोटो खोजें</h1>
 
-    <!-- Upload box -->
-    <div id="upload-area" class="upload-box w-full max-w-md">
-        <p class="text-lg">अपना Selfie अपलोड करें</p>
-        <p class="text-sm text-gray-300">(JPG/PNG)</p>
-        <input id="selfieInput" type="file" accept="image/*" class="hidden" />
+    <div id="uploadBox">
+        <h3>अपनी सेल्फी अपलोड करें</h3>
+        <input type="file" id="selfieInput" accept="image/*">
+        <button onclick="searchPhotos()">फोटो खोजें</button>
+        <div id="loading">⏳ कृपया प्रतीक्षा करें… खोज जारी है…</div>
     </div>
 
-    <!-- Loading Section -->
-    <div id="searching" class="hidden mt-10 text-center">
-        <div class="text-xl text-orange-400 font-semibold">फोटो खोजी जा रही है...</div>
-        <div class="text-sm text-gray-300 mt-2">कृपया इंतजार करें</div>
-    </div>
+    <div id="resultBox"></div>
 
-    <!-- Result Section -->
-    <div id="resultArea" class="hidden mt-10 text-center">
-        <div id="resultText" class="text-xl font-semibold"></div>
-
-        <div id="formArea" class="hidden mt-6">
-            <input 
-                id="guestName" 
-                class="w-full max-w-xs p-3 rounded bg-[#111] text-white border border-gray-600"
-                type="text" placeholder="आपका नाम">
-
-            <input 
-                id="guestMobile" 
-                class="w-full max-w-xs p-3 rounded bg-[#111] text-white mt-4 border border-gray-600"
-                type="tel" placeholder="मोबाइल नंबर">
-
-            <button id="saveDetailsBtn" 
-                class="mt-6 bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded text-white font-semibold">
-                आगे बढ़ें
-            </button>
-        </div>
-    </div>
 <script>
+
+///////////////////////////
+// CONFIG
+///////////////////////////
+const FIND_MATCH_API = "YOUR_FIND_MATCH_LAMBDA_URL_HERE"; 
+// जैसा तुमने Netlify UI में डाला है वही URL यहां लगाना।
+
+////////////////////////////
+// MAIN SEARCH FUNCTION
+////////////////////////////
 async function searchPhotos() {
     const linkId = new URLSearchParams(window.location.search).get("linkId");
     const fileInput = document.getElementById("selfieInput").files[0];
+
+    if (!linkId) {
+        alert("❌ लिंक ID नहीं मिली!");
+        return;
+    }
 
     if (!fileInput) {
         alert("कृपया सेल्फी अपलोड करें");
         return;
     }
 
-    // Convert → Base64
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("resultBox").innerHTML = "";
+
+    // Convert file → Base64
     const reader = new FileReader();
-    reader.onload = async function() {
+    reader.onload = async function () {
         const selfie_b64 = reader.result;
 
         const payload = {
@@ -87,33 +128,44 @@ async function searchPhotos() {
 
         console.log("🚀 Sending Payload:", payload);
 
-        const res = await fetch(YOUR_FIND_MATCH_ENDPOINT, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload)
-        });
+        try {
+            const res = await fetch(FIND_MATCH_API, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
 
-        const data = await res.json();
-        console.log("📌 RESPONSE:", data);
+            const data = await res.json();
+            console.log("📌 SERVER RESPONSE:", data);
 
-        if (!data.matches || data.matches.length === 0) {
-            document.getElementById("resultBox").innerText = "कोई फोटो नहीं मिली";
-            return;
+            document.getElementById("loading").style.display = "none";
+
+            // No matches
+            if (!data.matches || data.matches.length === 0) {
+                document.getElementById("resultBox").innerHTML =
+                    "<h2>क्षमा करें, आपको कोई फोटो नहीं मिली।</h2>";
+                return;
+            }
+
+            // Show photos
+            let html = "<h2>आपकी फ़ोटो मिलीं!</h2>";
+            data.matches.forEach(m => {
+                html += `<img src="${m.url}" class="photo">`;
+            });
+
+            document.getElementById("resultBox").innerHTML = html;
+
+        } catch (err) {
+            console.error("🔥 ERROR:", err);
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("resultBox").innerHTML =
+                "<h2>❌ कोई तकनीकी त्रुटि हुई।</h2>";
         }
-
-        // Show results
-        let html = "";
-        data.matches.forEach(m => {
-            html += `<img src="${m.url}" style="width:200px;margin:10px;">`;
-        });
-        document.getElementById("resultBox").innerHTML = html;
     };
 
     reader.readAsDataURL(fileInput);
 }
+
 </script>
-
-
 </body>
 </html>
-
