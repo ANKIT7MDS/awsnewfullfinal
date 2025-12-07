@@ -1,162 +1,119 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventLens – अपनी फोटो खोजें</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EventLens – अपनी फोटो खोजें</title>
 
-    <style>
-        body {
-            background: #111;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-
-        h1 {
-            margin-top: 50px;
-            font-size: 30px;
-            font-weight: bold;
-        }
-
-        #uploadBox {
-            background: #1c1c1c;
-            padding: 20px;
-            margin: 20px auto;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 12px;
-            border: 1px solid #333;
-        }
-
-        #selfieInput {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: #222;
-            color: #fff;
-            border-radius: 8px;
-            border: 1px solid #444;
-            cursor: pointer;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #ff6600;
-            border: none;
-            color: white;
-            font-size: 16px;
-            border-radius: 8px;
-            margin-top: 12px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #ff4500;
-        }
-
-        #loading {
-            display: none;
-            margin-top: 15px;
-            color: #ccc;
-        }
-
-        .photo {
-            width: 200px;
-            margin: 10px;
-            border-radius: 10px;
-            border: 2px solid #444;
-        }
-    </style>
+<style>
+    body {
+        background: #111;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 30px;
+    }
+    #preview {
+        width: 220px;
+        margin-top: 20px;
+        border-radius: 10px;
+        display: none;
+    }
+    button {
+        padding: 10px 25px;
+        background: #00c853;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #009e3f;
+    }
+    .error {
+        color: #ff5252;
+        margin-top: 10px;
+    }
+</style>
 </head>
-
 <body>
 
 <h1>EventLens – अपनी फोटो खोजें</h1>
 
-<div id="uploadBox">
-    <h3>अपनी सेल्फी अपलोड करें</h3>
+<input type="file" id="selfieInput" accept="image/*">
+<br>
+<img id="preview">
 
-    <!-- यह input अब 100% clickable है -->
-    <input type="file" id="selfieInput" accept="image/*">
+<br><br>
+<button onclick="uploadSelfie()">फोटो खोजें</button>
 
-    <button onclick="searchPhotos()">फोटो खोजें</button>
-
-    <div id="loading">⏳ कृपया प्रतीक्षा करें…</div>
-</div>
-
-<div id="resultBox"></div>
+<p id="msg" class="error"></p>
 
 <script>
-const FIND_MATCH_API = "YOUR_FIND_MATCH_LAMBDA_URL_HERE"; 
+let apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search
+";  // ← यहाँ अपना API URL डालना है
 
-async function searchPhotos() {
-    const selfieFile = document.getElementById("selfieInput").files[0];
-    const linkId = new URLSearchParams(window.location.search).get("linkId");
+let selfieBase64 = "";
 
-    if (!selfieFile) {
-        alert("कृपया एक सेल्फी चुनें।");
+document.getElementById("selfieInput").addEventListener("change", function(e) {
+    let file = e.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = function(evt) {
+        selfieBase64 = evt.target.result;
+        document.getElementById("preview").src = selfieBase64;
+        document.getElementById("preview").style.display = "block";
+    };
+    reader.readAsDataURL(file);
+});
+
+async function uploadSelfie() {
+    if (!selfieBase64) {
+        document.getElementById("msg").innerText = "कृपया एक फोटो चुनें।";
         return;
     }
+
+    document.getElementById("msg").innerText = "कृपया प्रतीक्षा करें...";
+
+    // URL के query parameter से linkId निकालना
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkId = urlParams.get("linkId");
 
     if (!linkId) {
-        alert("लिंक ID नहीं मिली!");
+        document.getElementById("msg").innerText = "Link ID नहीं मिला!";
         return;
     }
 
-    document.getElementById("loading").style.display = "block";
-    document.getElementById("resultBox").innerHTML = "";
+    try {
+        let response = await fetch(apiURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                linkId: linkId,
+                name: "temp",      // name बाद में लेंगे
+                mobile: "0",       // mobile बाद में
+                selfie_image: selfieBase64
+            })
+        });
 
-    const reader = new FileReader();
+        let result = await response.json();
+        console.log("API Response:", result);
 
-    reader.onload = async function () {
-        const base64Selfie = reader.result;
-
-        const payload = {
-            linkId: linkId,
-            name: "Guest",
-            mobile: "0000000000",
-            selfie_image: base64Selfie
-        };
-
-        console.log("🚀 Sending Payload:", payload);
-
-        try {
-            const response = await fetch(FIND_MATCH_API, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            console.log("📌 Server Response:", data);
-
-            document.getElementById("loading").style.display = "none";
-
-            if (!data.matches || data.matches.length === 0) {
-                document.getElementById("resultBox").innerHTML =
-                    "<h2>क्षमा करें, आपकी कोई फोटो नहीं मिली।</h2>";
-                return;
-            }
-
-            let html = "<h2>आपकी फ़ोटोज़ मिलीं!</h2>";
-            data.matches.forEach(m => {
-                html += `<img src="${m.url}" class="photo">`;
-            });
-
-            document.getElementById("resultBox").innerHTML = html;
-
-        } catch (error) {
-            console.error("🔥 ERROR:", error);
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("resultBox").innerHTML =
-                "<h2>❌ तकनीकी समस्या हुई।</h2>";
+        if (result.error) {
+            document.getElementById("msg").innerText = "Error: " + result.error;
+        } else if (!result.matches || result.matches.length === 0) {
+            document.getElementById("msg").innerText = "क्षमा करें, आपकी फोटो नहीं मिली।";
+        } else {
+            document.getElementById("msg").innerText =
+                result.matches.length + " फोटो मिली!";
         }
-    };
 
-    reader.readAsDataURL(selfieFile);
+    } catch (err) {
+        console.error(err);
+        document.getElementById("msg").innerText = "सर्वर त्रुटि!";
+    }
 }
 </script>
 
