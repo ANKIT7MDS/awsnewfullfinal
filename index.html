@@ -11,7 +11,7 @@
         color: white;
         font-family: Arial, sans-serif;
         text-align: center;
-        padding: 30px;
+        padding: 40px;
     }
     #preview {
         width: 220px;
@@ -20,42 +20,41 @@
         display: none;
     }
     button {
-        padding: 10px 25px;
-        background: #00c853;
+        padding: 12px 28px;
+        background: #00cc55;
         color: white;
         border: none;
         border-radius: 8px;
-        font-size: 18px;
+        font-size: 20px;
         cursor: pointer;
+        margin-top: 20px;
     }
-    button:hover {
-        background: #009e3f;
-    }
-    .error {
-        color: #ff5252;
-        margin-top: 10px;
-    }
+    button:hover { background: #009e3c; }
+    .error { color: #ff5252; margin-top: 10px; }
 </style>
 </head>
+
 <body>
 
 <h1>EventLens – अपनी फोटो खोजें</h1>
 
 <input type="file" id="selfieInput" accept="image/*">
+
 <br>
 <img id="preview">
 
-<br><br>
+<br>
 <button onclick="uploadSelfie()">फोटो खोजें</button>
 
 <p id="msg" class="error"></p>
 
 <script>
-let apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";  
-// ⬆⬆⬆ यही आपका सही API URL है
+/* YOUR API URL */
+const apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
 
 let selfieBase64 = "";
 
+/* PREVIEW SELFIE */
 document.getElementById("selfieInput").addEventListener("change", function(e) {
     let file = e.target.files[0];
     if (!file) return;
@@ -69,54 +68,54 @@ document.getElementById("selfieInput").addEventListener("change", function(e) {
     reader.readAsDataURL(file);
 });
 
+/* MAIN FUNCTION */
 async function uploadSelfie() {
+    const msg = document.getElementById("msg");
+    msg.innerText = "";
+
     if (!selfieBase64) {
-        document.getElementById("msg").innerText = "कृपया एक फोटो चुनें।";
+        msg.innerText = "कृपया एक फोटो चुनें।";
         return;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const linkId = urlParams.get("linkId");
+    const params = new URLSearchParams(window.location.search);
+    const linkId = params.get("linkId");
 
     if (!linkId) {
-        document.getElementById("msg").innerText = "Link ID नहीं मिला!";
+        msg.innerText = "Link ID नहीं मिला!";
         return;
     }
 
-    // यह name/mobile अभी dummy है क्योंकि असली form बाद में आएगा
     const payload = {
         linkId: linkId,
-        name: "temp-user",
+        name: "guest",
         mobile: "0000000000",
         selfie_image: selfieBase64
     };
 
-    console.log("➡ Sending Payload:", payload);
-
-    document.getElementById("msg").innerText = "कृपया प्रतीक्षा करें...";
+    msg.innerText = "कृपया प्रतीक्षा करें...";
 
     try {
-        let response = await fetch(apiURL, {
+        const res = await fetch(apiURL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
-        let result = await response.json();
-        console.log("⬅ API Response:", result);
+        const data = await res.json();
+        console.log("API response:", data);
 
-        if (result.error) {
-            document.getElementById("msg").innerText = "Error: " + result.error;
-        } else if (!result.matches || result.matches.length === 0) {
-            document.getElementById("msg").innerText = "क्षमा करें, आपकी फोटो नहीं मिली।";
+        if (data.error) {
+            msg.innerText = "त्रुटि: " + data.error;
+        } else if (!data.matches || data.matches.length === 0) {
+            msg.innerText = "क्षमा करें, आपकी फोटो नहीं मिली।";
         } else {
-            document.getElementById("msg").innerText =
-                result.matches.length + " फोटो मिली!";
+            msg.innerText = data.matches.length + " फोटो मिली!";
         }
 
     } catch (err) {
-        console.error("🔥 Network Error:", err);
-        document.getElementById("msg").innerText = "सर्वर त्रुटि!";
+        console.error(err);
+        msg.innerText = "Server error!";
     }
 }
 </script>
