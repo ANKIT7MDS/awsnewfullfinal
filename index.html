@@ -3,77 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <title>EventLens – अपनी फोटो खोजें</title>
-
-<!-- MOBILE RESPONSIVE -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- LIGHTBOX -->
+<!-- Lightbox -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css"/>
 
 <style>
     body {
-        background: black;
-        color: white;
+        background: #000;
+        color: #fff;
         text-align: center;
-        font-family: Arial, sans-serif;
+        font-family: 'Poppins', sans-serif;
+        padding: 20px;
     }
 
     h1 {
-        font-size: 38px;
-        margin-top: 20px;
-        font-weight: bold;
+        font-size: 32px;
+        margin-bottom: 15px;
+    }
+
+    .input-box {
+        background: #111;
+        padding: 14px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        width: 90%;
+        max-width: 380px;
+        font-size: 18px;
+        border: 1px solid #333;
+        color: white;
+    }
+
+    label {
+        font-size: 18px;
+        display: block;
+        margin-top: 12px;
     }
 
     #previewImg {
-        max-width: 280px;
-        border-radius: 10px;
+        max-width: 260px;
+        border-radius: 12px;
         margin: 10px auto;
         display: none;
+        border: 2px solid #00ff66;
     }
 
     button {
-        background: #00c63b;
+        background: linear-gradient(45deg, #00ff55, #00aa33);
         padding: 14px 30px;
         font-size: 20px;
         border: none;
         border-radius: 10px;
         cursor: pointer;
         margin-top: 10px;
+        color: black;
+        font-weight: bold;
     }
 
-    button:hover { opacity: 0.8; }
+    button:hover { opacity: 0.9; }
 
-    /* GRID */
+    #loading {
+        display: none;
+        font-size: 22px;
+        margin-top: 15px;
+        color: #00ff66;
+    }
+
+    .controls {
+        margin-top: 20px;
+    }
+
     .grid-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
         margin-top: 25px;
+        padding-bottom: 50px;
     }
 
-    .photo-box {
-        width: 260px;
-        height: 260px;
+    .photo-card {
         border: 3px solid #00ff66;
         border-radius: 14px;
-        margin: 12px;
         overflow: hidden;
         position: relative;
-        transition: 0.2s;
         cursor: pointer;
     }
 
-    .photo-box:hover {
-        transform: scale(1.03);
-    }
-
-    .photo-box img {
+    .photo-card img {
         width: 100%;
-        height: 100%;
+        height: 260px;
         object-fit: cover;
     }
 
-    .selected-check {
+    .event-badge {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        background: rgba(0,0,0,0.6);
+        padding: 4px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        border: 1px solid #00ff66;
+    }
+
+    .checkmark {
         position: absolute;
         top: 8px;
         right: 8px;
@@ -86,12 +119,16 @@
 
     .zip-btn {
         background: orange;
-        font-size: 22px;
+        font-size: 20px;
         margin-top: 20px;
         padding: 14px 40px;
-        border-radius: 10px;
     }
 
+    .select-controls button {
+        margin: 5px;
+        font-size: 18px;
+        padding: 10px 26px;
+    }
 </style>
 
 </head>
@@ -99,99 +136,87 @@
 
 <h1>EventLens – अपनी फोटो खोजें</h1>
 
-<!-- SELFIE INPUT -->
-<input type="file" id="selfieInput" accept="image/*">
-<br>
+<!-- GUEST DETAILS -->
+<label>आपका नाम</label>
+<input id="guestName" class="input-box" placeholder="अपना नाम लिखें">
+
+<label>मोबाइल नंबर</label>
+<input id="guestMobile" class="input-box" placeholder="मोबाइल नंबर">
+
+<label>सेल्फी अपलोड करें</label>
+<input type="file" id="selfieInput" accept="image/*" class="input-box">
+
 <img id="previewImg">
 
 <button onclick="searchPhotos()">फोटो खोजें</button>
 
+<div id="loading">⏳ कृपया प्रतीक्षा करें... खोज जारी है...</div>
+
 <h2 id="resultCount"></h2>
 
-<button class="zip-btn" onclick="downloadZip()">चयनित फोटो ZIP डाउनलोड</button>
+<div class="select-controls">
+    <button onclick="selectAll()">सभी चुनें</button>
+    <button onclick="clearAll()">सब हटाएँ</button>
+</div>
 
-<!-- GRID -->
+<button class="zip-btn" onclick="downloadZip()">ZIP डाउनलोड</button>
+
 <div class="grid-container" id="photoGrid"></div>
 
-<!-- JS LIBRARIES -->
+<!-- JS Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
 <script>
 let selectedPhotos = [];
-const apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";  // ← यहां अपनी API URL डालें
 
-// Preview selfie
+const apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
+
 document.getElementById("selfieInput").addEventListener("change", function(event) {
     const file = event.target.files[0];
-    if (file) {
-        let reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById("previewImg").src = e.target.result;
-            document.getElementById("previewImg").style.display = "block";
-        };
-        reader.readAsDataURL(file);
-    }
-});
-async function startSearch() {
-    const name = document.getElementById("guestName").value.trim();
-    const mobile = document.getElementById("guestMobile").value.trim();
-    const fileInput = document.getElementById("selfieInput").files[0];
+    if (!file) return;
 
-    if (!name || !mobile || !fileInput) {
-        alert("कृपया नाम, मोबाइल और सेल्फी अपलोड करें");
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-        const selfieBase64 = e.target.result;
-
-        const payload = {
-            linkId: link_id_from_url,   // तुम पहले से URL से निकालते हो
-            name: name,
-            mobile: mobile,
-            selfie_image: selfieBase64
-        };
-
-        // API call
-        const response = await fetch(YOUR_API_BASE + "/save-details", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        console.log("Search Response:", data);
-
-        if (!data.matches || data.matches.length === 0) {
-            alert("No photos found!");
-            return;
-        }
-
-        showResults(data.matches);
+    let reader = new FileReader();
+    reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = "block";
     };
+    reader.readAsDataURL(file);
+});
 
-    reader.readAsDataURL(fileInput);
+function getLinkId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("linkId");
 }
 
+function fileToBase64(file) {
+    return new Promise(resolve => {
+        let reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+    });
+}
 
-// ⭐ MAIN SEARCH FUNCTION
 async function searchPhotos() {
-    const fileInput = document.getElementById("selfieInput").files[0];
-    if (!fileInput) {
-        alert("कृपया एक सेल्फी अपलोड करें!");
+    const name = guestName.value.trim();
+    const mobile = guestMobile.value.trim();
+    const selfieFile = selfieInput.files[0];
+
+    if (!name || !mobile || !selfieFile) {
+        alert("कृपया नाम, मोबाइल और सेल्फी भरें!");
         return;
     }
 
-    const base64Img = await fileToBase64(fileInput);
+    loading.style.display = "block";
+
+    const selfie_base64 = await fileToBase64(selfieFile);
 
     const body = {
         linkId: getLinkId(),
-        name: "guest",
-        mobile: "0000000000",
-        selfie_image: base64Img
+        name: name,
+        mobile: mobile,
+        selfie_image: selfie_base64
     };
 
     const res = await fetch(apiURL, {
@@ -201,66 +226,49 @@ async function searchPhotos() {
     });
 
     const data = await res.json();
+    loading.style.display = "none";
 
     if (!data.matches || data.matches.length === 0) {
-        document.getElementById("resultCount").innerText = "❌ कोई फोटो नहीं मिली!";
+        resultCount.innerText = "❌ कोई फोटो नहीं मिली!";
         return;
     }
 
-    document.getElementById("resultCount").innerText = data.matches.length + " फोटो मिली!";
-
+    resultCount.innerText = `${data.matches.length} फोटो मिली!`;
     showPhotos(data.matches);
 }
 
-
-// Convert file to Base64
-function fileToBase64(file) {
-    return new Promise(resolve => {
-        let reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-    });
-}
-
-// Get linkId from URL
-function getLinkId() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("linkId");
-}
-
-
-// ⭐ DISPLAY PHOTOS GRID
 function showPhotos(photos) {
-    const grid = document.getElementById("photoGrid");
-    grid.innerHTML = "";
+    selectedPhotos = [];
+    photoGrid.innerHTML = "";
 
     photos.forEach((p, index) => {
-        let div = document.createElement("div");
-        div.className = "photo-box";
+        let box = document.createElement("div");
+        box.className = "photo-card";
 
         let img = document.createElement("img");
         img.src = p.url;
         img.setAttribute("data-lightbox", "gallery");
-        img.setAttribute("data-title", "Photo");
 
-        // Selection check mark
         let tick = document.createElement("div");
-        tick.className = "selected-check";
+        tick.className = "checkmark";
         tick.innerHTML = "✔";
 
-        div.appendChild(img);
-        div.appendChild(tick);
+        let badge = document.createElement("div");
+        badge.className = "event-badge";
+        badge.innerText = p.eventName || "";
 
-        div.onclick = () => toggleSelect(div, p);
+        box.appendChild(img);
+        box.appendChild(tick);
+        box.appendChild(badge);
 
-        grid.appendChild(div);
+        box.onclick = () => toggleSelect(box, p);
+
+        photoGrid.appendChild(box);
     });
 }
 
-
-// SELECT / DESELECT PHOTO
 function toggleSelect(box, photo) {
-    const tick = box.querySelector(".selected-check");
+    const tick = box.querySelector(".checkmark");
 
     if (tick.style.display === "block") {
         tick.style.display = "none";
@@ -271,11 +279,24 @@ function toggleSelect(box, photo) {
     }
 }
 
+function selectAll() {
+    selectedPhotos = [];
+    document.querySelectorAll(".photo-card").forEach((box, i) => {
+        const img = box.querySelector("img").src;
+        const eventName = box.querySelector(".event-badge").innerText;
+        selectedPhotos.push({ url: img, eventName });
+        box.querySelector(".checkmark").style.display = "block";
+    });
+}
 
-// ⭐ ZIP DOWNLOAD (NO CORS PROBLEM)
+function clearAll() {
+    selectedPhotos = [];
+    document.querySelectorAll(".checkmark").forEach(t => t.style.display = "none");
+}
+
 async function downloadZip() {
     if (selectedPhotos.length === 0) {
-        alert("कृपया कुछ फोटो चुनें!");
+        alert("कृपया फोटो चुनें!");
         return;
     }
 
@@ -289,11 +310,9 @@ async function downloadZip() {
     }
 
     const content = await zip.generateAsync({ type: "blob" });
-    saveAs(content, "SelectedPhotos.zip");
+    saveAs(content, "EventPhotos.zip");
 }
 </script>
 
 </body>
 </html>
-
-
