@@ -5,297 +5,306 @@
 <title>EventLens – अपनी फोटो खोजें</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Lightbox -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css"/>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css"/>
 
 <style>
     body {
         background: #000;
         color: #fff;
-        text-align: center;
         font-family: 'Poppins', sans-serif;
         padding: 20px;
+        text-align: center;
     }
 
     h1 {
+        margin-top: 20px;
         font-size: 32px;
-        margin-bottom: 15px;
+        font-weight: 600;
     }
 
-    .input-box {
-        background: #111;
-        padding: 14px;
-        border-radius: 10px;
-        margin-bottom: 12px;
-        width: 90%;
-        max-width: 380px;
-        font-size: 18px;
-        border: 1px solid #333;
-        color: white;
-    }
-
-    label {
-        font-size: 18px;
-        display: block;
-        margin-top: 12px;
-    }
-
-    #previewImg {
-        max-width: 260px;
-        border-radius: 12px;
-        margin: 10px auto;
+    .section {
         display: none;
-        border: 2px solid #00ff66;
     }
 
-    button {
-        background: linear-gradient(45deg, #00ff55, #00aa33);
-        padding: 14px 30px;
+    .active {
+        display: block;
+    }
+
+    .btn {
+        background: linear-gradient(45deg, #ffb300, #ff7a00);
+        padding: 14px 28px;
         font-size: 20px;
-        border: none;
         border-radius: 10px;
+        border: none;
         cursor: pointer;
-        margin-top: 10px;
-        color: black;
+        margin-top: 15px;
+        color: #000;
         font-weight: bold;
     }
 
-    button:hover { opacity: 0.9; }
-
-    #loading {
-        display: none;
-        font-size: 22px;
-        margin-top: 15px;
-        color: #00ff66;
+    .btn-green {
+        background: #00ff6e;
     }
 
-    .controls {
+    .btn-block {
+        width: 90%;
+        max-width: 360px;
+    }
+
+    input {
+        width: 90%;
+        max-width: 360px;
+        padding: 12px;
+        border-radius: 10px;
+        margin-top: 10px;
+        background: #111;
+        border: 1px solid #444;
+        color: white;
+        font-size: 16px;
+    }
+
+    #previewImg {
+        margin-top: 15px;
+        max-width: 260px;
+        border-radius: 12px;
+        display: none;
+        border: 2px solid #ffb300;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 14px;
         margin-top: 20px;
     }
 
-    .grid-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 16px;
-        margin-top: 25px;
-        padding-bottom: 50px;
-    }
-
-    .photo-card {
-        border: 3px solid #00ff66;
-        border-radius: 14px;
+    .card {
+        border: 3px solid #ffb300;
+        border-radius: 10px;
         overflow: hidden;
         position: relative;
-        cursor: pointer;
-    }
-
-    .photo-card img {
-        width: 100%;
-        height: 260px;
-        object-fit: cover;
     }
 
     .event-badge {
         position: absolute;
         bottom: 8px;
         left: 8px;
-        background: rgba(0,0,0,0.6);
         padding: 4px 10px;
-        font-size: 12px;
+        background: rgba(0,0,0,0.6);
         border-radius: 6px;
-        border: 1px solid #00ff66;
+        font-size: 12px;
+        border: 1px solid #ffb300;
     }
 
-    .checkmark {
+    .tick {
         position: absolute;
         top: 8px;
         right: 8px;
-        background: #00c6ff;
+        font-size: 20px;
+        background: #00eaff;
         padding: 6px 10px;
         border-radius: 50%;
-        font-size: 20px;
         display: none;
     }
 
-    .zip-btn {
-        background: orange;
-        font-size: 20px;
-        margin-top: 20px;
-        padding: 14px 40px;
-    }
-
-    .select-controls button {
-        margin: 5px;
-        font-size: 18px;
-        padding: 10px 26px;
-    }
 </style>
-
 </head>
+
 <body>
 
 <h1>EventLens – अपनी फोटो खोजें</h1>
 
-<!-- GUEST DETAILS -->
-<label>आपका नाम</label>
-<input id="guestName" class="input-box" placeholder="अपना नाम लिखें">
+<!-- STEP 1: SELFIE ONLY -->
+<div id="step1" class="section active">
+    <button class="btn btn-block" onclick="pickFile()">सेल्फी अपलोड करें</button>
+    <button class="btn btn-block" onclick="openCamera()">कैमरा खोलें</button>
 
-<label>मोबाइल नंबर</label>
-<input id="guestMobile" class="input-box" placeholder="मोबाइल नंबर">
+    <input type="file" id="selfieInput" accept="image/*" style="display:none">
+    <img id="previewImg">
 
-<label>सेल्फी अपलोड करें</label>
-<input type="file" id="selfieInput" accept="image/*" class="input-box">
-
-<img id="previewImg">
-
-<button onclick="searchPhotos()">फोटो खोजें</button>
-
-<div id="loading">⏳ कृपया प्रतीक्षा करें... खोज जारी है...</div>
-
-<h2 id="resultCount"></h2>
-
-<div class="select-controls">
-    <button onclick="selectAll()">सभी चुनें</button>
-    <button onclick="clearAll()">सब हटाएँ</button>
+    <button class="btn btn-green btn-block" onclick="startSearch()">फोटो खोजें</button>
 </div>
 
-<button class="zip-btn" onclick="downloadZip()">ZIP डाउनलोड</button>
 
-<div class="grid-container" id="photoGrid"></div>
+<!-- STEP 2: SHOW MATCH COUNT + ASK DETAILS -->
+<div id="step2" class="section">
+    <h2 id="matchCount"></h2>
+    <p>अपनी पहचान सत्यापित करने के लिए विवरण भरें</p>
 
-<!-- JS Libraries -->
+    <input id="guestName" placeholder="आपका नाम">
+    <input id="guestMobile" placeholder="मोबाइल नंबर">
+
+    <button class="btn btn-green btn-block" onclick="submitDetails()">जारी रखें</button>
+</div>
+
+
+<!-- STEP 3: SHOW PHOTOS -->
+<div id="step3" class="section">
+    <h2 id="resultTitle"></h2>
+
+    <button class="btn" onclick="selectAll()">सभी चुनें</button>
+    <button class="btn" onclick="clearAll()">साफ़ करें</button>
+
+    <div class="grid" id="photoGrid"></div>
+
+    <button class="btn btn-green" onclick="downloadZip()">ZIP डाउनलोड</button>
+</div>
+
+
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
 <script>
-let selectedPhotos = [];
-
+let selfieBase64 = "";
+let tempMatches = [];
+let finalPhotos = [];
 const apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
-document.getElementById("selfieInput").addEventListener("change", function(event) {
-    const file = event.target.files[0];
+function pickFile() {
+    document.getElementById("selfieInput").click();
+}
+
+function openCamera() {
+    document.getElementById("selfieInput").setAttribute("capture", "camera");
+    document.getElementById("selfieInput").click();
+}
+
+document.getElementById("selfieInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
     if (!file) return;
 
-    let reader = new FileReader();
-    reader.onload = e => {
-        previewImg.src = e.target.result;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        selfieBase64 = ev.target.result;
+        previewImg.src = selfieBase64;
         previewImg.style.display = "block";
     };
     reader.readAsDataURL(file);
 });
 
 function getLinkId() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("linkId");
+    return new URLSearchParams(window.location.search).get("linkId");
 }
 
-function fileToBase64(file) {
-    return new Promise(resolve => {
-        let reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-    });
-}
-
-async function searchPhotos() {
-    const name = guestName.value.trim();
-    const mobile = guestMobile.value.trim();
-    const selfieFile = selfieInput.files[0];
-
-    if (!name || !mobile || !selfieFile) {
-        alert("कृपया नाम, मोबाइल और सेल्फी भरें!");
+async function startSearch() {
+    if (!selfieBase64) {
+        alert("कृपया सेल्फी अपलोड करें");
         return;
     }
 
-    loading.style.display = "block";
+    // Step 1 → Step 2
+    document.getElementById("step1").classList.remove("active");
+    document.getElementById("step2").classList.add("active");
 
-    const selfie_base64 = await fileToBase64(selfieFile);
-
-    const body = {
-        linkId: getLinkId(),
-        name: name,
-        mobile: mobile,
-        selfie_image: selfie_base64
-    };
-
+    // SEARCH only, but don’t show photos yet
     const res = await fetch(apiURL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify({
+            linkId: getLinkId(),
+            name: "temp",
+            mobile: "temp",
+            selfie_image: selfieBase64
+        })
     });
 
     const data = await res.json();
-    loading.style.display = "none";
+    tempMatches = data.matches || [];
 
-    if (!data.matches || data.matches.length === 0) {
-        resultCount.innerText = "❌ कोई फोटो नहीं मिली!";
+    document.getElementById("matchCount").innerText =
+        `${tempMatches.length} फोटो मिलीं!`;
+}
+
+async function submitDetails() {
+    const name = guestName.value.trim();
+    const mobile = guestMobile.value.trim();
+    if (!name || !mobile) {
+        alert("कृपया नाम और मोबाइल भरें");
         return;
     }
 
-    resultCount.innerText = `${data.matches.length} फोटो मिली!`;
-    showPhotos(data.matches);
+    // Now call again with real details
+    const res = await fetch(apiURL, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            linkId: getLinkId(),
+            name,
+            mobile,
+            selfie_image: selfieBase64
+        })
+    });
+
+    const data = await res.json();
+    finalPhotos = data.matches;
+
+    document.getElementById("step2").classList.remove("active");
+    document.getElementById("step3").classList.add("active");
+
+    document.getElementById("resultTitle").innerText =
+        `${finalPhotos.length} फोटो मिलीं!`;
+
+    showPhotos();
 }
 
-function showPhotos(photos) {
-    selectedPhotos = [];
-    photoGrid.innerHTML = "";
+function showPhotos() {
+    const grid = document.getElementById("photoGrid");
+    grid.innerHTML ="";
 
-    photos.forEach((p, index) => {
-        let box = document.createElement("div");
-        box.className = "photo-card";
+    finalPhotos.forEach((p)=> {
+        let div = document.createElement("div");
+        div.className = "card";
 
         let img = document.createElement("img");
         img.src = p.url;
-        img.setAttribute("data-lightbox", "gallery");
+        img.setAttribute("data-lightbox","gallery");
 
         let tick = document.createElement("div");
-        tick.className = "checkmark";
-        tick.innerHTML = "✔";
+        tick.className="tick";
+        tick.innerHTML="✔";
 
         let badge = document.createElement("div");
         badge.className = "event-badge";
-        badge.innerText = p.eventName || "";
+        badge.innerText = p.eventName;
 
-        box.appendChild(img);
-        box.appendChild(tick);
-        box.appendChild(badge);
+        div.appendChild(img);
+        div.appendChild(tick);
+        div.appendChild(badge);
+        div.onclick = () => toggleSelect(div, p);
 
-        box.onclick = () => toggleSelect(box, p);
-
-        photoGrid.appendChild(box);
+        grid.appendChild(div);
     });
 }
 
-function toggleSelect(box, photo) {
-    const tick = box.querySelector(".checkmark");
+let selected = [];
 
-    if (tick.style.display === "block") {
-        tick.style.display = "none";
-        selectedPhotos = selectedPhotos.filter(p => p.url !== photo.url);
+function toggleSelect(box, photo) {
+    const tick = box.querySelector(".tick");
+    if (tick.style.display==="block") {
+        tick.style.display="none";
+        selected = selected.filter(p=>p.url!==photo.url);
     } else {
-        tick.style.display = "block";
-        selectedPhotos.push(photo);
+        tick.style.display="block";
+        selected.push(photo);
     }
 }
 
 function selectAll() {
-    selectedPhotos = [];
-    document.querySelectorAll(".photo-card").forEach((box, i) => {
-        const img = box.querySelector("img").src;
-        const eventName = box.querySelector(".event-badge").innerText;
-        selectedPhotos.push({ url: img, eventName });
-        box.querySelector(".checkmark").style.display = "block";
-    });
+    selected = [...finalPhotos];
+    document.querySelectorAll(".tick").forEach(t=> t.style.display="block");
 }
 
 function clearAll() {
-    selectedPhotos = [];
-    document.querySelectorAll(".checkmark").forEach(t => t.style.display = "none");
+    selected = [];
+    document.querySelectorAll(".tick").forEach(t=> t.style.display="none");
 }
 
 async function downloadZip() {
-    if (selectedPhotos.length === 0) {
+    if (selected.length===0) {
         alert("कृपया फोटो चुनें!");
         return;
     }
@@ -303,13 +312,12 @@ async function downloadZip() {
     const zip = new JSZip();
     let folder = zip.folder("photos");
 
-    for (let i = 0; i < selectedPhotos.length; i++) {
-        let url = selectedPhotos[i].url;
-        let blob = await fetch(url).then(r => r.blob());
-        folder.file("photo_" + (i + 1) + ".jpg", blob);
+    for (let i=0; i<selected.length; i++) {
+        let blob = await fetch(selected[i].url).then(r=>r.blob());
+        folder.file(`photo_${i+1}.jpg`, blob);
     }
 
-    const content = await zip.generateAsync({ type: "blob" });
+    const content = await zip.generateAsync({type:"blob"});
     saveAs(content, "EventPhotos.zip");
 }
 </script>
