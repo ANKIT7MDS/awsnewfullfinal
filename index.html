@@ -167,6 +167,25 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+
+        /* LIGHTBOX FIXES */
+        .lightboxOverlay {
+            z-index: 9998 !important;
+            opacity: 0.9 !important;
+            background-color: #000 !important;
+        }
+        .lightbox {
+            z-index: 9999 !important;
+        }
+        /* Ensure buttons are visible */
+        .lb-nav a.lb-prev, .lb-nav a.lb-next {
+            opacity: 1 !important;
+        }
+        .lb-data .lb-close {
+            opacity: 1 !important;
+            width: 30px; /* Make it bigger */
+            height: 30px;
+        }
     </style>
 </head>
 
@@ -263,6 +282,17 @@
                 <div class="skeleton aspect-square rounded-2xl"></div>
                 <div class="skeleton aspect-square rounded-2xl"></div>
             </div>
+
+            <!-- Pagination Controls -->
+            <div id="paginationControls" class="hidden flex justify-center items-center gap-4 mt-8 pb-4">
+                <button onclick="changePage(-1)" id="prevBtn" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700 transition">
+                    <i class="fas fa-chevron-left mr-1"></i> पीछे
+                </button>
+                <span id="pageIndicator" class="text-slate-400 text-sm font-medium">Page 1</span>
+                <button onclick="changePage(1)" id="nextBtn" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700 transition">
+                    आगे <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
         </div>
 
     </main>
@@ -300,7 +330,8 @@
                 'wrapAround': true,
                 'albumLabel': "फोटो %1 / %2",
                 'fadeDuration': 300,
-                'imageFadeDuration': 300
+                'imageFadeDuration': 300,
+                'alwaysShowNavOnTouchDevices': true // Important for mobile
             });
         } catch (e) {
             console.warn("Lightbox init failed (possibly jQuery missing or loaded late). Zoom might not work.", e);
@@ -308,6 +339,10 @@
 
         let globalMatches = [];
         let selected = [];
+        
+        // Pagination State
+        const ITEMS_PER_PAGE = 12; // 3x4 grid per page
+        let currentPage = 1;
 
         /* UTILS */
         function toBase64(file) {
@@ -428,7 +463,11 @@
                 // Simulate a slight delay for smooth transition (optional)
                 setTimeout(() => {
                     document.getElementById("skeletonGrid").classList.add("hidden");
-                    showPhotos(globalMatches);
+                    
+                    // Initialize Pagination and Show First Page
+                    currentPage = 1;
+                    renderGalleryPage();
+                    
                 }, 800);
 
             } catch (error) {
@@ -436,16 +475,31 @@
             }
         }
 
-        /* GALLERY LOGIC */
-        function showPhotos(list) {
+        /* PAGINATION & GALLERY LOGIC */
+        function renderGalleryPage() {
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pagePhotos = globalMatches.slice(start, end);
+            const totalPages = Math.ceil(globalMatches.length / ITEMS_PER_PAGE);
+
             let grid = document.getElementById("photoGrid");
             grid.innerHTML = "";
-            document.getElementById("resultsSubtext").innerText = `${list.length} फोटो मिलीं`;
+            document.getElementById("resultsSubtext").innerText = `कुल ${globalMatches.length} फोटो मिलीं`;
 
-            list.forEach((photo, index) => {
+            // Populate Grid
+            pagePhotos.forEach((photo, index) => {
+                // Determine actual global index for unique IDs or tracking
+                const globalIndex = start + index;
+                
                 // Card
                 let box = document.createElement("div");
                 box.className = "photo-card bg-slate-800";
+                
+                // Check if already selected
+                if(selected.find(p => p.url === photo.url)) {
+                    box.classList.add("selected");
+                }
+                
                 box.onclick = () => togglePhoto(photo, box);
 
                 // Image
@@ -458,7 +512,7 @@
                 let viewBtn = document.createElement("a");
                 viewBtn.href = photo.url;
                 viewBtn.setAttribute("data-lightbox", "gallery");
-                viewBtn.setAttribute("data-title", "फोटो " + (index + 1));
+                viewBtn.setAttribute("data-title", "फोटो " + (globalIndex + 1));
                 viewBtn.className = "view-btn";
                 viewBtn.innerHTML = '<i class="fas fa-expand-alt"></i>';
                 
@@ -471,7 +525,41 @@
                 box.appendChild(viewBtn);
                 grid.appendChild(box);
             });
+
+            // Update Pagination UI
+            const controls = document.getElementById("paginationControls");
+            if(totalPages > 1) {
+                controls.classList.remove("hidden");
+                controls.classList.add("flex");
+                
+                document.getElementById("pageIndicator").innerText = `Page ${currentPage} of ${totalPages}`;
+                
+                const prevBtn = document.getElementById("prevBtn");
+                const nextBtn = document.getElementById("nextBtn");
+                
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
+                
+            } else {
+                controls.classList.add("hidden");
+            }
+            
             updateSelectionUI();
+            
+            // Scroll to top of grid
+            if(currentPage > 1) {
+                 document.getElementById("gallerySection").scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(globalMatches.length / ITEMS_PER_PAGE);
+            let newPage = currentPage + direction;
+            
+            if(newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderGalleryPage();
+            }
         }
 
         function togglePhoto(photo, boxElement) {
@@ -487,14 +575,19 @@
         }
 
         function selectAll() {
+            // Select ALL global matches, not just current page
             selected = [...globalMatches];
+            
+            // Visually select current page items
             document.querySelectorAll(".photo-card").forEach(box => box.classList.add("selected"));
+            
             updateSelectionUI();
             showToast("सभी फोटो चुन ली गईं");
         }
 
         function clearAll() {
             selected = [];
+            // Visually deselect current page items
             document.querySelectorAll(".photo-card").forEach(box => box.classList.remove("selected"));
             updateSelectionUI();
         }
