@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EventLens Gallery</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css"/>
+
+<style>
+    body { background: black; color: white; text-align: center; font-family: Arial; }
+    h1 { margin-top: 20px; }
+
+    .grid-container { 
+        display: flex; 
+        flex-wrap: wrap; 
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .photo-box {
+        width: 260px;
+        height: 260px;
+        margin: 10px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 3px solid #00ff66;
+    }
+
+    .photo-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style>
+
+</head>
+<body>
+
+<h1>Event Gallery</h1>
+<h3 id="photoCount"></h3>
+
+<div id="galleryGrid" class="grid-container"></div>
+
+<script>
+const API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/get-photos";
+
+function getCollectionId() {
+    return new URLSearchParams(window.location.search).get("collection_id");
+}
+
+async function loadGallery() {
+    const res = await fetch(API, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ collection_id: getCollectionId() })
+    });
+
+    const data = await res.json();
+    const photos = data.photos || [];
+
+    document.getElementById("photoCount").innerText = `${photos.length} फोटो`;
+
+    const grid = document.getElementById("galleryGrid");
+    photos.forEach(p => {
+        let box = document.createElement("div");
+        box.className = "photo-box";
+
+        let img = document.createElement("img");
+        img.src = p.url;
+        img.setAttribute("data-lightbox", "gallery");
+
+        box.appendChild(img);
+        grid.appendChild(box);
+    });
+}
+
+loadGallery();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+</body>
+</html>
