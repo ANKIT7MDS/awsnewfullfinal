@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EventLens – Smart AI Gallery</title>
 
+  <!-- Zip download libs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
@@ -12,39 +13,37 @@
     :root {
       --bg: #050505;
       --card: #101010;
-      --accent: #00e676;
+      --accent: #00e676; /* Green Accent */
       --accent-soft: rgba(0, 230, 118, 0.15);
-      --accent-strong: #00c853;
       --text: #ffffff;
       --muted: #a0a0a0;
       --border: #262626;
-      --chip-bg: #181818;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: radial-gradient(circle at top, #202020 0, #050505 45%);
+      background: #050505;
       color: var(--text);
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
+      padding-bottom: 40px;
     }
 
-    .page {
-      max-width: 1200px;
+    .container {
+      max-width: 600px; /* Mobile focused width */
       margin: 0 auto;
-      padding: 18px 14px 40px;
+      padding: 16px;
     }
 
+    /* HEADER */
     header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
-
     header h1 {
-      font-size: clamp(26px, 5vw, 34px);
+      font-size: 28px;
       font-weight: 700;
-      margin-bottom: 6px;
       background: linear-gradient(to right, #fff, #bbb);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -52,562 +51,551 @@
 
     /* CARDS */
     .card {
-      background: rgba(0, 0, 0, 0.8);
-      border-radius: 18px;
+      background: #101010;
       border: 1px solid var(--border);
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+      border-radius: 20px;
+      padding: 24px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    .card-title {
-      font-size: 17px;
+    .step-title {
+      font-size: 16px;
       font-weight: 600;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      margin-bottom: 15px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    .step-pill {
-      display: inline-flex;
+    /* CUSTOM CAMERA BUTTONS */
+    .camera-btn {
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 1px solid var(--accent-soft);
-      font-size: 14px;
+      width: 100%;
+      padding: 30px;
+      background: #1a1a1a;
+      border: 2px dashed var(--accent);
+      border-radius: 16px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 12px;
+    }
+    .camera-btn:active {
+      background: #252525; 
+      transform: scale(0.98);
+    }
+    .camera-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .gallery-link {
       color: var(--accent);
-      background: rgba(0,230,118,0.1);
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 5px;
     }
 
     /* INPUTS & BUTTONS */
-    .text-input {
+    input[type="text"], input[type="tel"] {
       width: 100%;
-      padding: 12px 16px;
-      border-radius: 999px;
+      padding: 14px 16px;
+      background: #000;
       border: 1px solid var(--border);
-      background: #0a0a0a;
+      border-radius: 12px;
       color: white;
-      font-size: 15px;
+      font-size: 16px;
       margin-bottom: 12px;
-    }
-    .text-input:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-soft);
     }
+    input:focus { border-color: var(--accent); }
 
     .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 50px;
       border: none;
-      cursor: pointer;
-      border-radius: 999px;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
-      padding: 12px 24px;
+      cursor: pointer;
       background: var(--accent);
       color: #000;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      transition: transform 0.2s;
     }
-    .btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      background: var(--accent-strong);
-      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
-    }
-    .btn:disabled { opacity: 0.5; cursor: default; }
+    .btn:hover { opacity: 0.9; transform: scale(1.02); }
+    .btn:disabled { opacity: 0.5; cursor: wait; }
 
-    .btn-secondary {
-      background: var(--chip-bg);
-      color: var(--text);
+    .btn-outline {
+      background: transparent;
       border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      font-size: 13px;
+      width: auto;
     }
-    .btn-secondary:hover { background: #222; }
 
-    .btn-full { width: 100%; }
-    .btn-sm { padding: 6px 14px; font-size: 13px; }
-
-    /* SELFIE PREVIEW */
-    .selfie-preview img {
+    /* PREVIEW IMG */
+    #previewImg {
       width: 140px;
       height: 140px;
-      object-fit: cover;
       border-radius: 50%;
-      border: 3px solid var(--accent);
-      margin: 10px auto;
+      object-fit: cover;
+      margin: 20px auto;
       display: block;
+      border: 4px solid var(--accent);
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
     }
 
-    /* GALLERY CONTROLS */
-    .gallery-controls {
-      margin-bottom: 16px;
-    }
-
-    /* SEARCH BAR */
-    .search-bar-wrap {
+    /* SEARCH BAR (Google Photos Style) */
+    .search-wrapper {
       position: relative;
-      margin-bottom: 14px;
+      margin-bottom: 15px;
     }
-    .search-input {
+    .search-wrapper input {
       width: 100%;
-      padding: 12px 44px 12px 18px;
-      border-radius: 12px;
-      background: #121212;
-      border: 1px solid var(--border);
+      padding: 12px 16px 12px 40px;
+      border-radius: 50px;
+      background: #1a1a1a;
+      border: none;
       color: white;
       font-size: 15px;
+      outline: none;
     }
     .search-icon {
       position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
+      left: 14px;
+      top: 12px;
       color: var(--muted);
     }
 
-    /* SMART FILTERS */
-    .filter-scroll {
+    /* FILTER CHIPS */
+    .filter-row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       overflow-x: auto;
-      padding-bottom: 8px;
-      scrollbar-width: none; /* Firefox */
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      scrollbar-width: none;
     }
-    .filter-scroll::-webkit-scrollbar { display: none; } /* Chrome */
+    .filter-row::-webkit-scrollbar { display: none; }
 
     .chip {
       white-space: nowrap;
       padding: 8px 16px;
-      border-radius: 999px;
+      border-radius: 20px;
       background: #1a1a1a;
-      border: 1px solid var(--border);
+      border: 1px solid #333;
       color: #ccc;
       font-size: 13px;
       cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      transition: 0.2s;
     }
-    .chip:hover { background: #252525; }
-    
     .chip.active {
-      background: rgba(0, 230, 118, 0.15);
+      background: var(--accent-soft);
       border-color: var(--accent);
       color: var(--accent);
     }
 
-    /* GRID */
+    /* PHOTO GRID */
     .grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
     }
-    @media (min-width: 600px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (min-width: 900px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+    @media(min-width: 768px) { .grid { grid-template-columns: repeat(5, 1fr); gap: 10px; } }
 
-    .tile {
+    .photo-item {
       position: relative;
       aspect-ratio: 1;
-      border-radius: 12px;
-      overflow: hidden;
       background: #111;
+      overflow: hidden;
       cursor: pointer;
-      border: 1px solid transparent;
     }
-    .tile img {
+    .photo-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.3s;
+      transition: 0.3s;
     }
-    .tile:hover img { transform: scale(1.05); }
+    .photo-item.selected img { opacity: 0.5; transform: scale(0.95); }
     
-    .tile.selected {
-      border-color: var(--accent);
-    }
-    .tile.selected img { opacity: 0.6; }
-
-    .check-badge {
+    .check-mark {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
+      top: 5px; right: 5px;
+      width: 22px; height: 22px;
       background: rgba(0,0,0,0.6);
-      border: 1px solid rgba(255,255,255,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
       color: transparent;
-      transition: all 0.2s;
+      font-size: 12px;
     }
-    .tile.selected .check-badge {
+    .photo-item.selected .check-mark {
       background: var(--accent);
       border-color: var(--accent);
-      color: black;
+      color: #000;
     }
 
-    /* VIEWER */
+    /* VIEWER OVERLAY */
     .viewer {
-      position: fixed; inset: 0;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.95);
-      z-index: 1000;
+      z-index: 999;
       display: none;
       flex-direction: column;
       justify-content: center;
+      align-items: center;
     }
     .viewer.open { display: flex; }
-    
-    .viewer-img {
-      max-width: 100%;
-      max-height: 80vh;
+    .viewer img {
+      max-width: 95%; max-height: 80vh;
       object-fit: contain;
-      margin: 0 auto;
+      border-radius: 8px;
     }
     .viewer-controls {
-      position: absolute;
-      bottom: 20px;
-      left: 0; right: 0;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
+      position: absolute; bottom: 30px;
+      display: flex; gap: 20px;
     }
-    .close-btn {
-      position: absolute;
-      top: 20px; right: 20px;
-      color: white;
-      font-size: 30px;
-      cursor: pointer;
-      background: none; border: none;
+    .close-viewer {
+      position: absolute; top: 20px; right: 20px;
+      color: white; font-size: 30px; cursor: pointer;
     }
+
   </style>
 </head>
 <body>
 
-  <div class="page">
-    <header>
-      <h1>EventLens AI</h1>
-      <p style="color:var(--muted); font-size:14px;">Find your photos instantly with AI</p>
-    </header>
+<div class="container">
+  <header>
+    <h1>EventLens</h1>
+    <p style="color:var(--muted); font-size:14px;">AI Powered Photo Finder</p>
+  </header>
 
-    <div class="card" id="step1">
-      <div class="card-title"><span class="step-pill">1</span> सेल्फी अपलोड करें</div>
-      <input type="file" id="selfieInput" accept="image/*" class="text-input" style="padding:10px;">
-      
-      <div class="selfie-preview" id="previewContainer" style="display:none;">
-        <img id="previewImg">
-      </div>
+  <!-- STEP 1: UPLOAD (NEW DESIGN) -->
+  <div id="step1" class="card" style="text-align:center;">
+    <div class="step-title" style="text-align:left;">1. Upload Your Selfie</div>
+    
+    <!-- Inputs (Hidden) -->
+    <input type="file" id="cameraInput" accept="image/*" capture="user" style="display:none">
+    <input type="file" id="galleryInput" accept="image/*" style="display:none">
 
-      <button class="btn btn-full" id="searchBtn" style="margin-top:10px;">🔍 फोटो खोजें</button>
-      <p id="statusMsg" style="margin-top:10px; font-size:13px; color:var(--muted); text-align:center;"></p>
+    <!-- Big Camera Button -->
+    <label for="cameraInput" class="camera-btn">
+      <div class="camera-icon">📸</div>
+      Take Selfie
+    </label>
+
+    <!-- Small Gallery Link -->
+    <div style="margin-top:5px;">
+      <span style="color:#555; font-size:13px;">or</span><br>
+      <label for="galleryInput" class="gallery-link">Upload from Gallery</label>
     </div>
 
-    <div class="card" id="step2" style="display:none;">
-      <div class="card-title"><span class="step-pill">2</span> अपनी डिटेल भरें</div>
-      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
-        हमें <span style="color:var(--accent);" id="foundCount">0</span> फोटो मिली हैं!
-      </p>
-      <input type="text" id="guestName" placeholder="आपका नाम" class="text-input">
-      <input type="tel" id="guestMobile" placeholder="मोबाइल नंबर" class="text-input" maxlength="10">
-      <button class="btn btn-full" id="showGalleryBtn">👉 गैलरी देखें</button>
+    <!-- Preview Area -->
+    <div id="previewContainer" style="display:none;">
+      <img id="previewImg">
+      <button id="searchBtn" class="btn" style="margin-top:15px;">Find My Photos 🔍</button>
     </div>
 
-    <div class="card" id="step3" style="display:none;">
-      
-      <div class="gallery-controls">
-        
-        <div class="search-bar-wrap">
-          <input type="text" id="aiSearchInput" class="search-input" placeholder="Search (e.g. Red shirt, Smile, Garden)...">
-          <span class="search-icon">🔍</span>
-        </div>
-
-        <div class="filter-scroll" id="filterContainer">
-          <button class="chip active" onclick="applyFilter('ALL')">All Photos</button>
-          <button class="chip" onclick="applyFilter('BEST')">⭐ Best</button>
-          <button class="chip" onclick="applyFilter('HAPPY')">😊 Happy</button>
-          <button class="chip" onclick="applyFilter('COUPLE')">👩‍❤️‍👨 Couple</button>
-          <button class="chip" onclick="applyFilter('GROUP')">👥 Group</button>
-          <button class="chip" onclick="applyFilter('SELFIE')">🤳 Selfie</button>
-          <button class="chip" onclick="applyFilter('WEDDING')">💍 Wedding</button>
-        </div>
-
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <span style="font-size:13px; color:var(--muted);">
-          Selected: <b id="selCount" style="color:white;">0</b>
-        </span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-sm btn-secondary" onclick="toggleSelectAll()">Select All</button>
-          <button class="btn btn-sm" onclick="downloadZip()">⬇ ZIP</button>
-        </div>
-      </div>
-
-      <div class="grid" id="photoGrid"></div>
-    </div>
-
+    <p id="loadingText" style="text-align:center; color:var(--muted); margin-top:10px; font-size:13px;"></p>
   </div>
 
-  <div class="viewer" id="viewer">
-    <button class="close-btn" onclick="closeViewer()">✕</button>
-    <img id="viewerImg" class="viewer-img">
-    <div class="viewer-controls">
-      <button class="btn btn-secondary" onclick="prevPhoto()">❮</button>
-      <button class="btn" onclick="toggleCurrentSelection()">Select / Unselect</button>
-      <button class="btn btn-secondary" onclick="nextPhoto()">❯</button>
-    </div>
+  <!-- STEP 2: LEAD GEN -->
+  <div id="step2" class="card" style="display:none;">
+    <div class="step-title">2. Enter Details</div>
+    <p style="margin-bottom:15px;">
+      We found <b style="color:var(--accent);" id="matchCount">0</b> photos of you!
+    </p>
+    <input type="text" id="guestName" placeholder="Your Name (e.g. Rahul)">
+    <input type="tel" id="guestMobile" placeholder="Mobile Number" maxlength="10">
+    <button id="showGalleryBtn" class="btn">View Gallery 👉</button>
   </div>
+
+  <!-- STEP 3: SMART GALLERY -->
+  <div id="step3" class="card" style="background:transparent; border:none; padding:0; display:none;">
+    
+    <!-- SEARCH & FILTER -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search (e.g. 'Red Shirt', 'Stage', 'Smile')...">
+    </div>
+
+    <div class="filter-row">
+      <div class="chip active" onclick="filterPhotos('ALL', this)">All Photos</div>
+      <div class="chip" onclick="filterPhotos('BEST', this)">⭐ Best</div>
+      <div class="chip" onclick="filterPhotos('HAPPY', this)">😊 Happy</div>
+      <div class="chip" onclick="filterPhotos('GROUP', this)">👥 Group</div>
+      <div class="chip" onclick="filterPhotos('TEXT', this)">🅰️ Text</div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 5px;">
+      <span style="font-size:13px; color:var(--muted);">Selected: <b id="selCount" style="color:#fff;">0</b></span>
+      <div>
+        <button class="btn btn-outline" onclick="selectAll()">Select All</button>
+        <button class="btn btn-outline" style="background:var(--accent); color:#000; border:none;" onclick="downloadZip()">Download ZIP</button>
+      </div>
+    </div>
+
+    <!-- GRID -->
+    <div id="photoGrid" class="grid"></div>
+  </div>
+
+</div>
+
+<!-- FULLSCREEN VIEWER -->
+<div id="viewer" class="viewer">
+  <div class="close-viewer" onclick="closeViewer()">✕</div>
+  <img id="viewerImage">
+  <div class="viewer-controls">
+    <button class="btn btn-outline" onclick="prevImage()">❮</button>
+    <button class="btn btn-outline" onclick="toggleViewerSelect()">Select / Unselect</button>
+    <button class="btn btn-outline" onclick="nextImage()">❯</button>
+  </div>
+</div>
 
 <script>
   // CONFIG
   const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
-  const LOG_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
+  const SAVE_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
   // STATE
-  let allMatches = [];      // Raw data from API
-  let visiblePhotos = [];   // Filtered data shown in grid
+  let allPhotos = [];
+  let filteredPhotos = [];
   let selectedUrls = new Set();
-  let viewerIdx = 0;
-  let selfieBase64 = "";
+  let selfieBase64 = null;
+  let currentViewerIndex = 0;
 
-  // DOM Elements
-  const step1 = document.getElementById('step1');
-  const step2 = document.getElementById('step2');
-  const step3 = document.getElementById('step3');
-  const grid = document.getElementById('photoGrid');
-
-  // --- 1. SELFIE HANDLING ---
-  document.getElementById('selfieInput').addEventListener('change', async (e) => {
-    let file = e.target.files[0];
-    if(file) {
-      let reader = new FileReader();
-      reader.onload = (ev) => {
+  // --- 1. HANDLE SELFIE (Updated for Camera + Gallery) ---
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = function(ev) {
         selfieBase64 = ev.target.result;
         document.getElementById('previewImg').src = selfieBase64;
         document.getElementById('previewContainer').style.display = 'block';
+        
+        // Optional: Scroll to preview to show user the photo is taken
+        document.getElementById('previewContainer').scrollIntoView({behavior: 'smooth'});
       };
       reader.readAsDataURL(file);
     }
-  });
+  }
 
+  // Bind both inputs to the same handler
+  document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
+  document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
+
+
+  // --- 2. API CALL ---
   document.getElementById('searchBtn').addEventListener('click', async () => {
-    if(!selfieBase64) return alert("Please upload a selfie first!");
+    if(!selfieBase64) return alert("Please upload a selfie first.");
     
-    document.getElementById('statusMsg').innerText = "Searching photos... please wait...";
-    let btn = document.getElementById('searchBtn');
-    btn.disabled = true;
+    document.getElementById('loadingText').innerText = "Scanning faces with AI... Please wait...";
+    document.getElementById('searchBtn').disabled = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const linkId = params.get('linkId');
 
     try {
-      // Get linkId from URL
-      const params = new URLSearchParams(window.location.search);
-      const linkId = params.get("linkId");
-
-      let res = await fetch(SEARCH_API, {
-        method: "POST",
+      const res = await fetch(SEARCH_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ linkId: linkId, selfie_image: selfieBase64 })
       });
-      let data = await res.json();
+      const data = await res.json();
       
-      allMatches = data.matches || [];
-      visiblePhotos = [...allMatches];
+      allPhotos = data.matches || [];
+      filteredPhotos = [...allPhotos];
+      
+      document.getElementById('matchCount').innerText = allPhotos.length;
+      
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
 
-      document.getElementById('foundCount').innerText = allMatches.length;
-      step1.style.display = 'none';
-      step2.style.display = 'block';
-      
     } catch(err) {
       alert("Error finding photos.");
       console.error(err);
-    } finally {
-      btn.disabled = false;
+      document.getElementById('searchBtn').disabled = false;
     }
   });
 
-  // --- 2. SHOW GALLERY ---
+  // --- 3. SHOW GALLERY ---
   document.getElementById('showGalleryBtn').addEventListener('click', () => {
     const name = document.getElementById('guestName').value;
     const mobile = document.getElementById('guestMobile').value;
     
-    if(!name || mobile.length < 10) return alert("Please enter valid Name & Mobile");
+    if(!name || mobile.length < 10) return alert("Please enter valid details.");
 
-    // Background Log (Optional)
+    // Save Data in background
     const params = new URLSearchParams(window.location.search);
-    fetch(LOG_API, {
-      method: "POST",
+    fetch(SAVE_API, {
+      method: 'POST',
       body: JSON.stringify({
-        linkId: params.get("linkId"),
-        name, mobile, selfie_image: selfieBase64
+        linkId: params.get('linkId'),
+        name: name, mobile: mobile, selfie_image: selfieBase64
       })
-    }).catch(e => console.log(e));
-
-    step2.style.display = 'none';
-    step3.style.display = 'block';
-    renderGrid();
-  });
-
-  // --- 3. SMART FILTERS & SEARCH ---
-  
-  // Text Search
-  document.getElementById('aiSearchInput').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    visiblePhotos = allMatches.filter(p => {
-      // Search in AI Tags, Event Name, or ID
-      const tags = (p.ai_tags || []).join(" ").toLowerCase();
-      const evt = (p.eventName || "").toLowerCase();
-      return tags.includes(q) || evt.includes(q);
     });
+
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'block';
     renderGrid();
-    highlightChip('ALL'); // Reset chips visual
   });
 
-  // Category Filters
-  window.applyFilter = function(type) {
-    // Reset search input
-    document.getElementById('aiSearchInput').value = "";
+  // --- 4. SMART FILTERS ---
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
     
-    // Logic mapping backend data to filters
-    if(type === 'ALL') {
-      visiblePhotos = [...allMatches];
+    filteredPhotos = allPhotos.filter(photo => {
+      const tags = (photo.ai_tags || []).join(' ').toLowerCase();
+      const ocr = (photo.detected_text || []).join(' ').toLowerCase();
+      const evt = (photo.eventName || "").toLowerCase();
+      return tags.includes(q) || ocr.includes(q) || evt.includes(q);
+    });
+    
+    renderGrid();
+    resetChips();
+  });
+
+  window.filterPhotos = function(type, el) {
+    document.getElementById('searchInput').value = ""; // clear search
+    resetChips();
+    el.classList.add('active');
+
+    if (type === 'ALL') {
+      filteredPhotos = [...allPhotos];
     } 
-    else if(type === 'BEST') {
-      // High quality OR very happy
-      visiblePhotos = allMatches.filter(p => (p.quality_score > 0.85) || (p.emotions?.Happy > 80));
+    else if (type === 'BEST') {
+      filteredPhotos = allPhotos.filter(p => {
+        const isHappy = (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 80);
+        return (p.quality_score > 0.85) || isHappy;
+      });
     }
-    else if(type === 'HAPPY') {
-      visiblePhotos = allMatches.filter(p => (p.emotions?.Happy > 60));
+    else if (type === 'HAPPY') {
+      filteredPhotos = allPhotos.filter(p => {
+        return (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60);
+      });
     }
-    else if(type === 'COUPLE') {
-      visiblePhotos = allMatches.filter(p => p.face_count === 2);
+    else if (type === 'GROUP') {
+      filteredPhotos = allPhotos.filter(p => p.face_count >= 3);
     }
-    else if(type === 'GROUP') {
-      visiblePhotos = allMatches.filter(p => p.face_count >= 3);
-    }
-    else if(type === 'SELFIE') {
-      visiblePhotos = allMatches.filter(p => p.face_count === 1 && p.shot_type === 'close-up');
-    }
-    else if(type === 'WEDDING') {
-      // Checks event name or tags
-      visiblePhotos = allMatches.filter(p => 
-        (p.eventName || "").toLowerCase().includes("wedding") || 
-        (p.ai_tags || []).includes("wedding")
-      );
+    else if (type === 'TEXT') {
+      filteredPhotos = allPhotos.filter(p => (p.detected_text || []).length > 0);
     }
 
     renderGrid();
-    highlightChip(type);
   };
 
-  function highlightChip(type) {
+  function resetChips() {
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    // Simple way to find the button by text content logic or onclick attr
-    // For now, re-clicking will set active class via event delegation or loop
-    const buttons = document.querySelectorAll('.chip');
-    buttons.forEach(btn => {
-      if(btn.getAttribute('onclick').includes(`'${type}'`)) {
-        btn.classList.add('active');
-      }
-    });
   }
 
-  // --- 4. RENDER GRID ---
+  // --- 5. RENDER GRID ---
   function renderGrid() {
+    const grid = document.getElementById('photoGrid');
     grid.innerHTML = "";
-    visiblePhotos.forEach((photo, idx) => {
-      const isSel = selectedUrls.has(photo.url);
+
+    filteredPhotos.forEach((photo, index) => {
+      const isSelected = selectedUrls.has(photo.url);
       
       const div = document.createElement('div');
-      div.className = `tile ${isSel ? 'selected' : ''}`;
+      div.className = `photo-item ${isSelected ? 'selected' : ''}`;
+      
       div.onclick = (e) => {
-        // If clicked on badge, toggle select. Else open viewer
-        if(e.target.closest('.check-badge')) {
+        if(e.target.closest('.check-mark')) {
           toggleSelect(photo.url);
         } else {
-          openViewer(idx);
+          openViewer(index);
         }
       };
 
       div.innerHTML = `
         <img src="${photo.url}" loading="lazy">
-        <div class="check-badge">✓</div>
+        <div class="check-mark">✓</div>
       `;
       grid.appendChild(div);
     });
+
     document.getElementById('selCount').innerText = selectedUrls.size;
   }
 
-  // --- SELECTION LOGIC ---
+  // --- 6. SELECTION & DOWNLOAD ---
   function toggleSelect(url) {
     if(selectedUrls.has(url)) selectedUrls.delete(url);
     else selectedUrls.add(url);
     renderGrid();
   }
 
-  window.toggleSelectAll = function() {
-    if(selectedUrls.size === visiblePhotos.length) {
-      selectedUrls.clear();
-    } else {
-      visiblePhotos.forEach(p => selectedUrls.add(p.url));
-    }
+  window.selectAll = function() {
+    if(selectedUrls.size === filteredPhotos.length) selectedUrls.clear();
+    else filteredPhotos.forEach(p => selectedUrls.add(p.url));
     renderGrid();
-  };
+  }
 
-  // --- ZIP DOWNLOAD ---
   window.downloadZip = async function() {
     if(selectedUrls.size === 0) return alert("Select photos first!");
     
-    let zip = new JSZip();
-    let folder = zip.folder("My_Photos");
-    
-    let btn = document.querySelector("button[onclick='downloadZip()']");
+    const zip = new JSZip();
+    const folder = zip.folder("EventLens_Photos");
+    const urls = Array.from(selectedUrls);
+
+    const btn = document.querySelector("button[onclick='downloadZip()']");
+    const oldText = btn.innerText;
     btn.innerText = "⏳ Zipping...";
+    btn.disabled = true;
 
-    let urls = Array.from(selectedUrls);
-    for(let i=0; i<urls.length; i++) {
-      let blob = await fetch(urls[i]).then(r => r.blob());
-      folder.file(`photo_${i+1}.jpg`, blob);
+    try {
+      for(let i=0; i<urls.length; i++) {
+        const blob = await fetch(urls[i]).then(r => r.blob());
+        folder.file(`photo_${i+1}.jpg`, blob);
+      }
+      const content = await zip.generateAsync({type:"blob"});
+      saveAs(content, "My_Photos.zip");
+    } catch(e) {
+      alert("Download failed. Try again.");
+    } finally {
+      btn.innerText = oldText;
+      btn.disabled = false;
     }
-
-    let content = await zip.generateAsync({type:"blob"});
-    saveAs(content, "EventLens_Photos.zip");
-    btn.innerText = "⬇ ZIP";
   };
 
-  // --- VIEWER LOGIC ---
-  function openViewer(idx) {
-    viewerIdx = idx;
+  // --- 7. VIEWER LOGIC ---
+  function openViewer(index) {
+    currentViewerIndex = index;
     updateViewer();
     document.getElementById('viewer').classList.add('open');
   }
   
   window.closeViewer = function() {
     document.getElementById('viewer').classList.remove('open');
-  };
-
-  function updateViewer() {
-    let photo = visiblePhotos[viewerIdx];
-    document.getElementById('viewerImg').src = photo.url;
   }
 
-  window.nextPhoto = function() {
-    viewerIdx = (viewerIdx + 1) % visiblePhotos.length;
-    updateViewer();
-  };
+  function updateViewer() {
+    const photo = filteredPhotos[currentViewerIndex];
+    document.getElementById('viewerImage').src = photo.url;
+  }
 
-  window.prevPhoto = function() {
-    viewerIdx = (viewerIdx - 1 + visiblePhotos.length) % visiblePhotos.length;
+  window.nextImage = function() {
+    currentViewerIndex = (currentViewerIndex + 1) % filteredPhotos.length;
     updateViewer();
-  };
+  }
+  
+  window.prevImage = function() {
+    currentViewerIndex = (currentViewerIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+    updateViewer();
+  }
 
-  window.toggleCurrentSelection = function() {
-    let url = visiblePhotos[viewerIdx].url;
+  window.toggleViewerSelect = function() {
+    const url = filteredPhotos[currentViewerIndex].url;
     toggleSelect(url);
-  };
+  }
 
 </script>
 </body>
