@@ -134,6 +134,47 @@ document.getElementById("selfieInput").addEventListener("change", function(event
         reader.readAsDataURL(file);
     }
 });
+async function startSearch() {
+    const name = document.getElementById("guestName").value.trim();
+    const mobile = document.getElementById("guestMobile").value.trim();
+    const fileInput = document.getElementById("selfieInput").files[0];
+
+    if (!name || !mobile || !fileInput) {
+        alert("कृपया नाम, मोबाइल और सेल्फी अपलोड करें");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        const selfieBase64 = e.target.result;
+
+        const payload = {
+            linkId: link_id_from_url,   // तुम पहले से URL से निकालते हो
+            name: name,
+            mobile: mobile,
+            selfie_image: selfieBase64
+        };
+
+        // API call
+        const response = await fetch(YOUR_API_BASE + "/save-details", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        console.log("Search Response:", data);
+
+        if (!data.matches || data.matches.length === 0) {
+            alert("No photos found!");
+            return;
+        }
+
+        showResults(data.matches);
+    };
+
+    reader.readAsDataURL(fileInput);
+}
 
 
 // ⭐ MAIN SEARCH FUNCTION
@@ -254,4 +295,5 @@ async function downloadZip() {
 
 </body>
 </html>
+
 
