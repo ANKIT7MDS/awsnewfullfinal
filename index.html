@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>EventLens – अपनी फोटो खोजें</title>
+    <title>EventLens Pro – अपनी फोटो खोजें</title>
 
-    <!-- Tailwind CSS (For Modern Styling) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Lightbox CSS -->
@@ -20,198 +20,287 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #0f172a; /* Dark Slate */
+            background-color: #0f172a; /* Slate 900 */
             color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        /* Smooth Fade In Animation */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
+        /* Smooth Fade In */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
-
-        /* Photo Grid Selection Styles */
+        /* Photo Card Styling */
         .photo-card {
             position: relative;
             aspect-ratio: 1;
             overflow: hidden;
-            border-radius: 12px;
-            transition: transform 0.2s;
+            border-radius: 16px;
             cursor: pointer;
+            transition: all 0.2s;
             border: 2px solid transparent;
+            background: #1e293b;
         }
         
-        .photo-card:active {
-            transform: scale(0.95);
+        .photo-card img {
+            transition: transform 0.4s ease;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
+        /* Selection State */
         .photo-card.selected {
-            border-color: #22c55e; /* Green Border */
+            border-color: #3b82f6; /* Blue Border */
         }
-
+        .photo-card.selected img {
+            transform: scale(1.05);
+            opacity: 0.6;
+        }
         .photo-card.selected::after {
-            content: '\f00c'; /* FontAwesome Check */
+            content: '\f00c'; /* Check Icon */
             font-family: "Font Awesome 6 Free";
             font-weight: 900;
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             font-size: 24px;
             color: white;
-            background: rgba(34, 197, 94, 0.8);
-            width: 40px;
-            height: 40px;
+            background: #3b82f6;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0); }
+            to { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Zoom/View Button on Card */
+        .view-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            font-size: 14px;
+            z-index: 10;
+            transition: transform 0.2s;
         }
+        .view-btn:active { transform: scale(0.9); }
 
-        /* Floating Bottom Bar for Download */
+        /* Bottom Action Bar */
         .bottom-bar {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 16px;
-            border-top: 1px solid #334155;
-            display: none; /* Hidden initially */
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(150%);
+            width: 90%;
+            max-width: 400px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 12px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             z-index: 50;
-            animation: slideUp 0.3s ease-out;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
+        .bottom-bar.show { transform: translateX(-50%) translateY(0); }
+
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideDown 0.3s ease-out;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .toast.success { border-left: 4px solid #22c55e; }
+        .toast.error { border-left: 4px solid #ef4444; }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .loader {
-            border-top-color: #3b82f6;
-            -webkit-animation: spinner 1.5s linear infinite;
-            animation: spinner 1.5s linear infinite;
+        /* Skeleton Loading Animation */
+        .skeleton {
+            background: #1e293b;
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
         }
-        @keyframes spinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
     </style>
 </head>
 
-<body class="bg-slate-900 min-h-screen pb-24">
+<body class="min-h-screen pb-32">
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
     <!-- Header -->
-    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
-        <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-center">
-            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                <i class="fas fa-camera-retro mr-2 text-blue-400"></i>EventLens
+    <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-center relative">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wide">
+                <i class="fas fa-bolt mr-2 text-cyan-400"></i>EventLens
             </h1>
         </div>
     </header>
 
     <main class="max-w-md mx-auto px-4 pt-6 space-y-6">
 
-        <!-- STEP 1: Selfie Upload -->
-        <div id="step1" class="bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-700 fade-in">
-            <h2 class="text-lg font-semibold mb-1 text-center">शुरुआत करें</h2>
-            <p class="text-slate-400 text-xs text-center mb-6">अपनी सेल्फी अपलोड करें ताकि हम आपको खोज सकें</p>
-
-            <label class="block w-full cursor-pointer group">
-                <div class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center transition group-hover:border-blue-500 group-hover:bg-slate-700/50">
-                    <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-3 group-hover:text-blue-400"></i>
-                    <p class="text-sm text-slate-300">यहां क्लिक करें या फोटो खींचें</p>
-                    <input type="file" id="selfieInput" accept="image/*" class="hidden" onchange="previewSelfie(this)" />
+        <!-- STEP 1: Upload -->
+        <div id="step1" class="bg-slate-800/50 rounded-3xl p-6 border border-white/5 fade-in backdrop-blur-sm">
+            <div class="text-center mb-6">
+                <div class="inline-block p-3 rounded-full bg-blue-500/10 mb-3">
+                    <i class="fas fa-camera text-2xl text-blue-400"></i>
                 </div>
-            </label>
-            
-            <!-- Selfie Preview (New Feature) -->
-            <div id="selfiePreviewContainer" class="hidden mt-4 text-center">
-                <img id="selfiePreview" class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-blue-500 shadow-lg" />
+                <h2 class="text-lg font-semibold text-slate-100">अपनी फोटो खोजें</h2>
+                <p class="text-slate-400 text-xs mt-1">AI आपकी शक्ल पहचान कर एल्बम से फोटो निकलेगा</p>
             </div>
 
-            <button onclick="findMatches()" id="searchBtn" class="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-95 flex justify-center items-center">
-                <span id="btnText">फोटो खोजें</span>
-                <div id="btnLoader" class="loader ease-linear rounded-full border-2 border-t-2 border-gray-200 h-5 w-5 ml-2 hidden"></div>
-            </button>
+            <label class="block w-full cursor-pointer group relative overflow-hidden rounded-2xl">
+                <div class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center transition group-hover:border-blue-500 group-hover:bg-slate-700/30">
+                    <div id="uploadPlaceholder">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-3 group-hover:text-blue-400 transition"></i>
+                        <p class="text-sm text-slate-300 font-medium">गैलरी से चुनें या कैमरा खोलें</p>
+                    </div>
+                    <!-- Selfie Preview -->
+                    <img id="selfiePreview" class="hidden w-32 h-32 rounded-full object-cover mx-auto border-4 border-blue-500 shadow-2xl" />
+                </div>
+                <input type="file" id="selfieInput" accept="image/*" class="hidden" onchange="previewSelfie(this)" />
+            </label>
 
-            <div id="matchCount" class="text-center mt-4 text-sm font-medium text-blue-300 h-6"></div>
+            <button onclick="findMatches()" id="searchBtn" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all transform active:scale-95 flex justify-center items-center">
+                <span id="btnText">फोटो ढूंढे</span>
+                <i class="fas fa-arrow-right ml-2" id="btnIcon"></i>
+                <div id="btnLoader" class="hidden w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin ml-2"></div>
+            </button>
         </div>
 
         <!-- STEP 2: Details Form -->
-        <div id="detailsForm" class="hidden bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-700 fade-in">
-            <h2 class="text-lg font-semibold mb-4 text-center">आपकी जानकारी</h2>
+        <div id="detailsForm" class="hidden bg-slate-800/50 rounded-3xl p-6 border border-white/5 fade-in">
+            <h2 class="text-lg font-semibold mb-6 text-center">संपर्क जानकारी</h2>
             
             <div class="space-y-4">
-                <div class="relative">
-                    <i class="fas fa-user absolute left-4 top-4 text-slate-500"></i>
-                    <input type="text" id="guestName" placeholder="आपका पूरा नाम" class="w-full bg-slate-900 text-white border border-slate-700 rounded-xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-blue-500 transition shadow-inner" />
+                <div class="relative group">
+                    <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400 transition"></i>
+                    <input type="text" id="guestName" placeholder="आपका नाम" class="w-full bg-slate-900/80 text-white border border-slate-700 rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" />
                 </div>
                 
-                <div class="relative">
-                    <i class="fas fa-phone absolute left-4 top-4 text-slate-500"></i>
-                    <input type="number" id="guestMobile" placeholder="मोबाइल नंबर" class="w-full bg-slate-900 text-white border border-slate-700 rounded-xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-blue-500 transition shadow-inner" />
+                <div class="relative group">
+                    <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400 transition"></i>
+                    <input type="number" id="guestMobile" placeholder="मोबाइल नंबर" class="w-full bg-slate-900/80 text-white border border-slate-700 rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" />
                 </div>
             </div>
 
-            <button onclick="submitDetails()" class="w-full mt-6 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-95">
-                सबमिट करें और फोटो देखें
+            <button onclick="submitDetails()" class="w-full mt-6 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/30 transition-all transform active:scale-95">
+                देखें और डाउनलोड करें
             </button>
         </div>
 
-        <!-- STEP 3 & 4: Toolbar & Grid -->
+        <!-- STEP 3: Gallery -->
         <div id="gallerySection" class="hidden fade-in">
-            <!-- Toolbar -->
-            <div class="flex justify-between items-center mb-4 px-1">
-                <h3 class="text-slate-200 font-semibold">परिणाम</h3>
-                <div class="space-x-4 text-sm">
-                    <button onclick="selectAll()" class="text-blue-400 hover:text-blue-300 font-medium transition"><i class="fas fa-check-double mr-1"></i>सभी चुनें</button>
-                    <button onclick="clearAll()" class="text-red-400 hover:text-red-300 font-medium transition"><i class="fas fa-times mr-1"></i>हटाएँ</button>
+            <div class="flex justify-between items-end mb-4 px-2">
+                <div>
+                    <h3 class="text-xl font-bold text-white">परिणाम</h3>
+                    <p class="text-xs text-slate-400 mt-1" id="resultsSubtext">फ़ोटो चुनने के लिए टैप करें</p>
+                </div>
+                <div class="flex gap-2">
+                     <button onclick="selectAll()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-blue-400 transition">सभी चुनें</button>
+                     <button onclick="clearAll()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-400 transition">हटाएं</button>
                 </div>
             </div>
 
             <!-- Grid -->
-            <div id="photoGrid" class="grid grid-cols-3 gap-2 sm:gap-4">
-                <!-- Javascript will populate this -->
+            <div id="photoGrid" class="grid grid-cols-3 gap-2">
+                <!-- Javascript populates this -->
             </div>
             
-            <div class="h-20"></div> <!-- Spacer for bottom bar -->
+            <!-- Skeleton Grid (Hidden by default) -->
+            <div id="skeletonGrid" class="hidden grid grid-cols-3 gap-2">
+                <div class="skeleton aspect-square rounded-2xl"></div>
+                <div class="skeleton aspect-square rounded-2xl"></div>
+                <div class="skeleton aspect-square rounded-2xl"></div>
+                <div class="skeleton aspect-square rounded-2xl"></div>
+                <div class="skeleton aspect-square rounded-2xl"></div>
+                <div class="skeleton aspect-square rounded-2xl"></div>
+            </div>
         </div>
 
     </main>
 
-    <!-- STEP 3 (Part 2): Action Buttons (Sticky Bottom Bar) -->
-    <div id="actionButtons" class="bottom-bar flex justify-between items-center gap-4">
-        <div class="text-slate-300 text-sm">
-            <span id="selectedCount">0</span> फोटो चुनी गईं
+    <!-- Floating Bottom Bar -->
+    <div id="actionButtons" class="bottom-bar">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="countBadge">0</div>
+            <span class="text-sm font-medium text-slate-200">फोटो चुनीं</span>
         </div>
-        <button onclick="downloadZip()" class="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center">
-            <i class="fas fa-download mr-2"></i> डाउनलोड ZIP
+        <button onclick="downloadZip()" class="bg-white text-slate-900 hover:bg-slate-200 font-bold py-2.5 px-6 rounded-full text-sm shadow-lg transition-transform active:scale-95 flex items-center">
+            <i class="fas fa-download mr-2"></i> डाउनलोड
         </button>
     </div>
 
-    <!-- LIBRARIES -->
+    <!-- SCRIPTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- Lightbox JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
     <script>
+        // Setup Lightbox options
+        lightbox.option({
+            'resizeDuration': 200,
+            'wrapAround': true,
+            'albumLabel': "फोटो %1 / %2",
+            'fadeDuration': 300,
+            'imageFadeDuration': 300
+        });
+
         const API_SEARCH = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
         const API_SAVE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
         let globalMatches = [];
         let selected = [];
 
-        /* Convert to Base64 */
+        /* UTILS */
         function toBase64(file) {
             return new Promise(res => {
                 let reader = new FileReader();
@@ -220,52 +309,50 @@
             });
         }
 
-        /* Extract linkId */
         function linkId() {
             return new URLSearchParams(window.location.search).get("linkId");
         }
-        
-        /* UI Helper: Preview Selfie */
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            toast.innerHTML = `<i class="fas ${icon} text-lg"></i> <span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         function previewSelfie(input) {
             if (input.files && input.files[0]) {
-                var reader = new FileReader();
+                const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('selfiePreview').src = e.target.result;
-                    document.getElementById('selfiePreviewContainer').classList.remove('hidden');
+                    document.getElementById('selfiePreview').classList.remove('hidden');
+                    document.getElementById('uploadPlaceholder').classList.add('hidden');
                 }
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        /* UI Helper: Toggle Loading State */
-        function setLoading(isLoading) {
-            const btnText = document.getElementById("btnText");
-            const btnLoader = document.getElementById("btnLoader");
-            const btn = document.getElementById("searchBtn");
-            
-            if(isLoading) {
-                btnText.innerText = "खोज रहा है...";
-                btnLoader.classList.remove("hidden");
-                btn.disabled = true;
-                btn.classList.add("opacity-75");
-            } else {
-                btnText.innerText = "फोटो खोजें";
-                btnLoader.classList.add("hidden");
-                btn.disabled = false;
-                btn.classList.remove("opacity-75");
-            }
-        }
-
-        /* STEP 1: Find Matches */
+        /* STEP 1: FIND MATCHES */
         async function findMatches() {
             const file = document.getElementById("selfieInput").files[0];
-            if (!file) return alert("कृपया सेल्फी अपलोड करें!");
+            if (!file) return showToast("कृपया पहले सेल्फी अपलोड करें!", "error");
 
-            setLoading(true);
+            // UI Loading State
+            document.getElementById("btnText").innerText = "खोज रहा है...";
+            document.getElementById("btnIcon").classList.add("hidden");
+            document.getElementById("btnLoader").classList.remove("hidden");
+            document.getElementById("searchBtn").disabled = true;
 
             try {
                 const base64 = await toBase64(file);
-
                 const body = {
                     linkId: linkId(),
                     name: "temp",
@@ -278,47 +365,42 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
                 });
-
                 let data = await res.json();
-
+                
                 globalMatches = data.matches || [];
 
-                const countElem = document.getElementById("matchCount");
                 if (globalMatches.length > 0) {
-                    countElem.innerText = `🎉 ${globalMatches.length} फोटो मिलीं!`;
-                    countElem.className = "text-center mt-4 text-sm font-bold text-emerald-400 h-6";
-                    
-                    // Scroll to next step smoothly
+                    showToast(`🎉 ${globalMatches.length} फोटो मिल गईं!`, "success");
+                    document.getElementById("step1").classList.add("hidden");
                     document.getElementById("detailsForm").classList.remove("hidden");
-                    setTimeout(() => {
-                        document.getElementById("detailsForm").scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
                 } else {
-                    countElem.innerText = "❌ कोई फोटो नहीं मिली, कृपया दूसरी फोटो प्रयास करें।";
-                    countElem.className = "text-center mt-4 text-sm font-bold text-red-400 h-6";
+                    showToast("कोई फोटो नहीं मिली। दूसरी सेल्फी लें।", "error");
+                    // Reset button
+                    document.getElementById("btnText").innerText = "फिर से कोशिश करें";
+                    document.getElementById("btnIcon").classList.remove("hidden");
+                    document.getElementById("btnLoader").classList.add("hidden");
+                    document.getElementById("searchBtn").disabled = false;
                 }
 
             } catch (error) {
-                alert("कुछ गलती हुई, कृपया दोबारा प्रयास करें।");
                 console.error(error);
-            } finally {
-                setLoading(false);
+                showToast("सर्वर एरर, कृपया बाद में प्रयास करें", "error");
+                document.getElementById("searchBtn").disabled = false;
             }
         }
 
-        /* STEP 2: Submit Details */
+        /* STEP 2: SUBMIT DETAILS */
         async function submitDetails() {
             let name = document.getElementById("guestName").value.trim();
             let mobile = document.getElementById("guestMobile").value.trim();
 
-            if (!name || !mobile) return alert("कृपया नाम और मोबाइल नंबर भरें!");
+            if (!name || !mobile) return showToast("नाम और नंबर भरना ज़रूरी है!", "error");
 
-            // Show simple loading feedback on button text (optional)
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "कृपया प्रतीक्षा करें...";
-            btn.disabled = true;
-
+            // Hide form and show Skeleton Loader
+            document.getElementById("detailsForm").classList.add("hidden");
+            document.getElementById("gallerySection").classList.remove("hidden");
+            document.getElementById("skeletonGrid").classList.remove("hidden");
+            
             try {
                 const body = {
                     linkId: linkId(),
@@ -327,51 +409,57 @@
                     selfie_image: "skip"
                 };
 
-                await fetch(API_SAVE, {
+                // Saving details in background, don't block UI too long
+                fetch(API_SAVE, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body)
                 });
 
-                document.getElementById("detailsForm").classList.add("hidden"); // Hide form to save space
-                document.getElementById("step1").classList.add("hidden"); // Hide upload to save space
-                
-                showPhotos(globalMatches);
-                
-                document.getElementById("gallerySection").classList.remove("hidden");
-                document.getElementById("actionButtons").style.display = "flex"; // Show sticky footer
-                
+                // Simulate a slight delay for smooth transition (optional)
+                setTimeout(() => {
+                    document.getElementById("skeletonGrid").classList.add("hidden");
+                    showPhotos(globalMatches);
+                }, 800);
+
             } catch (error) {
-                alert("Error submitting details");
-                btn.innerText = originalText;
-                btn.disabled = false;
+                showToast("विवरण सेव नहीं हो सका", "error");
             }
         }
 
-        /* SHOW PHOTOS */
+        /* GALLERY LOGIC */
         function showPhotos(list) {
             let grid = document.getElementById("photoGrid");
             grid.innerHTML = "";
+            document.getElementById("resultsSubtext").innerText = `${list.length} फोटो मिलीं`;
 
-            list.forEach(photo => {
-                // Card Container
+            list.forEach((photo, index) => {
+                // Card
                 let box = document.createElement("div");
                 box.className = "photo-card bg-slate-800";
-                box.id = `box-${photo.url}`; // Unique ID for referencing
+                box.onclick = () => togglePhoto(photo, box);
 
                 // Image
                 let img = document.createElement("img");
                 img.src = photo.url;
-                img.className = "w-full h-full object-cover";
-                // Lightbox integration disabled on click because click selects the photo now
-                // but we can keep lightbox attribute if we want a separate view button.
-                // For this flow, user wants to SELECT to download.
+                img.loading = "lazy";
                 
+                // Zoom/View Button (Eye Icon)
+                // IMP: data-lightbox links all images to same group 'gallery' for sliding
+                let viewBtn = document.createElement("a");
+                viewBtn.href = photo.url;
+                viewBtn.setAttribute("data-lightbox", "gallery");
+                viewBtn.setAttribute("data-title", "फोटो " + (index + 1));
+                viewBtn.className = "view-btn";
+                viewBtn.innerHTML = '<i class="fas fa-expand-alt"></i>';
+                
+                // Prevent selection when clicking view button
+                viewBtn.onclick = (e) => {
+                    e.stopPropagation(); 
+                };
+
                 box.appendChild(img);
-
-                // Click event to toggle selection
-                box.onclick = () => togglePhoto(photo, box);
-
+                box.appendChild(viewBtn);
                 grid.appendChild(box);
             });
             updateSelectionUI();
@@ -379,13 +467,10 @@
 
         function togglePhoto(photo, boxElement) {
             const index = selected.findIndex(p => p.url === photo.url);
-            
             if (index > -1) {
-                // Already selected, remove it
                 selected.splice(index, 1);
                 boxElement.classList.remove("selected");
             } else {
-                // Add to selection
                 selected.push(photo);
                 boxElement.classList.add("selected");
             }
@@ -396,6 +481,7 @@
             selected = [...globalMatches];
             document.querySelectorAll(".photo-card").forEach(box => box.classList.add("selected"));
             updateSelectionUI();
+            showToast("सभी फोटो चुन ली गईं");
         }
 
         function clearAll() {
@@ -403,45 +489,53 @@
             document.querySelectorAll(".photo-card").forEach(box => box.classList.remove("selected"));
             updateSelectionUI();
         }
-        
+
         function updateSelectionUI() {
-            document.getElementById("selectedCount").innerText = selected.length;
-            const actionBtn = document.getElementById("actionButtons");
+            const count = selected.length;
+            document.getElementById("countBadge").innerText = count;
             
-            // Auto hide/show bottom bar based on selection (Optional, currently set to always show if details submitted)
-            // if(selected.length > 0) actionBtn.style.display = "flex";
+            const bar = document.getElementById("actionButtons");
+            if (count > 0) {
+                bar.classList.add("show");
+            } else {
+                bar.classList.remove("show");
+            }
         }
 
-        /* ZIP DOWNLOAD */
+        /* DOWNLOAD ZIP */
         async function downloadZip() {
-            if (selected.length === 0) return alert("कृपया कम से कम एक फोटो चुनें!");
+            if (selected.length === 0) return;
 
             const btn = document.querySelector("#actionButtons button");
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> डाउनलोड हो रहा है...`;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> लोड हो रहा है`;
             btn.disabled = true;
 
             try {
                 const zip = new JSZip();
-                const folder = zip.folder("photos");
+                const folder = zip.folder("EventLens_Photos");
 
+                // Download one by one
                 for (let i = 0; i < selected.length; i++) {
-                    // Fetch through a proxy or directly if CORS allows. Assuming standard fetch works here based on your code.
                     const blob = await fetch(selected[i].url).then(r => r.blob());
-                    folder.file(`EventLens_Photo_${i + 1}.jpg`, blob);
+                    folder.file(`Photo_${i + 1}.jpg`, blob);
                 }
 
                 const content = await zip.generateAsync({ type: "blob" });
-                saveAs(content, "EventLens_Photos.zip");
+                saveAs(content, "EventLens_Memories.zip");
+                showToast("डाउनलोड शुरू हो गया है! 📥");
+                
+                // Reset selection after download
+                clearAll();
+
             } catch (e) {
-                alert("Download Failed. Try again.");
                 console.error(e);
+                showToast("डाउनलोड फेल हो गया", "error");
             } finally {
-                btn.innerHTML = originalText;
+                btn.innerHTML = originalContent;
                 btn.disabled = false;
             }
         }
     </script>
-
 </body>
 </html>
