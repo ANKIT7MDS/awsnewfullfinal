@@ -396,13 +396,21 @@
 
   // --- 2. API CALL ---
   document.getElementById('searchBtn').addEventListener('click', async () => {
+    // 1. Validation for Selfie
     if(!selfieBase64) return alert("Please upload a selfie first.");
     
-    document.getElementById('loadingText').innerText = "Scanning faces with AI... Please wait...";
-    document.getElementById('searchBtn').disabled = true;
-
+    // 2. Validation for LinkID
     const params = new URLSearchParams(window.location.search);
     const linkId = params.get('linkId');
+    if (!linkId) {
+      alert("Error: Link ID missing! Please open the correct link (e.g. ?linkId=123)");
+      return;
+    }
+
+    // UI Loading State
+    document.getElementById('loadingText').innerText = "Scanning faces with AI... Please wait...";
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true;
 
     try {
       const res = await fetch(SEARCH_API, {
@@ -410,7 +418,19 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ linkId: linkId, selfie_image: selfieBase64 })
       });
+      
+      // 3. Handle API Errors Explicitly
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Server Error");
+      }
+
       const data = await res.json();
+      
+      // Check for logical error in response body
+      if (data.error) {
+        throw new Error(data.error);
+      }
       
       allPhotos = data.matches || [];
       filteredPhotos = [...allPhotos];
@@ -421,9 +441,12 @@
       document.getElementById('step2').style.display = 'block';
 
     } catch(err) {
-      alert("Error finding photos.");
       console.error(err);
-      document.getElementById('searchBtn').disabled = false;
+      alert("Failed to find photos: " + err.message);
+    } finally {
+      // Always re-enable button and clear text
+      btn.disabled = false;
+      document.getElementById('loadingText').innerText = "";
     }
   });
 
