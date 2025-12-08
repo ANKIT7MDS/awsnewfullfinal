@@ -281,21 +281,30 @@
     <!-- SCRIPTS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <!-- jQuery (Added this to fix the error) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
     <!-- Lightbox JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
     <script>
-        // Setup Lightbox options
-        lightbox.option({
-            'resizeDuration': 200,
-            'wrapAround': true,
-            'albumLabel': "फोटो %1 / %2",
-            'fadeDuration': 300,
-            'imageFadeDuration': 300
-        });
-
+        // API Constants defined FIRST to avoid ReferenceError
         const API_SEARCH = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
         const API_SAVE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
+
+        // Lightbox Init (Wrapped in try-catch to not break the app if it fails)
+        try {
+            lightbox.option({
+                'resizeDuration': 200,
+                'wrapAround': true,
+                'albumLabel': "फोटो %1 / %2",
+                'fadeDuration': 300,
+                'imageFadeDuration': 300
+            });
+        } catch (e) {
+            console.warn("Lightbox init failed (possibly jQuery missing or loaded late). Zoom might not work.", e);
+        }
 
         let globalMatches = [];
         let selected = [];
