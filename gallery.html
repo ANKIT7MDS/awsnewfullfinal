@@ -1,83 +1,816 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>EventLens Gallery</title>
+  <meta charset="UTF-8" />
+  <title>EventLens – Smart Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css"/>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- Lightbox -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" />
 
-<style>
-    body { background: black; color: white; text-align: center; font-family: Arial; }
-    h1 { margin-top: 20px; }
-
-    .grid-container { 
-        display: flex; 
-        flex-wrap: wrap; 
-        justify-content: center;
-        padding: 20px;
+  <style>
+    :root {
+      --bg: #050505;
+      --panel: #111;
+      --panel-soft: #151515;
+      --card: #181818;
+      --border: #2c2c2c;
+      --accent: #4dabf7;
+      --accent-soft: rgba(77, 171, 247, 0.12);
+      --text: #f8f9fa;
+      --muted: #adb5bd;
+      --danger: #ff6b6b;
+      --good: #51cf66;
+      --chip-bg: #202020;
+      --chip-active: #4dabf7;
     }
 
-    .photo-box {
-        width: 260px;
-        height: 260px;
-        margin: 10px;
-        border-radius: 10px;
-        overflow: hidden;
-        border: 3px solid #00ff66;
+    * {
+      box-sizing: border-box;
     }
 
-    .photo-box img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #111 0, #000 55%);
+      color: var(--text);
+      font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
     }
-</style>
 
+    .page {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 16px 12px 40px;
+    }
+
+    /* HEADER */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 30% 0%, #ff922b 0, #f76707 25%, #d9480f 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 14px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-text-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .brand-text-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .pill {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 4px 10px;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    .pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--good);
+    }
+
+    /* FILTER BAR WRAPPER */
+    .filters-wrapper {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.6));
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 10px 12px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+      margin-bottom: 18px;
+    }
+
+    .filters-top-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 160px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--panel);
+      border-radius: 999px;
+      padding: 6px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .search-icon {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    .select {
+      background: var(--panel);
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 6px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .filters-bottom-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--chip-bg);
+      font-size: 11px;
+      color: var(--muted);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .chip span {
+      font-size: 13px;
+    }
+
+    .chip-active {
+      background: var(--chip-active);
+      color: #fff;
+      border-color: var(--chip-active);
+    }
+
+    .chip-people-avatar {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #845ef7, #9775fa);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #fff;
+    }
+
+    .chip-tag {
+      background: rgba(77, 171, 247, 0.14);
+      border-color: rgba(77, 171, 247, 0.5);
+      color: #e7f5ff;
+    }
+
+    .chip-emotion {
+      background: rgba(255, 214, 102, 0.12);
+      border-color: rgba(255, 214, 102, 0.4);
+    }
+
+    /* STATS */
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stats-left {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .stats-badge {
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    /* MASONRY GRID */
+    .gallery-shell {
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 18px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .masonry-grid {
+      column-count: 4;
+      column-gap: 8px;
+    }
+
+    @media (max-width: 1100px) {
+      .masonry-grid {
+        column-count: 3;
+      }
+    }
+    @media (max-width: 800px) {
+      .masonry-grid {
+        column-count: 2;
+      }
+      .filters-wrapper {
+        border-radius: 14px;
+      }
+    }
+    @media (max-width: 520px) {
+      .masonry-grid {
+        column-count: 2;
+      }
+    }
+
+    .masonry-item {
+      margin-bottom: 8px;
+      break-inside: avoid;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #111;
+      cursor: zoom-in;
+    }
+
+    .masonry-img {
+      width: 100%;
+      display: block;
+      border-radius: 10px;
+      transition: transform 0.25s ease, filter 0.25s ease;
+    }
+
+    .masonry-item:hover .masonry-img {
+      transform: scale(1.03);
+      filter: brightness(1.05);
+    }
+
+    .masonry-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent 45%);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      display: flex;
+      align-items: flex-end;
+      padding: 8px;
+    }
+
+    .masonry-item:hover .masonry-overlay {
+      opacity: 1;
+    }
+
+    .overlay-text {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .overlay-chipline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .overlay-tag {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .empty-icon {
+      font-size: 26px;
+      display: inline-block;
+      margin-bottom: 8px;
+      opacity: 0.9;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.85);
+      border-radius: 999px;
+      padding: 8px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 12px;
+      color: var(--text);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+    }
+
+    .toast-show {
+      display: inline-flex;
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="page">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-logo">EL</div>
+        <div class="brand-text">
+          <span class="brand-text-title">EventLens Gallery</span>
+          <span class="brand-text-sub" id="collectionLabel">कलेक्शन लोड हो रहा है...</span>
+        </div>
+      </div>
 
-<h1>Event Gallery</h1>
-<h3 id="photoCount"></h3>
+      <div class="header-right">
+        <div class="pill">
+          <div class="pill-dot"></div>
+          <span id="headerStats">0 फोटो</span>
+        </div>
+      </div>
+    </header>
 
-<div id="galleryGrid" class="grid-container"></div>
+    <!-- FILTERS -->
+    <section class="filters-wrapper">
+      <div class="filters-top-row">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="AI टैग, टेक्स्ट या कुछ भी टाइप करें (जैसे 'stage', 'haldi', 'welcome')"
+          />
+        </div>
 
-<script>
-const API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/get-photos";
+        <select id="qualitySelect" class="select">
+          <option value="all">Quality: All</option>
+          <option value="best">Best Only (Q ≥ 80)</option>
+          <option value="good">Good & Best (Q ≥ 60)</option>
+        </select>
 
-function getCollectionId() {
-    return new URLSearchParams(window.location.search).get("collection_id");
-}
+        <select id="sortSelect" class="select">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+        </select>
+      </div>
 
-async function loadGallery() {
-    const res = await fetch(API, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ collection_id: getCollectionId() })
-    });
+      <div class="filters-bottom-row">
+        <!-- Dynamic chips render होंगे -->
+        <div id="tagChips"></div>
+        <div id="emotionChips"></div>
+        <div id="peopleChips"></div>
+      </div>
+    </section>
 
-    const data = await res.json();
-    const photos = data.photos || [];
+    <!-- STATS BAR -->
+    <section class="stats-row">
+      <div class="stats-left">
+        <span class="stats-badge" id="visibleCountLabel">0 फोटो दिख रही हैं</span>
+        <span class="stats-badge" id="activeFiltersLabel">कोई फ़िल्टर सक्रिय नहीं</span>
+      </div>
+    </section>
 
-    document.getElementById("photoCount").innerText = `${photos.length} फोटो`;
+    <!-- GALLERY -->
+    <section class="gallery-shell">
+      <div id="masonryGrid" class="masonry-grid"></div>
+      <div id="emptyState" class="empty-state" style="display:none;">
+        <div class="empty-icon">🌓</div>
+        <div>कोई फोटो आपके चुने हुए फ़िल्टर से मैच नहीं कर रही।</div>
+        <div>ऊपर से फ़िल्टर रीसेट करें या सर्च खाली करें।</div>
+      </div>
+    </section>
+  </div>
 
-    const grid = document.getElementById("galleryGrid");
-    photos.forEach(p => {
-        let box = document.createElement("div");
-        box.className = "photo-box";
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
 
-        let img = document.createElement("img");
+  <!-- Lightbox JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+
+  <script>
+    // ==== CONFIG (YAHAN API URL भरो) ====
+    const GALLERY_API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/get-photos-for-gallery";
+    // ↑ ऊपर अपने API Gateway का सही path लगा देना
+
+    let allPhotos = [];
+    let filteredPhotos = [];
+
+    let filters = {
+      search: "",
+      quality: "all",
+      sort: "newest",
+      tag: null,
+      emotion: null,
+      person: null
+    };
+
+    let uniqueTags = [];
+    let uniqueEmotions = [];
+    let peopleList = []; // { personId, faceId, count }
+
+    function showToast(message, timeout = 2500) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("toast-show");
+      setTimeout(() => {
+        toast.classList.remove("toast-show");
+      }, timeout);
+    }
+
+    function getCollectionId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("collection_id");
+    }
+
+    async function fetchPhotos() {
+      const collectionId = getCollectionId();
+      if (!collectionId) {
+        showToast("collection_id URL में नहीं मिला");
+        document.getElementById("collectionLabel").textContent = "कोई कलेक्शन नहीं मिला";
+        return;
+      }
+
+      try {
+        document.getElementById("collectionLabel").textContent = `कलेक्शन: ${collectionId.substring(0, 8)}…`;
+
+        const res = await fetch(GALLERY_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ collection_id: collectionId })
+        });
+
+        const data = await res.json();
+        const photos = data.photos || data.Items || [];
+
+        allPhotos = photos;
+        document.getElementById("headerStats").textContent = `${allPhotos.length} फोटो`;
+
+        buildDerivedData();
+        applyFilters();
+      } catch (err) {
+        console.error(err);
+        showToast("फोटो लोड करने में त्रुटि");
+      }
+    }
+
+    function buildDerivedData() {
+      const tagSet = new Set();
+      const emotionSet = new Set();
+      const faceMap = new Map(); // faceId -> count
+
+      allPhotos.forEach((p) => {
+        if (Array.isArray(p.ai_tags)) {
+          p.ai_tags.forEach((t) => tagSet.add(t));
+        }
+        if (Array.isArray(p.emotions)) {
+          p.emotions.forEach((e) => emotionSet.add(e));
+        }
+        if (Array.isArray(p.face_ids)) {
+          p.face_ids.forEach((fid) => {
+            faceMap.set(fid, (faceMap.get(fid) || 0) + 1);
+          });
+        }
+      });
+
+      uniqueTags = Array.from(tagSet).sort();
+      uniqueEmotions = Array.from(emotionSet).sort();
+      peopleList = Array.from(faceMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([faceId, count], idx) => ({
+          personId: `P${idx + 1}`,
+          faceId,
+          count
+        }));
+
+      renderFilterChips();
+    }
+
+    function renderFilterChips() {
+      const tagChipsEl = document.getElementById("tagChips");
+      const emotionChipsEl = document.getElementById("emotionChips");
+      const peopleChipsEl = document.getElementById("peopleChips");
+
+      tagChipsEl.innerHTML = "";
+      emotionChipsEl.innerHTML = "";
+      peopleChipsEl.innerHTML = "";
+
+      if (uniqueTags.length > 0) {
+        const label = document.createElement("span");
+        label.textContent = "Tags:";
+        label.style.fontSize = "11px";
+        label.style.color = "var(--muted)";
+        label.style.marginRight = "4px";
+        tagChipsEl.appendChild(label);
+      }
+
+      uniqueTags.slice(0, 12).forEach((tag) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip chip-tag";
+        chip.textContent = tag;
+        if (filters.tag === tag) chip.classList.add("chip-active");
+        chip.onclick = () => {
+          filters.tag = filters.tag === tag ? null : tag;
+          applyFilters();
+        };
+        tagChipsEl.appendChild(chip);
+      });
+
+      if (uniqueEmotions.length > 0) {
+        const label = document.createElement("span");
+        label.textContent = "Mood:";
+        label.style.fontSize = "11px";
+        label.style.color = "var(--muted)";
+        label.style.marginRight = "4px";
+        emotionChipsEl.appendChild(label);
+      }
+
+      uniqueEmotions.forEach((emo) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip chip-emotion";
+        chip.textContent = emo;
+        if (filters.emotion === emo) chip.classList.add("chip-active");
+        chip.onclick = () => {
+          filters.emotion = filters.emotion === emo ? null : emo;
+          applyFilters();
+        };
+        emotionChipsEl.appendChild(chip);
+      });
+
+      if (peopleList.length > 0) {
+        const label = document.createElement("span");
+        label.textContent = "People:";
+        label.style.fontSize = "11px";
+        label.style.color = "var(--muted)";
+        label.style.marginRight = "4px";
+        peopleChipsEl.appendChild(label);
+
+        peopleList.slice(0, 8).forEach((p, idx) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "chip";
+          if (filters.person === p.faceId) chip.classList.add("chip-active");
+
+          const avatar = document.createElement("span");
+          avatar.className = "chip-people-avatar";
+          avatar.textContent = idx + 1;
+
+          const labelSpan = document.createElement("span");
+          labelSpan.textContent = `Person ${idx + 1} (${p.count})`;
+          chip.appendChild(avatar);
+          chip.appendChild(labelSpan);
+
+          chip.onclick = () => {
+            filters.person = filters.person === p.faceId ? null : p.faceId;
+            applyFilters();
+          };
+
+          peopleChipsEl.appendChild(chip);
+        });
+      }
+    }
+
+    function applyFilters() {
+      const search = filters.search.trim().toLowerCase();
+      let out = [...allPhotos];
+
+      // Quality filter
+      out = out.filter((p) => {
+        const q = typeof p.quality_score === "number" ? p.quality_score : parseFloat(p.quality_score || 0);
+        if (filters.quality === "best") {
+          return q >= 80;
+        } else if (filters.quality === "good") {
+          return q >= 60;
+        }
+        return true;
+      });
+
+      // Tag filter
+      if (filters.tag) {
+        out = out.filter((p) => Array.isArray(p.ai_tags) && p.ai_tags.includes(filters.tag));
+      }
+
+      // Emotion
+      if (filters.emotion) {
+        out = out.filter((p) => Array.isArray(p.emotions) && p.emotions.includes(filters.emotion));
+      }
+
+      // Person / face
+      if (filters.person) {
+        out = out.filter((p) => Array.isArray(p.face_ids) && p.face_ids.includes(filters.person));
+      }
+
+      // Search (in tags + detected_text + maybe filename)
+      if (search) {
+        out = out.filter((p) => {
+          let haystack = "";
+          if (Array.isArray(p.ai_tags)) haystack += " " + p.ai_tags.join(" ");
+          if (Array.isArray(p.detected_text)) haystack += " " + p.detected_text.join(" ");
+          if (p.photo_id) haystack += " " + p.photo_id;
+          return haystack.toLowerCase().includes(search);
+        });
+      }
+
+      // Sort
+      out.sort((a, b) => {
+        const da = new Date(a.created_at || a.createdAt || 0).getTime();
+        const db = new Date(b.created_at || b.createdAt || 0).getTime();
+        if (filters.sort === "newest") return db - da;
+        return da - db;
+      });
+
+      filteredPhotos = out;
+      renderStats();
+      renderGrid();
+      renderFilterChips(); // active-states refresh
+    }
+
+    function renderStats() {
+      const visibleCountLabel = document.getElementById("visibleCountLabel");
+      const activeFiltersLabel = document.getElementById("activeFiltersLabel");
+
+      visibleCountLabel.textContent = `${filteredPhotos.length} फोटो दिख रही हैं`;
+
+      const active = [];
+      if (filters.tag) active.push(`Tag: ${filters.tag}`);
+      if (filters.emotion) active.push(`Mood: ${filters.emotion}`);
+      if (filters.person) active.push(`Person filter`);
+      if (filters.search) active.push(`Search: "${filters.search}"`);
+      if (filters.quality === "best") active.push("Best Only");
+      if (filters.quality === "good") active.push("Good+Best");
+
+      activeFiltersLabel.textContent =
+        active.length > 0 ? active.join(" • ") : "कोई फ़िल्टर सक्रिय नहीं";
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById("masonryGrid");
+      const emptyState = document.getElementById("emptyState");
+      grid.innerHTML = "";
+
+      if (filteredPhotos.length === 0) {
+        emptyState.style.display = "block";
+        return;
+      } else {
+        emptyState.style.display = "none";
+      }
+
+      filteredPhotos.forEach((p, idx) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "masonry-item";
+
+        const link = document.createElement("a");
+        link.href = p.url;
+        link.setAttribute("data-lightbox", "event-gallery");
+        const created = p.created_at || p.createdAt || "";
+        link.setAttribute("data-title", created ? new Date(created).toLocaleString("hi-IN") : "");
+
+        const img = document.createElement("img");
         img.src = p.url;
-        img.setAttribute("data-lightbox", "gallery");
+        img.loading = "lazy";
+        img.className = "masonry-img";
+        link.appendChild(img);
 
-        box.appendChild(img);
-        grid.appendChild(box);
+        const overlay = document.createElement("div");
+        overlay.className = "masonry-overlay";
+
+        const overlayText = document.createElement("div");
+        overlayText.className = "overlay-text";
+
+        const dateLabel = document.createElement("div");
+        dateLabel.textContent = created
+          ? new Date(created).toLocaleDateString("hi-IN", { day: "2-digit", month: "short", year: "numeric" })
+          : "—";
+        overlayText.appendChild(dateLabel);
+
+        const chipline = document.createElement("div");
+        chipline.className = "overlay-chipline";
+
+        const q = typeof p.quality_score === "number" ? p.quality_score : parseFloat(p.quality_score || 0);
+        if (!Number.isNaN(q)) {
+          const qChip = document.createElement("span");
+          qChip.className = "overlay-tag";
+          qChip.textContent = q >= 80 ? `⭐ Best (${q})` : `Q: ${q}`;
+          chipline.appendChild(qChip);
+        }
+
+        if (Array.isArray(p.ai_tags) && p.ai_tags.length > 0) {
+          p.ai_tags.slice(0, 2).forEach((t) => {
+            const tChip = document.createElement("span");
+            tChip.className = "overlay-tag";
+            tChip.textContent = t;
+            chipline.appendChild(tChip);
+          });
+        }
+
+        overlayText.appendChild(chipline);
+        overlay.appendChild(overlayText);
+
+        wrapper.appendChild(link);
+        wrapper.appendChild(overlay);
+
+        grid.appendChild(wrapper);
+      });
+    }
+
+    // EVENT LISTENERS
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      filters.search = e.target.value;
+      applyFilters();
     });
-}
 
-loadGallery();
-</script>
+    document.getElementById("qualitySelect").addEventListener("change", (e) => {
+      filters.quality = e.target.value;
+      applyFilters();
+    });
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    document.getElementById("sortSelect").addEventListener("change", (e) => {
+      filters.sort = e.target.value;
+      applyFilters();
+    });
+
+    // INIT
+    fetchPhotos();
+  </script>
 </body>
 </html>
