@@ -1,113 +1,111 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>EventLens – अपनी फोटो खोजें</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css"/>
+<!-- Lightbox -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" />
 
 <style>
-    body {
-        background: #000;
-        color: #fff;
-        font-family: 'Poppins', sans-serif;
-        padding: 20px;
-        text-align: center;
-    }
+body {
+    background: #000;
+    color: #fff;
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    text-align: center;
+}
 
-    h1 {
-        margin-top: 20px;
-        font-size: 32px;
-        font-weight: 600;
-    }
+/* HEADER */
+h1 {
+    margin-top: 25px;
+    font-size: 30px;
+    font-weight: bold;
+}
 
-    .section {
-        display: none;
-    }
+/* MAIN CARD */
+.card {
+    background: #111;
+    width: 92%;
+    max-width: 450px;
+    margin: 18px auto;
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid #222;
+}
 
-    .active {
-        display: block;
-    }
+/* INPUTS */
+input[type="file"],
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    margin-top: 10px;
+    font-size: 16px;
+    background: #222;
+    color: #fff;
+}
 
-    .btn {
-        background: linear-gradient(45deg, #ffb300, #ff7a00);
-        padding: 14px 28px;
-        font-size: 20px;
-        border-radius: 10px;
-        border: none;
-        cursor: pointer;
-        margin-top: 15px;
-        color: #000;
-        font-weight: bold;
-    }
+button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 16px;
+    font-size: 18px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
 
-    .btn-green {
-        background: #00ff6e;
-    }
+/* Button Colors */
+.btn-green { background: #00c853; }
+.btn-blue { background: #2196f3; }
+.btn-orange { background: #ff9800; }
+.btn-red { background: #e53935; }
+.btn-dark { background: #333; }
 
-    .btn-block {
-        width: 90%;
-        max-width: 360px;
-    }
+/* Hidden Sections */
+.hidden { display: none; }
 
-    input {
-        width: 90%;
-        max-width: 360px;
-        padding: 12px;
-        border-radius: 10px;
-        margin-top: 10px;
-        background: #111;
-        border: 1px solid #444;
-        color: white;
-        font-size: 16px;
-    }
+/* GRID */
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 15px;
+}
 
-    #previewImg {
-        margin-top: 15px;
-        max-width: 260px;
-        border-radius: 12px;
-        display: none;
-        border: 2px solid #ffb300;
-    }
+.photo-box {
+    width: 150px;
+    height: 150px;
+    margin: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #00c853;
+    cursor: pointer;
+}
 
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-        gap: 14px;
-        margin-top: 20px;
-    }
+.photo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
-    .card {
-        border: 3px solid #ffb300;
-        border-radius: 10px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .event-badge {
-        position: absolute;
-        bottom: 8px;
-        left: 8px;
-        padding: 4px 10px;
-        background: rgba(0,0,0,0.6);
-        border-radius: 6px;
-        font-size: 12px;
-        border: 1px solid #ffb300;
-    }
-
-    .tick {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        font-size: 20px;
-        background: #00eaff;
-        padding: 6px 10px;
-        border-radius: 50%;
-        display: none;
-    }
-
+/* Tick */
+.tick {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #00c6ff;
+    padding: 5px 9px;
+    border-radius: 50%;
+    font-size: 16px;
+    display: none;
+}
 </style>
 </head>
 
@@ -115,210 +113,180 @@ href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.c
 
 <h1>EventLens – अपनी फोटो खोजें</h1>
 
-<!-- STEP 1: SELFIE ONLY -->
-<div id="step1" class="section active">
-    <button class="btn btn-block" onclick="pickFile()">सेल्फी अपलोड करें</button>
-    <button class="btn btn-block" onclick="openCamera()">कैमरा खोलें</button>
+<!-- STEP 1: Selfie Upload -->
+<div class="card" id="step1">
+    <h2>अपनी सेल्फी अपलोड करें</h2>
 
-    <input type="file" id="selfieInput" accept="image/*" style="display:none">
-    <img id="previewImg">
+    <input type="file" id="selfieInput" accept="image/*" />
 
-    <button class="btn btn-green btn-block" onclick="startSearch()">फोटो खोजें</button>
+    <button class="btn-green" onclick="findMatches()">फोटो खोजें</button>
+
+    <h3 id="matchCount"></h3>
 </div>
 
+<!-- STEP 2: Details Form -->
+<div class="card hidden" id="detailsForm">
+    <h2>अपनी जानकारी भरें</h2>
 
-<!-- STEP 2: SHOW MATCH COUNT + ASK DETAILS -->
-<div id="step2" class="section">
-    <h2 id="matchCount"></h2>
-    <p>अपनी पहचान सत्यापित करने के लिए विवरण भरें</p>
+    <input type="text" id="guestName" placeholder="आपका नाम" />
+    <input type="number" id="guestMobile" placeholder="मोबाइल नंबर" />
 
-    <input id="guestName" placeholder="आपका नाम">
-    <input id="guestMobile" placeholder="मोबाइल नंबर">
-
-    <button class="btn btn-green btn-block" onclick="submitDetails()">जारी रखें</button>
+    <button class="btn-blue" onclick="submitDetails()">सबमिट करें और फोटो देखें</button>
 </div>
 
-
-<!-- STEP 3: SHOW PHOTOS -->
-<div id="step3" class="section">
-    <h2 id="resultTitle"></h2>
-
-    <button class="btn" onclick="selectAll()">सभी चुनें</button>
-    <button class="btn" onclick="clearAll()">साफ़ करें</button>
-
-    <div class="grid" id="photoGrid"></div>
-
-    <button class="btn btn-green" onclick="downloadZip()">ZIP डाउनलोड</button>
+<!-- STEP 3: Action Buttons -->
+<div class="card hidden" id="actionButtons">
+    <button class="btn-green" onclick="selectAll()">सभी चुनें</button>
+    <button class="btn-red" onclick="clearAll()">सब हटाएँ</button>
+    <button class="btn-orange" onclick="downloadZip()">ZIP डाउनलोड</button>
 </div>
 
+<!-- STEP 4: Photos Grid -->
+<div id="photoGrid" class="grid"></div>
 
-
-
+<!-- LIBRARIES -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
 <script>
-let selfieBase64 = "";
-let tempMatches = [];
-let finalPhotos = [];
-const apiURL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
+const API_SEARCH = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
+const API_SAVE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
-function pickFile() {
-    document.getElementById("selfieInput").click();
+let globalMatches = [];
+let selected = [];
+
+/* Convert to Base64 */
+function toBase64(file) {
+    return new Promise(res => {
+        let reader = new FileReader();
+        reader.onload = () => res(reader.result);
+        reader.readAsDataURL(file);
+    });
 }
 
-function openCamera() {
-    document.getElementById("selfieInput").setAttribute("capture", "camera");
-    document.getElementById("selfieInput").click();
-}
-
-document.getElementById("selfieInput").addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        selfieBase64 = ev.target.result;
-        previewImg.src = selfieBase64;
-        previewImg.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-});
-
-function getLinkId() {
+/* Extract linkId */
+function linkId() {
     return new URLSearchParams(window.location.search).get("linkId");
 }
 
-async function startSearch() {
-    if (!selfieBase64) {
-        alert("कृपया सेल्फी अपलोड करें");
-        return;
-    }
+/* STEP 1: Find Matches */
+async function findMatches() {
+    const file = document.getElementById("selfieInput").files[0];
+    if (!file) return alert("कृपया सेल्फी अपलोड करें!");
 
-    // Step 1 → Step 2
-    document.getElementById("step1").classList.remove("active");
-    document.getElementById("step2").classList.add("active");
+    const base64 = await toBase64(file);
 
-    // SEARCH only, but don’t show photos yet
-    const res = await fetch(apiURL, {
+    const body = {
+        linkId: linkId(),
+        name: "temp",
+        mobile: "temp",
+        selfie_image: base64
+    };
+
+    let res = await fetch(API_SEARCH, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            linkId: getLinkId(),
-            name: "temp",
-            mobile: "temp",
-            selfie_image: selfieBase64
-        })
+        body: JSON.stringify(body)
     });
 
-    const data = await res.json();
-    tempMatches = data.matches || [];
+    let data = await res.json();
+
+    globalMatches = data.matches || [];
 
     document.getElementById("matchCount").innerText =
-        `${tempMatches.length} फोटो मिलीं!`;
+        globalMatches.length ? `${globalMatches.length} फोटो मिलीं!` : "❌ कोई फोटो नहीं मिली!";
+
+    if (globalMatches.length > 0) {
+        document.getElementById("detailsForm").classList.remove("hidden");
+    }
 }
 
+/* STEP 2: Submit Details */
 async function submitDetails() {
-    const name = guestName.value.trim();
-    const mobile = guestMobile.value.trim();
-    if (!name || !mobile) {
-        alert("कृपया नाम और मोबाइल भरें");
-        return;
-    }
+    let name = document.getElementById("guestName").value.trim();
+    let mobile = document.getElementById("guestMobile").value.trim();
 
-    // Now call again with real details
-    const res = await fetch(apiURL, {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-            linkId: getLinkId(),
-            name,
-            mobile,
-            selfie_image: selfieBase64
-        })
+    if (!name || !mobile) return alert("कृपया नाम और मोबाइल नंबर भरें!");
+
+    const body = {
+        linkId: linkId(),
+        name,
+        mobile,
+        selfie_image: "skip"
+    };
+
+    await fetch(API_SAVE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
     });
 
-    const data = await res.json();
-    finalPhotos = data.matches;
+    showPhotos(globalMatches);
 
-    document.getElementById("step2").classList.remove("active");
-    document.getElementById("step3").classList.add("active");
-
-    document.getElementById("resultTitle").innerText =
-        `${finalPhotos.length} फोटो मिलीं!`;
-
-    showPhotos();
+    document.getElementById("actionButtons").classList.remove("hidden");
 }
 
-function showPhotos() {
-    const grid = document.getElementById("photoGrid");
-    grid.innerHTML ="";
+/* SHOW PHOTOS */
+function showPhotos(list) {
+    let grid = document.getElementById("photoGrid");
+    grid.innerHTML = "";
 
-    finalPhotos.forEach((p)=> {
-        let div = document.createElement("div");
-        div.className = "card";
+    list.forEach(photo => {
+        let box = document.createElement("div");
+        box.className = "photo-box";
 
         let img = document.createElement("img");
-        img.src = p.url;
-        img.setAttribute("data-lightbox","gallery");
+        img.src = photo.url;
+        img.setAttribute("data-lightbox", "gallery");
 
         let tick = document.createElement("div");
-        tick.className="tick";
-        tick.innerHTML="✔";
+        tick.className = "tick";
+        tick.innerHTML = "✔";
 
-        let badge = document.createElement("div");
-        badge.className = "event-badge";
-        badge.innerText = p.eventName;
+        box.appendChild(img);
+        box.appendChild(tick);
 
-        div.appendChild(img);
-        div.appendChild(tick);
-        div.appendChild(badge);
-        div.onclick = () => toggleSelect(div, p);
+        box.onclick = () => togglePhoto(photo, tick);
 
-        grid.appendChild(div);
+        grid.appendChild(box);
     });
 }
 
-let selected = [];
-
-function toggleSelect(box, photo) {
-    const tick = box.querySelector(".tick");
-    if (tick.style.display==="block") {
-        tick.style.display="none";
-        selected = selected.filter(p=>p.url!==photo.url);
+function togglePhoto(photo, tick) {
+    if (tick.style.display === "block") {
+        tick.style.display = "none";
+        selected = selected.filter(p => p.url !== photo.url);
     } else {
-        tick.style.display="block";
+        tick.style.display = "block";
         selected.push(photo);
     }
 }
 
 function selectAll() {
-    selected = [...finalPhotos];
-    document.querySelectorAll(".tick").forEach(t=> t.style.display="block");
+    selected = [...globalMatches];
+    document.querySelectorAll(".tick").forEach(t => t.style.display = "block");
 }
 
 function clearAll() {
     selected = [];
-    document.querySelectorAll(".tick").forEach(t=> t.style.display="none");
+    document.querySelectorAll(".tick").forEach(t => t.style.display = "none");
 }
 
+/* ZIP DOWNLOAD */
 async function downloadZip() {
-    if (selected.length===0) {
-        alert("कृपया फोटो चुनें!");
-        return;
-    }
+    if (selected.length === 0) return alert("कृपया कुछ फोटो चुनें!");
 
     const zip = new JSZip();
-    let folder = zip.folder("photos");
+    const folder = zip.folder("photos");
 
-    for (let i=0; i<selected.length; i++) {
-        let blob = await fetch(selected[i].url).then(r=>r.blob());
-        folder.file(`photo_${i+1}.jpg`, blob);
+    for (let i = 0; i < selected.length; i++) {
+        const blob = await fetch(selected[i].url).then(r => r.blob());
+        folder.file("photo_" + (i + 1) + ".jpg", blob);
     }
 
-    const content = await zip.generateAsync({type:"blob"});
-    saveAs(content, "EventPhotos.zip");
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, "EventLens_Photos.zip");
 }
 </script>
 
