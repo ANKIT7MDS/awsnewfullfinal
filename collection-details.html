@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -15,59 +14,103 @@
             --muted: #a0a0a0;
             --brand: #ff6a00; /* Dark Orange */
             --brand-hover: #e65c00;
-            --danger: #d93025; /* Dark Red */
-            --ok: #208b3a;
-            --secondary: #5f6368;
+            --danger: #d93025;
+            --ok: #1faa59;
+            --secondary: #3a3a3a;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            background: var(--bg);
+            background-color: var(--bg);
             color: var(--text);
-            font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         .wrap {
-            max-width: 1100px;
-            margin: 20px auto;
-            padding: 0 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-weight: 600;
         }
 
         .card {
-            background: var(--card);
+            background-color: var(--card);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 24px;
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        h3 {
-            margin: 0 0 20px;
-            font-size: 20px;
-            color: var(--brand);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
-        
-        label { display: block; margin: 12px 0 8px 2px; color: var(--muted); font-size: 14px; }
-        input, select {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: #1e1e1e;
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .text-muted {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        a.back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             color: var(--text);
-            outline: none;
-            box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #2c2c2c;
+            font-size: 14px;
         }
-        input:focus, select:focus {
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.3);
+
+        a.back-link:hover {
+            background: #333;
         }
-        
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #333;
+            font-size: 12px;
+        }
+
+        .pill strong {
+            font-weight: 600;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            border: 1px solid var(--border);
+            margin-left: 6px;
+        }
+
         .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             background: var(--brand);
             color: #fff;
             border: none;
@@ -84,17 +127,125 @@
         .btn:disabled { background: var(--secondary); cursor: not-allowed; }
         .btn.danger { background: var(--danger); }
         .btn.secondary { background: var(--secondary); }
-        .btn.ok { background: var(--ok); }
-        
-        /* --- NEW: Mobile Friendly Table --- */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; white-space: nowrap; }
-        th { color: var(--muted); font-weight: 600; font-size: 13px; }
-        
+
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: var(--muted);
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background-color: #111;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: 1px solid var(--brand);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--border);
+            padding: 8px 6px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+        }
+
+        tr:hover td {
+            background-color: #242424;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 11px;
+            border: 1px solid var(--border);
+        }
+
+        .status-pill.ok {
+            border-color: var(--ok);
+            color: var(--ok);
+        }
+
+        .status-pill.warn {
+            border-color: #f9a826;
+            color: #f9a826;
+        }
+
+        .status-pill.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--muted);
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: #fff;
+            border-bottom-color: var(--brand);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
         #dropZone {
             border: 2px dashed var(--border);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 40px;
             text-align: center;
             color: var(--muted);
@@ -103,7 +254,18 @@
         }
         #dropZone.dragover { background-color: rgba(255, 106, 0, 0.1); border-color: var(--brand); }
         
-        .link-display { margin-top: 15px; padding: 12px; background: #1e1e1e; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; color: var(--ok); display: none; word-wrap: break-word; user-select: all; }
+        .link-display { 
+            margin-top: 15px; 
+            padding: 12px; 
+            background: #111; 
+            border: 1px dashed var(--ok); 
+            border-radius: 8px; 
+            font-size: 13px; 
+            color: var(--ok); 
+            display: none; 
+            word-wrap: break-word; 
+            user-select: all; 
+        }
         
         .grid-container { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media (min-width: 900px) { .grid-container { grid-template-columns: 1fr 1fr; } }
@@ -117,68 +279,152 @@
 <body>
 <div class="wrap">
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-        <a href="dashboard.html" style="background:#2c2c2c; color:var(--muted); padding:6px 12px; border:1px solid var(--border); border-radius:999px; text-decoration:none;">⬅ डैशबोर्ड</a>
+        <a href="dashboard.html" class="back-link">⬅ डैशबोर्ड</a>
         <div>
-            <h1 id="pageTitle" style="font-size: 24px; margin:0;"></h1>
-            <h2 id="pageSub" style="font-size:14px; color:var(--muted); margin:0; font-family:monospace;"></h2>
+            <h1 id="pageTitle">कलेक्शन डिटेल्स</h1>
+            <div class="text-muted" id="pageSubtitle">कलेक्शन की जानकारी लोड हो रही है...</div>
         </div>
     </div>
 
-    <div class="grid-container">
-        <div>
-            <div class="card" id="event-form-card">
-                <h3 id="form-title">नया इवेंट बनाएं</h3>
-                <label for="eventName">इवेंट का नाम *</label><input id="eventName" type="text" />
-                <label for="eventDate">इवेंट की तारीख *</label><input id="eventDate" type="date" />
-                <input type="hidden" id="eventIdToEdit">
-                <div style="margin-top: 20px;">
-                    <button id="saveEventBtn" class="btn">इवेंट बनाएं</button>
-                    <button id="cancelEditBtn" class="btn secondary" style="display:none;">कैंसल</button>
+    <!-- TOP SUMMARY CARD -->
+    <div class="card" id="collectionSummaryCard">
+        <div class="card-header">
+            <div>
+                <div class="card-title" id="collectionName">-</div>
+                <div class="text-muted" style="margin-top:4px;">
+                    बनाया गया: <span id="collectionCreatedAt">-</span> • 
+                    टोटल इवेंट्स: <span id="collectionEventsCount">-</span> • 
+                    टोटल फोटो: <span id="collectionPhotosCount">-</span>
                 </div>
             </div>
-
-            <!-- --- NEW: Generate Search Link Section --- -->
-            <div class="card">
-                <h3>सर्च लिंक बनाएँ</h3>
-                <p style="color:var(--muted); margin-top:0; font-size:14px;">मेहमानों के साथ शेयर करने के लिए एक यूनिक सर्च लिंक बनाएँ।</p>
-                <button id="generateSelectedBtn" class="btn ok">चुने हुए इवेंट्स का लिंक</button>
-                <button id="generateCollectionBtn" class="btn ok">पूरे कलेक्शन का लिंक</button>
-                <div id="link-display-area" class="link-display"></div>
+            <div>
+                <span class="pill">
+                    <strong>Storage:</strong>
+                    <span id="collectionStorageBytes">-</span>
+                </span>
+                <span class="tag" id="collectionStatusTag">Active</span>
             </div>
-            
-            <div class="card">
-                <h3>इवेंट सूची</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="card">
+        <div class="tabs">
+            <div class="tab active" data-tab="eventsTab">इवेंट्स</div>
+            <div class="tab" data-tab="uploadTab">फोटो अपलोड</div>
+            <div class="tab" data-tab="linksTab">लिंक्स / सर्च लिंक</div>
+        </div>
+
+        <div class="tab-content active" id="eventsTab">
+            <div class="grid-container">
+                <!-- LEFT: Event List -->
+                <div>
+                    <div class="card-header" style="padding:0; margin-bottom:8px;">
+                        <div class="card-title" style="font-size:16px;">इवेंट लिस्ट</div>
+                    </div>
+                    <div style="overflow:auto;">
+                        <table>
+                            <thead>
                             <tr>
-                                <th><input type="checkbox" id="selectAllCheckbox" /></th>
-                                <th>नाम</th><th>तारीख</th><th>फोटो</th><th>डुप्लीकेट</th>
-                                <th style="min-width: 240px; text-align: center;">एक्शन</th>
+                                <th>नाम</th>
+                                <th>तारीख</th>
+                                <th>फोटो</th>
+                                <th>स्टोरेज</th>
+                                <th>एक्शन</th>
                             </tr>
-                        </thead>
-                        <tbody id="eventsTbody"></tbody>
-                    </table>
+                            </thead>
+                            <tbody id="eventsTbody">
+                            <!-- इवेंट्स यहाँ आएँगे -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Event Form -->
+                <div>
+                    <div class="card-header" style="padding:0; margin-bottom:8px;">
+                        <div class="card-title" style="font-size:16px;" id="form-title">नया इवेंट बनाएं</div>
+                    </div>
+                    <form id="eventForm" onsubmit="return false;">
+                        <input type="hidden" id="eventIdToEdit" />
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="eventName">इवेंट का नाम</label>
+                                <input type="text" id="eventName" placeholder="जैसे - शादी, रिसेप्शन, हल्दी" />
+                            </div>
+                            <div class="form-group">
+                                <label for="eventDate">तारीख</label>
+                                <input type="date" id="eventDate" />
+                            </div>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <button class="btn" id="saveEventBtn">इवेंट बनाएं</button>
+                            <button class="btn secondary" id="cancelEditBtn" type="button" style="display:none;">रीसेट</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <h3>फ़ोटो अपलोड करें</h3>
-            <label for="eventSelectForUpload">किस इवेंट में अपलोड करें?</label>
-            <select id="eventSelectForUpload"></select>
-            <div id="dropZone" style="margin-top:10px;">
-                <p>अपलोड करने के लिए फ़ाइलें यहाँ खींचें या क्लिक करें<br><small>(एक साथ 1500 तक)</small></p>
-                <input type="file" id="fileInput" multiple accept="image/jpeg,image/png" style="display:none;">
+        <!-- UPLOAD TAB -->
+        <div class="tab-content" id="uploadTab">
+            <div class="card-header" style="padding:0; margin-bottom:8px;">
+                <div class="card-title" style="font-size:16px;">फोटो अपलोड</div>
             </div>
-            <!-- --- NEW: Replaced old status with new progress bar --- -->
-            <div id="progress-container">
-                <div style="background-color: #1e1e1e; border-radius: 4px; padding: 2px;">
-                    <div id="progress-bar"></div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="eventSelectForUpload">किस इवेंट में अपलोड करना है?</label>
+                    <select id="eventSelectForUpload">
+                        <option value="">इवेंट चुनें...</option>
+                    </select>
                 </div>
-                <div id="progress-text"></div>
             </div>
-             <div id="uploadStatus" style="margin-top:10px;color:var(--muted);font-size:13px;"></div>
+
+            <div id="dropZone">
+                <p style="font-size:15px; margin-bottom:4px;">यहाँ क्लिक करें या फोटो ड्रैग & ड्रॉप करें</p>
+                <p class="text-muted" style="margin-bottom:0;">आप एक बार में सैकड़ों फोटो चुन सकते हैं, हम उन्हें बैच में अपलोड कर देंगे।</p>
+            </div>
+            <input type="file" id="fileInput" multiple style="display:none;" />
+            
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+                <div id="progress-text">अपलोड की तैयारी हो रही है...</div>
+            </div>
+
+            <div id="uploadStatus" class="text-muted" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- LINKS TAB -->
+        <div class="tab-content" id="linksTab">
+            <div class="card-header" style="padding:0; margin-bottom:8px;">
+                <div class="card-title" style="font-size:16px;">गेस्ट सर्च लिंक्स</div>
+            </div>
+
+            <p class="text-muted" style="margin-bottom:12px;">
+                यहाँ से आप पूरे कलेक्शन या चुने हुए इवेंट्स के लिए गेस्ट सर्च लिंक बना सकते हैं।
+            </p>
+
+            <div class="form-row" style="align-items:flex-end;">
+                <div class="form-group">
+                    <label>इवेंट चुनें (एक या अधिक):</label>
+                    <div style="max-height:180px; overflow:auto; border:1px solid var(--border); border-radius:8px; padding:8px;">
+                        <label style="display:block; font-size:13px; margin-bottom:6px;">
+                            <input type="checkbox" id="selectAllCheckbox" /> सभी इवेंट्स चुनें
+                        </label>
+                        <div id="eventsForLinkContainer" style="max-height:140px; overflow:auto;">
+                            <!-- यहाँ इवेंट्स के checkbox आएँगे -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:10px;">
+                <button class="btn" id="generateSelectedBtn">चुने हुए इवेंट्स के लिए लिंक बनाएं</button>
+                <button class="btn secondary" id="generateCollectionBtn">पूरा कलेक्शन लिंक बनाएँ</button>
+            </div>
+
+            <div id="link-display-area" class="link-display"></div>
         </div>
     </div>
 </div>
@@ -186,7 +432,7 @@
 <script>
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const GET_EVENTS_API = `${API_BASE}/get-events`;
-    const UPSERT_EVENT_API = `${API_BASE}/upsert-event`; // NEW: For create and update
+    const UPSERT_EVENT_API = `${API_BASE}/upsert-event`; // create + update
     const DELETE_EVENT_API = `${API_BASE}/delete-event`;
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
@@ -216,6 +462,15 @@
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
 
+    const pageTitleEl = document.getElementById('pageTitle');
+    const pageSubtitleEl = document.getElementById('pageSubtitle');
+    const collectionNameEl = document.getElementById('collectionName');
+    const collectionCreatedAtEl = document.getElementById('collectionCreatedAt');
+    const collectionEventsCountEl = document.getElementById('collectionEventsCount');
+    const collectionPhotosCountEl = document.getElementById('collectionPhotosCount');
+    const collectionStorageBytesEl = document.getElementById('collectionStorageBytes');
+    const collectionStatusTagEl = document.getElementById('collectionStatusTag');
+
     // --- Helper Functions ---
     function resetForm() {
         formTitle.textContent = "नया इवेंट बनाएं";
@@ -224,62 +479,176 @@
         eventDateEl.value = "";
         eventIdToEdit.value = "";
         cancelEditBtn.style.display = 'none';
-        saveEventBtn.disabled = false;
     }
 
-    function fmtDate(d) {
-        try {
-            if (!d) return "-";
-            return new Date(d).toLocaleDateString('hi-IN', { timeZone: 'UTC' });
-        } catch { return d || "-"; }
+    function formatBytes(bytes) {
+        if (!bytes || bytes <= 0) return "0 B";
+        const sizes = ["B", "KB", "MB", "GB", "TB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        const val = bytes / Math.pow(1024, i);
+        return `${val.toFixed(1)} ${sizes[i]}`;
     }
-    
-    // --- Core Functions ---
+
+    function formatDate(isoString) {
+        if (!isoString) return "-";
+        const d = new Date(isoString);
+        return d.toLocaleDateString("hi-IN", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function setActiveTab(tabName) {
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.classList.toggle("active", tab.dataset.tab === tabName);
+        });
+        document.querySelectorAll(".tab-content").forEach(tc => {
+            tc.classList.toggle("active", tc.id === tabName);
+        });
+    }
+
+    // --- Fetch Events & Collection Summary ---
     async function fetchEvents() {
         try {
             const res = await fetch(GET_EVENTS_API, {
-                method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${idToken}`,
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({ collection_id: collectionId })
             });
-            if (!res.ok) throw new Error('इवेंट्स लोड करने में त्रुटि।');
             const data = await res.json();
-            const items = data.events || [];
-            items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            if (!res.ok) throw new Error(data.message || "इवेंट्स लोड नहीं हो पाए।");
 
-            eventsTbody.innerHTML = "";
-            eventSelectForUpload.innerHTML = "<option value=''>पहले एक इवेंट चुनें</option>";
+            const { events = [], collection_summary } = data;
 
-            items.forEach(ev => {
-                const tr = document.createElement("tr");
-                // NEW: Added checkbox and edit button
-                tr.innerHTML = `
-                    <td><input type="checkbox" class="event-checkbox" data-event-id="${ev.event_id}"></td>
-                    <td>${ev.name || '-'}</td>
-                    <td>${fmtDate(ev.event_date)}</td>
-                    <td>${ev.photo_count || 0}</td>
-                    <td>${ev.dup_count || 0}</td>
-                    <td style="text-align: center;">
-                        <button class="btn ok link-btn" data-event-id="${ev.event_id}">लिंक</button>
-                        <button class="btn secondary edit-btn" data-event-id="${ev.event_id}" data-name="${ev.name}" data-date="${ev.event_date}">एडिट</button>
-                        <button class="btn danger delete-btn" data-event-id="${ev.event_id}">डिलीट</button>
-                    </td>`;
-                eventsTbody.appendChild(tr);
+            // Update collection header summary (if backend sends)
+            if (collection_summary) {
+                collectionNameEl.textContent = collection_summary.name || "कलेक्शन";
+                collectionCreatedAtEl.textContent = formatDate(collection_summary.created_at);
+                collectionEventsCountEl.textContent = collection_summary.events_count || events.length;
+                collectionPhotosCountEl.textContent = collection_summary.photo_count || "-";
+                collectionStorageBytesEl.textContent = formatBytes(collection_summary.storage_bytes || 0);
+                collectionStatusTagEl.textContent = collection_summary.status || "Active";
+            } else {
+                // fallback
+                collectionNameEl.textContent = "कलेक्शन";
+                collectionCreatedAtEl.textContent = "-";
+                collectionEventsCountEl.textContent = events.length;
+                collectionPhotosCountEl.textContent = "-";
+                collectionStorageBytesEl.textContent = "-";
+                collectionStatusTagEl.textContent = "Active";
+            }
 
-                const opt = document.createElement("option");
-                opt.value = ev.event_id;
-                opt.textContent = `${ev.name} (${fmtDate(ev.event_date)})`;
-                eventSelectForUpload.appendChild(opt);
-            });
-        } catch (e) {
-            console.error(e);
-            eventsTbody.innerHTML = `<tr><td colspan="6">इवेंट्स लोड करने में त्रुटि।</td></tr>`;
+            renderEventsTable(events);
+            populateEventDropdowns(events);
+        } catch (err) {
+            console.error(err);
+            alert("इवेंट्स लोड करने में त्रुटि: " + err.message);
         }
     }
 
+    function renderEventsTable(events) {
+        eventsTbody.innerHTML = "";
+        events.forEach(ev => {
+            const tr = document.createElement("tr");
+
+            const tdName = document.createElement("td");
+            tdName.textContent = ev.name || "-";
+
+            const tdDate = document.createElement("td");
+            tdDate.textContent = ev.event_date || "-";
+
+            const tdPhotos = document.createElement("td");
+            tdPhotos.textContent = ev.photo_count || 0;
+
+            const tdStorage = document.createElement("td");
+            tdStorage.textContent = formatBytes(ev.storage_bytes || 0);
+
+            const tdActions = document.createElement("td");
+            const editBtn = document.createElement("button");
+            editBtn.className = "btn btn-sm secondary";
+            editBtn.textContent = "Edit";
+            editBtn.onclick = () => {
+                formTitle.textContent = "इवेंट अपडेट करें";
+                saveEventBtn.textContent = "इवेंट अपडेट करें";
+                eventNameEl.value = ev.name || "";
+                eventDateEl.value = ev.event_date || "";
+                eventIdToEdit.value = ev.event_id;
+                cancelEditBtn.style.display = 'inline-flex';
+            };
+
+            const delBtn = document.createElement("button");
+            delBtn.className = "btn btn-sm danger";
+            delBtn.textContent = "Delete";
+            delBtn.onclick = async () => {
+                if (!confirm("क्या आप सच में इस इवेंट को डिलीट करना चाहते हैं?")) return;
+                try {
+                    const res = await fetch(DELETE_EVENT_API, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${idToken}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ event_id: ev.event_id, collection_id: collectionId })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || "डिलीट करने में त्रुटि।");
+                    fetchEvents();
+                } catch (e) {
+                    alert("इवेंट डिलीट करने में त्रुटि: " + e.message);
+                }
+            };
+
+            tdActions.appendChild(editBtn);
+            tdActions.appendChild(delBtn);
+
+            tr.appendChild(tdName);
+            tr.appendChild(tdDate);
+            tr.appendChild(tdPhotos);
+            tr.appendChild(tdStorage);
+            tr.appendChild(tdActions);
+
+            eventsTbody.appendChild(tr);
+        });
+    }
+
+    function populateEventDropdowns(events) {
+        // Upload tab dropdown
+        eventSelectForUpload.innerHTML = `<option value="">इवेंट चुनें...</option>`;
+        events.forEach(ev => {
+            const opt = document.createElement("option");
+            opt.value = ev.event_id;
+            opt.textContent = `${ev.name || "Unnamed"} (${ev.event_date || "-"})`;
+            eventSelectForUpload.appendChild(opt);
+        });
+
+        // Links tab checklist
+        const container = document.getElementById('eventsForLinkContainer');
+        container.innerHTML = "";
+        events.forEach(ev => {
+            const label = document.createElement("label");
+            label.style.display = "block";
+            label.style.fontSize = "13px";
+            label.style.marginBottom = "4px";
+
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.value = ev.event_id;
+            cb.className = "event-checkbox";
+
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(` ${ev.name || "Unnamed"} (${ev.event_date || "-"})`));
+            container.appendChild(label);
+        });
+    }
+
+    // --- Save Event (Create/Update) ---
     async function handleSaveEvent() {
         const name = eventNameEl.value.trim();
         const date = eventDateEl.value.trim();
-        if (!name || !date) { alert("नाम और तारीख भरें।"); return; }
+        if (!name || !date) {
+            alert("नाम और तारीख भरें।");
+            return;
+        }
         
         const eventId = eventIdToEdit.value;
         const payload = { collection_id: collectionId, name, event_date: date };
@@ -288,7 +657,11 @@
         saveEventBtn.disabled = true;
         try {
             await fetch(UPSERT_EVENT_API, {
-                method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${idToken}`,
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify(payload)
             });
             resetForm();
@@ -300,47 +673,73 @@
         }
     }
     
-    // --- NEW: Batch Upload Logic ---
+    // --- Batch Upload Logic (Bulk Upload for thousands of photos) ---
     async function uploadInBatches(files, eventId, concurrency = 8) {
-        const BATCH_SIZE = 50; // Generate URLs in batches of 50
+        const BATCH_SIZE = 50; // एक request में 50 file नाम से presigned URLs
         const totalFiles = files.length;
         let uploadedCount = 0;
         
         progressContainer.style.display = 'block';
         uploadStatus.textContent = '';
+        progressBar.style.width = '0%';
+        progressText.textContent = `कुल ${totalFiles} फोटो चुने गए हैं, अपलोड शुरू हो रहा है...`;
 
-        for (let i = 0; i < totalFiles; i += BATCH_SIZE) {
-            const batch = files.slice(i, i + BATCH_SIZE);
-            const batchNumber = (i / BATCH_SIZE) + 1;
-            const totalBatches = Math.ceil(totalFiles / BATCH_SIZE);
-            
+        // Files को छोटे-छोटे batches में बाँटते हैं
+        const chunks = [];
+        for (let i = 0; i < files.length; i += BATCH_SIZE) {
+            chunks.push(files.slice(i, i + BATCH_SIZE));
+        }
+
+        let batchNumber = 0;
+        const totalBatches = chunks.length;
+
+        for (const batch of chunks) {
+            batchNumber++;
             progressText.textContent = `प्रोसेसिंग बैच ${batchNumber}/${totalBatches}...`;
             
-            const filesToRequest = batch.map(f => ({ name: f.name, type: f.type }));
+            const filesToRequest = batch.map(f => ({ name: f.name, type: f.type || "image/jpeg" }));
+            const payload = {
+                collection_id: collectionId,
+                event_id: eventId,
+                files: filesToRequest
+            };
+
             const res = await fetch(UPLOAD_URLS_API, {
-                method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ event_id: eventId, collection_id: collectionId, files: filesToRequest })
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${idToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Upload URLs नहीं मिले।");
 
             const uploadTasks = data.urls.map(item => async () => {
                 const file = batch.find(f => f.name === item.filename);
-                await fetch(item.uploadURL, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+                if (!file) return;
+                await fetch(item.uploadURL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': file.type || 'image/jpeg' },
+                    body: file
+                });
                 uploadedCount++;
                 const progress = (uploadedCount / totalFiles) * 100;
                 progressBar.style.width = `${progress}%`;
                 progressText.textContent = `अपलोड हो रहा है... ${uploadedCount}/${totalFiles}`;
             });
 
-            // Using Promise.all for concurrent uploads within a batch
+            // एक batch के अन्दर parallel upload
             await Promise.all(uploadTasks.map(task => task()));
         }
     }
 
     async function handleFiles(files) {
         const eventId = eventSelectForUpload.value;
-        if (!eventId) { alert("कृपया पहले एक इवेंट चुनें।"); return; }
+        if (!eventId) {
+            alert("कृपया पहले एक इवेंट चुनें।");
+            return;
+        }
         if (files.length === 0) return;
 
         dropZone.style.pointerEvents = 'none';
@@ -350,28 +749,32 @@
             await uploadInBatches(Array.from(files), eventId);
             uploadStatus.textContent = "अपलोड पूरा हुआ! लिस्ट रिफ्रेश हो रही है...";
         } catch (e) {
+            console.error(e);
             uploadStatus.textContent = `अपलोड में त्रुटि: ${e.message}`;
         } finally {
-            // NEW: Auto-reset after upload
+            // Auto-reset after upload
             dropZone.style.pointerEvents = 'auto';
-            fileInput.value = ''; // Reset file input
+            fileInput.value = '';
             fileInput.disabled = false;
-            progressText.textContent = "अपलोड पूरा हुआ!";
             setTimeout(() => {
                 progressContainer.style.display = 'none';
                 uploadStatus.textContent = "";
-                fetchEvents(); // Refresh list with new counts
+                fetchEvents(); // Upload के बाद counts refresh
             }, 2000);
         }
     }
     
-    // --- NEW: Link Generation Logic ---
+    // --- Link Generation Logic ---
     async function generateLink(payload) {
         linkDisplayArea.style.display = 'block';
         linkDisplayArea.textContent = 'लिंक बनाया जा रहा है...';
         try {
             const res = await fetch(GENERATE_LINK_API, {
-                method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${idToken}`,
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
@@ -384,60 +787,58 @@
 
     // --- Initialization and Event Listeners ---
     function initialize() {
-        document.getElementById("pageTitle").textContent = decodeURIComponent(url.searchParams.get("name") || "कलेक्शन");
-        document.getElementById("pageSub").textContent = `ID: ${collectionId}`;
-        resetForm();
+        document.getElementById("pageTitle").textContent = "कलेक्शन डिटेल्स";
+        pageSubtitleEl.textContent = "इवेंट्स, फोटो अपलोड और गेस्ट सर्च लिंक मैनेज करें।";
 
-        saveEventBtn.addEventListener('click', handleSaveEvent);
-        cancelEditBtn.addEventListener('click', resetForm);
-        
-        eventsTbody.addEventListener('click', e => {
-            const target = e.target;
-            const eventId = target.dataset.eventId;
-            if (target.classList.contains('delete-btn')) {
-                if (confirm("क्या आप वाकई इस इवेंट और इसकी सभी तस्वीरों को डिलीट करना चाहते हैं?")) {
-                    fetch(DELETE_EVENT_API, {
-                        method: 'POST', headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-                        body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
-                    }).then(() => fetchEvents());
-                }
-            } else if (target.classList.contains('link-btn')) {
-                generateLink({ event_ids: [eventId] });
-            } else if (target.classList.contains('edit-btn')) {
-                formTitle.textContent = "इवेंट एडिट करें";
-                saveEventBtn.textContent = "बदलाव सेव करें";
-                eventNameEl.value = target.dataset.name;
-                // Date needs to be in YYYY-MM-DD format for input
-                eventDateEl.value = new Date(target.dataset.date).toISOString().split('T')[0];
-                eventIdToEdit.value = eventId;
-                cancelEditBtn.style.display = 'inline-block';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+        // Tab switching
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                setActiveTab(tab.dataset.tab);
+            });
         });
 
-        selectAllCheckbox.addEventListener('change', (e) => {
-            document.querySelectorAll('.event-checkbox').forEach(cb => cb.checked = e.target.checked);
-        });
+        // Event form
+        saveEventBtn.addEventListener("click", handleSaveEvent);
+        cancelEditBtn.addEventListener("click", resetForm);
 
-        generateSelectedBtn.addEventListener('click', () => {
-            const selectedIds = Array.from(document.querySelectorAll('.event-checkbox:checked')).map(cb => cb.dataset.eventId);
-            if (selectedIds.length === 0) {
-                alert("कृपया पहले कम से कम एक इवेंट चुनें।");
-                return;
-            }
-            generateLink({ event_ids: selectedIds });
-        });
-
-        generateCollectionBtn.addEventListener('click', () => {
-             generateLink({ collection_id: collectionId });
-        });
-
+        // Upload tab
         dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
         fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
+        // Links tab
+        selectAllCheckbox.addEventListener("change", () => {
+            const checked = selectAllCheckbox.checked;
+            document.querySelectorAll(".event-checkbox").forEach(cb => {
+                cb.checked = checked;
+            });
+        });
+
+        generateSelectedBtn.addEventListener("click", () => {
+            const selectedEvents = Array.from(document.querySelectorAll(".event-checkbox"))
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            if (selectedEvents.length === 0) {
+                alert("कम से कम एक इवेंट चुनें।");
+                return;
+            }
+            generateLink({ collection_id: collectionId, event_ids: selectedEvents });
+        });
+
+        generateCollectionBtn.addEventListener("click", () => {
+            generateLink({ collection_id: collectionId });
+        });
+
+        // Initial fetch
         fetchEvents();
     }
 
