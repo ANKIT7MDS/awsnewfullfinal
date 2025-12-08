@@ -1,359 +1,613 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
-<title>EventLens – अपनी फोटो खोजें</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EventLens – Smart AI Gallery</title>
 
-<style>
-body {
-    background: black;
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 0;
-}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-/* HEADER */
-h1 {
-    font-size: 34px;
-    margin-top: 18px;
-}
+  <style>
+    :root {
+      --bg: #050505;
+      --card: #101010;
+      --accent: #00e676;
+      --accent-soft: rgba(0, 230, 118, 0.15);
+      --accent-strong: #00c853;
+      --text: #ffffff;
+      --muted: #a0a0a0;
+      --border: #262626;
+      --chip-bg: #181818;
+    }
 
-#previewImg {
-    max-width: 240px;
-    border-radius: 12px;
-    display: none;
-    margin: 12px auto;
-}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-button {
-    background: #00c853;
-    padding: 12px 26px;
-    border-radius: 10px;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-}
-button:hover { opacity: 0.85; }
+    body {
+      background: radial-gradient(circle at top, #202020 0, #050505 45%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
 
-/* FILTER BAR */
-.filter-bar {
-    display: none;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 10px auto 14px;
-    max-width: 680px;
-}
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 14px 40px;
+    }
 
-.chip {
-    padding: 6px 12px;
-    background: #1b1b1b;
-    border: 1px solid #333;
-    border-radius: 999px;
-    color: #ccc;
-    font-size: 13px;
-    cursor: pointer;
-}
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-.chip.active {
-    background: rgba(0, 230, 118, 0.2);
-    border-color: #00e676;
-    color: #00e676;
-}
+    header h1 {
+      font-size: clamp(26px, 5vw, 34px);
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(to right, #fff, #bbb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-.search-text {
-    padding: 8px 14px;
-    min-width: 200px;
-    background: #000;
-    border-radius: 999px;
-    border: 1px solid #333;
-    color: white;
-}
+    /* CARDS */
+    .card {
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+    }
 
-/* GRID */
-.grid-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 14px;
-    margin-top: 20px;
-}
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-.photo-box {
-    width: 260px;
-    height: 260px;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 2px solid #00e676;
-    cursor: pointer;
-    position: relative;
-}
+    .step-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--accent-soft);
+      font-size: 14px;
+      color: var(--accent);
+      background: rgba(0,230,118,0.1);
+    }
 
-.photo-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+    /* INPUTS & BUTTONS */
+    .text-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #0a0a0a;
+      color: white;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    .text-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
 
-.selected-check {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: rgba(0,255,100,0.9);
-    font-size: 18px;
-    padding: 4px 8px;
-    border-radius: 50%;
-    display: none;
-}
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: #000;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: var(--accent-strong);
+      box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
+    }
+    .btn:disabled { opacity: 0.5; cursor: default; }
 
-.zip-btn {
-    background: orange;
-    font-size: 20px;
-    margin-top: 20px;
-    padding: 14px 40px;
-    border-radius: 10px;
-}
-</style>
+    .btn-secondary {
+      background: var(--chip-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #222; }
+
+    .btn-full { width: 100%; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+    /* SELFIE PREVIEW */
+    .selfie-preview img {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      margin: 10px auto;
+      display: block;
+    }
+
+    /* GALLERY CONTROLS */
+    .gallery-controls {
+      margin-bottom: 16px;
+    }
+
+    /* SEARCH BAR */
+    .search-bar-wrap {
+      position: relative;
+      margin-bottom: 14px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px 44px 12px 18px;
+      border-radius: 12px;
+      background: #121212;
+      border: 1px solid var(--border);
+      color: white;
+      font-size: 15px;
+    }
+    .search-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+
+    /* SMART FILTERS */
+    .filter-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none; /* Firefox */
+    }
+    .filter-scroll::-webkit-scrollbar { display: none; } /* Chrome */
+
+    .chip {
+      white-space: nowrap;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      color: #ccc;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chip:hover { background: #252525; }
+    
+    .chip.active {
+      background: rgba(0, 230, 118, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* GRID */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    @media (min-width: 600px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 900px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .tile {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #111;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+    .tile:hover img { transform: scale(1.05); }
+    
+    .tile.selected {
+      border-color: var(--accent);
+    }
+    .tile.selected img { opacity: 0.6; }
+
+    .check-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      transition: all 0.2s;
+    }
+    .tile.selected .check-badge {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: black;
+    }
+
+    /* VIEWER */
+    .viewer {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .viewer.open { display: flex; }
+    
+    .viewer-img {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+      margin: 0 auto;
+    }
+    .viewer-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    .close-btn {
+      position: absolute;
+      top: 20px; right: 20px;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+      background: none; border: none;
+    }
+  </style>
 </head>
 <body>
 
-<h1>EventLens – अपनी फोटो खोजें</h1>
+  <div class="page">
+    <header>
+      <h1>EventLens AI</h1>
+      <p style="color:var(--muted); font-size:14px;">Find your photos instantly with AI</p>
+    </header>
 
-<!-- STEP 1: SELFIE UPLOAD -->
-<input type="file" id="selfieInput" accept="image/*">
-<img id="previewImg">
+    <div class="card" id="step1">
+      <div class="card-title"><span class="step-pill">1</span> सेल्फी अपलोड करें</div>
+      <input type="file" id="selfieInput" accept="image/*" class="text-input" style="padding:10px;">
+      
+      <div class="selfie-preview" id="previewContainer" style="display:none;">
+        <img id="previewImg">
+      </div>
 
-<button onclick="searchPhotos()">फोटो खोजें</button>
+      <button class="btn btn-full" id="searchBtn" style="margin-top:10px;">🔍 फोटो खोजें</button>
+      <p id="statusMsg" style="margin-top:10px; font-size:13px; color:var(--muted); text-align:center;"></p>
+    </div>
 
-<h2 id="resultCount"></h2>
+    <div class="card" id="step2" style="display:none;">
+      <div class="card-title"><span class="step-pill">2</span> अपनी डिटेल भरें</div>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
+        हमें <span style="color:var(--accent);" id="foundCount">0</span> फोटो मिली हैं!
+      </p>
+      <input type="text" id="guestName" placeholder="आपका नाम" class="text-input">
+      <input type="tel" id="guestMobile" placeholder="मोबाइल नंबर" class="text-input" maxlength="10">
+      <button class="btn btn-full" id="showGalleryBtn">👉 गैलरी देखें</button>
+    </div>
 
-<!-- STEP 2: FILTER BAR (Google Photos Style) -->
-<div id="filterBar" class="filter-bar">
+    <div class="card" id="step3" style="display:none;">
+      
+      <div class="gallery-controls">
+        
+        <div class="search-bar-wrap">
+          <input type="text" id="aiSearchInput" class="search-input" placeholder="Search (e.g. Red shirt, Smile, Garden)...">
+          <span class="search-icon">🔍</span>
+        </div>
 
-    <div class="chip filter-chip active" data-filter="ALL">सभी फोटो</div>
-    <div class="chip filter-chip" data-filter="BEST">⭐ Best Photos</div>
-    <div class="chip filter-chip" data-filter="HAPPY">😊 Happy Moments</div>
-    <div class="chip filter-chip" data-filter="FACES">🙂 Faces</div>
-    <div class="chip filter-chip" data-filter="GROUPS">👥 Group Photos</div>
-    <div class="chip filter-chip" data-filter="SELFIES">🤳 Selfies</div>
+        <div class="filter-scroll" id="filterContainer">
+          <button class="chip active" onclick="applyFilter('ALL')">All Photos</button>
+          <button class="chip" onclick="applyFilter('BEST')">⭐ Best</button>
+          <button class="chip" onclick="applyFilter('HAPPY')">😊 Happy</button>
+          <button class="chip" onclick="applyFilter('COUPLE')">👩‍❤️‍👨 Couple</button>
+          <button class="chip" onclick="applyFilter('GROUP')">👥 Group</button>
+          <button class="chip" onclick="applyFilter('SELFIE')">🤳 Selfie</button>
+          <button class="chip" onclick="applyFilter('WEDDING')">💍 Wedding</button>
+        </div>
 
-    <input type="text" id="searchTextFilter" class="search-text" placeholder="Search like Google Photos…">
+      </div>
 
-</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:13px; color:var(--muted);">
+          Selected: <b id="selCount" style="color:white;">0</b>
+        </span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-secondary" onclick="toggleSelectAll()">Select All</button>
+          <button class="btn btn-sm" onclick="downloadZip()">⬇ ZIP</button>
+        </div>
+      </div>
 
-<!-- STEP 3: ACTION BUTTONS -->
-<button class="zip-btn" onclick="downloadZip()">ZIP डाउनलोड</button>
+      <div class="grid" id="photoGrid"></div>
+    </div>
 
-<!-- STEP 4: RESULTS GRID -->
-<div id="photoGrid" class="grid-container"></div>
+  </div>
 
-
-
-<!-- JS LIBRARIES -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <div class="viewer" id="viewer">
+    <button class="close-btn" onclick="closeViewer()">✕</button>
+    <img id="viewerImg" class="viewer-img">
+    <div class="viewer-controls">
+      <button class="btn btn-secondary" onclick="prevPhoto()">❮</button>
+      <button class="btn" onclick="toggleCurrentSelection()">Select / Unselect</button>
+      <button class="btn btn-secondary" onclick="nextPhoto()">❯</button>
+    </div>
+  </div>
 
 <script>
-let matches = [];
-let filteredMatches = [];
-let selectedPhotos = [];
+  // CONFIG
+  const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
+  const LOG_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
-const SAVE_DETAILS_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
-const FIND_MATCH_API  = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
-const GALLERY_API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/get-photos";
+  // STATE
+  let allMatches = [];      // Raw data from API
+  let visiblePhotos = [];   // Filtered data shown in grid
+  let selectedUrls = new Set();
+  let viewerIdx = 0;
+  let selfieBase64 = "";
 
+  // DOM Elements
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
+  const grid = document.getElementById('photoGrid');
 
-/* PREVIEW IMAGE */
-document.getElementById("selfieInput").addEventListener("change", function(e){
+  // --- 1. SELFIE HANDLING ---
+  document.getElementById('selfieInput').addEventListener('change', async (e) => {
     let file = e.target.files[0];
-    if (!file) return;
-
-    let reader = new FileReader();
-    reader.onload = ev => {
-        previewImg.src = ev.target.result;
-        previewImg.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-});
-
-
-/* ------------------------------
-   STEP 1 → SEARCH FOR MATCHES
-------------------------------- */
-async function searchPhotos(){
-    const file = selfieInput.files[0];
-    if (!file){
-        alert("कृपया सेल्फी अपलोड करें!");
-        return;
+    if(file) {
+      let reader = new FileReader();
+      reader.onload = (ev) => {
+        selfieBase64 = ev.target.result;
+        document.getElementById('previewImg').src = selfieBase64;
+        document.getElementById('previewContainer').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
     }
+  });
 
-    const base64Image = await fileToBase64(file);
+  document.getElementById('searchBtn').addEventListener('click', async () => {
+    if(!selfieBase64) return alert("Please upload a selfie first!");
+    
+    document.getElementById('statusMsg').innerText = "Searching photos... please wait...";
+    let btn = document.getElementById('searchBtn');
+    btn.disabled = true;
 
-    const body = {
-        linkId: getLinkId(),
-        name: "Unknown",
-        mobile: "0000000000",
-        selfie_image: base64Image
-    };
+    try {
+      // Get linkId from URL
+      const params = new URLSearchParams(window.location.search);
+      const linkId = params.get("linkId");
 
-    let resp = await fetch(FIND_MATCH_API, {
+      let res = await fetch(SEARCH_API, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(body)
-    });
+        body: JSON.stringify({ linkId: linkId, selfie_image: selfieBase64 })
+      });
+      let data = await res.json();
+      
+      allMatches = data.matches || [];
+      visiblePhotos = [...allMatches];
 
-    let data = await resp.json();
+      document.getElementById('foundCount').innerText = allMatches.length;
+      step1.style.display = 'none';
+      step2.style.display = 'block';
+      
+    } catch(err) {
+      alert("Error finding photos.");
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
-    matches = data.matches || [];
-    filteredMatches = matches;
+  // --- 2. SHOW GALLERY ---
+  document.getElementById('showGalleryBtn').addEventListener('click', () => {
+    const name = document.getElementById('guestName').value;
+    const mobile = document.getElementById('guestMobile').value;
+    
+    if(!name || mobile.length < 10) return alert("Please enter valid Name & Mobile");
 
-    resultCount.innerText = matches.length + " फोटो मिलीं!";
-
-    // Enable filter bar
-    document.getElementById("filterBar").style.display = "flex";
-
-    renderGrid();
-}
-
-
-/* FILE TO BASE64 */
-function fileToBase64(file){
-    return new Promise(resolve => {
-        let reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-    });
-}
-
-function getLinkId(){
+    // Background Log (Optional)
     const params = new URLSearchParams(window.location.search);
-    return params.get("linkId");
-}
+    fetch(LOG_API, {
+      method: "POST",
+      body: JSON.stringify({
+        linkId: params.get("linkId"),
+        name, mobile, selfie_image: selfieBase64
+      })
+    }).catch(e => console.log(e));
 
+    step2.style.display = 'none';
+    step3.style.display = 'block';
+    renderGrid();
+  });
 
-/* ------------------------------
-     RENDER GRID
-------------------------------- */
-function renderGrid(){
-    const grid = document.getElementById("photoGrid");
+  // --- 3. SMART FILTERS & SEARCH ---
+  
+  // Text Search
+  document.getElementById('aiSearchInput').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    visiblePhotos = allMatches.filter(p => {
+      // Search in AI Tags, Event Name, or ID
+      const tags = (p.ai_tags || []).join(" ").toLowerCase();
+      const evt = (p.eventName || "").toLowerCase();
+      return tags.includes(q) || evt.includes(q);
+    });
+    renderGrid();
+    highlightChip('ALL'); // Reset chips visual
+  });
+
+  // Category Filters
+  window.applyFilter = function(type) {
+    // Reset search input
+    document.getElementById('aiSearchInput').value = "";
+    
+    // Logic mapping backend data to filters
+    if(type === 'ALL') {
+      visiblePhotos = [...allMatches];
+    } 
+    else if(type === 'BEST') {
+      // High quality OR very happy
+      visiblePhotos = allMatches.filter(p => (p.quality_score > 0.85) || (p.emotions?.Happy > 80));
+    }
+    else if(type === 'HAPPY') {
+      visiblePhotos = allMatches.filter(p => (p.emotions?.Happy > 60));
+    }
+    else if(type === 'COUPLE') {
+      visiblePhotos = allMatches.filter(p => p.face_count === 2);
+    }
+    else if(type === 'GROUP') {
+      visiblePhotos = allMatches.filter(p => p.face_count >= 3);
+    }
+    else if(type === 'SELFIE') {
+      visiblePhotos = allMatches.filter(p => p.face_count === 1 && p.shot_type === 'close-up');
+    }
+    else if(type === 'WEDDING') {
+      // Checks event name or tags
+      visiblePhotos = allMatches.filter(p => 
+        (p.eventName || "").toLowerCase().includes("wedding") || 
+        (p.ai_tags || []).includes("wedding")
+      );
+    }
+
+    renderGrid();
+    highlightChip(type);
+  };
+
+  function highlightChip(type) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    // Simple way to find the button by text content logic or onclick attr
+    // For now, re-clicking will set active class via event delegation or loop
+    const buttons = document.querySelectorAll('.chip');
+    buttons.forEach(btn => {
+      if(btn.getAttribute('onclick').includes(`'${type}'`)) {
+        btn.classList.add('active');
+      }
+    });
+  }
+
+  // --- 4. RENDER GRID ---
+  function renderGrid() {
     grid.innerHTML = "";
+    visiblePhotos.forEach((photo, idx) => {
+      const isSel = selectedUrls.has(photo.url);
+      
+      const div = document.createElement('div');
+      div.className = `tile ${isSel ? 'selected' : ''}`;
+      div.onclick = (e) => {
+        // If clicked on badge, toggle select. Else open viewer
+        if(e.target.closest('.check-badge')) {
+          toggleSelect(photo.url);
+        } else {
+          openViewer(idx);
+        }
+      };
 
-    filteredMatches.forEach(photo => {
-        const div = document.createElement("div");
-        div.className = "photo-box";
-
-        let img = document.createElement("img");
-        img.src = photo.url;
-
-        let tick = document.createElement("div");
-        tick.className = "selected-check";
-        tick.innerText = "✔";
-
-        div.onclick = () => toggleSelect(div, photo);
-
-        div.appendChild(img);
-        div.appendChild(tick);
-        grid.appendChild(div);
+      div.innerHTML = `
+        <img src="${photo.url}" loading="lazy">
+        <div class="check-badge">✓</div>
+      `;
+      grid.appendChild(div);
     });
-}
+    document.getElementById('selCount').innerText = selectedUrls.size;
+  }
 
+  // --- SELECTION LOGIC ---
+  function toggleSelect(url) {
+    if(selectedUrls.has(url)) selectedUrls.delete(url);
+    else selectedUrls.add(url);
+    renderGrid();
+  }
 
-/* SELECT / DESELECT */
-function toggleSelect(box, photo){
-    const tick = box.querySelector(".selected-check");
-
-    if (tick.style.display === "block"){
-        tick.style.display = "none";
-        selectedPhotos = selectedPhotos.filter(p => p.url !== photo.url);
+  window.toggleSelectAll = function() {
+    if(selectedUrls.size === visiblePhotos.length) {
+      selectedUrls.clear();
     } else {
-        tick.style.display = "block";
-        selectedPhotos.push(photo);
+      visiblePhotos.forEach(p => selectedUrls.add(p.url));
     }
-}
-
-
-/* ------------------------------
-     ZIP DOWNLOAD
-------------------------------- */
-async function downloadZip(){
-    if (selectedPhotos.length === 0){
-        alert("कृपया कुछ फोटो चुनें!");
-        return;
-    }
-
-    const zip = new JSZip();
-    let folder = zip.folder("photos");
-
-    for (let i = 0; i < selectedPhotos.length; i++){
-        let url = selectedPhotos[i].url;
-        let blob = await fetch(url).then(r => r.blob());
-        folder.file("photo_" + (i+1) + ".jpg", blob);
-    }
-
-    const content = await zip.generateAsync({type:"blob"});
-    saveAs(content, "SelectedPhotos.zip");
-}
-
-
-/* ------------------------------
-     GOOGLE PHOTOS STYLE FILTERS
-------------------------------- */
-function applySmartFilter(filterName){
-    let temp = [...matches];
-
-    if (filterName === "BEST"){
-        temp = temp.filter(p =>
-            (p.quality_score ?? 0) > 0.80 ||
-            (p.emotions?.Happy ?? 0) > 70
-        );
-    }
-
-    if (filterName === "HAPPY"){
-        temp = temp.filter(p => (p.emotions?.Happy ?? 0) >= 60);
-    }
-
-    if (filterName === "FACES"){
-        temp = temp.filter(p => (p.face_count ?? 0) >= 1);
-    }
-
-    if (filterName === "GROUPS"){
-        temp = temp.filter(p => (p.face_count ?? 0) >= 3);
-    }
-
-    if (filterName === "SELFIES"){
-        temp = temp.filter(p =>
-            (p.face_count ?? 0) === 1 &&
-            p.shot_type === "close-up"
-        );
-    }
-
-    filteredMatches = temp;
     renderGrid();
-}
+  };
 
-/* CHIP BUTTONS */
-document.querySelectorAll(".filter-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-        document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
-        chip.classList.add("active");
-        applySmartFilter(chip.dataset.filter);
-    });
-});
+  // --- ZIP DOWNLOAD ---
+  window.downloadZip = async function() {
+    if(selectedUrls.size === 0) return alert("Select photos first!");
+    
+    let zip = new JSZip();
+    let folder = zip.folder("My_Photos");
+    
+    let btn = document.querySelector("button[onclick='downloadZip()']");
+    btn.innerText = "⏳ Zipping...";
 
-/* TEXT SEARCH LIKE GOOGLE PHOTOS */
-searchTextFilter.addEventListener("input", function(){
-    const q = this.value.toLowerCase();
+    let urls = Array.from(selectedUrls);
+    for(let i=0; i<urls.length; i++) {
+      let blob = await fetch(urls[i]).then(r => r.blob());
+      folder.file(`photo_${i+1}.jpg`, blob);
+    }
 
-    filteredMatches = matches.filter(p =>
-        (p.ai_tags || []).some(t => t.toLowerCase().includes(q)) ||
-        (p.eventName || "").toLowerCase().includes(q) ||
-        (p.photo_id || "").toLowerCase().includes(q)
-    );
+    let content = await zip.generateAsync({type:"blob"});
+    saveAs(content, "EventLens_Photos.zip");
+    btn.innerText = "⬇ ZIP";
+  };
 
-    renderGrid();
-});
+  // --- VIEWER LOGIC ---
+  function openViewer(idx) {
+    viewerIdx = idx;
+    updateViewer();
+    document.getElementById('viewer').classList.add('open');
+  }
+  
+  window.closeViewer = function() {
+    document.getElementById('viewer').classList.remove('open');
+  };
+
+  function updateViewer() {
+    let photo = visiblePhotos[viewerIdx];
+    document.getElementById('viewerImg').src = photo.url;
+  }
+
+  window.nextPhoto = function() {
+    viewerIdx = (viewerIdx + 1) % visiblePhotos.length;
+    updateViewer();
+  };
+
+  window.prevPhoto = function() {
+    viewerIdx = (viewerIdx - 1 + visiblePhotos.length) % visiblePhotos.length;
+    updateViewer();
+  };
+
+  window.toggleCurrentSelection = function() {
+    let url = visiblePhotos[viewerIdx].url;
+    toggleSelect(url);
+  };
 
 </script>
 </body>
