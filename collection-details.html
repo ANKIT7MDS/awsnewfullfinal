@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
+    <!-- Zip Libs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
@@ -16,43 +17,50 @@
         * { box-sizing: border-box; }
         body { margin: 0; background-color: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; padding-bottom: 50px; }
         .wrap { max-width: 1300px; margin: 0 auto; padding: 20px; }
+        
+        /* HEADER & TABS */
         .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
-        .back-link { color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 6px; font-size: 14px; transition: color 0.2s; }
-        .back-link:hover { color: var(--brand); }
-        h1 { font-size: 24px; margin: 0; font-weight: 700; }
-        .pill { background: #1a1a1a; padding: 4px 10px; border-radius: 50px; font-size: 12px; border: 1px solid var(--border); color: var(--muted); display: inline-flex; gap: 5px; }
-        .pill strong { color: var(--brand); }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 14px; }
+        h1 { font-size: 24px; margin: 5px 0; }
+        .pill { background: #1a1a1a; padding: 4px 10px; border-radius: 50px; font-size: 12px; border: 1px solid var(--border); color: var(--muted); }
         .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
         .tab { padding: 12px 5px; cursor: pointer; color: var(--muted); font-size: 14px; position: relative; white-space: nowrap; }
-        .tab.active { color: var(--brand); font-weight: 600; }
-        .tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: var(--brand); }
+        .tab.active { color: var(--brand); font-weight: 600; border-bottom: 2px solid var(--brand); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .btn { background: var(--brand); color: #000; border: none; border-radius: 50px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
-        .btn:hover { background: var(--brand-hover); }
-        .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn.secondary:hover { border-color: var(--brand); color: var(--brand); background: transparent; }
-        .btn.danger { background: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-        .btn.danger:hover { background: var(--danger); color: #fff; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+
+        /* GALLERY & VIEWER */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
         .photo-card { position: relative; aspect-ratio: 1; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: pointer; }
         .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
         .photo-card:hover img { transform: scale(1.05); opacity: 0.8; }
         .meta-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; pointer-events: none; }
-        .filter-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
-        .chip { background: #151515; border: 1px solid var(--border); padding: 6px 12px; border-radius: 50px; font-size: 12px; cursor: pointer; color: var(--muted); white-space: nowrap; transition: all 0.2s; }
+        
+        /* VIEWER OVERLAY */
+        .viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .viewer.open { display: flex; }
+        .viewer img { max-width: 90%; max-height: 80vh; object-fit: contain; border-radius: 8px; }
+        .viewer-close { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 30px; cursor: pointer; }
+        .viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: #fff; padding: 10px; border-radius: 50%; cursor: pointer; font-size: 20px; }
+        .viewer-nav.left { left: 20px; }
+        .viewer-nav.right { right: 20px; }
+
+        /* BUTTONS & FILTERS */
+        .btn { background: var(--brand); color: #000; border: none; border-radius: 50px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn.danger { background: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .filter-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; }
+        .chip { background: #151515; border: 1px solid var(--border); padding: 6px 12px; border-radius: 50px; font-size: 12px; cursor: pointer; color: var(--muted); white-space: nowrap; }
         .chip.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
-        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; background: #0a0a0a; transition: all 0.2s; cursor: pointer; }
-        #dropZone:hover { border-color: var(--brand); background: rgba(0, 230, 118, 0.02); }
-        #progress-container { margin-top: 15px; background: #1a1a1a; height: 8px; border-radius: 4px; overflow: hidden; display: none; }
-        #progress-bar { height: 100%; background: var(--brand); width: 0%; transition: width 0.3s; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; padding: 10px; color: var(--muted); border-bottom: 1px solid var(--border); }
-        td { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; }
+
+        /* UPLOAD & TABLES */
+        #dropZone { border: 2px dashed var(--border); padding: 40px; text-align: center; background: #0a0a0a; border-radius: 12px; cursor: pointer; }
+        #progress-bar { height: 6px; background: var(--brand); width: 0%; border-radius: 3px; transition: width 0.3s; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+        th { color: var(--muted); }
         input, select { background: #000; border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff; width: 100%; outline: none; margin-bottom: 10px; }
-        input:focus, select:focus { border-color: var(--brand); }
-        .link-box { background: #111; border: 1px dashed var(--brand); padding: 15px; border-radius: 8px; margin-top: 15px; font-family: monospace; color: var(--brand); word-break: break-all; display: none; }
     </style>
 </head>
 <body>
@@ -62,17 +70,15 @@
     <div class="top-bar">
         <div>
             <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
-            <h1 id="collectionName" style="margin-top:5px;">Loading...</h1>
-            <div style="margin-top:5px; font-size:13px; color:var(--muted);">
-                <span id="collectionDate">-</span> • 
-                <span id="totalEvents">0</span> Events • 
-                <span id="totalPhotos">0</span> Photos
+            <h1 id="collectionName">Loading...</h1>
+            <div style="font-size:13px; color:var(--muted);">
+                <span id="collectionDate">-</span> • <span id="totalPhotos">0</span> Photos
             </div>
         </div>
-        <div style="text-align:right;">
+        <div>
             <span class="pill">Storage: <strong id="storageUsed">0 MB</strong></span>
-            <div style="margin-top:5px;">
-                <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="padding:4px 10px; font-size:11px;">⚡ Upload Link (for Staff)</a>
+            <div style="margin-top:5px; text-align:right;">
+                <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="padding:4px 10px; font-size:11px;">⚡ Staff Link</a>
             </div>
         </div>
     </div>
@@ -81,21 +87,22 @@
     <div class="tabs">
         <div class="tab active" onclick="switchTab('galleryTab')">🖼️ Gallery</div>
         <div class="tab" onclick="switchTab('eventsTab')">📅 Events</div>
-        <div class="tab" onclick="switchTab('uploadTab')">☁️ Upload Photos</div>
-        <div class="tab" onclick="switchTab('linksTab')">🔗 Search Links</div>
-        <div class="tab" onclick="switchTab('analyticsTab')">📊 Guests / Analytics</div>
+        <div class="tab" onclick="switchTab('uploadTab')">☁️ Upload</div>
+        <div class="tab" onclick="switchTab('linksTab')">🔗 Links</div>
+        <div class="tab" onclick="switchTab('analyticsTab')">📊 Guests / Leads</div>
     </div>
 
     <!-- 1. GALLERY TAB -->
     <div id="galleryTab" class="tab-content active">
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div class="filter-row">
                     <div class="chip active" onclick="filterGallery('ALL', this)">All</div>
                     <div class="chip" onclick="filterGallery('BEST', this)">⭐ Best</div>
                     <div class="chip" onclick="filterGallery('HAPPY', this)">😊 Happy</div>
                     <div class="chip" onclick="filterGallery('GROUP', this)">👥 Groups</div>
                 </div>
+                <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
             </div>
             <div id="galleryGrid" class="gallery-grid">
                 <p style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--muted);">Loading photos...</p>
@@ -115,7 +122,7 @@
             </div>
             <div class="card">
                 <h3 id="eventFormTitle">Create Event</h3>
-                <input type="text" id="eventName" placeholder="Event Name (e.g. Haldi)">
+                <input type="text" id="eventName" placeholder="Event Name">
                 <input type="date" id="eventDate">
                 <input type="hidden" id="eventIdToEdit">
                 <button class="btn" id="saveEventBtn" style="width:100%">Create Event</button>
@@ -128,16 +135,16 @@
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
             <h3>Upload Photos</h3>
-            <label style="font-size:13px; color:var(--muted);">Select Event to upload to:</label>
+            <label style="font-size:13px; color:var(--muted);">Select Event:</label>
             <select id="uploadEventSelect"><option value="">Select Event...</option></select>
             
             <div id="dropZone">
-                <div style="font-size:40px; margin-bottom:10px;">☁️</div>
-                <p>Drag & Drop photos here or click to browse</p>
+                <div style="font-size:40px;">☁️</div>
+                <p>Drag & Drop photos or Click</p>
                 <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
             
-            <div id="progress-container">
+            <div id="progress-container" style="margin-top:15px; background:#1a1a1a; height:8px; border-radius:4px; display:none;">
                 <div id="progress-bar"></div>
             </div>
             <p id="uploadStatus" style="text-align:center; font-size:13px; margin-top:10px; color:var(--muted);"></p>
@@ -148,22 +155,24 @@
     <div id="linksTab" class="tab-content">
         <div class="card" style="max-width:600px; margin:0 auto;">
             <h3>Generate Guest Link</h3>
-            <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">Select events to include in the public search link.</p>
-            <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;"></div>
-            <button class="btn" id="genLinkBtn">Generate Search Link</button>
-            <div id="linkResult" class="link-box"></div>
+            <div id="linkEventList" style="margin-bottom:15px; border:1px solid var(--border); padding:10px; border-radius:8px;"></div>
+            <button class="btn" id="genLinkBtn">Generate Link</button>
+            <div id="linkResult" style="margin-top:15px; padding:10px; background:#111; border:1px dashed var(--brand); color:var(--brand); display:none; word-break:break-all;"></div>
         </div>
     </div>
-    
-    <!-- 5. ANALYTICS TAB -->
+
+    <!-- 5. ANALYTICS TAB (New) -->
     <div id="analyticsTab" class="tab-content">
         <div class="card">
-            <h3>Guest Searches</h3>
-            <p style="color:var(--muted); font-size:13px;">List of users who uploaded selfie and searched.</p>
+            <h3>Guest / Leads Data</h3>
+            <p style="font-size:13px; color:var(--muted);">People who searched their photos.</p>
             <table>
                 <thead><tr><th>Name</th><th>Mobile</th><th>Time</th><th>Status</th></tr></thead>
                 <tbody id="analyticsBody">
-                    <tr><td colspan="4" style="text-align:center; padding:15px; color:#555;">(Connect to guest-data API to view real leads)</td></tr>
+                    <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">
+                        Fetching data... <br>
+                        (Ensure GET /get-leads API is connected to DynamoDB table 'guest-data')
+                    </td></tr>
                 </tbody>
             </table>
         </div>
@@ -171,18 +180,28 @@
 
 </div>
 
+<!-- VIEWER OVERLAY -->
+<div class="viewer" id="viewer">
+    <div class="viewer-close" onclick="closeViewer()">✕</div>
+    <div class="viewer-nav left" onclick="moveViewer(-1)">❮</div>
+    <img id="viewerImg" src="">
+    <div class="viewer-nav right" onclick="moveViewer(1)">❯</div>
+</div>
+
 <script>
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+    // Replace these endpoints with your actual ones
     const GET_EVENTS_API = `${API_BASE}/get-events`;
     const GET_PHOTOS_API = `${API_BASE}/get-photos`;
     const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
     const DELETE_EVENT_API = `${API_BASE}/delete-event`;
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
+    // const GET_LEADS_API = `${API_BASE}/get-leads`; // TODO: You need to create this
 
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
-    const collectionNameParam = urlParams.get("name"); // Fallback name
+    const collectionNameParam = urlParams.get("name");
     const idToken = localStorage.getItem("idToken");
 
     if (!idToken) window.location.href = 'login.html';
@@ -192,21 +211,8 @@
 
     // STATE
     let allPhotos = [];
-    let eventsList = [];
-
-    // --- UTILS ---
-    function formatBytes(bytes, decimals = 2) {
-        if (!+bytes) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
-    }
-
-    function formatDate(dateStr) {
-        if(!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('en-IN');
-    }
+    let filteredPhotos = [];
+    let viewerIndex = 0;
 
     // --- TABS ---
     window.switchTab = function(tabId) {
@@ -216,7 +222,7 @@
         document.getElementById(tabId).classList.add('active');
     }
 
-    // --- DATA FETCHING ---
+    // --- INIT ---
     async function init() {
         try {
             const res = await fetch(GET_EVENTS_API, {
@@ -226,25 +232,24 @@
             });
             const data = await res.json();
             
-            // Fix: Header Data Binding
+            // Header Stats
             const summary = data.collection_summary || {};
             document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-            document.getElementById('collectionDate').textContent = summary.created_at ? formatDate(summary.created_at) : '-';
+            document.getElementById('collectionDate').textContent = summary.created_at ? new Date(summary.created_at).toLocaleDateString() : '-';
             
-            // Count Aggregation from Events if summary is not updated
             const evts = data.events || [];
+            // Calculate totals if summary is missing
             const totalPhotos = summary.photo_count || evts.reduce((sum, e) => sum + (e.photo_count||0), 0);
             const totalStorage = summary.storage_bytes || evts.reduce((sum, e) => sum + (e.storage_bytes||0), 0);
             
-            document.getElementById('totalEvents').textContent = evts.length;
             document.getElementById('totalPhotos').textContent = totalPhotos;
             document.getElementById('storageUsed').textContent = formatBytes(totalStorage);
 
-            eventsList = evts;
-            renderEvents(eventsList);
-            fetchPhotos(); // Load Gallery
+            renderEvents(evts);
+            fetchPhotos(); 
+            // fetchAnalytics(); // Call this when API is ready
 
-        } catch (e) { console.error(e); alert("Failed to load collection details"); }
+        } catch (e) { console.error(e); }
     }
 
     async function fetchPhotos() {
@@ -257,6 +262,7 @@
             });
             const data = await res.json();
             allPhotos = data.photos || [];
+            filteredPhotos = [...allPhotos];
             
             if(allPhotos.length === 0) {
                 grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:20px; color:#666;">No photos uploaded yet.</p>';
@@ -268,59 +274,70 @@
         }
     }
 
-    // --- RENDERERS ---
+    // --- GALLERY & VIEWER ---
     function renderGallery(photos) {
         const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = photos.map(p => {
+        grid.innerHTML = photos.map((p, idx) => {
             let badge = '';
             if(p.quality_score > 85) badge = '<span class="meta-badge">⭐ Best</span>';
             else if(p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 80)) badge = '<span class="meta-badge">😊 Happy</span>';
             
-            // Broken Image Handler included in onError
-            return `<div class="photo-card" onclick="window.open('${p.url}', '_blank')">
+            // Added onerror to hide broken images
+            return `<div class="photo-card" onclick="openViewer(${idx})">
                 <img src="${p.url}" loading="lazy" onerror="this.parentElement.style.display='none'">
                 ${badge}
             </div>`;
         }).join('');
     }
 
-    function renderEvents(events) {
-        const tbody = document.getElementById('eventsTbody');
-        const uploadSelect = document.getElementById('uploadEventSelect');
-        const linkList = document.getElementById('linkEventList');
-        
-        tbody.innerHTML = '';
-        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-        linkList.innerHTML = '';
-
-        events.forEach(ev => {
-            tbody.innerHTML += `<tr>
-                <td>${ev.name}</td>
-                <td>${formatDate(ev.event_date)}</td>
-                <td>${ev.photo_count || 0}</td>
-                <td>
-                    <button class="btn secondary" style="padding:4px 8px; font-size:11px;" onclick="editEvent('${ev.event_id}', '${ev.name}', '${ev.event_date}')">Edit</button>
-                    <button class="btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteEvent('${ev.event_id}')">Del</button>
-                </td>
-            </tr>`;
-            uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-            linkList.innerHTML += `<label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
-                <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
-            </label>`;
-        });
+    window.openViewer = (idx) => {
+        viewerIndex = idx;
+        document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+        document.getElementById('viewer').classList.add('open');
+    }
+    window.closeViewer = () => document.getElementById('viewer').classList.remove('open');
+    window.moveViewer = (dir) => {
+        viewerIndex = (viewerIndex + dir + filteredPhotos.length) % filteredPhotos.length;
+        document.getElementById('viewerImg').src = filteredPhotos[viewerIndex].url;
     }
 
     window.filterGallery = function(type, el) {
         document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
         
-        let filtered = [];
-        if(type === 'ALL') filtered = allPhotos;
-        else if(type === 'BEST') filtered = allPhotos.filter(p => p.quality_score > 85);
-        else if(type === 'HAPPY') filtered = allPhotos.filter(p => p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60));
-        else if(type === 'GROUP') filtered = allPhotos.filter(p => p.face_count >= 3);
+        if(type === 'ALL') filteredPhotos = allPhotos;
+        else if(type === 'BEST') filteredPhotos = allPhotos.filter(p => p.quality_score > 85);
+        else if(type === 'HAPPY') filteredPhotos = allPhotos.filter(p => p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60));
+        else if(type === 'GROUP') filteredPhotos = allPhotos.filter(p => p.face_count >= 3);
         
-        renderGallery(filtered);
+        renderGallery(filteredPhotos);
+    }
+
+    // --- ZIP DOWNLOAD ---
+    window.downloadAllZip = async function() {
+        if(filteredPhotos.length === 0) return alert("No photos to download");
+        const btn = document.querySelector('button[onclick="downloadAllZip()"]');
+        btn.textContent = "⏳ Zipping...";
+        
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        
+        // Download first 20 for demo/speed (remove slice for full)
+        const limit = filteredPhotos.slice(0, 50); 
+        
+        let count = 0;
+        for(let i=0; i<limit.length; i++) {
+            try {
+                const blob = await fetch(limit[i].url).then(r=>r.blob());
+                folder.file(`photo_${i+1}.jpg`, blob);
+                count++;
+            } catch(e) {}
+        }
+        
+        zip.generateAsync({type:"blob"}).then(function(content) {
+            saveAs(content, "EventLens_Photos.zip");
+            btn.textContent = "⬇ Download Zip";
+        });
     }
 
     // --- UPLOAD LOGIC ---
@@ -369,64 +386,48 @@
                     progressBar.style.width = `${(uploaded/total)*100}%`;
                     status.innerHTML = `🚀 Uploading... <b>${uploaded}/${total}</b>`;
                 }));
-            } catch(err) {
-                console.error(err);
-            }
+            } catch(err) { console.error(err); }
         }
         
         progressBar.style.width = '100%';
         progressBar.style.backgroundColor = '#00e676';
-        status.innerHTML = `✅ <b>Upload Complete!</b> Processing photos (they will appear in gallery soon).`;
-        setTimeout(() => init(), 3000); 
+        status.innerHTML = `✅ <b>Upload Complete!</b> Processing photos...`;
+        setTimeout(() => init(), 2000); 
     }
 
     // --- EVENT ACTIONS ---
+    function renderEvents(events) {
+        const tbody = document.getElementById('eventsTbody');
+        const uploadSelect = document.getElementById('uploadEventSelect');
+        const linkList = document.getElementById('linkEventList');
+        
+        tbody.innerHTML = '';
+        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+        linkList.innerHTML = '';
+
+        events.forEach(ev => {
+            tbody.innerHTML += `<tr>
+                <td>${ev.name}</td>
+                <td>${ev.event_date}</td>
+                <td>${ev.photo_count || 0}</td>
+                <td><button class="btn secondary" style="padding:4px 8px; font-size:11px;" onclick="alert('Use Quick Upload for edits')">View</button></td>
+            </tr>`;
+            uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+            linkList.innerHTML += `<label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;"><input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}</label>`;
+        });
+    }
+
     document.getElementById('saveEventBtn').onclick = async () => {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
-        const id = document.getElementById('eventIdToEdit').value;
         if(!name) return;
         
-        const payload = { collection_id: collectionId, name, event_date: date };
-        if(id) payload.event_id = id;
-
         await fetch(UPSERT_EVENT_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
         });
-        
         document.getElementById('eventName').value = '';
-        document.getElementById('eventIdToEdit').value = '';
-        document.getElementById('cancelEventEdit').style.display = 'none';
-        document.getElementById('saveEventBtn').textContent = 'Create Event';
-        document.getElementById('eventFormTitle').textContent = 'Create Event';
-        init();
-    }
-
-    window.editEvent = (id, name, date) => {
-        document.getElementById('eventName').value = name;
-        document.getElementById('eventDate').value = date;
-        document.getElementById('eventIdToEdit').value = id;
-        document.getElementById('saveEventBtn').textContent = 'Update Event';
-        document.getElementById('eventFormTitle').textContent = 'Edit Event';
-        document.getElementById('cancelEventEdit').style.display = 'inline-block';
-    }
-
-    document.getElementById('cancelEventEdit').onclick = () => {
-        document.getElementById('eventName').value = '';
-        document.getElementById('eventIdToEdit').value = '';
-        document.getElementById('cancelEventEdit').style.display = 'none';
-        document.getElementById('saveEventBtn').textContent = 'Create Event';
-    }
-    
-    window.deleteEvent = async (id) => {
-        if(!confirm("Delete event?")) return;
-        await fetch(DELETE_EVENT_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_id: id })
-        });
         init();
     }
 
@@ -447,9 +448,15 @@
         box.innerHTML = `<a href="${data.searchUrl}" target="_blank" style="color:var(--brand)">${data.searchUrl}</a>`;
     }
 
-    // START
-    init();
+    function formatBytes(bytes) {
+        if (!+bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    }
 
+    init();
 </script>
 </body>
 </html>
