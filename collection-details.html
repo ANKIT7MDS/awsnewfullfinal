@@ -10,169 +10,210 @@
 
     <style>
         :root {
-            --bg: #050505; --card: #101010; --border: #262626; --text: #ffffff;
-            --muted: #a0a0a0; --brand: #00e676; --brand-hover: #00c853;
-            --brand-soft: rgba(0, 230, 118, 0.1); --danger: #ff5252;
+            --bg: #0f0f0f; --card: #1e1e1e; --border: #333; --text: #e0e0e0;
+            --muted: #888; --brand: #4285f4; --brand-hover: #3367d6; /* Google Blueish */
+            --danger: #ea4335; --ok: #34a853;
         }
         * { box-sizing: border-box; }
-        body { margin: 0; background-color: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; padding-bottom: 50px; }
-        .wrap { max-width: 1300px; margin: 0 auto; padding: 20px; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); font-family: 'Google Sans', Roboto, Arial, sans-serif; padding-bottom: 60px; }
+        .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
         
-        /* HEADER & TABS */
+        /* HEADER */
         .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
-        .back-link { color: var(--muted); text-decoration: none; font-size: 14px; }
-        h1 { font-size: 24px; margin: 5px 0; }
-        .pill { background: #1a1a1a; padding: 4px 10px; border-radius: 50px; font-size: 12px; border: 1px solid var(--border); color: var(--muted); }
-        .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
-        .tab { padding: 12px 5px; cursor: pointer; color: var(--muted); font-size: 14px; position: relative; white-space: nowrap; }
-        .tab.active { color: var(--brand); font-weight: 600; border-bottom: 2px solid var(--brand); }
+        .back-link { color: var(--muted); text-decoration: none; font-size: 14px; display:flex; align-items:center; gap:5px; }
+        h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
+        
+        /* TABS */
+        .tabs { display: flex; gap: 30px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
+        .tab { padding: 12px 0; cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500; border-bottom: 3px solid transparent; }
+        .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
-
-        /* GALLERY & VIEWER */
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .photo-card { position: relative; aspect-ratio: 1; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: pointer; }
-        .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-        .photo-card:hover img { transform: scale(1.05); opacity: 0.8; }
-        .meta-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; pointer-events: none; }
         
-        /* VIEWER OVERLAY */
-        .viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
-        .viewer.open { display: flex; }
-        .viewer img { max-width: 90%; max-height: 80vh; object-fit: contain; border-radius: 8px; }
-        .viewer-close { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 30px; cursor: pointer; }
-        .viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: #fff; padding: 10px; border-radius: 50%; cursor: pointer; font-size: 20px; }
-        .viewer-nav.left { left: 20px; }
-        .viewer-nav.right { right: 20px; }
+        /* CARDS */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
-        /* BUTTONS & FILTERS */
-        .btn { background: var(--brand); color: #000; border: none; border-radius: 50px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        /* GOOGLE PHOTOS STYLE GRID */
+        .date-header { font-size: 14px; font-weight: 500; color: var(--text); margin: 25px 0 10px 5px; display: flex; align-items: center; gap: 10px; }
+        .date-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        
+        .gallery-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+            gap: 8px; 
+        }
+        .photo-card { 
+            position: relative; 
+            aspect-ratio: 1; 
+            background: #000; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            cursor: pointer; 
+            transition: transform 0.1s;
+        }
+        .photo-card:hover { transform: scale(1.02); z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* INFO OVERLAY ON HOVER */
+        .photo-info {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 20px 8px 8px;
+            font-size: 11px; color: #fff;
+            opacity: 0; transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .photo-card:hover .photo-info { opacity: 1; }
+        .tags-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .tiny-tag { background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; }
+
+        /* BUTTONS */
+        .btn { background: var(--brand); color: #fff; border: none; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn:hover { background: var(--brand-hover); }
         .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn.danger { background: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-        .filter-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; }
-        .chip { background: #151515; border: 1px solid var(--border); padding: 6px 12px; border-radius: 50px; font-size: 12px; cursor: pointer; color: var(--muted); white-space: nowrap; }
-        .chip.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
-
-        /* UPLOAD & TABLES */
-        #dropZone { border: 2px dashed var(--border); padding: 40px; text-align: center; background: #0a0a0a; border-radius: 12px; cursor: pointer; }
-        #progress-bar { height: 6px; background: var(--brand); width: 0%; border-radius: 3px; transition: width 0.3s; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
-        th { color: var(--muted); }
-        input, select { background: #000; border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff; width: 100%; outline: none; margin-bottom: 10px; }
+        .btn.secondary:hover { background: rgba(255,255,255,0.05); }
+        .btn.danger { color: var(--danger); border-color: var(--danger); }
+        
+        /* VIEWER */
+        .viewer { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .viewer.open { display: flex; }
+        .viewer img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+        .viewer-close { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 50%; }
+        .viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); color: #fff; font-size: 40px; cursor: pointer; padding: 20px; user-select: none; }
+        .viewer-nav.left { left: 10px; }
+        .viewer-nav.right { right: 10px; }
+        
+        /* TABLES */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+        td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
+        
+        /* FORMS & INPUTS */
+        input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
+        input:focus { border-color: var(--brand); }
+        
+        /* UPLOAD */
+        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; }
+        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; }
+        
+        /* Load More */
+        .load-more-container { text-align: center; margin-top: 30px; }
     </style>
 </head>
 <body>
 <div class="wrap">
     
-    <!-- HEADER -->
     <div class="top-bar">
         <div>
-            <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+            <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
             <h1 id="collectionName">Loading...</h1>
-            <div style="font-size:13px; color:var(--muted);">
-                <span id="collectionDate">-</span> • <span id="totalPhotos">0</span> Photos
-            </div>
+            <div style="font-size:13px; color:var(--muted);"><span id="totalPhotos">0</span> Photos • <span id="storageUsed">0 MB</span></div>
         </div>
-        <div>
-            <span class="pill">Storage: <strong id="storageUsed">0 MB</strong></span>
-            <div style="margin-top:5px; text-align:right;">
-                <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="padding:4px 10px; font-size:11px;">⚡ Staff Link</a>
-            </div>
+        <div style="display:flex; gap:10px;">
+            <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ Staff Upload Link</a>
         </div>
     </div>
 
-    <!-- TABS -->
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('galleryTab')">🖼️ Gallery</div>
-        <div class="tab" onclick="switchTab('eventsTab')">📅 Events</div>
-        <div class="tab" onclick="switchTab('uploadTab')">☁️ Upload</div>
-        <div class="tab" onclick="switchTab('linksTab')">🔗 Links</div>
-        <div class="tab" onclick="switchTab('analyticsTab')">📊 Guests / Leads</div>
+        <div class="tab active" onclick="switchTab('galleryTab')">Photos</div>
+        <div class="tab" onclick="switchTab('eventsTab')">Events</div>
+        <div class="tab" onclick="switchTab('uploadTab')">Upload</div>
+        <div class="tab" onclick="switchTab('linksTab')">Links</div>
+        <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
     </div>
 
-    <!-- 1. GALLERY TAB -->
+    <!-- 1. GALLERY TAB (Google Photos Style) -->
     <div id="galleryTab" class="tab-content active">
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
-                <div class="filter-row">
-                    <div class="chip active" onclick="filterGallery('ALL', this)">All</div>
-                    <div class="chip" onclick="filterGallery('BEST', this)">⭐ Best</div>
-                    <div class="chip" onclick="filterGallery('HAPPY', this)">😊 Happy</div>
-                    <div class="chip" onclick="filterGallery('GROUP', this)">👥 Groups</div>
-                </div>
-                <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <div style="display:flex; gap:10px;">
+                <select id="filterType" style="width:150px; padding:8px;" onchange="applyFilters()">
+                    <option value="ALL">All Photos</option>
+                    <option value="BEST">⭐ Best Shots</option>
+                    <option value="HAPPY">😊 Happy</option>
+                    <option value="GROUP">👥 Groups</option>
+                </select>
+                <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" style="width:200px; padding:8px;" oninput="applyFilters()">
             </div>
-            <div id="galleryGrid" class="gallery-grid">
-                <p style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--muted);">Loading photos...</p>
-            </div>
+            <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
+        </div>
+
+        <div id="galleryContainer">
+            <!-- Photos will be grouped by date here -->
+            <p style="text-align:center; padding:40px; color:var(--muted);">Loading photos...</p>
+        </div>
+        
+        <div class="load-more-container">
+            <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="renderNextBatch()">Load More</button>
         </div>
     </div>
 
     <!-- 2. EVENTS TAB -->
     <div id="eventsTab" class="tab-content">
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
-            <div class="card">
-                <h3>Event List</h3>
-                <table>
-                    <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
-                    <tbody id="eventsTbody"></tbody>
-                </table>
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>Events</h3>
+                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
             </div>
-            <div class="card">
-                <h3 id="eventFormTitle">Create Event</h3>
-                <input type="text" id="eventName" placeholder="Event Name">
-                <input type="date" id="eventDate">
-                <input type="hidden" id="eventIdToEdit">
-                <button class="btn" id="saveEventBtn" style="width:100%">Create Event</button>
-                <button class="btn secondary" id="cancelEventEdit" style="width:100%; margin-top:5px; display:none;">Cancel</button>
+            
+            <!-- Create Event Form -->
+            <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <input type="text" id="eventName" placeholder="Event Name">
+                    <input type="date" id="eventDate">
+                </div>
+                <div style="margin-top:10px; text-align:right;">
+                    <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
+                    <button class="btn" id="saveEventBtn">Save</button>
+                </div>
             </div>
+
+            <table>
+                <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+                <tbody id="eventsTbody"></tbody>
+            </table>
         </div>
     </div>
 
     <!-- 3. UPLOAD TAB -->
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
-            <h3>Upload Photos</h3>
-            <label style="font-size:13px; color:var(--muted);">Select Event:</label>
-            <select id="uploadEventSelect"><option value="">Select Event...</option></select>
+            <div style="margin-bottom:20px;">
+                <label style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
+                <select id="uploadEventSelect"><option value="">Loading...</option></select>
+            </div>
             
             <div id="dropZone">
-                <div style="font-size:40px;">☁️</div>
-                <p>Drag & Drop photos or Click</p>
+                <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
+                <p>Drag photos here to upload</p>
                 <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
             
-            <div id="progress-container" style="margin-top:15px; background:#1a1a1a; height:8px; border-radius:4px; display:none;">
+            <div id="progress-container" style="display:none;">
                 <div id="progress-bar"></div>
+                <p id="uploadStatus" style="text-align:center; font-size:13px; margin-top:5px; color:var(--muted);"></p>
             </div>
-            <p id="uploadStatus" style="text-align:center; font-size:13px; margin-top:10px; color:var(--muted);"></p>
         </div>
     </div>
 
     <!-- 4. LINKS TAB -->
     <div id="linksTab" class="tab-content">
         <div class="card" style="max-width:600px; margin:0 auto;">
-            <h3>Generate Guest Link</h3>
-            <div id="linkEventList" style="margin-bottom:15px; border:1px solid var(--border); padding:10px; border-radius:8px;"></div>
+            <h3>Generate Search Link</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include.</p>
+            <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;"></div>
             <button class="btn" id="genLinkBtn">Generate Link</button>
-            <div id="linkResult" style="margin-top:15px; padding:10px; background:#111; border:1px dashed var(--brand); color:var(--brand); display:none; word-break:break-all;"></div>
+            <div id="linkResult" style="margin-top:15px; padding:15px; background:#111; border:1px dashed var(--brand); color:var(--brand); display:none; word-break:break-all;"></div>
         </div>
     </div>
 
-    <!-- 5. ANALYTICS TAB (New) -->
+    <!-- 5. ANALYTICS TAB -->
     <div id="analyticsTab" class="tab-content">
         <div class="card">
-            <h3>Guest / Leads Data</h3>
-            <p style="font-size:13px; color:var(--muted);">People who searched their photos.</p>
+            <h3>Guest Leads</h3>
             <table>
-                <thead><tr><th>Name</th><th>Mobile</th><th>Time</th><th>Status</th></tr></thead>
+                <thead><tr><th>Name</th><th>Mobile</th><th>Time</th><th>Details</th></tr></thead>
                 <tbody id="analyticsBody">
-                    <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">
-                        Fetching data... <br>
-                        (Ensure GET /get-leads API is connected to DynamoDB table 'guest-data')
-                    </td></tr>
+                    <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Loading leads...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -180,7 +221,7 @@
 
 </div>
 
-<!-- VIEWER OVERLAY -->
+<!-- FULLSCREEN VIEWER -->
 <div class="viewer" id="viewer">
     <div class="viewer-close" onclick="closeViewer()">✕</div>
     <div class="viewer-nav left" onclick="moveViewer(-1)">❮</div>
@@ -190,14 +231,13 @@
 
 <script>
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
-    // Replace these endpoints with your actual ones
     const GET_EVENTS_API = `${API_BASE}/get-events`;
     const GET_PHOTOS_API = `${API_BASE}/get-photos`;
     const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
     const DELETE_EVENT_API = `${API_BASE}/delete-event`;
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
-    // const GET_LEADS_API = `${API_BASE}/get-leads`; // TODO: You need to create this
+    const GUEST_API = `${API_BASE}/save-details`; 
 
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
@@ -205,13 +245,13 @@
     const idToken = localStorage.getItem("idToken");
 
     if (!idToken) window.location.href = 'login.html';
-
-    // Set Assistant Link
     document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
 
     // STATE
     let allPhotos = [];
     let filteredPhotos = [];
+    let displayedPhotosCount = 0;
+    const BATCH_SIZE = 50; // Pagination Batch Size
     let viewerIndex = 0;
 
     // --- TABS ---
@@ -220,11 +260,13 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
         document.getElementById(tabId).classList.add('active');
+        if(tabId === 'analyticsTab') fetchAnalytics();
     }
 
     // --- INIT ---
     async function init() {
         try {
+            // 1. Fetch Events
             const res = await fetch(GET_EVENTS_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
@@ -232,13 +274,10 @@
             });
             const data = await res.json();
             
-            // Header Stats
             const summary = data.collection_summary || {};
             document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-            document.getElementById('collectionDate').textContent = summary.created_at ? new Date(summary.created_at).toLocaleDateString() : '-';
             
             const evts = data.events || [];
-            // Calculate totals if summary is missing
             const totalPhotos = summary.photo_count || evts.reduce((sum, e) => sum + (e.photo_count||0), 0);
             const totalStorage = summary.storage_bytes || evts.reduce((sum, e) => sum + (e.storage_bytes||0), 0);
             
@@ -246,14 +285,13 @@
             document.getElementById('storageUsed').textContent = formatBytes(totalStorage);
 
             renderEvents(evts);
-            fetchPhotos(); 
-            // fetchAnalytics(); // Call this when API is ready
+            fetchPhotos();
 
         } catch (e) { console.error(e); }
     }
 
     async function fetchPhotos() {
-        const grid = document.getElementById('galleryGrid');
+        const container = document.getElementById('galleryContainer');
         try {
             const res = await fetch(GET_PHOTOS_API, {
                 method: 'POST',
@@ -264,32 +302,102 @@
             allPhotos = data.photos || [];
             filteredPhotos = [...allPhotos];
             
+            // Sort by Date Descending
+            filteredPhotos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
             if(allPhotos.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:20px; color:#666;">No photos uploaded yet.</p>';
+                container.innerHTML = '<p style="text-align:center; padding:40px; color:var(--muted);">No photos uploaded yet.</p>';
             } else {
-                renderGallery(allPhotos);
+                displayedPhotosCount = 0;
+                container.innerHTML = ''; // Clear loading
+                renderNextBatch();
             }
         } catch (e) {
-            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:red;">Failed to load photos.</p>';
+            container.innerHTML = '<p style="text-align:center; color:var(--danger);">Failed to load photos.</p>';
         }
     }
 
-    // --- GALLERY & VIEWER ---
-    function renderGallery(photos) {
-        const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = photos.map((p, idx) => {
-            let badge = '';
-            if(p.quality_score > 85) badge = '<span class="meta-badge">⭐ Best</span>';
-            else if(p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 80)) badge = '<span class="meta-badge">😊 Happy</span>';
+    // --- GOOGLE PHOTOS STYLE RENDERING ---
+    window.renderNextBatch = function() {
+        const container = document.getElementById('galleryContainer');
+        const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + BATCH_SIZE);
+        
+        if(nextBatch.length === 0) {
+            document.getElementById('loadMoreBtn').style.display = 'none';
+            return;
+        }
+
+        // Group by Date
+        let currentGroup = document.querySelector('.gallery-grid:last-child');
+        let lastDate = container.lastElementChild?.previousElementSibling?.textContent || '';
+
+        nextBatch.forEach((p, idx) => {
+            const globalIdx = displayedPhotosCount + idx;
+            // Fake Date if missing, or parse real date
+            const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Recent Uploads';
             
-            // Added onerror to hide broken images
-            return `<div class="photo-card" onclick="openViewer(${idx})">
+            // Create new Group if date changes
+            if(dateStr !== lastDate) {
+                const header = document.createElement('div');
+                header.className = 'date-header';
+                header.textContent = dateStr;
+                container.appendChild(header);
+                
+                currentGroup = document.createElement('div');
+                currentGroup.className = 'gallery-grid';
+                container.appendChild(currentGroup);
+                lastDate = dateStr;
+            }
+
+            // Create Photo Card
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.onclick = () => openViewer(globalIdx);
+            
+            // AI Tags Display
+            const tags = (p.ai_tags || []).slice(0, 3).join(', ');
+            
+            card.innerHTML = `
                 <img src="${p.url}" loading="lazy" onerror="this.parentElement.style.display='none'">
-                ${badge}
-            </div>`;
-        }).join('');
+                <div class="photo-info">
+                    ${tags ? `<div class="tiny-tag">🏷️ ${tags}</div>` : ''}
+                    ${p.emotions && p.emotions.length > 0 ? `<div class="tiny-tag">😊 ${p.emotions[0].Type}</div>` : ''}
+                </div>
+            `;
+            currentGroup.appendChild(card);
+        });
+
+        displayedPhotosCount += nextBatch.length;
+        
+        // Toggle Load More Button
+        const btn = document.getElementById('loadMoreBtn');
+        btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
 
+    // --- FILTERS ---
+    window.applyFilters = function() {
+        const type = document.getElementById('filterType').value;
+        const query = document.getElementById('tagSearch').value.toLowerCase();
+        
+        filteredPhotos = allPhotos.filter(p => {
+            const matchesType = 
+                (type === 'ALL') ||
+                (type === 'BEST' && p.quality_score > 85) ||
+                (type === 'HAPPY' && p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+                (type === 'GROUP' && p.face_count >= 3);
+            
+            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
+            
+            return matchesType && matchesQuery;
+        });
+
+        // Reset Display
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+    }
+
+    // --- VIEWER ---
     window.openViewer = (idx) => {
         viewerIndex = idx;
         document.getElementById('viewerImg').src = filteredPhotos[idx].url;
@@ -301,58 +409,19 @@
         document.getElementById('viewerImg').src = filteredPhotos[viewerIndex].url;
     }
 
-    window.filterGallery = function(type, el) {
-        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        
-        if(type === 'ALL') filteredPhotos = allPhotos;
-        else if(type === 'BEST') filteredPhotos = allPhotos.filter(p => p.quality_score > 85);
-        else if(type === 'HAPPY') filteredPhotos = allPhotos.filter(p => p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60));
-        else if(type === 'GROUP') filteredPhotos = allPhotos.filter(p => p.face_count >= 3);
-        
-        renderGallery(filteredPhotos);
-    }
-
-    // --- ZIP DOWNLOAD ---
-    window.downloadAllZip = async function() {
-        if(filteredPhotos.length === 0) return alert("No photos to download");
-        const btn = document.querySelector('button[onclick="downloadAllZip()"]');
-        btn.textContent = "⏳ Zipping...";
-        
-        const zip = new JSZip();
-        const folder = zip.folder("photos");
-        
-        // Download first 20 for demo/speed (remove slice for full)
-        const limit = filteredPhotos.slice(0, 50); 
-        
-        let count = 0;
-        for(let i=0; i<limit.length; i++) {
-            try {
-                const blob = await fetch(limit[i].url).then(r=>r.blob());
-                folder.file(`photo_${i+1}.jpg`, blob);
-                count++;
-            } catch(e) {}
-        }
-        
-        zip.generateAsync({type:"blob"}).then(function(content) {
-            saveAs(content, "EventLens_Photos.zip");
-            btn.textContent = "⬇ Download Zip";
-        });
-    }
-
-    // --- UPLOAD LOGIC ---
+    // --- UPLOAD ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     
     dropZone.onclick = () => fileInput.click();
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--brand)'; };
-    dropZone.ondragleave = () => { dropZone.style.borderColor = 'var(--border)'; };
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
+    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
     dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
     fileInput.onchange = () => handleFiles(fileInput.files);
 
     async function handleFiles(files) {
         const eventId = document.getElementById('uploadEventSelect').value;
-        if(!eventId) return alert("Please select an event first!");
+        if(!eventId) return alert("Select an event first!");
         
         const total = files.length;
         if(total === 0) return;
@@ -361,16 +430,15 @@
         const progressBar = document.getElementById('progress-bar');
         const status = document.getElementById('uploadStatus');
         
-        status.innerHTML = `⏳ Preparing to upload <b>${total}</b> photos...`;
-
-        const batches = [];
+        // Batch Upload
         const BATCH_SIZE = 10;
-        for(let i=0; i<total; i+=BATCH_SIZE) batches.push(Array.from(files).slice(i, i+BATCH_SIZE));
-
+        const fileArr = Array.from(files);
         let uploaded = 0;
 
-        for(let batch of batches) {
+        for(let i=0; i<total; i+=BATCH_SIZE) {
+            const batch = fileArr.slice(i, i+BATCH_SIZE);
             const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            
             try {
                 const res = await fetch(UPLOAD_URLS_API, {
                     method: 'POST',
@@ -384,18 +452,44 @@
                     await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
                     uploaded++;
                     progressBar.style.width = `${(uploaded/total)*100}%`;
-                    status.innerHTML = `🚀 Uploading... <b>${uploaded}/${total}</b>`;
+                    status.innerHTML = `Uploading... ${uploaded}/${total}`;
                 }));
             } catch(err) { console.error(err); }
         }
-        
-        progressBar.style.width = '100%';
-        progressBar.style.backgroundColor = '#00e676';
-        status.innerHTML = `✅ <b>Upload Complete!</b> Processing photos...`;
-        setTimeout(() => init(), 2000); 
+        status.innerHTML = `✅ Upload Complete!`;
+        setTimeout(() => { init(); }, 2000); 
     }
 
-    // --- EVENT ACTIONS ---
+    // --- ANALYTICS ---
+    async function fetchAnalytics() {
+        const tbody = document.getElementById('analyticsBody');
+        try {
+            const res = await fetch(`${GUEST_API}?collection_id=${collectionId}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            const data = await res.json();
+            const leads = data.leads || [];
+            
+            if(leads.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">No leads yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = leads.map(l => `
+                <tr>
+                    <td>${l.name || '-'}</td>
+                    <td>${l.mobile || '-'}</td>
+                    <td style="color:var(--muted);">${l.timestamp ? new Date(l.timestamp).toLocaleString() : '-'}</td>
+                    <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">Viewed</span></td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Failed to fetch leads.</td></tr>';
+        }
+    }
+
+    // --- UTILS ---
     function renderEvents(events) {
         const tbody = document.getElementById('eventsTbody');
         const uploadSelect = document.getElementById('uploadEventSelect');
@@ -406,42 +500,25 @@
         linkList.innerHTML = '';
 
         events.forEach(ev => {
-            tbody.innerHTML += `<tr>
-                <td>${ev.name}</td>
-                <td>${ev.event_date}</td>
-                <td>${ev.photo_count || 0}</td>
-                <td><button class="btn secondary" style="padding:4px 8px; font-size:11px;" onclick="alert('Use Quick Upload for edits')">View</button></td>
-            </tr>`;
+            tbody.innerHTML += `<tr><td>${ev.name}</td><td>${ev.event_date}</td><td>${ev.photo_count || 0}</td><td><button class="btn secondary" style="padding:4px 8px; font-size:11px;">Edit</button></td></tr>`;
             uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
             linkList.innerHTML += `<label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;"><input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}</label>`;
         });
     }
 
+    // [Add Create Event & Link Gen logic from previous version here - omitted for brevity but logic remains same]
     document.getElementById('saveEventBtn').onclick = async () => {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
         if(!name) return;
-        
-        await fetch(UPSERT_EVENT_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-        });
-        document.getElementById('eventName').value = '';
+        await fetch(UPSERT_EVENT_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, name, event_date: date }) });
+        document.getElementById('eventForm').style.display='none';
         init();
     }
-
-    // --- LINK GEN ---
+    
     document.getElementById('genLinkBtn').onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
-        const payload = { collection_id: collectionId };
-        if(selected.length > 0) payload.event_ids = selected;
-
-        const res = await fetch(GENERATE_LINK_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        const res = await fetch(GENERATE_LINK_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_ids: selected }) });
         const data = await res.json();
         const box = document.getElementById('linkResult');
         box.style.display = 'block';
@@ -450,10 +527,21 @@
 
     function formatBytes(bytes) {
         if (!+bytes) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    }
+
+    window.downloadAllZip = async function() {
+        if(filteredPhotos.length === 0) return alert("No photos");
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const limit = filteredPhotos.slice(0, 30);
+        for(let i=0; i<limit.length; i++) {
+            const b = await fetch(limit[i].url).then(r=>r.blob());
+            folder.file(`photo_${i}.jpg`, b);
+        }
+        zip.generateAsync({type:"blob"}).then(c => saveAs(c, "photos.zip"));
     }
 
     init();
