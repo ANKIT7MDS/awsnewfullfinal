@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Upload - EventLens</title>
+    <style>
+        :root {
+            --bg: #050505; --card: #101010; --border: #262626; --text: #ffffff;
+            --muted: #a0a0a0; --brand: #00e676;
+        }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; display:flex; justify-content:center; padding:20px; }
+        .wrap { width:100%; max-width:600px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; margin-bottom: 20px; }
+        h1 { color: var(--brand); margin: 0 0 10px; font-size: 22px; }
+        input, select { background: #000; border: 1px solid var(--border); padding: 12px; width: 100%; color: #fff; border-radius: 8px; margin-bottom: 15px; outline: none; }
+        .btn { background: var(--brand); color: #000; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #dropZone { border: 2px dashed var(--border); padding: 40px; text-align: center; border-radius: 10px; cursor: pointer; }
+        #progress-bar { height: 8px; background: var(--brand); width: 0%; transition: width 0.3s; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <h1>⚡ Quick Upload</h1>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">Staff Portal for <b id="collName">Collection</b></p>
+            
+            <label style="font-size:13px; color:var(--muted);">1. Select or Create Event</label>
+            <select id="eventSelect">
+                <option value="">Loading Events...</option>
+            </select>
+            
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="newEventName" placeholder="OR Enter New Event Name" style="margin-bottom:0;">
+                <button class="btn" style="width:auto;" onclick="createEvent()">Create</button>
+            </div>
+            
+            <br><br>
+            <label style="font-size:13px; color:var(--muted);">2. Upload Photos</label>
+            <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div style="font-size:30px;">☁️</div>
+                <p>Click to Select Photos</p>
+                <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
+            </div>
+            
+            <div style="margin-top:20px; background:#222; border-radius:4px; overflow:hidden;">
+                <div id="progress-bar"></div>
+            </div>
+            <p id="status" style="text-align:center; font-size:13px; margin-top:10px; color:var(--muted);"></p>
+        </div>
+    </div>
+
+<script>
+    // NOTE: This page requires the user to be logged in via Cognito cookie/localStorage from the main dashboard
+    // OR you can implement a simpler key-based auth here if needed.
+    // For now, it reuses the token.
+    
+    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+    const urlParams = new URLSearchParams(window.location.search);
+    const collectionId = urlParams.get("id");
+    const collName = urlParams.get("name");
+    const idToken = localStorage.getItem("idToken");
+    
+    if(!idToken) { alert("Please login to dashboard first."); window.location.href='login.html'; }
+    document.getElementById('collName').textContent = collName || 'Collection';
+
+    async function loadEvents() {
+        const res = await fetch(`${API_BASE}/get-events`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
+        const data = await res.json();
+        const sel = document.getElementById('eventSelect');
+        sel.innerHTML = '<option value="">-- Select Existing Event --</option>';
+        (data.events||[]).forEach(e => {
+            sel.innerHTML += `<option value="${e.event_id}">${e.name} (${e.event_date})</option>`;
+        });
+    }
+
+    async function createEvent() {
+        const name = document.getElementById('newEventName').value;
+        if(!name) return alert("Enter name");
+        const btn = document.querySelector('button'); btn.disabled=true; btn.textContent="Creating...";
+        
+        await fetch(`${API_BASE}/upsert-event`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, name, event_date: new Date().toISOString().split('T')[0] })
+        });
+        document.getElementById('newEventName').value = '';
+        btn.disabled=false; btn.textContent="Create";
+        loadEvents();
+    }
+
+    document.getElementById('fileInput').onchange = async (e) => {
+        const files = e.target.files;
+        const eventId = document.getElementById('eventSelect').value;
+        if(!eventId) return alert("Select an event first!");
+        
+        const total = files.length;
+        if(total === 0) return;
+        
+        const status = document.getElementById('status');
+        const bar = document.getElementById('progress-bar');
+        
+        // Batch Upload Logic
+        const BATCH_SIZE = 20;
+        let uploaded = 0;
+        const fileArr = Array.from(files);
+        
+        for(let i=0; i<total; i+=BATCH_SIZE) {
+            const batch = fileArr.slice(i, i+BATCH_SIZE);
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            
+            try {
+                const res = await fetch(`${API_BASE}/generate-upload-urls`, {
+                    method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+                });
+                const data = await res.json();
+                
+                await Promise.all(data.urls.map(async (u) => {
+                    const file = batch.find(f => f.name === u.filename);
+                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+                    uploaded++;
+                    bar.style.width = `${(uploaded/total)*100}%`;
+                    status.innerHTML = `Uploading... ${uploaded}/${total}`;
+                }));
+            } catch(e) { console.error(e); }
+        }
+        status.innerHTML = "✅ Upload Complete! You can close this window.";
+    };
+
+    loadEvents();
+</script>
+</body>
+</html>
