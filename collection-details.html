@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
-    <!-- Zip Libs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
@@ -124,7 +123,6 @@
         <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
     </div>
 
-    <!-- 1. GALLERY TAB (Google Photos Style) -->
     <div id="galleryTab" class="tab-content active">
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
             <div style="display:flex; gap:10px;">
@@ -148,7 +146,6 @@
         </div>
     </div>
 
-    <!-- 2. EVENTS TAB -->
     <div id="eventsTab" class="tab-content">
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
@@ -174,7 +171,6 @@
         </div>
     </div>
 
-    <!-- 3. UPLOAD TAB -->
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
             <div style="margin-bottom:20px;">
@@ -193,7 +189,6 @@
         </div>
     </div>
 
-    <!-- 4. LINKS TAB -->
     <div id="linksTab" class="tab-content">
         <div class="card" style="max-width:600px; margin:0 auto;">
             <h3>Generate Search Link</h3>
@@ -204,22 +199,31 @@
         </div>
     </div>
 
-    <!-- 5. ANALYTICS TAB -->
     <div id="analyticsTab" class="tab-content">
         <div class="card">
             <h3>Guest Leads</h3>
-            <table>
-                <thead><tr><th>Name</th><th>Mobile</th><th>Time</th><th>Link ID</th></tr></thead>
-                <tbody id="analyticsBody">
-                    <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Loading leads...</td></tr>
-                </tbody>
-            </table>
+            <div id="analyticsBodyContainer">
+                <table>
+                    <thead><tr><th>Name</th><th>Mobile</th><th>Time (Latest)</th><th>Link ID</th></tr></thead>
+                    <tbody id="analyticsBody">
+                        <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Loading leads...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="historyViewer" style="display:none; margin-top:30px;">
+                <h3 id="historyHeader">Search History</h3>
+                <button class="btn secondary" style="margin-bottom:15px; padding:6px 15px;" onclick="hideHistoryViewer()">← Back to Leads</button>
+                <table style="font-size:13px;">
+                    <thead><tr><th>Search Time</th><th>Link ID</th><th>Name (Captured)</th></tr></thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
 </div>
 
-<!-- FULLSCREEN VIEWER -->
 <div class="viewer" id="viewer">
     <div class="viewer-close" onclick="closeViewer()">✕</div>
     <div class="viewer-nav left" onclick="moveViewer(-1)">❮</div>
@@ -235,7 +239,7 @@
     const DELETE_EVENT_API = `${API_BASE}/delete-event`;
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
-    const GUEST_API = `${API_BASE}/save-details`; 
+    const GUEST_API = `${API_BASE}/save-details`; // Used for both GET leads and POST save
 
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
@@ -379,36 +383,97 @@
         document.getElementById('viewerImg').src = filteredPhotos[viewerIndex].url;
     }
 
-    // --- ANALYTICS ---
+    // --- ANALYTICS (UPDATED FUNCTIONS) ---
+
+    // ✅ FIX 1: मुख्य लीड्स सूची (Unique Guests) प्राप्त करने के लिए
     async function fetchAnalytics() {
         const tbody = document.getElementById('analyticsBody');
+        const container = document.getElementById('analyticsBodyContainer');
+        const historyViewer = document.getElementById('historyViewer');
+
+        container.style.display = 'block';
+        historyViewer.style.display = 'none';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Loading leads...</td></tr>';
+        
         try {
-            const res = await fetch(`${GUEST_API}?collection_id=${collectionId}`, {
+            // GET call without mobile param returns grouped leads (latest entry per guest)
+            const res = await fetch(GUEST_API, {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${idToken}` }
             });
             const data = await res.json();
-            const leads = data.leads || [];
+            const leads = data.leads || []; 
             
             if(leads.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">No leads yet.</td></tr>';
                 return;
             }
 
+            // Render main list
             tbody.innerHTML = leads.map(l => `
                 <tr>
                     <td>${l.name || '-'}</td>
-                    <td>${l.mobile || '-'}</td>
+                    <td style="color:var(--brand); text-decoration:underline; cursor:pointer;" 
+                        onclick="showGuestHistory('${l.mobile}', '${l.name}')">
+                        ${l.mobile || '-'}
+                    </td>
                     <td style="color:var(--muted);">${l.timestamp ? new Date(l.timestamp).toLocaleString() : '-'}</td>
                     <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${l.link_id || '-'}</span></td>
                 </tr>
             `).join('');
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Failed to fetch leads.</td></tr>';
+            console.error("Fetch Leads Error:", e);
+            tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger); text-align:center;">Failed to fetch leads.</td></tr>';
         }
     }
 
-    // --- FILTERS & OTHER FUNCTIONS ---
+    // ✅ FIX 2: विशिष्ट गेस्ट की सर्च हिस्ट्री प्राप्त करने के लिए नया फ़ंक्शन
+    window.showGuestHistory = async function(mobile, name) {
+        const container = document.getElementById('analyticsBodyContainer');
+        const historyViewer = document.getElementById('historyViewer');
+        const historyBody = document.getElementById('historyBody');
+        
+        container.style.display = 'none';
+        historyViewer.style.display = 'block';
+        document.getElementById('historyHeader').textContent = `Search History for ${name} (${mobile})`;
+        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+        
+        try {
+            // GET call with 'mobile' query parameter to retrieve all entries for that number
+            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            const data = await res.json();
+            // Data now contains 'history' array from the updated Lambda code
+            const history = data.history || []; 
+            
+            if(history.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+                return;
+            }
+
+            historyBody.innerHTML = history.map(h => `
+                <tr>
+                    <td>${h.timestamp ? new Date(h.timestamp).toLocaleString() : '-'}</td>
+                    <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
+                    <td style="color:var(--muted);">${h.name || '-'}</td>
+                </tr>
+            `).join('');
+
+        } catch(e) {
+            console.error("Fetch History Error:", e);
+            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+        }
+    }
+
+    // ✅ FIX 3: हिस्ट्री व्यूअर को छुपाने और लीड्स पर वापस जाने का फ़ंक्शन
+    window.hideHistoryViewer = function() {
+        document.getElementById('analyticsBodyContainer').style.display = 'block';
+        document.getElementById('historyViewer').style.display = 'none';
+    }
+    
+    // --- FILTERS & OTHER FUNCTIONS (UNCHANGED) ---
     window.applyFilters = function() {
         const type = document.getElementById('filterType').value;
         const query = document.getElementById('tagSearch').value.toLowerCase();
@@ -426,7 +491,7 @@
         renderNextBatch();
     }
 
-    // --- UPLOAD & EVENT LOGIC (Standard) ---
+    // --- UPLOAD & EVENT LOGIC (UNCHANGED) ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     dropZone.onclick = () => fileInput.click();
