@@ -1,625 +1,239 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EventLens – Smart AI Gallery</title>
+<meta charset="UTF-8">
+<title>EventLens – अपनी फोटो खोजें</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Zip download libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-  <style>
-    :root {
-      --bg: #050505;
-      --card: #101010;
-      --accent: #00e676; /* Green Accent */
-      --accent-soft: rgba(0, 230, 118, 0.15);
-      --text: #ffffff;
-      --muted: #a0a0a0;
-      --border: #262626;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
+<style>
     body {
-      background: #050505;
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-      padding-bottom: 40px;
+        background: #000;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
     }
 
-    .container {
-      max-width: 600px; /* Mobile focused width */
-      margin: 0 auto;
-      padding: 16px;
+    h1 { font-size: 34px; margin-bottom: 10px; }
+    .step-box {
+        background: #111;
+        border-radius: 16px;
+        padding: 25px;
+        max-width: 520px;
+        margin: auto;
+        border: 1px solid #333;
     }
 
-    /* HEADER */
-    header {
-      text-align: center;
-      margin-bottom: 25px;
+    #previewImg {
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        margin: 15px auto;
+        object-fit: cover;
+        display: none;
+        border: 4px solid #00ff99;
     }
-    header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      background: linear-gradient(to right, #fff, #bbb);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    /* CARDS */
-    .card {
-      background: #101010;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    .step-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 15px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    /* CUSTOM CAMERA BUTTONS */
-    .camera-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      padding: 30px;
-      background: #1a1a1a;
-      border: 2px dashed var(--accent);
-      border-radius: 16px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-      margin-bottom: 12px;
-    }
-    .camera-btn:active {
-      background: #252525; 
-      transform: scale(0.98);
-    }
-    .camera-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    .gallery-link {
-      color: var(--accent);
-      text-decoration: underline;
-      cursor: pointer;
-      font-size: 14px;
-      padding: 5px;
-    }
-
-    /* INPUTS & BUTTONS */
-    input[type="text"], input[type="tel"] {
-      width: 100%;
-      padding: 14px 16px;
-      background: #000;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: white;
-      font-size: 16px;
-      margin-bottom: 12px;
-      outline: none;
-    }
-    input:focus { border-color: var(--accent); }
 
     .btn {
-      width: 100%;
-      padding: 14px;
-      border-radius: 50px;
-      border: none;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      background: var(--accent);
-      color: #000;
-      transition: transform 0.2s;
+        display: block;
+        width: 90%;
+        margin: 12px auto;
+        padding: 16px;
+        background: #00e676;
+        color: #000;
+        font-weight: bold;
+        border-radius: 12px;
+        font-size: 20px;
+        border: none;
+        cursor: pointer;
     }
-    .btn:hover { opacity: 0.9; transform: scale(1.02); }
-    .btn:disabled { opacity: 0.5; cursor: wait; }
-
-    .btn-outline {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 16px;
-      font-size: 13px;
-      width: auto;
+    .btn:hover { opacity: 0.85; }
+    .small-btn {
+        background: #444;
+        padding: 10px;
+        display: inline-block;
+        border-radius: 8px;
+        margin-top: 10px;
     }
 
-    /* PREVIEW IMG */
-    #previewImg {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin: 20px auto;
-      display: block;
-      border: 4px solid var(--accent);
-      box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
-    }
-
-    /* SEARCH BAR (Google Photos Style) */
-    .search-wrapper {
-      position: relative;
-      margin-bottom: 15px;
-    }
-    .search-wrapper input {
-      width: 100%;
-      padding: 12px 16px 12px 40px;
-      border-radius: 50px;
-      background: #1a1a1a;
-      border: none;
-      color: white;
-      font-size: 15px;
-      outline: none;
-    }
-    .search-icon {
-      position: absolute;
-      left: 14px;
-      top: 12px;
-      color: var(--muted);
-    }
-
-    /* FILTER CHIPS */
-    .filter-row {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
-      scrollbar-width: none;
-    }
-    .filter-row::-webkit-scrollbar { display: none; }
-
-    .chip {
-      white-space: nowrap;
-      padding: 8px 16px;
-      border-radius: 20px;
-      background: #1a1a1a;
-      border: 1px solid #333;
-      color: #ccc;
-      font-size: 13px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .chip.active {
-      background: var(--accent-soft);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    /* PHOTO GRID */
     .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 20px;
     }
-    @media(min-width: 768px) { .grid { grid-template-columns: repeat(5, 1fr); gap: 10px; } }
+    .photo-box {
+        width: 260px;
+        height: 260px;
+        margin: 10px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 3px solid #00ff66;
+    }
+    .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+</style>
 
-    .photo-item {
-      position: relative;
-      aspect-ratio: 1;
-      background: #111;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    .photo-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: 0.3s;
-    }
-    .photo-item.selected img { opacity: 0.5; transform: scale(0.95); }
-    
-    .check-mark {
-      position: absolute;
-      top: 5px; right: 5px;
-      width: 22px; height: 22px;
-      background: rgba(0,0,0,0.6);
-      border: 1px solid rgba(255,255,255,0.5);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      color: transparent;
-      font-size: 12px;
-    }
-    .photo-item.selected .check-mark {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #000;
-    }
-
-    /* VIEWER OVERLAY */
-    .viewer {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.95);
-      z-index: 999;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    .viewer.open { display: flex; }
-    .viewer img {
-      max-width: 95%; max-height: 80vh;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-    .viewer-controls {
-      position: absolute; bottom: 30px;
-      display: flex; gap: 20px;
-    }
-    .close-viewer {
-      position: absolute; top: 20px; right: 20px;
-      color: white; font-size: 30px; cursor: pointer;
-    }
-
-  </style>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <h1>EventLens</h1>
-    <p style="color:var(--muted); font-size:14px;">AI Powered Photo Finder</p>
-  </header>
+<h1>EventLens – अपनी फोटो खोजें</h1>
 
-  <!-- STEP 1: UPLOAD (NEW DESIGN) -->
-  <div id="step1" class="card" style="text-align:center;">
-    <div class="step-title" style="text-align:left;">1. Upload Your Selfie</div>
-    
-    <!-- Inputs (Hidden) -->
-    <input type="file" id="cameraInput" accept="image/*" capture="user" style="display:none">
-    <input type="file" id="galleryInput" accept="image/*" style="display:none">
+<div class="step-box">
 
-    <!-- Big Camera Button -->
-    <label for="cameraInput" class="camera-btn">
-      <div class="camera-icon">📸</div>
-      Take Selfie
+    <!-- STEP 1 -->
+    <h2>1. अपनी सेल्फी अपलोड करें</h2>
+
+    <div class="small-btn" onclick="openCamera()">📷 Take Selfie</div>
+    <br>
+    या  
+    <br>
+    <label class="small-btn">
+        Upload From Gallery
+        <input type="file" id="galleryInput" accept="image/*" style="display:none">
     </label>
 
-    <!-- Small Gallery Link -->
-    <div style="margin-top:5px;">
-      <span style="color:#555; font-size:13px;">or</span><br>
-      <label for="galleryInput" class="gallery-link">Upload from Gallery</label>
+    <img id="previewImg">
+
+    <button class="btn" onclick="startFaceSearch()">Find My Photos 🔍</button>
+
+    <h3 id="foundCount"></h3>
+
+    <!-- STEP 2 -->
+    <div id="detailsBox" style="display:none;">
+        <h2>2. अपनी जानकारी भरें</h2>
+
+        <input id="nameBox" type="text" placeholder="आपका नाम" 
+            style="padding:12px;width:90%;border-radius:10px;border:none;margin-bottom:10px;">
+        <input id="mobileBox" type="text" placeholder="मोबाइल नंबर"
+            style="padding:12px;width:90%;border-radius:10px;border:none;margin-bottom:10px;">
+
+        <button class="btn" onclick="showGallery()">📁 गैलरी देखें</button>
     </div>
-
-    <!-- Preview Area -->
-    <div id="previewContainer" style="display:none;">
-      <img id="previewImg">
-      <button id="searchBtn" class="btn" style="margin-top:15px;">Find My Photos 🔍</button>
-    </div>
-
-    <p id="loadingText" style="text-align:center; color:var(--muted); margin-top:10px; font-size:13px;"></p>
-  </div>
-
-  <!-- STEP 2: LEAD GEN -->
-  <div id="step2" class="card" style="display:none;">
-    <div class="step-title">2. Enter Details</div>
-    <p style="margin-bottom:15px;">
-      We found <b style="color:var(--accent);" id="matchCount">0</b> photos of you!
-    </p>
-    <input type="text" id="guestName" placeholder="Your Name (e.g. Rahul)">
-    <input type="tel" id="guestMobile" placeholder="Mobile Number" maxlength="10">
-    <button id="showGalleryBtn" class="btn">View Gallery 👉</button>
-  </div>
-
-  <!-- STEP 3: SMART GALLERY -->
-  <div id="step3" class="card" style="background:transparent; border:none; padding:0; display:none;">
-    
-    <!-- SEARCH & FILTER -->
-    <div class="search-wrapper">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Search (e.g. 'Red Shirt', 'Stage', 'Smile')...">
-    </div>
-
-    <div class="filter-row">
-      <div class="chip active" onclick="filterPhotos('ALL', this)">All Photos</div>
-      <div class="chip" onclick="filterPhotos('BEST', this)">⭐ Best</div>
-      <div class="chip" onclick="filterPhotos('HAPPY', this)">😊 Happy</div>
-      <div class="chip" onclick="filterPhotos('GROUP', this)">👥 Group</div>
-      <div class="chip" onclick="filterPhotos('TEXT', this)">🅰️ Text</div>
-    </div>
-
-    <!-- ACTIONS -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 5px;">
-      <span style="font-size:13px; color:var(--muted);">Selected: <b id="selCount" style="color:#fff;">0</b></span>
-      <div>
-        <button class="btn btn-outline" onclick="selectAll()">Select All</button>
-        <button class="btn btn-outline" style="background:var(--accent); color:#000; border:none;" onclick="downloadZip()">Download ZIP</button>
-      </div>
-    </div>
-
-    <!-- GRID -->
-    <div id="photoGrid" class="grid"></div>
-  </div>
 
 </div>
 
-<!-- FULLSCREEN VIEWER -->
-<div id="viewer" class="viewer">
-  <div class="close-viewer" onclick="closeViewer()">✕</div>
-  <img id="viewerImage">
-  <div class="viewer-controls">
-    <button class="btn btn-outline" onclick="prevImage()">❮</button>
-    <button class="btn btn-outline" onclick="toggleViewerSelect()">Select / Unselect</button>
-    <button class="btn btn-outline" onclick="nextImage()">❯</button>
-  </div>
-</div>
+<!-- RESULTS GRID -->
+<div id="gallery" class="grid"></div>
+
+<!-------------------------------------------------------------->
+<!-------------- CAMERA + GALLERY BASE64 FIXED ----------------->
+<!-------------------------------------------------------------->
 
 <script>
-  // CONFIG
-  const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
-  const SAVE_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
-  // STATE
-  let allPhotos = [];
-  let filteredPhotos = [];
-  let selectedUrls = new Set();
-  let selfieBase64 = null;
-  let currentViewerIndex = 0;
+const API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
 
-  // --- 1. HANDLE SELFIE (Updated for Camera + Gallery) ---
-  function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if(file){
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        selfieBase64 = ev.target.result;
-        document.getElementById('previewImg').src = selfieBase64;
-        document.getElementById('previewContainer').style.display = 'block';
-        
-        // Optional: Scroll to preview to show user the photo is taken
-        document.getElementById('previewContainer').scrollIntoView({behavior: 'smooth'});
-      };
-      reader.readAsDataURL(file);
+let FINAL_BASE64 = null;
+let FOUND_PHOTOS = [];
+
+
+// CAMERA OPEN --------------------------------------------------
+function openCamera() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            const video = document.createElement("video");
+            video.autoplay = true;
+            video.srcObject = stream;
+
+            let camWindow = window.open("", "", "width=360,height=500");
+            camWindow.document.body.appendChild(video);
+
+            let snapBtn = camWindow.document.createElement("button");
+            snapBtn.innerText = "Capture Photo";
+            snapBtn.style.marginTop = "20px";
+            camWindow.document.body.appendChild(snapBtn);
+
+            snapBtn.onclick = () => {
+                const canvas = camWindow.document.createElement("canvas");
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(video, 0, 0);
+
+                FINAL_BASE64 = canvas.toDataURL("image/jpeg");
+
+                document.getElementById("previewImg").src = FINAL_BASE64;
+                document.getElementById("previewImg").style.display = "block";
+
+                stream.getTracks().forEach(t => t.stop());
+                camWindow.close();
+            };
+        });
+}
+
+
+// GALLERY FILE → BASE64 ----------------------------------------
+document.getElementById("galleryInput").addEventListener("change", function(e) {
+    let file = e.target.files[0];
+    let reader = new FileReader();
+
+    reader.onload = function(ev) {
+        FINAL_BASE64 = ev.target.result;
+        document.getElementById("previewImg").src = FINAL_BASE64;
+        document.getElementById("previewImg").style.display = "block";
+    };
+
+    reader.readAsDataURL(file);
+});
+
+
+// FACE SEARCH CALL --------------------------------------------
+async function startFaceSearch() {
+    if (!FINAL_BASE64) {
+        alert("कृपया पहले सेल्फी अपलोड करें!");
+        return;
     }
-  }
 
-  // Bind both inputs to the same handler
-  document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
-  document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
+    const linkId = new URLSearchParams(window.location.search).get("linkId");
 
+    let payload = {
+        linkId: linkId,
+        name: "guest",
+        mobile: "0000000000",
+        selfie_image: FINAL_BASE64
+    };
 
-  // --- 2. API CALL ---
-  document.getElementById('searchBtn').addEventListener('click', async () => {
-    // 1. Validation for Selfie
-    if(!selfieBase64) return alert("Please upload a selfie first.");
-    
-    // 2. Validation for LinkID
-    const params = new URLSearchParams(window.location.search);
-    const linkId = params.get('linkId');
-    if (!linkId) {
-      alert("Error: Link ID missing! Please open the correct link (e.g. ?linkId=123)");
-      return;
-    }
-
-    // UI Loading State
-    document.getElementById('loadingText').innerText = "Scanning faces with AI... Please wait...";
-    const btn = document.getElementById('searchBtn');
-    btn.disabled = true;
-
-    try {
-      const res = await fetch(SEARCH_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ linkId: linkId, selfie_image: selfieBase64 })
-      });
-      
-      // 3. Handle API Errors Explicitly
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Server Error");
-      }
-
-      const data = await res.json();
-      
-      // Check for logical error in response body
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      allPhotos = data.matches || [];
-      filteredPhotos = [...allPhotos];
-      
-      document.getElementById('matchCount').innerText = allPhotos.length;
-      
-      document.getElementById('step1').style.display = 'none';
-      document.getElementById('step2').style.display = 'block';
-
-    } catch(err) {
-      console.error(err);
-      alert("Failed to find photos: " + err.message);
-    } finally {
-      // Always re-enable button and clear text
-      btn.disabled = false;
-      document.getElementById('loadingText').innerText = "";
-    }
-  });
-
-  // --- 3. SHOW GALLERY ---
-  document.getElementById('showGalleryBtn').addEventListener('click', () => {
-    const name = document.getElementById('guestName').value;
-    const mobile = document.getElementById('guestMobile').value;
-    
-    if(!name || mobile.length < 10) return alert("Please enter valid details.");
-
-    // Save Data in background
-    const params = new URLSearchParams(window.location.search);
-    fetch(SAVE_API, {
-      method: 'POST',
-      body: JSON.stringify({
-        linkId: params.get('linkId'),
-        name: name, mobile: mobile, selfie_image: selfieBase64
-      })
+    let res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
     });
 
-    document.getElementById('step2').style.display = 'none';
-    document.getElementById('step3').style.display = 'block';
-    renderGrid();
-  });
+    let data = await res.json();
 
-  // --- 4. SMART FILTERS ---
-  document.getElementById('searchInput').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    
-    filteredPhotos = allPhotos.filter(photo => {
-      const tags = (photo.ai_tags || []).join(' ').toLowerCase();
-      const ocr = (photo.detected_text || []).join(' ').toLowerCase();
-      const evt = (photo.eventName || "").toLowerCase();
-      return tags.includes(q) || ocr.includes(q) || evt.includes(q);
-    });
-    
-    renderGrid();
-    resetChips();
-  });
+    FOUND_PHOTOS = data.matches || [];
 
-  window.filterPhotos = function(type, el) {
-    document.getElementById('searchInput').value = ""; // clear search
-    resetChips();
-    el.classList.add('active');
+    document.getElementById("foundCount").innerHTML =
+        `हमें <b>${FOUND_PHOTOS.length}</b> फोटो मिलीं!`;
 
-    if (type === 'ALL') {
-      filteredPhotos = [...allPhotos];
-    } 
-    else if (type === 'BEST') {
-      filteredPhotos = allPhotos.filter(p => {
-        const isHappy = (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 80);
-        return (p.quality_score > 0.85) || isHappy;
-      });
+    if (FOUND_PHOTOS.length > 0) {
+        document.getElementById("detailsBox").style.display = "block";
     }
-    else if (type === 'HAPPY') {
-      filteredPhotos = allPhotos.filter(p => {
-        return (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60);
-      });
-    }
-    else if (type === 'GROUP') {
-      filteredPhotos = allPhotos.filter(p => p.face_count >= 3);
-    }
-    else if (type === 'TEXT') {
-      filteredPhotos = allPhotos.filter(p => (p.detected_text || []).length > 0);
-    }
+}
 
-    renderGrid();
-  };
 
-  function resetChips() {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  }
-
-  // --- 5. RENDER GRID ---
-  function renderGrid() {
-    const grid = document.getElementById('photoGrid');
+// SHOW GALLERY -------------------------------------------------
+function showGallery() {
+    const grid = document.getElementById("gallery");
     grid.innerHTML = "";
 
-    filteredPhotos.forEach((photo, index) => {
-      const isSelected = selectedUrls.has(photo.url);
-      
-      const div = document.createElement('div');
-      div.className = `photo-item ${isSelected ? 'selected' : ''}`;
-      
-      div.onclick = (e) => {
-        if(e.target.closest('.check-mark')) {
-          toggleSelect(photo.url);
-        } else {
-          openViewer(index);
-        }
-      };
+    FOUND_PHOTOS.forEach(p => {
+        let box = document.createElement("div");
+        box.className = "photo-box";
 
-      div.innerHTML = `
-        <img src="${photo.url}" loading="lazy">
-        <div class="check-mark">✓</div>
-      `;
-      grid.appendChild(div);
+        let img = document.createElement("img");
+        img.src = p.url;
+
+        box.appendChild(img);
+        grid.appendChild(box);
     });
 
-    document.getElementById('selCount').innerText = selectedUrls.size;
-  }
-
-  // --- 6. SELECTION & DOWNLOAD ---
-  function toggleSelect(url) {
-    if(selectedUrls.has(url)) selectedUrls.delete(url);
-    else selectedUrls.add(url);
-    renderGrid();
-  }
-
-  window.selectAll = function() {
-    if(selectedUrls.size === filteredPhotos.length) selectedUrls.clear();
-    else filteredPhotos.forEach(p => selectedUrls.add(p.url));
-    renderGrid();
-  }
-
-  window.downloadZip = async function() {
-    if(selectedUrls.size === 0) return alert("Select photos first!");
-    
-    const zip = new JSZip();
-    const folder = zip.folder("EventLens_Photos");
-    const urls = Array.from(selectedUrls);
-
-    const btn = document.querySelector("button[onclick='downloadZip()']");
-    const oldText = btn.innerText;
-    btn.innerText = "⏳ Zipping...";
-    btn.disabled = true;
-
-    try {
-      for(let i=0; i<urls.length; i++) {
-        const blob = await fetch(urls[i]).then(r => r.blob());
-        folder.file(`photo_${i+1}.jpg`, blob);
-      }
-      const content = await zip.generateAsync({type:"blob"});
-      saveAs(content, "My_Photos.zip");
-    } catch(e) {
-      alert("Download failed. Try again.");
-    } finally {
-      btn.innerText = oldText;
-      btn.disabled = false;
-    }
-  };
-
-  // --- 7. VIEWER LOGIC ---
-  function openViewer(index) {
-    currentViewerIndex = index;
-    updateViewer();
-    document.getElementById('viewer').classList.add('open');
-  }
-  
-  window.closeViewer = function() {
-    document.getElementById('viewer').classList.remove('open');
-  }
-
-  function updateViewer() {
-    const photo = filteredPhotos[currentViewerIndex];
-    document.getElementById('viewerImage').src = photo.url;
-  }
-
-  window.nextImage = function() {
-    currentViewerIndex = (currentViewerIndex + 1) % filteredPhotos.length;
-    updateViewer();
-  }
-  
-  window.prevImage = function() {
-    currentViewerIndex = (currentViewerIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
-    updateViewer();
-  }
-
-  window.toggleViewerSelect = function() {
-    const url = filteredPhotos[currentViewerIndex].url;
-    toggleSelect(url);
-  }
+    window.scrollTo(0, document.body.scrollHeight);
+}
 
 </script>
+
 </body>
 </html>
