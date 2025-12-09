@@ -3,78 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>एडमिन डैशबोर्ड</title>
+    <title>Photographer Dashboard</title>
     <style>
         :root {
-            --bg: #1a1a1a; --card: #2c2c2c; --border: #444; --text: #f0f0f0;
-            --muted: #a0a0a0; --brand: #ff6a00; --brand-hover: #e65c00;
-            --danger: #d93025; --ok: #208b3a; --secondary: #5f6368;
+            --bg: #050505;
+            --card: #101010;
+            --border: #262626;
+            --text: #ffffff;
+            --muted: #a0a0a0;
+            --brand: #00e676; /* Green Accent */
+            --brand-hover: #00c853;
+            --danger: #ff5252;
+            --secondary: #333;
         }
-        body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
         a { color: var(--brand); text-decoration: none; }
-        .wrap { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
-        .header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-        .header h1 { font-size: 24px; margin: 0; color: var(--brand); }
-        .badge { background: var(--card); color: var(--muted); padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; }
-        .btn { background: var(--brand); color: #fff; border: none; border-radius: 8px; padding: 9px 16px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 8px; transition: background-color 0.2s; }
-        .btn:hover { background-color: var(--brand-hover); }
-        .btn.danger { background-color: var(--danger); }
-        .btn.secondary { background-color: var(--secondary); }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
-        .card h3 { margin: 0 0 20px; font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .wrap { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        
+        /* HEADER */
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .header h1 { font-size: 26px; margin: 0; font-weight: 700; background: linear-gradient(to right, #fff, #bbb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .badge { background: #1a1a1a; color: var(--brand); padding: 6px 12px; border: 1px solid var(--border); border-radius: 50px; font-size: 13px; }
+        
+        /* BUTTONS */
+        .btn { background: var(--brand); color: #000; border: none; border-radius: 50px; padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+        .btn:hover { background-color: var(--brand-hover); transform: translateY(-2px); }
+        .btn.danger { background-color: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .btn.danger:hover { background-color: var(--danger); color: #fff; }
+        .btn.secondary { background-color: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn.secondary:hover { border-color: var(--brand); }
+        
+        /* CARDS */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card h3 { margin: 0 0 20px; font-size: 18px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-box { background: #151515; padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+        .stat-val { font-size: 24px; font-weight: 700; color: var(--brand); margin-top: 5px; }
+
+        /* FORM */
+        .form-group label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 14px; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #000; color: #fff; outline: none; margin-bottom: 15px; }
+        .form-group input:focus { border-color: var(--brand); }
+
+        /* TABLE */
         .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; white-space: nowrap; }
-        th { color: var(--muted); }
-        input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: #1e1e1e; color: var(--text); outline: none; box-sizing: border-box; }
-        label { display: block; margin: 12px 0 8px 2px; color: var(--muted); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 12px; color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--border); }
+        td { padding: 16px 12px; border-bottom: 1px solid #1a1a1a; font-size: 14px; }
+        tr:hover td { background: #151515; }
+        .action-btns { display: flex; gap: 8px; }
+        
     </style>
 </head>
 <body>
     <div class="wrap">
         <div class="header">
-            <h1>फोटोग्राफर डैशबोर्ड</h1>
-            <span id="welcomeMessage" class="badge"></span>
-            <button id="logoutButton" class="btn danger" style="margin-left:auto">लॉगआउट करें</button>
+            <h1>Dashboard</h1>
+            <div class="user-info">
+                <span id="welcomeMessage" class="badge">Loading...</span>
+                <button id="logoutButton" class="btn danger">Logout</button>
+            </div>
         </div>
 
-        <div class="card" id="accountStatusCard">
-             <h3 style="color: var(--brand);">अकाउंट स्टेटस</h3>
-             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                 <div>
-                     <p style="font-size: 14px; color: var(--muted);">डेटा उपयोग</p>
-                     <p id="dataUsageText" style="font-size: 1.25rem; font-weight: bold;">लोड हो रहा है...</p>
+        <!-- Account Status -->
+        <div class="card">
+             <h3>Account Overview</h3>
+             <div class="stats-grid">
+                 <div class="stat-box">
+                     <span style="font-size: 13px; color: var(--muted);">Data Used</span>
+                     <div id="dataUsageText" class="stat-val">Loading...</div>
                  </div>
-                 <div>
-                     <p style="font-size: 14px; color: var(--muted);">अकाउंट की एक्सपायरी</p>
-                     <p id="expiryDateText" style="font-size: 1.25rem; font-weight: bold;">लोड हो रहा है...</p>
+                 <div class="stat-box">
+                     <span style="font-size: 13px; color: var(--muted);">Expiry Date</span>
+                     <div id="expiryDateText" class="stat-val" style="color:#fff;">Loading...</div>
                  </div>
              </div>
         </div>
 
-        <div class="card" id="collection-form-card">
-            <h3 id="form-title">नया कलेक्शन बनाएं</h3>
-            <label for="collectionNameInput">कलेक्शन का नाम *</label>
-            <input type="text" id="collectionNameInput" placeholder="जैसे: Jaipur Wedding Photos">
-            <input type="hidden" id="collectionIdToEdit">
-            <div style="margin-top: 20px;">
-                <button id="saveCollectionBtn" class="btn">कलेक्शन बनाएं</button>
-                <button id="cancelEditBtn" class="btn secondary" style="display:none;">कैंसल</button>
+        <!-- Create Collection -->
+        <div class="card">
+            <h3 id="form-title">Create New Collection</h3>
+            <div class="form-group">
+                <label for="collectionNameInput">Collection Name (e.g. Rahul & Priya Wedding)</label>
+                <input type="text" id="collectionNameInput" placeholder="Enter name...">
+                <input type="hidden" id="collectionIdToEdit">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="saveCollectionBtn" class="btn">Create Collection</button>
+                <button id="cancelEditBtn" class="btn secondary" style="display:none;">Cancel</button>
             </div>
         </div>
 
+        <!-- Collections List -->
         <div class="card">
-            <h3>आपके कलेक्शन्स</h3>
+            <h3>Your Collections</h3>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>नाम</th>
-                            <th>बनाने की तारीख</th>
-                            <th>कुल इवेंट्स</th>
-                            <th>कुल फोटो</th>
-                            <th>डेटा उपयोग</th>
-                            <th style="min-width: 200px; text-align: center;">एक्शन</th>
+                            <th>Name</th>
+                            <th>Created</th>
+                            <th>Events</th>
+                            <th>Photos</th>
+                            <th>Storage</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="collectionsTbody"></tbody>
@@ -84,14 +120,9 @@
     </div>
 
 <script>
-    // --- CONSTANTS (UPDATED HOST) ---
     const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
     const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-
-    // ✅ अब Netlify वाला redirect
-    const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html";
-    
-    // API Gateway same
+    const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html"; // Matches your config
     const API_BASE = 'https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod';
 
     const GET_COLLECTIONS_API = `${API_BASE}/get-collections`;
@@ -99,7 +130,7 @@
     const DELETE_COLLECTION_API = `${API_BASE}/delete-collection`;
     const GET_ACCOUNT_STATUS_API = `${API_BASE}/account-status`;
 
-    // --- Element Selectors ---
+    // Selectors
     const welcomeMessage = document.getElementById('welcomeMessage');
     const logoutButton = document.getElementById('logoutButton');
     const collectionsTbody = document.getElementById('collectionsTbody');
@@ -111,7 +142,6 @@
     
     let idToken = null;
 
-    // --- Helper Functions ---
     function formatBytes(bytes = 0, decimals = 2) {
         if (!+bytes) return '0 Bytes';
         const k = 1024;
@@ -122,155 +152,130 @@
     }
     
     function fmtDate(d) {
-        try { if (!d) return "-"; return new Date(d).toLocaleDateString('hi-IN'); } 
+        try { if (!d) return "-"; return new Date(d).toLocaleDateString('en-IN'); } 
         catch { return d || "-"; }
     }
     
     function resetForm() {
-        formTitle.textContent = "नया कलेक्शन बनाएं";
-        saveCollectionBtn.textContent = "कलेक्शन बनाएं";
+        formTitle.textContent = "Create New Collection";
+        saveCollectionBtn.textContent = "Create Collection";
         collectionNameInput.value = "";
         collectionIdToEdit.value = "";
         cancelEditBtn.style.display = 'none';
         saveCollectionBtn.disabled = false;
     }
 
-    // --- API Call Functions ---
     async function fetchAccountStatus() {
         try {
             const response = await fetch(GET_ACCOUNT_STATUS_API, { headers: { 'Authorization': `Bearer ${idToken}` } });
-            if (!response.ok) throw new Error('Failed to load status');
+            if (!response.ok) throw new Error('Failed');
             const data = await response.json();
             const dataUsageEl = document.getElementById('dataUsageText');
             const expiryDateEl = document.getElementById('expiryDateText');
-            if (data.storage_limit_bytes > 0) {
-                dataUsageEl.textContent = `${formatBytes(data.total_storage_used_bytes || 0)} / ${formatBytes(data.storage_limit_bytes)}`;
-            } else {
-                dataUsageEl.textContent = `${formatBytes(data.total_storage_used_bytes || 0)} (कोई लिमिट नहीं)`;
-            }
-            expiryDateEl.textContent = data.expiry_date ? new Date(data.expiry_date).toLocaleDateString('hi-IN') : 'कोई एक्सपायरी नहीं';
-        } catch (error) { 
-            document.getElementById('dataUsageText').textContent = 'त्रुटि';
-            document.getElementById('expiryDateText').textContent = 'त्रुटि';
-            console.error("अकाउंट स्टेटस लोड करने में विफल:", error); 
-        }
+            
+            dataUsageEl.textContent = data.storage_limit_bytes > 0 
+                ? `${formatBytes(data.total_storage_used_bytes || 0)} / ${formatBytes(data.storage_limit_bytes)}`
+                : `${formatBytes(data.total_storage_used_bytes || 0)} (Unlimited)`;
+            
+            expiryDateEl.textContent = data.expiry_date ? new Date(data.expiry_date).toLocaleDateString('en-IN') : 'Lifetime';
+        } catch (error) { console.error(error); }
     }
 
     async function fetchCollections() {
-        collectionsTbody.innerHTML = '<tr><td colspan="6">कलेक्शन्स लोड हो रहे हैं...</td></tr>';
+        collectionsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Loading collections...</td></tr>';
         try {
             const response = await fetch(GET_COLLECTIONS_API, { headers: { 'Authorization': `Bearer ${idToken}` } });
-            if (!response.ok) {
-                let errorMsg = 'Failed to fetch';
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.message || errorMsg;
-                } catch {}
-                throw new Error(errorMsg);
-            }
+            if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
             const collections = data.Items || []; 
             collections.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            collectionsTbody.innerHTML = collections.length === 0 ? '<tr><td colspan="6">कोई कलेक्शन नहीं मिला।</td></tr>' : '';
+            
+            collectionsTbody.innerHTML = collections.length === 0 
+                ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:#666;">No collections found. Create one above!</td></tr>' 
+                : '';
+                
             collections.forEach(col => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td><a href="collection-details.html?id=${col.collection_id}&name=${encodeURIComponent(col.name)}">${col.name}</a></td><td>${fmtDate(col.created_at)}</td><td>${col.event_count || 0}</td><td>${col.total_photo_count || 0}</td><td>${formatBytes(col.storage_bytes)}</td><td style="text-align: center;"><button class="btn secondary edit-btn" data-id="${col.collection_id}" data-name="${col.name}">एडिट</button><button class="btn danger delete-btn" data-id="${col.collection_id}">डिलीट</button></td>`;
+                row.innerHTML = `
+                    <td><a href="collection-details.html?id=${col.collection_id}&name=${encodeURIComponent(col.name)}" style="font-weight:600; color:#fff; display:flex; align-items:center; gap:8px;">📁 ${col.name}</a></td>
+                    <td>${fmtDate(col.created_at)}</td>
+                    <td><span class="badge" style="background:#222; border:none; color:#ccc;">${col.event_count || 0}</span></td>
+                    <td><span class="badge" style="background:#222; border:none; color:#ccc;">${col.total_photo_count || 0}</span></td>
+                    <td>${formatBytes(col.storage_bytes)}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn secondary edit-btn" style="padding:6px 12px; font-size:12px;" data-id="${col.collection_id}" data-name="${col.name}">Edit</button>
+                            <button class="btn danger delete-btn" style="padding:6px 12px; font-size:12px;" data-id="${col.collection_id}">Delete</button>
+                        </div>
+                    </td>`;
                 collectionsTbody.appendChild(row);
             });
         } catch (error) { 
-            collectionsTbody.innerHTML = `<tr><td colspan="6">त्रुटि: ${error.message}</td></tr>`; 
-            console.error("कलेक्शन लोड करने में विफल:", error);
+            collectionsTbody.innerHTML = `<tr><td colspan="6" style="color:red;">Error: ${error.message}</td></tr>`; 
         }
     }
 
-    // --- Action Handlers ---
     async function handleSaveCollection() {
         const collectionName = collectionNameInput.value.trim();
         if (!collectionName) return;
         const payload = { name: collectionName };
         if (collectionIdToEdit.value) payload.collection_id = collectionIdToEdit.value;
         saveCollectionBtn.disabled = true;
+        saveCollectionBtn.textContent = "Saving...";
         try {
             const response = await fetch(UPSERT_COLLECTION_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if(!response.ok) throw new Error('Failed to save collection');
+            if(!response.ok) throw new Error('Failed');
             resetForm();
             fetchCollections();
-        } catch (error) { 
-            alert(`त्रुटि: ${error.message}`); 
-        } finally { 
-            saveCollectionBtn.disabled = false; 
-        }
+        } catch (error) { alert(error.message); } 
+        finally { saveCollectionBtn.disabled = false; saveCollectionBtn.textContent = "Create Collection"; }
     }
 
     async function handleDeleteCollection(collectionId) {
-        if (!confirm("क्या आप वाकई इस कलेक्शन को डिलीट करना चाहते हैं?")) return;
+        if (!confirm("Delete this collection? This cannot be undone.")) return;
         try {
-            const response = await fetch(DELETE_COLLECTION_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId }) });
-            if(!response.ok) throw new Error('Failed to delete collection');
+            await fetch(DELETE_COLLECTION_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId }) });
             fetchCollections();
-        } catch (error) { 
-            alert(`त्रुटि: ${error.message}`); 
-        }
+        } catch (error) { alert(error.message); }
     }
     
-    // --- Core Authentication and Page Load Logic ---
     async function handleAuth() {
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         idToken = localStorage.getItem('idToken');
 
         if (code) {
-            welcomeMessage.textContent = 'लॉगिन हो रहा है...';
+            welcomeMessage.textContent = 'Logging in...';
             try {
                 const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ 
-                        grant_type: 'authorization_code', 
-                        client_id: CLIENT_ID, 
-                        code: code, 
-                        redirect_uri: REDIRECT_URI 
-                    })
+                    body: new URLSearchParams({ grant_type: 'authorization_code', client_id: CLIENT_ID, code: code, redirect_uri: REDIRECT_URI })
                 });
                 const tokens = await response.json();
-                if (!response.ok) throw new Error(tokens.error_description || 'Token exchange failed');
+                if (!response.ok) throw new Error('Auth failed');
                 
                 idToken = tokens.id_token;
                 localStorage.setItem('idToken', idToken);
-                localStorage.setItem('accessToken', tokens.access_token);
                 window.history.replaceState({}, document.title, window.location.pathname);
             } catch (error) {
-                console.error("Auth Error:", error);
-                localStorage.clear();
+                console.error(error);
                 window.location.href = `login.html`;
                 return;
             }
         }
 
-        if (!idToken) {
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!idToken) { window.location.href = 'login.html'; return; }
         
         try {
             const payload = JSON.parse(atob(idToken.split('.')[1]));
-            const expires = payload.exp * 1000;
-            if (Date.now() > expires) {
-                throw new Error("Token expired");
-            }
+            if (Date.now() > payload.exp * 1000) throw new Error("Expired");
+            if ((payload['cognito:groups'] || []).includes('MasterAdmins')) { window.location.href = 'super-admin.html'; return; }
 
-            const groups = payload['cognito:groups'] || [];
-
-            if (groups.includes('MasterAdmins')) {
-                window.location.href = 'super-admin.html';
-                return;
-            }
-
-            welcomeMessage.textContent = `लॉगिन: ${payload.email}`;
+            welcomeMessage.textContent = `Hi, ${payload.email.split('@')[0]}`;
             fetchCollections();
             fetchAccountStatus();
         } catch (e) {
-            console.error("Token validation failed:", e);
             localStorage.clear();
             window.location.href = 'login.html';
         }
@@ -283,8 +288,8 @@
             const target = e.target;
             const collectionId = target.dataset.id;
             if (target.classList.contains('edit-btn')) {
-                formTitle.textContent = "कलेक्शन एडिट करें";
-                saveCollectionBtn.textContent = "बदलाव सेव करें";
+                formTitle.textContent = "Edit Collection";
+                saveCollectionBtn.textContent = "Update";
                 collectionNameInput.value = target.dataset.name;
                 collectionIdToEdit.value = collectionId;
                 cancelEditBtn.style.display = 'inline-block';
@@ -295,7 +300,6 @@
         });
         logoutButton.addEventListener('click', () => {
             localStorage.clear();
-            // ✅ logout के बाद Netlify वाले login पेज पर
             const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent("https://selfiphotos.netlify.app/login.html")}`;
             window.location.href = logoutUrl;
         });
