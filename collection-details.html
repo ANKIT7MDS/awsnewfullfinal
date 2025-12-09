@@ -4,88 +4,55 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
-    <!-- Zip Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <style>
         :root {
-            --bg: #050505;
-            --card: #101010;
-            --border: #262626;
-            --text: #ffffff;
-            --muted: #a0a0a0;
-            --brand: #00e676; /* Green */
-            --brand-hover: #00c853;
-            --brand-soft: rgba(0, 230, 118, 0.1);
-            --danger: #ff5252;
-            --ok: #00e676;
+            --bg: #050505; --card: #101010; --border: #262626; --text: #ffffff;
+            --muted: #a0a0a0; --brand: #00e676; --brand-hover: #00c853;
+            --brand-soft: rgba(0, 230, 118, 0.1); --danger: #ff5252;
         }
-
         * { box-sizing: border-box; }
         body { margin: 0; background-color: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; padding-bottom: 50px; }
-
         .wrap { max-width: 1300px; margin: 0 auto; padding: 20px; }
-
-        /* HEADER */
         .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
         .back-link { color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 6px; font-size: 14px; transition: color 0.2s; }
         .back-link:hover { color: var(--brand); }
         h1 { font-size: 24px; margin: 0; font-weight: 700; }
-        
         .pill { background: #1a1a1a; padding: 4px 10px; border-radius: 50px; font-size: 12px; border: 1px solid var(--border); color: var(--muted); display: inline-flex; gap: 5px; }
         .pill strong { color: var(--brand); }
-
-        /* CARDS */
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
-
-        /* TABS */
-        .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-        .tab { padding: 12px 5px; cursor: pointer; color: var(--muted); font-size: 14px; position: relative; transition: color 0.2s; }
+        .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
+        .tab { padding: 12px 5px; cursor: pointer; color: var(--muted); font-size: 14px; position: relative; white-space: nowrap; }
         .tab.active { color: var(--brand); font-weight: 600; }
         .tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: var(--brand); }
-        
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        /* BUTTONS */
         .btn { background: var(--brand); color: #000; border: none; border-radius: 50px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
         .btn:hover { background: var(--brand-hover); }
         .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
         .btn.secondary:hover { border-color: var(--brand); color: var(--brand); background: transparent; }
         .btn.danger { background: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
         .btn.danger:hover { background: var(--danger); color: #fff; }
-
-        /* GALLERY GRID */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
         .photo-card { position: relative; aspect-ratio: 1; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: pointer; }
         .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
         .photo-card:hover img { transform: scale(1.05); opacity: 0.8; }
         .meta-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; pointer-events: none; }
-        
-        /* FILTERS */
         .filter-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
         .chip { background: #151515; border: 1px solid var(--border); padding: 6px 12px; border-radius: 50px; font-size: 12px; cursor: pointer; color: var(--muted); white-space: nowrap; transition: all 0.2s; }
         .chip.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
-        
-        /* UPLOAD ZONE */
         #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; background: #0a0a0a; transition: all 0.2s; cursor: pointer; }
         #dropZone:hover { border-color: var(--brand); background: rgba(0, 230, 118, 0.02); }
-        #progress-container { margin-top: 15px; background: #1a1a1a; height: 6px; border-radius: 3px; overflow: hidden; display: none; }
+        #progress-container { margin-top: 15px; background: #1a1a1a; height: 8px; border-radius: 4px; overflow: hidden; display: none; }
         #progress-bar { height: 100%; background: var(--brand); width: 0%; transition: width 0.3s; }
-
-        /* TABLES */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { text-align: left; padding: 10px; color: var(--muted); border-bottom: 1px solid var(--border); }
         td { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; }
-        
-        /* FORMS */
         input, select { background: #000; border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff; width: 100%; outline: none; margin-bottom: 10px; }
         input:focus, select:focus { border-color: var(--brand); }
-        
-        /* LINKS */
         .link-box { background: #111; border: 1px dashed var(--brand); padding: 15px; border-radius: 8px; margin-top: 15px; font-family: monospace; color: var(--brand); word-break: break-all; display: none; }
-
     </style>
 </head>
 <body>
@@ -102,9 +69,11 @@
                 <span id="totalPhotos">0</span> Photos
             </div>
         </div>
-        <div>
+        <div style="text-align:right;">
             <span class="pill">Storage: <strong id="storageUsed">0 MB</strong></span>
-            <span class="pill" style="border-color:var(--brand); color:var(--brand);">Active</span>
+            <div style="margin-top:5px;">
+                <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="padding:4px 10px; font-size:11px;">⚡ Upload Link (for Staff)</a>
+            </div>
         </div>
     </div>
 
@@ -114,22 +83,21 @@
         <div class="tab" onclick="switchTab('eventsTab')">📅 Events</div>
         <div class="tab" onclick="switchTab('uploadTab')">☁️ Upload Photos</div>
         <div class="tab" onclick="switchTab('linksTab')">🔗 Search Links</div>
+        <div class="tab" onclick="switchTab('analyticsTab')">📊 Guests / Analytics</div>
     </div>
 
     <!-- 1. GALLERY TAB -->
     <div id="galleryTab" class="tab-content active">
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <div class="filter-row">
-                    <div class="chip active" onclick="filterGallery('ALL', this)">All Photos</div>
+                    <div class="chip active" onclick="filterGallery('ALL', this)">All</div>
                     <div class="chip" onclick="filterGallery('BEST', this)">⭐ Best</div>
                     <div class="chip" onclick="filterGallery('HAPPY', this)">😊 Happy</div>
                     <div class="chip" onclick="filterGallery('GROUP', this)">👥 Groups</div>
                 </div>
-                <button class="btn secondary" onclick="alert('Download Feature Coming Soon')">⬇ Download All</button>
             </div>
             <div id="galleryGrid" class="gallery-grid">
-                <!-- JS will fill this -->
                 <p style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--muted);">Loading photos...</p>
             </div>
         </div>
@@ -137,7 +105,7 @@
 
     <!-- 2. EVENTS TAB -->
     <div id="eventsTab" class="tab-content">
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
             <div class="card">
                 <h3>Event List</h3>
                 <table>
@@ -181,13 +149,23 @@
         <div class="card" style="max-width:600px; margin:0 auto;">
             <h3>Generate Guest Link</h3>
             <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">Select events to include in the public search link.</p>
-            
-            <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;">
-                <!-- Checkboxes -->
-            </div>
-            
-            <button class="btn" id="genLinkBtn">Generate Link</button>
+            <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;"></div>
+            <button class="btn" id="genLinkBtn">Generate Search Link</button>
             <div id="linkResult" class="link-box"></div>
+        </div>
+    </div>
+    
+    <!-- 5. ANALYTICS TAB -->
+    <div id="analyticsTab" class="tab-content">
+        <div class="card">
+            <h3>Guest Searches</h3>
+            <p style="color:var(--muted); font-size:13px;">List of users who uploaded selfie and searched.</p>
+            <table>
+                <thead><tr><th>Name</th><th>Mobile</th><th>Time</th><th>Status</th></tr></thead>
+                <tbody id="analyticsBody">
+                    <tr><td colspan="4" style="text-align:center; padding:15px; color:#555;">(Connect to guest-data API to view real leads)</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -196,7 +174,7 @@
 <script>
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const GET_EVENTS_API = `${API_BASE}/get-events`;
-    const GET_PHOTOS_API = `${API_BASE}/get-photos`; // New API needed
+    const GET_PHOTOS_API = `${API_BASE}/get-photos`;
     const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
     const DELETE_EVENT_API = `${API_BASE}/delete-event`;
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
@@ -204,13 +182,31 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
+    const collectionNameParam = urlParams.get("name"); // Fallback name
     const idToken = localStorage.getItem("idToken");
 
     if (!idToken) window.location.href = 'login.html';
 
+    // Set Assistant Link
+    document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
+
     // STATE
     let allPhotos = [];
     let eventsList = [];
+
+    // --- UTILS ---
+    function formatBytes(bytes, decimals = 2) {
+        if (!+bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
+    }
+
+    function formatDate(dateStr) {
+        if(!dateStr) return '-';
+        return new Date(dateStr).toLocaleDateString('en-IN');
+    }
 
     // --- TABS ---
     window.switchTab = function(tabId) {
@@ -222,7 +218,6 @@
 
     // --- DATA FETCHING ---
     async function init() {
-        // 1. Fetch Events & Details
         try {
             const res = await fetch(GET_EVENTS_API, {
                 method: 'POST',
@@ -231,18 +226,23 @@
             });
             const data = await res.json();
             
-            // Update Header
-            document.getElementById('collectionName').textContent = data.collection_summary?.name || "Collection";
-            document.getElementById('collectionDate').textContent = new Date(data.collection_summary?.created_at).toLocaleDateString() || "-";
-            document.getElementById('totalEvents').textContent = data.events?.length || 0;
-            document.getElementById('totalPhotos').textContent = data.collection_summary?.photo_count || 0;
-            document.getElementById('storageUsed').textContent = formatBytes(data.collection_summary?.storage_bytes);
-
-            eventsList = data.events || [];
-            renderEvents(eventsList);
+            // Fix: Header Data Binding
+            const summary = data.collection_summary || {};
+            document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+            document.getElementById('collectionDate').textContent = summary.created_at ? formatDate(summary.created_at) : '-';
             
-            // 2. Fetch Photos for Gallery (Using get-photos API)
-            fetchPhotos();
+            // Count Aggregation from Events if summary is not updated
+            const evts = data.events || [];
+            const totalPhotos = summary.photo_count || evts.reduce((sum, e) => sum + (e.photo_count||0), 0);
+            const totalStorage = summary.storage_bytes || evts.reduce((sum, e) => sum + (e.storage_bytes||0), 0);
+            
+            document.getElementById('totalEvents').textContent = evts.length;
+            document.getElementById('totalPhotos').textContent = totalPhotos;
+            document.getElementById('storageUsed').textContent = formatBytes(totalStorage);
+
+            eventsList = evts;
+            renderEvents(eventsList);
+            fetchPhotos(); // Load Gallery
 
         } catch (e) { console.error(e); alert("Failed to load collection details"); }
     }
@@ -253,7 +253,7 @@
             const res = await fetch(GET_PHOTOS_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId }) // Fetch ALL photos for collection
+                body: JSON.stringify({ collection_id: collectionId })
             });
             const data = await res.json();
             allPhotos = data.photos || [];
@@ -276,8 +276,9 @@
             if(p.quality_score > 85) badge = '<span class="meta-badge">⭐ Best</span>';
             else if(p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 80)) badge = '<span class="meta-badge">😊 Happy</span>';
             
+            // Broken Image Handler included in onError
             return `<div class="photo-card" onclick="window.open('${p.url}', '_blank')">
-                <img src="${p.url}" loading="lazy">
+                <img src="${p.url}" loading="lazy" onerror="this.parentElement.style.display='none'">
                 ${badge}
             </div>`;
         }).join('');
@@ -293,21 +294,16 @@
         linkList.innerHTML = '';
 
         events.forEach(ev => {
-            // Table
             tbody.innerHTML += `<tr>
                 <td>${ev.name}</td>
-                <td>${ev.event_date}</td>
+                <td>${formatDate(ev.event_date)}</td>
                 <td>${ev.photo_count || 0}</td>
                 <td>
                     <button class="btn secondary" style="padding:4px 8px; font-size:11px;" onclick="editEvent('${ev.event_id}', '${ev.name}', '${ev.event_date}')">Edit</button>
                     <button class="btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteEvent('${ev.event_id}')">Del</button>
                 </td>
             </tr>`;
-            
-            // Dropdown
             uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-            
-            // Link Checkbox
             linkList.innerHTML += `<label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
                 <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
             </label>`;
@@ -348,37 +344,40 @@
         const progressBar = document.getElementById('progress-bar');
         const status = document.getElementById('uploadStatus');
         
-        status.textContent = `Preparing to upload ${total} photos...`;
+        status.innerHTML = `⏳ Preparing to upload <b>${total}</b> photos...`;
 
-        // Batching logic (simplified)
         const batches = [];
-        const BATCH_SIZE = 20;
+        const BATCH_SIZE = 10;
         for(let i=0; i<total; i+=BATCH_SIZE) batches.push(Array.from(files).slice(i, i+BATCH_SIZE));
 
         let uploaded = 0;
 
         for(let batch of batches) {
-            // Get URLs
             const fileData = batch.map(f => ({ name: f.name, type: f.type }));
-            const res = await fetch(UPLOAD_URLS_API, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
-            });
-            const data = await res.json();
-            
-            // Upload to S3
-            await Promise.all(data.urls.map(async (u) => {
-                const file = batch.find(f => f.name === u.filename);
-                await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
-                uploaded++;
-                progressBar.style.width = `${(uploaded/total)*100}%`;
-                status.textContent = `Uploaded ${uploaded}/${total}`;
-            }));
+            try {
+                const res = await fetch(UPLOAD_URLS_API, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+                });
+                const data = await res.json();
+                
+                await Promise.all(data.urls.map(async (u) => {
+                    const file = batch.find(f => f.name === u.filename);
+                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+                    uploaded++;
+                    progressBar.style.width = `${(uploaded/total)*100}%`;
+                    status.innerHTML = `🚀 Uploading... <b>${uploaded}/${total}</b>`;
+                }));
+            } catch(err) {
+                console.error(err);
+            }
         }
         
-        status.textContent = "Upload Complete! Processing photos...";
-        setTimeout(() => init(), 2000); // Refresh
+        progressBar.style.width = '100%';
+        progressBar.style.backgroundColor = '#00e676';
+        status.innerHTML = `✅ <b>Upload Complete!</b> Processing photos (they will appear in gallery soon).`;
+        setTimeout(() => init(), 3000); 
     }
 
     // --- EVENT ACTIONS ---
@@ -386,7 +385,6 @@
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
         const id = document.getElementById('eventIdToEdit').value;
-        
         if(!name) return;
         
         const payload = { collection_id: collectionId, name, event_date: date };
@@ -447,14 +445,6 @@
         const box = document.getElementById('linkResult');
         box.style.display = 'block';
         box.innerHTML = `<a href="${data.searchUrl}" target="_blank" style="color:var(--brand)">${data.searchUrl}</a>`;
-    }
-
-    function formatBytes(bytes, decimals = 2) {
-        if (!+bytes) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
     }
 
     // START
