@@ -3,846 +3,463 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>कलेक्शन डिटेल्स</title>
+    <title>Collection Manager</title>
+    <!-- Zip Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
     <style>
-        /* --- NEW: Orange and Dark Red Theme --- */
         :root {
-            --bg: #1a1a1a;
-            --card: #2c2c2c;
-            --border: #444;
-            --text: #f0f0f0;
+            --bg: #050505;
+            --card: #101010;
+            --border: #262626;
+            --text: #ffffff;
             --muted: #a0a0a0;
-            --brand: #ff6a00; /* Dark Orange */
-            --brand-hover: #e65c00;
-            --danger: #d93025;
-            --ok: #1faa59;
-            --secondary: #3a3a3a;
+            --brand: #00e676; /* Green */
+            --brand-hover: #00c853;
+            --brand-soft: rgba(0, 230, 118, 0.1);
+            --danger: #ff5252;
+            --ok: #00e676;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; padding-bottom: 50px; }
 
-        body {
-            margin: 0;
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
+        .wrap { max-width: 1300px; margin: 0 auto; padding: 20px; }
 
-        .wrap {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        h1, h2, h3 {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .card {
-            background-color: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .text-muted {
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        a.back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text);
-            text-decoration: none;
-            padding: 6px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--border);
-            background: #2c2c2c;
-            font-size: 14px;
-        }
-
-        a.back-link:hover {
-            background: #333;
-        }
-
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: #333;
-            font-size: 12px;
-        }
-
-        .pill strong {
-            font-weight: 600;
-        }
-
-        .tag {
-            display: inline-flex;
-            align-items: center;
-            padding: 3px 8px;
-            border-radius: 999px;
-            font-size: 11px;
-            border: 1px solid var(--border);
-            margin-left: 6px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--brand);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 9px 16px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            margin-right: 8px;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        .btn:hover { background-color: var(--brand-hover); }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { background: var(--secondary); cursor: not-allowed; }
-        .btn.danger { background: var(--danger); }
-        .btn.secondary { background: var(--secondary); }
-
-        .btn-sm {
-            padding: 6px 10px;
-            font-size: 12px;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .form-group {
-            flex: 1;
-            min-width: 180px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            margin-bottom: 4px;
-            color: var(--muted);
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background-color: #111;
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: 1px solid var(--brand);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        th, td {
-            border-bottom: 1px solid var(--border);
-            padding: 8px 6px;
-            text-align: left;
-            vertical-align: middle;
-        }
-
-        th {
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--muted);
-        }
-
-        tr:hover td {
-            background-color: #242424;
-        }
-
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            padding: 2px 8px;
-            font-size: 11px;
-            border: 1px solid var(--border);
-        }
-
-        .status-pill.ok {
-            border-color: var(--ok);
-            color: var(--ok);
-        }
-
-        .status-pill.warn {
-            border-color: #f9a826;
-            color: #f9a826;
-        }
-
-        .status-pill.danger {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 16px;
-        }
-
-        .tab {
-            padding: 10px 16px;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--muted);
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab.active {
-            color: #fff;
-            border-bottom-color: var(--brand);
-            font-weight: 600;
-        }
-
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-
-        #dropZone {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            color: var(--muted);
-            cursor: pointer;
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-        #dropZone.dragover { background-color: rgba(255, 106, 0, 0.1); border-color: var(--brand); }
+        /* HEADER */
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .back-link { color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 6px; font-size: 14px; transition: color 0.2s; }
+        .back-link:hover { color: var(--brand); }
+        h1 { font-size: 24px; margin: 0; font-weight: 700; }
         
-        .link-display { 
-            margin-top: 15px; 
-            padding: 12px; 
-            background: #111; 
-            border: 1px dashed var(--ok); 
-            border-radius: 8px; 
-            font-size: 13px; 
-            color: var(--ok); 
-            display: none; 
-            word-wrap: break-word; 
-            user-select: all; 
-        }
+        .pill { background: #1a1a1a; padding: 4px 10px; border-radius: 50px; font-size: 12px; border: 1px solid var(--border); color: var(--muted); display: inline-flex; gap: 5px; }
+        .pill strong { color: var(--brand); }
+
+        /* CARDS */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .tab { padding: 12px 5px; cursor: pointer; color: var(--muted); font-size: 14px; position: relative; transition: color 0.2s; }
+        .tab.active { color: var(--brand); font-weight: 600; }
+        .tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: var(--brand); }
         
-        .grid-container { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 900px) { .grid-container { grid-template-columns: 1fr 1fr; } }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* BUTTONS */
+        .btn { background: var(--brand); color: #000; border: none; border-radius: 50px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { background: var(--brand-hover); }
+        .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn.secondary:hover { border-color: var(--brand); color: var(--brand); background: transparent; }
+        .btn.danger { background: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .btn.danger:hover { background: var(--danger); color: #fff; }
+
+        /* GALLERY GRID */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .photo-card { position: relative; aspect-ratio: 1; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: pointer; }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+        .photo-card:hover img { transform: scale(1.05); opacity: 0.8; }
+        .meta-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; pointer-events: none; }
         
-        /* --- NEW: Progress Bar for Upload --- */
-        #progress-container { display: none; margin-top: 15px; }
-        #progress-bar { width: 0%; height: 8px; background-color: var(--brand); border-radius: 4px; transition: width 0.3s ease; }
-        #progress-text { font-size: 13px; color: var(--muted); margin-top: 5px; }
+        /* FILTERS */
+        .filter-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
+        .chip { background: #151515; border: 1px solid var(--border); padding: 6px 12px; border-radius: 50px; font-size: 12px; cursor: pointer; color: var(--muted); white-space: nowrap; transition: all 0.2s; }
+        .chip.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+        
+        /* UPLOAD ZONE */
+        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; background: #0a0a0a; transition: all 0.2s; cursor: pointer; }
+        #dropZone:hover { border-color: var(--brand); background: rgba(0, 230, 118, 0.02); }
+        #progress-container { margin-top: 15px; background: #1a1a1a; height: 6px; border-radius: 3px; overflow: hidden; display: none; }
+        #progress-bar { height: 100%; background: var(--brand); width: 0%; transition: width 0.3s; }
+
+        /* TABLES */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 10px; color: var(--muted); border-bottom: 1px solid var(--border); }
+        td { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; }
+        
+        /* FORMS */
+        input, select { background: #000; border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: #fff; width: 100%; outline: none; margin-bottom: 10px; }
+        input:focus, select:focus { border-color: var(--brand); }
+        
+        /* LINKS */
+        .link-box { background: #111; border: 1px dashed var(--brand); padding: 15px; border-radius: 8px; margin-top: 15px; font-family: monospace; color: var(--brand); word-break: break-all; display: none; }
+
     </style>
 </head>
 <body>
 <div class="wrap">
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-        <a href="dashboard.html" class="back-link">⬅ डैशबोर्ड</a>
+    
+    <!-- HEADER -->
+    <div class="top-bar">
         <div>
-            <h1 id="pageTitle">कलेक्शन डिटेल्स</h1>
-            <div class="text-muted" id="pageSubtitle">कलेक्शन की जानकारी लोड हो रही है...</div>
+            <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+            <h1 id="collectionName" style="margin-top:5px;">Loading...</h1>
+            <div style="margin-top:5px; font-size:13px; color:var(--muted);">
+                <span id="collectionDate">-</span> • 
+                <span id="totalEvents">0</span> Events • 
+                <span id="totalPhotos">0</span> Photos
+            </div>
         </div>
-    </div>
-
-    <!-- TOP SUMMARY CARD -->
-    <div class="card" id="collectionSummaryCard">
-        <div class="card-header">
-            <div>
-                <div class="card-title" id="collectionName">-</div>
-                <div class="text-muted" style="margin-top:4px;">
-                    बनाया गया: <span id="collectionCreatedAt">-</span> • 
-                    टोटल इवेंट्स: <span id="collectionEventsCount">-</span> • 
-                    टोटल फोटो: <span id="collectionPhotosCount">-</span>
-                </div>
-            </div>
-            <div>
-                <span class="pill">
-                    <strong>Storage:</strong>
-                    <span id="collectionStorageBytes">-</span>
-                </span>
-                <span class="tag" id="collectionStatusTag">Active</span>
-            </div>
+        <div>
+            <span class="pill">Storage: <strong id="storageUsed">0 MB</strong></span>
+            <span class="pill" style="border-color:var(--brand); color:var(--brand);">Active</span>
         </div>
     </div>
 
     <!-- TABS -->
-    <div class="card">
-        <div class="tabs">
-            <div class="tab active" data-tab="eventsTab">इवेंट्स</div>
-            <div class="tab" data-tab="uploadTab">फोटो अपलोड</div>
-            <div class="tab" data-tab="linksTab">लिंक्स / सर्च लिंक</div>
-        </div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('galleryTab')">🖼️ Gallery</div>
+        <div class="tab" onclick="switchTab('eventsTab')">📅 Events</div>
+        <div class="tab" onclick="switchTab('uploadTab')">☁️ Upload Photos</div>
+        <div class="tab" onclick="switchTab('linksTab')">🔗 Search Links</div>
+    </div>
 
-        <div class="tab-content active" id="eventsTab">
-            <div class="grid-container">
-                <!-- LEFT: Event List -->
-                <div>
-                    <div class="card-header" style="padding:0; margin-bottom:8px;">
-                        <div class="card-title" style="font-size:16px;">इवेंट लिस्ट</div>
-                    </div>
-                    <div style="overflow:auto;">
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>नाम</th>
-                                <th>तारीख</th>
-                                <th>फोटो</th>
-                                <th>स्टोरेज</th>
-                                <th>एक्शन</th>
-                            </tr>
-                            </thead>
-                            <tbody id="eventsTbody">
-                            <!-- इवेंट्स यहाँ आएँगे -->
-                            </tbody>
-                        </table>
-                    </div>
+    <!-- 1. GALLERY TAB -->
+    <div id="galleryTab" class="tab-content active">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <div class="filter-row">
+                    <div class="chip active" onclick="filterGallery('ALL', this)">All Photos</div>
+                    <div class="chip" onclick="filterGallery('BEST', this)">⭐ Best</div>
+                    <div class="chip" onclick="filterGallery('HAPPY', this)">😊 Happy</div>
+                    <div class="chip" onclick="filterGallery('GROUP', this)">👥 Groups</div>
                 </div>
-
-                <!-- RIGHT: Event Form -->
-                <div>
-                    <div class="card-header" style="padding:0; margin-bottom:8px;">
-                        <div class="card-title" style="font-size:16px;" id="form-title">नया इवेंट बनाएं</div>
-                    </div>
-                    <form id="eventForm" onsubmit="return false;">
-                        <input type="hidden" id="eventIdToEdit" />
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventName">इवेंट का नाम</label>
-                                <input type="text" id="eventName" placeholder="जैसे - शादी, रिसेप्शन, हल्दी" />
-                            </div>
-                            <div class="form-group">
-                                <label for="eventDate">तारीख</label>
-                                <input type="date" id="eventDate" />
-                            </div>
-                        </div>
-                        <div style="margin-top:10px;">
-                            <button class="btn" id="saveEventBtn">इवेंट बनाएं</button>
-                            <button class="btn secondary" id="cancelEditBtn" type="button" style="display:none;">रीसेट</button>
-                        </div>
-                    </form>
-                </div>
+                <button class="btn secondary" onclick="alert('Download Feature Coming Soon')">⬇ Download All</button>
+            </div>
+            <div id="galleryGrid" class="gallery-grid">
+                <!-- JS will fill this -->
+                <p style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--muted);">Loading photos...</p>
             </div>
         </div>
+    </div>
 
-        <!-- UPLOAD TAB -->
-        <div class="tab-content" id="uploadTab">
-            <div class="card-header" style="padding:0; margin-bottom:8px;">
-                <div class="card-title" style="font-size:16px;">फोटो अपलोड</div>
+    <!-- 2. EVENTS TAB -->
+    <div id="eventsTab" class="tab-content">
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+            <div class="card">
+                <h3>Event List</h3>
+                <table>
+                    <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+                    <tbody id="eventsTbody"></tbody>
+                </table>
             </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="eventSelectForUpload">किस इवेंट में अपलोड करना है?</label>
-                    <select id="eventSelectForUpload">
-                        <option value="">इवेंट चुनें...</option>
-                    </select>
-                </div>
+            <div class="card">
+                <h3 id="eventFormTitle">Create Event</h3>
+                <input type="text" id="eventName" placeholder="Event Name (e.g. Haldi)">
+                <input type="date" id="eventDate">
+                <input type="hidden" id="eventIdToEdit">
+                <button class="btn" id="saveEventBtn" style="width:100%">Create Event</button>
+                <button class="btn secondary" id="cancelEventEdit" style="width:100%; margin-top:5px; display:none;">Cancel</button>
             </div>
+        </div>
+    </div>
 
+    <!-- 3. UPLOAD TAB -->
+    <div id="uploadTab" class="tab-content">
+        <div class="card" style="max-width:800px; margin:0 auto;">
+            <h3>Upload Photos</h3>
+            <label style="font-size:13px; color:var(--muted);">Select Event to upload to:</label>
+            <select id="uploadEventSelect"><option value="">Select Event...</option></select>
+            
             <div id="dropZone">
-                <p style="font-size:15px; margin-bottom:4px;">यहाँ क्लिक करें या फोटो ड्रैग & ड्रॉप करें</p>
-                <p class="text-muted" style="margin-bottom:0;">आप एक बार में सैकड़ों फोटो चुन सकते हैं, हम उन्हें बैच में अपलोड कर देंगे।</p>
+                <div style="font-size:40px; margin-bottom:10px;">☁️</div>
+                <p>Drag & Drop photos here or click to browse</p>
+                <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
-            <input type="file" id="fileInput" multiple style="display:none;" />
             
             <div id="progress-container">
                 <div id="progress-bar"></div>
-                <div id="progress-text">अपलोड की तैयारी हो रही है...</div>
             </div>
-
-            <div id="uploadStatus" class="text-muted" style="margin-top:10px;"></div>
-        </div>
-
-        <!-- LINKS TAB -->
-        <div class="tab-content" id="linksTab">
-            <div class="card-header" style="padding:0; margin-bottom:8px;">
-                <div class="card-title" style="font-size:16px;">गेस्ट सर्च लिंक्स</div>
-            </div>
-
-            <p class="text-muted" style="margin-bottom:12px;">
-                यहाँ से आप पूरे कलेक्शन या चुने हुए इवेंट्स के लिए गेस्ट सर्च लिंक बना सकते हैं।
-            </p>
-
-            <div class="form-row" style="align-items:flex-end;">
-                <div class="form-group">
-                    <label>इवेंट चुनें (एक या अधिक):</label>
-                    <div style="max-height:180px; overflow:auto; border:1px solid var(--border); border-radius:8px; padding:8px;">
-                        <label style="display:block; font-size:13px; margin-bottom:6px;">
-                            <input type="checkbox" id="selectAllCheckbox" /> सभी इवेंट्स चुनें
-                        </label>
-                        <div id="eventsForLinkContainer" style="max-height:140px; overflow:auto;">
-                            <!-- यहाँ इवेंट्स के checkbox आएँगे -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top:10px;">
-                <button class="btn" id="generateSelectedBtn">चुने हुए इवेंट्स के लिए लिंक बनाएं</button>
-                <button class="btn secondary" id="generateCollectionBtn">पूरा कलेक्शन लिंक बनाएँ</button>
-            </div>
-
-            <div id="link-display-area" class="link-display"></div>
+            <p id="uploadStatus" style="text-align:center; font-size:13px; margin-top:10px; color:var(--muted);"></p>
         </div>
     </div>
+
+    <!-- 4. LINKS TAB -->
+    <div id="linksTab" class="tab-content">
+        <div class="card" style="max-width:600px; margin:0 auto;">
+            <h3>Generate Guest Link</h3>
+            <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">Select events to include in the public search link.</p>
+            
+            <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;">
+                <!-- Checkboxes -->
+            </div>
+            
+            <button class="btn" id="genLinkBtn">Generate Link</button>
+            <div id="linkResult" class="link-box"></div>
+        </div>
+    </div>
+
 </div>
 
 <script>
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const GET_EVENTS_API = `${API_BASE}/get-events`;
-    const UPSERT_EVENT_API = `${API_BASE}/upsert-event`; // create + update
+    const GET_PHOTOS_API = `${API_BASE}/get-photos`; // New API needed
+    const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
     const DELETE_EVENT_API = `${API_BASE}/delete-event`;
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
 
-    // --- DOM Elements ---
-    const url = new URL(window.location.href);
-    const collectionId = url.searchParams.get("id");
+    const urlParams = new URLSearchParams(window.location.search);
+    const collectionId = urlParams.get("id");
     const idToken = localStorage.getItem("idToken");
-    if (!idToken) location.href = 'login.html';
 
-    const eventNameEl = document.getElementById("eventName");
-    const eventDateEl = document.getElementById("eventDate");
-    const eventsTbody = document.getElementById("eventsTbody");
-    const eventSelectForUpload = document.getElementById("eventSelectForUpload");
-    const saveEventBtn = document.getElementById('saveEventBtn');
-    const cancelEditBtn = document.getElementById('cancelEditBtn');
-    const eventIdToEdit = document.getElementById('eventIdToEdit');
-    const formTitle = document.getElementById('form-title');
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const uploadStatus = document.getElementById('uploadStatus');
-    const linkDisplayArea = document.getElementById('link-display-area');
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const generateSelectedBtn = document.getElementById('generateSelectedBtn');
-    const generateCollectionBtn = document.getElementById('generateCollectionBtn');
-    const progressContainer = document.getElementById('progress-container');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
+    if (!idToken) window.location.href = 'login.html';
 
-    const pageTitleEl = document.getElementById('pageTitle');
-    const pageSubtitleEl = document.getElementById('pageSubtitle');
-    const collectionNameEl = document.getElementById('collectionName');
-    const collectionCreatedAtEl = document.getElementById('collectionCreatedAt');
-    const collectionEventsCountEl = document.getElementById('collectionEventsCount');
-    const collectionPhotosCountEl = document.getElementById('collectionPhotosCount');
-    const collectionStorageBytesEl = document.getElementById('collectionStorageBytes');
-    const collectionStatusTagEl = document.getElementById('collectionStatusTag');
+    // STATE
+    let allPhotos = [];
+    let eventsList = [];
 
-    // --- Helper Functions ---
-    function resetForm() {
-        formTitle.textContent = "नया इवेंट बनाएं";
-        saveEventBtn.textContent = "इवेंट बनाएं";
-        eventNameEl.value = "";
-        eventDateEl.value = "";
-        eventIdToEdit.value = "";
-        cancelEditBtn.style.display = 'none';
+    // --- TABS ---
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
     }
 
-    function formatBytes(bytes) {
-        if (!bytes || bytes <= 0) return "0 B";
-        const sizes = ["B", "KB", "MB", "GB", "TB"];
-        const i = Math.floor(Math.log(bytes) / Math.log(1024));
-        const val = bytes / Math.pow(1024, i);
-        return `${val.toFixed(1)} ${sizes[i]}`;
-    }
-
-    function formatDate(isoString) {
-        if (!isoString) return "-";
-        const d = new Date(isoString);
-        return d.toLocaleDateString("hi-IN", { year: "numeric", month: "short", day: "numeric" });
-    }
-
-    function setActiveTab(tabName) {
-        document.querySelectorAll(".tab").forEach(tab => {
-            tab.classList.toggle("active", tab.dataset.tab === tabName);
-        });
-        document.querySelectorAll(".tab-content").forEach(tc => {
-            tc.classList.toggle("active", tc.id === tabName);
-        });
-    }
-
-    // --- Fetch Events & Collection Summary ---
-    async function fetchEvents() {
+    // --- DATA FETCHING ---
+    async function init() {
+        // 1. Fetch Events & Details
         try {
             const res = await fetch(GET_EVENTS_API, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${idToken}`,
-                    "Content-Type": "application/json"
-                },
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: collectionId })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "इवेंट्स लोड नहीं हो पाए।");
-
-            const { events = [], collection_summary } = data;
-
-            // Update collection header summary (if backend sends)
-            if (collection_summary) {
-                collectionNameEl.textContent = collection_summary.name || "कलेक्शन";
-                collectionCreatedAtEl.textContent = formatDate(collection_summary.created_at);
-                collectionEventsCountEl.textContent = collection_summary.events_count || events.length;
-                collectionPhotosCountEl.textContent = collection_summary.photo_count || "-";
-                collectionStorageBytesEl.textContent = formatBytes(collection_summary.storage_bytes || 0);
-                collectionStatusTagEl.textContent = collection_summary.status || "Active";
-            } else {
-                // fallback
-                collectionNameEl.textContent = "कलेक्शन";
-                collectionCreatedAtEl.textContent = "-";
-                collectionEventsCountEl.textContent = events.length;
-                collectionPhotosCountEl.textContent = "-";
-                collectionStorageBytesEl.textContent = "-";
-                collectionStatusTagEl.textContent = "Active";
-            }
-
-            renderEventsTable(events);
-            populateEventDropdowns(events);
-        } catch (err) {
-            console.error(err);
-            alert("इवेंट्स लोड करने में त्रुटि: " + err.message);
-        }
-    }
-
-    function renderEventsTable(events) {
-        eventsTbody.innerHTML = "";
-        events.forEach(ev => {
-            const tr = document.createElement("tr");
-
-            const tdName = document.createElement("td");
-            tdName.textContent = ev.name || "-";
-
-            const tdDate = document.createElement("td");
-            tdDate.textContent = ev.event_date || "-";
-
-            const tdPhotos = document.createElement("td");
-            tdPhotos.textContent = ev.photo_count || 0;
-
-            const tdStorage = document.createElement("td");
-            tdStorage.textContent = formatBytes(ev.storage_bytes || 0);
-
-            const tdActions = document.createElement("td");
-            const editBtn = document.createElement("button");
-            editBtn.className = "btn btn-sm secondary";
-            editBtn.textContent = "Edit";
-            editBtn.onclick = () => {
-                formTitle.textContent = "इवेंट अपडेट करें";
-                saveEventBtn.textContent = "इवेंट अपडेट करें";
-                eventNameEl.value = ev.name || "";
-                eventDateEl.value = ev.event_date || "";
-                eventIdToEdit.value = ev.event_id;
-                cancelEditBtn.style.display = 'inline-flex';
-            };
-
-            const delBtn = document.createElement("button");
-            delBtn.className = "btn btn-sm danger";
-            delBtn.textContent = "Delete";
-            delBtn.onclick = async () => {
-                if (!confirm("क्या आप सच में इस इवेंट को डिलीट करना चाहते हैं?")) return;
-                try {
-                    const res = await fetch(DELETE_EVENT_API, {
-                        method: "POST",
-                        headers: {
-                            "Authorization": `Bearer ${idToken}`,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ event_id: ev.event_id, collection_id: collectionId })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message || "डिलीट करने में त्रुटि।");
-                    fetchEvents();
-                } catch (e) {
-                    alert("इवेंट डिलीट करने में त्रुटि: " + e.message);
-                }
-            };
-
-            tdActions.appendChild(editBtn);
-            tdActions.appendChild(delBtn);
-
-            tr.appendChild(tdName);
-            tr.appendChild(tdDate);
-            tr.appendChild(tdPhotos);
-            tr.appendChild(tdStorage);
-            tr.appendChild(tdActions);
-
-            eventsTbody.appendChild(tr);
-        });
-    }
-
-    function populateEventDropdowns(events) {
-        // Upload tab dropdown
-        eventSelectForUpload.innerHTML = `<option value="">इवेंट चुनें...</option>`;
-        events.forEach(ev => {
-            const opt = document.createElement("option");
-            opt.value = ev.event_id;
-            opt.textContent = `${ev.name || "Unnamed"} (${ev.event_date || "-"})`;
-            eventSelectForUpload.appendChild(opt);
-        });
-
-        // Links tab checklist
-        const container = document.getElementById('eventsForLinkContainer');
-        container.innerHTML = "";
-        events.forEach(ev => {
-            const label = document.createElement("label");
-            label.style.display = "block";
-            label.style.fontSize = "13px";
-            label.style.marginBottom = "4px";
-
-            const cb = document.createElement("input");
-            cb.type = "checkbox";
-            cb.value = ev.event_id;
-            cb.className = "event-checkbox";
-
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(` ${ev.name || "Unnamed"} (${ev.event_date || "-"})`));
-            container.appendChild(label);
-        });
-    }
-
-    // --- Save Event (Create/Update) ---
-    async function handleSaveEvent() {
-        const name = eventNameEl.value.trim();
-        const date = eventDateEl.value.trim();
-        if (!name || !date) {
-            alert("नाम और तारीख भरें।");
-            return;
-        }
-        
-        const eventId = eventIdToEdit.value;
-        const payload = { collection_id: collectionId, name, event_date: date };
-        if (eventId) payload.event_id = eventId;
-
-        saveEventBtn.disabled = true;
-        try {
-            await fetch(UPSERT_EVENT_API, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${idToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-            resetForm();
-            fetchEvents();
-        } catch (e) {
-            alert("इवेंट सेव करने में त्रुटि।");
-        } finally {
-            saveEventBtn.disabled = false;
-        }
-    }
-    
-    // --- Batch Upload Logic (Bulk Upload for thousands of photos) ---
-    async function uploadInBatches(files, eventId, concurrency = 8) {
-        const BATCH_SIZE = 50; // एक request में 50 file नाम से presigned URLs
-        const totalFiles = files.length;
-        let uploadedCount = 0;
-        
-        progressContainer.style.display = 'block';
-        uploadStatus.textContent = '';
-        progressBar.style.width = '0%';
-        progressText.textContent = `कुल ${totalFiles} फोटो चुने गए हैं, अपलोड शुरू हो रहा है...`;
-
-        // Files को छोटे-छोटे batches में बाँटते हैं
-        const chunks = [];
-        for (let i = 0; i < files.length; i += BATCH_SIZE) {
-            chunks.push(files.slice(i, i + BATCH_SIZE));
-        }
-
-        let batchNumber = 0;
-        const totalBatches = chunks.length;
-
-        for (const batch of chunks) {
-            batchNumber++;
-            progressText.textContent = `प्रोसेसिंग बैच ${batchNumber}/${totalBatches}...`;
             
-            const filesToRequest = batch.map(f => ({ name: f.name, type: f.type || "image/jpeg" }));
-            const payload = {
-                collection_id: collectionId,
-                event_id: eventId,
-                files: filesToRequest
-            };
+            // Update Header
+            document.getElementById('collectionName').textContent = data.collection_summary?.name || "Collection";
+            document.getElementById('collectionDate').textContent = new Date(data.collection_summary?.created_at).toLocaleDateString() || "-";
+            document.getElementById('totalEvents').textContent = data.events?.length || 0;
+            document.getElementById('totalPhotos').textContent = data.collection_summary?.photo_count || 0;
+            document.getElementById('storageUsed').textContent = formatBytes(data.collection_summary?.storage_bytes);
 
-            const res = await fetch(UPLOAD_URLS_API, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${idToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
+            eventsList = data.events || [];
+            renderEvents(eventsList);
+            
+            // 2. Fetch Photos for Gallery (Using get-photos API)
+            fetchPhotos();
+
+        } catch (e) { console.error(e); alert("Failed to load collection details"); }
+    }
+
+    async function fetchPhotos() {
+        const grid = document.getElementById('galleryGrid');
+        try {
+            const res = await fetch(GET_PHOTOS_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId }) // Fetch ALL photos for collection
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Upload URLs नहीं मिले।");
-
-            const uploadTasks = data.urls.map(item => async () => {
-                const file = batch.find(f => f.name === item.filename);
-                if (!file) return;
-                await fetch(item.uploadURL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': file.type || 'image/jpeg' },
-                    body: file
-                });
-                uploadedCount++;
-                const progress = (uploadedCount / totalFiles) * 100;
-                progressBar.style.width = `${progress}%`;
-                progressText.textContent = `अपलोड हो रहा है... ${uploadedCount}/${totalFiles}`;
-            });
-
-            // एक batch के अन्दर parallel upload
-            await Promise.all(uploadTasks.map(task => task()));
+            allPhotos = data.photos || [];
+            
+            if(allPhotos.length === 0) {
+                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:20px; color:#666;">No photos uploaded yet.</p>';
+            } else {
+                renderGallery(allPhotos);
+            }
+        } catch (e) {
+            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:red;">Failed to load photos.</p>';
         }
     }
+
+    // --- RENDERERS ---
+    function renderGallery(photos) {
+        const grid = document.getElementById('galleryGrid');
+        grid.innerHTML = photos.map(p => {
+            let badge = '';
+            if(p.quality_score > 85) badge = '<span class="meta-badge">⭐ Best</span>';
+            else if(p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 80)) badge = '<span class="meta-badge">😊 Happy</span>';
+            
+            return `<div class="photo-card" onclick="window.open('${p.url}', '_blank')">
+                <img src="${p.url}" loading="lazy">
+                ${badge}
+            </div>`;
+        }).join('');
+    }
+
+    function renderEvents(events) {
+        const tbody = document.getElementById('eventsTbody');
+        const uploadSelect = document.getElementById('uploadEventSelect');
+        const linkList = document.getElementById('linkEventList');
+        
+        tbody.innerHTML = '';
+        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+        linkList.innerHTML = '';
+
+        events.forEach(ev => {
+            // Table
+            tbody.innerHTML += `<tr>
+                <td>${ev.name}</td>
+                <td>${ev.event_date}</td>
+                <td>${ev.photo_count || 0}</td>
+                <td>
+                    <button class="btn secondary" style="padding:4px 8px; font-size:11px;" onclick="editEvent('${ev.event_id}', '${ev.name}', '${ev.event_date}')">Edit</button>
+                    <button class="btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteEvent('${ev.event_id}')">Del</button>
+                </td>
+            </tr>`;
+            
+            // Dropdown
+            uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+            
+            // Link Checkbox
+            linkList.innerHTML += `<label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+                <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
+            </label>`;
+        });
+    }
+
+    window.filterGallery = function(type, el) {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        
+        let filtered = [];
+        if(type === 'ALL') filtered = allPhotos;
+        else if(type === 'BEST') filtered = allPhotos.filter(p => p.quality_score > 85);
+        else if(type === 'HAPPY') filtered = allPhotos.filter(p => p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60));
+        else if(type === 'GROUP') filtered = allPhotos.filter(p => p.face_count >= 3);
+        
+        renderGallery(filtered);
+    }
+
+    // --- UPLOAD LOGIC ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--brand)'; };
+    dropZone.ondragleave = () => { dropZone.style.borderColor = 'var(--border)'; };
+    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+    fileInput.onchange = () => handleFiles(fileInput.files);
 
     async function handleFiles(files) {
-        const eventId = eventSelectForUpload.value;
-        if (!eventId) {
-            alert("कृपया पहले एक इवेंट चुनें।");
-            return;
-        }
-        if (files.length === 0) return;
-
-        dropZone.style.pointerEvents = 'none';
-        fileInput.disabled = true;
+        const eventId = document.getElementById('uploadEventSelect').value;
+        if(!eventId) return alert("Please select an event first!");
         
-        try {
-            await uploadInBatches(Array.from(files), eventId);
-            uploadStatus.textContent = "अपलोड पूरा हुआ! लिस्ट रिफ्रेश हो रही है...";
-        } catch (e) {
-            console.error(e);
-            uploadStatus.textContent = `अपलोड में त्रुटि: ${e.message}`;
-        } finally {
-            // Auto-reset after upload
-            dropZone.style.pointerEvents = 'auto';
-            fileInput.value = '';
-            fileInput.disabled = false;
-            setTimeout(() => {
-                progressContainer.style.display = 'none';
-                uploadStatus.textContent = "";
-                fetchEvents(); // Upload के बाद counts refresh
-            }, 2000);
-        }
-    }
-    
-    // --- Link Generation Logic ---
-    async function generateLink(payload) {
-        linkDisplayArea.style.display = 'block';
-        linkDisplayArea.textContent = 'लिंक बनाया जा रहा है...';
-        try {
-            const res = await fetch(GENERATE_LINK_API, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${idToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
+        const total = files.length;
+        if(total === 0) return;
+
+        document.getElementById('progress-container').style.display = 'block';
+        const progressBar = document.getElementById('progress-bar');
+        const status = document.getElementById('uploadStatus');
+        
+        status.textContent = `Preparing to upload ${total} photos...`;
+
+        // Batching logic (simplified)
+        const batches = [];
+        const BATCH_SIZE = 20;
+        for(let i=0; i<total; i+=BATCH_SIZE) batches.push(Array.from(files).slice(i, i+BATCH_SIZE));
+
+        let uploaded = 0;
+
+        for(let batch of batches) {
+            // Get URLs
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            const res = await fetch(UPLOAD_URLS_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'लिंक बनाने में विफल।');
-            linkDisplayArea.textContent = data.searchUrl;
-        } catch (error) {
-            linkDisplayArea.textContent = `त्रुटि: ${error.message}`;
+            
+            // Upload to S3
+            await Promise.all(data.urls.map(async (u) => {
+                const file = batch.find(f => f.name === u.filename);
+                await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+                uploaded++;
+                progressBar.style.width = `${(uploaded/total)*100}%`;
+                status.textContent = `Uploaded ${uploaded}/${total}`;
+            }));
         }
+        
+        status.textContent = "Upload Complete! Processing photos...";
+        setTimeout(() => init(), 2000); // Refresh
     }
 
-    // --- Initialization and Event Listeners ---
-    function initialize() {
-        document.getElementById("pageTitle").textContent = "कलेक्शन डिटेल्स";
-        pageSubtitleEl.textContent = "इवेंट्स, फोटो अपलोड और गेस्ट सर्च लिंक मैनेज करें।";
+    // --- EVENT ACTIONS ---
+    document.getElementById('saveEventBtn').onclick = async () => {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        const id = document.getElementById('eventIdToEdit').value;
+        
+        if(!name) return;
+        
+        const payload = { collection_id: collectionId, name, event_date: date };
+        if(id) payload.event_id = id;
 
-        // Tab switching
-        document.querySelectorAll(".tab").forEach(tab => {
-            tab.addEventListener("click", () => {
-                setActiveTab(tab.dataset.tab);
-            });
+        await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
-
-        // Event form
-        saveEventBtn.addEventListener("click", handleSaveEvent);
-        cancelEditBtn.addEventListener("click", resetForm);
-
-        // Upload tab
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
-        });
-        fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-
-        // Links tab
-        selectAllCheckbox.addEventListener("change", () => {
-            const checked = selectAllCheckbox.checked;
-            document.querySelectorAll(".event-checkbox").forEach(cb => {
-                cb.checked = checked;
-            });
-        });
-
-        generateSelectedBtn.addEventListener("click", () => {
-            const selectedEvents = Array.from(document.querySelectorAll(".event-checkbox"))
-                .filter(cb => cb.checked)
-                .map(cb => cb.value);
-            if (selectedEvents.length === 0) {
-                alert("कम से कम एक इवेंट चुनें।");
-                return;
-            }
-            generateLink({ collection_id: collectionId, event_ids: selectedEvents });
-        });
-
-        generateCollectionBtn.addEventListener("click", () => {
-            generateLink({ collection_id: collectionId });
-        });
-
-        // Initial fetch
-        fetchEvents();
+        
+        document.getElementById('eventName').value = '';
+        document.getElementById('eventIdToEdit').value = '';
+        document.getElementById('cancelEventEdit').style.display = 'none';
+        document.getElementById('saveEventBtn').textContent = 'Create Event';
+        document.getElementById('eventFormTitle').textContent = 'Create Event';
+        init();
     }
 
-    document.addEventListener('DOMContentLoaded', initialize);
+    window.editEvent = (id, name, date) => {
+        document.getElementById('eventName').value = name;
+        document.getElementById('eventDate').value = date;
+        document.getElementById('eventIdToEdit').value = id;
+        document.getElementById('saveEventBtn').textContent = 'Update Event';
+        document.getElementById('eventFormTitle').textContent = 'Edit Event';
+        document.getElementById('cancelEventEdit').style.display = 'inline-block';
+    }
+
+    document.getElementById('cancelEventEdit').onclick = () => {
+        document.getElementById('eventName').value = '';
+        document.getElementById('eventIdToEdit').value = '';
+        document.getElementById('cancelEventEdit').style.display = 'none';
+        document.getElementById('saveEventBtn').textContent = 'Create Event';
+    }
+    
+    window.deleteEvent = async (id) => {
+        if(!confirm("Delete event?")) return;
+        await fetch(DELETE_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, event_id: id })
+        });
+        init();
+    }
+
+    // --- LINK GEN ---
+    document.getElementById('genLinkBtn').onclick = async () => {
+        const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
+        const payload = { collection_id: collectionId };
+        if(selected.length > 0) payload.event_ids = selected;
+
+        const res = await fetch(GENERATE_LINK_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const box = document.getElementById('linkResult');
+        box.style.display = 'block';
+        box.innerHTML = `<a href="${data.searchUrl}" target="_blank" style="color:var(--brand)">${data.searchUrl}</a>`;
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+        if (!+bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
+    }
+
+    // START
+    init();
+
 </script>
 </body>
 </html>
