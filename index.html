@@ -371,6 +371,8 @@
   let selectedUrls = new Set();
   let selfieBase64 = null;
   let currentViewerIndex = 0;
+  // ✅ NEW STATE: Match count to send to API
+  let currentMatchCount = 0; 
 
   // --- 1. HANDLE SELFIE (Updated for Camera + Gallery) ---
   function handleFileSelect(e) {
@@ -435,7 +437,10 @@
       allPhotos = data.matches || [];
       filteredPhotos = [...allPhotos];
       
-      document.getElementById('matchCount').innerText = allPhotos.length;
+      // ✅ NEW: Capture match count for saving
+      currentMatchCount = allPhotos.length;
+
+      document.getElementById('matchCount').innerText = currentMatchCount;
       
       document.getElementById('step1').style.display = 'none';
       document.getElementById('step2').style.display = 'block';
@@ -461,10 +466,18 @@
     const params = new URLSearchParams(window.location.search);
     fetch(SAVE_API, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         linkId: params.get('linkId'),
-        name: name, mobile: mobile, selfie_image: selfieBase64
+        name: name, 
+        mobile: mobile, 
+        selfie_image: selfieBase64, // Base64 data to save
+        photo_count: currentMatchCount // NEW: Match count to save
       })
+    }).then(res => {
+        if (!res.ok) console.error("Background lead save failed.");
+    }).catch(err => {
+        console.error("Background lead save failed:", err);
     });
 
     document.getElementById('step2').style.display = 'none';
