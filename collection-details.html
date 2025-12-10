@@ -137,16 +137,14 @@
         .load-more-container { text-align: center; margin-top: 30px; }
 
         /* GALLERY FIXES */
-        /* ✅ FIX: Thumbnail Grid Size Optimization */
+        /* ✅ FIX: Thumbnail Grid Size Optimization (smaller) */
         .gallery-grid { 
             display: grid; 
-            /* Grid now favors smaller thumbnail size for better performance */
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-            gap: 8px; 
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+            gap: 5px; /* Reduced gap */
         }
         .photo-card:hover .photo-info { opacity: 0; display: none; }
         .photo-card img { 
-            /* Ensure the thumbnail takes full space */
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
@@ -305,7 +303,7 @@
 
 </div>
 
-<!-- ✅ FIX 4: Viewer HTML simplified (only image is clickable to close) -->
+<!-- ✅ FIX: Viewer simplified (only image is clickable to close) -->
 <div class="viewer" id="viewer" onclick="closeViewer()">
     <img id="viewerImg" src="" onclick="event.stopPropagation()">
 </div>
@@ -359,8 +357,8 @@
                 renderNextBatch();
              }
         } else {
-            // Hide gallery content if switching tabs to prevent bleeding
-             document.getElementById('galleryContainer').innerHTML = '';
+            // ✅ FIX 3: Hide gallery content if switching tabs to prevent bleeding
+             document.getElementById('galleryContainer').innerHTML = '<p style="text-align:center; padding:40px; color:var(--muted);">Loading photos...</p>';
         }
 
         if(tabId === 'analyticsTab') fetchAnalytics(true); 
@@ -476,14 +474,13 @@
             
             const tags = (p.ai_tags || []).slice(0, 3).join(', ');
             
-            // ✅ FIX: Thumbnail URL and text visibility
-            // We assume the API provides a thumbnail/small URL (or use main URL)
+            // ✅ FIX 2: Thumbnail URL. Since we don't have a thumbnail URL, we load the main URL 
+            // but rely on CSS (minmax(100px)) and lazy loading to manage size.
             const thumbnailUrl = p.thumbnail_url || p.url; 
             
             card.innerHTML = `
-                <!-- Loading full size image, but CSS keeps it small. Performance fix is still limited by API, but best effort applied. -->
-                <img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
-                <!-- Removed photo-info text display to clean up the thumbnail grid -->
+                <!-- Added height/width attributes for better layout shift prevention -->
+                <img src="${thumbnailUrl}" loading="lazy" width="120" height="120" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
             `;
             currentGroup.appendChild(card);
         });
@@ -499,7 +496,7 @@
         document.getElementById('viewerImg').src = filteredPhotos[idx].url;
         document.getElementById('viewer').classList.add('open');
     }
-    // ✅ FIX 4: closeViewer also resets index
+    // FIX: closeViewer also resets index
     window.closeViewer = () => {
         document.getElementById('viewer').classList.remove('open');
         viewerIndex = 0; 
@@ -524,7 +521,7 @@
                     <td>${ev.photo_count || 0}</td>
                     <td>
                         <button class="btn secondary" style="padding:4px 8px; font-size:11px;">Edit</button>
-                        <!-- ✅ FIX: Delete Button Added -->
+                        <!-- FIX: Delete Button Added -->
                         <button class="btn secondary danger" style="padding:4px 8px; font-size:11px; margin-left: 5px;" 
                                 onclick="deleteEvent('${ev.event_id}', '${ev.name}')">Delete</button>
                     </td>
@@ -534,7 +531,7 @@
         });
     }
 
-    // ✅ FIX: Delete Event Function
+    // FIX: Delete Event Function
     window.deleteEvent = async function(eventId, eventName) {
         // Use custom message box instead of alert/confirm
         if (!window.confirm(`Are you sure you want to delete the event: ${eventName}? This action cannot be undone.`)) return;
@@ -620,7 +617,7 @@
 
         const html = nextBatch.map(l => {
             const timeStr = formatLeadTime(l.created_at);
-            // ✅ FIX 5: Base64 Selfie display with prefix and robust cleaning
+            // ✅ FIX: Base64 Selfie display with prefix and robust cleaning
             const selfieB64Data = l.selfie_b64;
             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
 
