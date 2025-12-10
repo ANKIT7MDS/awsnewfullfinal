@@ -137,8 +137,8 @@
         .load-more-container { text-align: center; margin-top: 30px; }
 
         /* GALLERY FIXES */
-        /* Hides the text that was appearing below photos */
-        .photo-card:hover .photo-info { opacity: 0; }
+        /* ✅ FIX: Hides the text that was appearing below photos */
+        .photo-card:hover .photo-info { opacity: 0; display: none; }
         .photo-card img { 
             /* Ensure the thumbnail takes full space */
             width: 100%; 
@@ -162,9 +162,21 @@
             line-height: 1;
         }
 
-        /* Fixes the phantom cross/buttons issue */
-        .viewer-nav.left { left: 10px; font-size: 50px; }
-        .viewer-nav.right { right: 10px; font-size: 50px; }
+        /* ✅ FIX: Fixes the large phantom icon issue */
+        .viewer-nav {
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            color: #fff; 
+            font-size: 36px; /* Reduced size from 50px */
+            cursor: pointer; 
+            padding: 20px; 
+            user-select: none; 
+            opacity: 0.8;
+        }
+        .viewer-nav:hover { opacity: 1; }
+        .viewer-nav.left { left: 10px; }
+        .viewer-nav.right { right: 10px; }
     </style>
 </head>
 <body>
