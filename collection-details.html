@@ -137,7 +137,7 @@
         .load-more-container { text-align: center; margin-top: 30px; }
 
         /* GALLERY FIXES */
-        /* ✅ FIX: Hides the text that was appearing below photos */
+        /* ✅ FIX 2: Hides the text that was appearing below photos */
         .photo-card:hover .photo-info { opacity: 0; display: none; }
         .photo-card img { 
             /* Ensure the thumbnail takes full space */
@@ -149,12 +149,13 @@
         }
         
         /* VIEWER FIXES */
+        /* ✅ FIX 1: Removes the navigation buttons from the structure and makes close button prominent */
         .viewer-close { 
             position: absolute; 
             top: 20px; 
-            left: 20px; /* Changed from right to left for better visibility */
+            left: 20px; 
             color: #fff; 
-            font-size: 30px; /* Slightly larger */
+            font-size: 30px; 
             cursor: pointer; 
             background: rgba(0,0,0,0.5); 
             padding: 5px 12px; 
@@ -162,21 +163,8 @@
             line-height: 1;
         }
 
-        /* ✅ FIX: Fixes the large phantom icon issue */
-        .viewer-nav {
-            position: absolute; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            color: #fff; 
-            font-size: 36px; /* Reduced size from 50px */
-            cursor: pointer; 
-            padding: 20px; 
-            user-select: none; 
-            opacity: 0.8;
-        }
-        .viewer-nav:hover { opacity: 1; }
-        .viewer-nav.left { left: 10px; }
-        .viewer-nav.right { right: 10px; }
+        /* Hiding unused viewer navigation classes */
+        .viewer-nav { display: none; } 
     </style>
 </head>
 <body>
@@ -286,7 +274,7 @@
                 <!-- Date Filter -->
                 <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics()">
                 <!-- Mobile Filter -->
-                <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="fetchAnalytics()">
+                <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" ononinput="fetchAnalytics()">
             </div>
             <div id="analyticsBodyContainer">
                 <!-- Data will be rendered in this grid (New Card View) -->
@@ -312,11 +300,9 @@
 
 </div>
 
-<div class="viewer" id="viewer">
-    <div class="viewer-close" onclick="closeViewer()">✕</div>
-    <div class="viewer-nav left" onclick="moveViewer(-1)">❮</div>
-    <img id="viewerImg" src="">
-    <div class="viewer-nav right" onclick="moveViewer(1)">❯</div>
+<!-- ✅ FIX 1: Removed viewer-close button (and its text '✕') -->
+<div class="viewer" id="viewer" onclick="closeViewer()">
+    <img id="viewerImg" src="" onclick="event.stopPropagation()">
 </div>
 
 <script>
@@ -356,6 +342,18 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
         document.getElementById(tabId).classList.add('active');
+        // FIX: Only render photos if the tab is 'galleryTab'
+        if(tabId === 'galleryTab') {
+             // If photos haven't been fetched yet, fetch them (only once)
+             if(allPhotos.length === 0 && document.getElementById('galleryContainer').innerHTML.includes('Loading')) {
+                fetchPhotos();
+             } else {
+                // If already fetched, just render the current filtered view
+                displayedPhotosCount = 0;
+                document.getElementById('galleryContainer').innerHTML = '';
+                renderNextBatch();
+             }
+        }
         if(tabId === 'analyticsTab') fetchAnalytics(true); // Pass true to force refetch and reset filters
         if(tabId === 'eventsTab') init(); 
     }
@@ -401,7 +399,7 @@
             document.getElementById('storageUsed').textContent = formatBytes(totalStorage);
 
             renderEvents(evts);
-            fetchPhotos();
+            // Removed direct call to fetchPhotos() here, photos are fetched when 'galleryTab' is clicked
 
         } catch (e) { console.error(e); }
     }
@@ -486,16 +484,16 @@
         btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
 
-    // --- VIEWER LOGIC (Unchanged) ---
+    // --- VIEWER LOGIC (Updated to remove navigation) ---
     window.openViewer = (idx) => { 
         viewerIndex = idx;
         document.getElementById('viewerImg').src = filteredPhotos[idx].url;
         document.getElementById('viewer').classList.add('open');
+        // Since we removed the buttons, navigation logic here is disabled
     }
     window.closeViewer = () => document.getElementById('viewer').classList.remove('open');
     window.moveViewer = (dir) => { 
-        viewerIndex = (viewerIndex + dir + filteredPhotos.length) % filteredPhotos.length;
-        document.getElementById('viewerImg').src = filteredPhotos[viewerIndex].url;
+        // This function is now technically unused since buttons are removed, but keeping it empty prevents errors
     }
 
     // --- EVENT LOGIC (Delete Button Fix) ---
@@ -616,12 +614,13 @@
 
             // Check if Base64 data is present and correctly format it
             if (selfieB64Data) {
-                // If the data starts with "data:image/...", use it directly
-                if (selfieB64Data.startsWith('data:image')) {
-                    selfieSrc = selfieB64Data;
+                // Ensure no whitespace and check for prefix
+                const cleanB64 = selfieB64Data.replace(/\s/g, ''); 
+                if (cleanB64.startsWith('data:image')) {
+                    selfieSrc = cleanB64;
                 } else {
                     // Otherwise, assume it's just the base64 payload and add the JPEG prefix
-                    selfieSrc = `data:image/jpeg;base64,${selfieB64Data}`;
+                    selfieSrc = `data:image/jpeg;base64,${cleanB64}`;
                 }
             }
             
