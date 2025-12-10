@@ -135,6 +135,36 @@
         
         /* Load More */
         .load-more-container { text-align: center; margin-top: 30px; }
+
+        /* GALLERY FIXES */
+        /* Hides the text that was appearing below photos */
+        .photo-card:hover .photo-info { opacity: 0; }
+        .photo-card img { 
+            /* Ensure the thumbnail takes full space */
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            opacity: 0; 
+            transition: opacity 0.3s; 
+        }
+        
+        /* VIEWER FIXES */
+        .viewer-close { 
+            position: absolute; 
+            top: 20px; 
+            left: 20px; /* Changed from right to left for better visibility */
+            color: #fff; 
+            font-size: 30px; /* Slightly larger */
+            cursor: pointer; 
+            background: rgba(0,0,0,0.5); 
+            padding: 5px 12px; 
+            border-radius: 50%;
+            line-height: 1;
+        }
+
+        /* Fixes the phantom cross/buttons issue */
+        .viewer-nav.left { left: 10px; font-size: 50px; }
+        .viewer-nav.right { right: 10px; font-size: 50px; }
     </style>
 </head>
 <body>
@@ -428,16 +458,13 @@
             
             const tags = (p.ai_tags || []).slice(0, 3).join(', ');
             
-            // ✅ FIX: Thumbnail URL (assuming the API provides a thumbnail/small URL)
-            // If the API doesn't provide a thumbnail URL, we still use the main URL but lazy load it.
+            // ✅ FIX: Thumbnail URL and text visibility
+            // We assume the API provides a thumbnail/small URL (or use main URL)
             const thumbnailUrl = p.thumbnail_url || p.url; 
             
             card.innerHTML = `
                 <img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
-                <div class="photo-info">
-                    ${tags ? `<div class="tiny-tag">🏷️ ${tags}</div>` : ''}
-                    ${p.emotions && p.emotions.length > 0 ? `<div class="tiny-tag">😊 ${p.emotions[0].Type}</div>` : ''}
-                </div>
+                <!-- Removed photo-info text display to clean up the thumbnail grid -->
             `;
             currentGroup.appendChild(card);
         });
@@ -448,9 +475,16 @@
     }
 
     // --- VIEWER LOGIC (Unchanged) ---
-    window.openViewer = (idx) => { /* ... unchanged ... */ }
+    window.openViewer = (idx) => { 
+        viewerIndex = idx;
+        document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+        document.getElementById('viewer').classList.add('open');
+    }
     window.closeViewer = () => document.getElementById('viewer').classList.remove('open');
-    window.moveViewer = (dir) => { /* ... unchanged ... */ }
+    window.moveViewer = (dir) => { 
+        viewerIndex = (viewerIndex + dir + filteredPhotos.length) % filteredPhotos.length;
+        document.getElementById('viewerImg').src = filteredPhotos[viewerIndex].url;
+    }
 
     // --- EVENT LOGIC (Delete Button Fix) ---
     function renderEvents(events) {
@@ -565,13 +599,25 @@
         const html = nextBatch.map(l => {
             const timeStr = formatLeadTime(l.created_at);
             // ✅ FIX: Base64 Selfie display with prefix and fallback
-            const selfieB64Data = l.selfie_b64 ? l.selfie_b64.split(',').pop() : null;
-            const selfieSrc = selfieB64Data ? `data:image/jpeg;base64,${selfieB64Data}` : 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+            const selfieB64Data = l.selfie_b64;
+            let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+
+            // Check if Base64 data is present and correctly format it
+            if (selfieB64Data) {
+                // If the data starts with "data:image/...", use it directly
+                if (selfieB64Data.startsWith('data:image')) {
+                    selfieSrc = selfieB64Data;
+                } else {
+                    // Otherwise, assume it's just the base64 payload and add the JPEG prefix
+                    selfieSrc = `data:image/jpeg;base64,${selfieB64Data}`;
+                }
+            }
+            
             const matchCount = l.match_count || 0;
             
             return `
                 <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name}')">
-                    <!-- Added data:image/jpeg/base64 prefix -->
+                    <!-- Added robust Base64 handling and error fallback -->
                     <img src="${selfieSrc}" class="selfie-img" alt="${l.name || 'Guest'} Selfie" 
                         onerror="this.onerror=null; this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
                     <div class="lead-info">
@@ -651,8 +697,6 @@
     
     // --- UPLOAD & EVENT LOGIC (Rest of the functions remain the same) ---
 
-    // ... (rest of the functions unchanged) ...
-
     document.getElementById('saveEventBtn').onclick = async () => {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
@@ -669,6 +713,84 @@
         const box = document.getElementById('linkResult');
         box.style.display = 'block';
         box.innerHTML = `<a href="${data.searchUrl}" target="_blank" style="color:var(--brand)">${data.searchUrl}</a>`;
+    }
+
+    function formatBytes(bytes) {
+        if (!+bytes) return '0 B';
+        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    }
+    
+    window.downloadAllZip = async function() {
+        if(filteredPhotos.length === 0) return alert("No photos");
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const limit = filteredPhotos.slice(0, 30);
+        for(let i=0; i<limit.length; i++) {
+            const b = await fetch(limit[i].url).then(r=>r.blob());
+            folder.file(`photo_${i}.jpg`, b);
+        }
+        zip.generateAsync({type:"blob"}).then(c => saveAs(c, "photos.zip"));
+    }
+    
+    window.applyFilters = function() {
+        const type = document.getElementById('filterType').value;
+        const query = document.getElementById('tagSearch').value.toLowerCase();
+        
+        filteredPhotos = allPhotos.filter(p => {
+            const matchesType = (type === 'ALL') ||
+                (type === 'BEST' && p.quality_score > 85) ||
+                (type === 'HAPPY' && p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+                (type === 'GROUP' && p.face_count >= 3);
+            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
+            return matchesType && matchesQuery;
+        });
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+    }
+    
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
+    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
+    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+    fileInput.onchange = () => handleFiles(fileInput.files);
+
+    async function handleFiles(files) {
+        const eventId = document.getElementById('uploadEventSelect').value;
+        if(!eventId) return alert("Select an event first!");
+        
+        const total = files.length;
+        if(total === 0) return;
+
+        document.getElementById('progress-container').style.display = 'block';
+        const progressBar = document.getElementById('progress-bar');
+        const status = document.getElementById('uploadStatus');
+        
+        const BATCH_SIZE = 10;
+        const fileArr = Array.from(files);
+        let uploaded = 0;
+
+        for(let i=0; i<total; i+=BATCH_SIZE) {
+            const batch = fileArr.slice(i, i+BATCH_SIZE);
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            try {
+                const res = await fetch(UPLOAD_URLS_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData }) });
+                const data = await res.json();
+                await Promise.all(data.urls.map(async (u) => {
+                    const file = batch.find(f => f.name === u.filename);
+                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+                    uploaded++;
+                    progressBar.style.width = `${(uploaded/total)*100}%`;
+                    status.innerHTML = `Uploading... ${uploaded}/${total}`;
+                }));
+            } catch(err) { console.error(err); }
+        }
+        status.innerHTML = `✅ Upload Complete!`;
+        setTimeout(() => { init(); }, 2000); 
     }
 
     init();
