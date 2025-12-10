@@ -401,6 +401,12 @@
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${idToken}` }
             });
+            
+            // 🐛 DEBUG: Check if response is okay
+            if (!res.ok) {
+                throw new Error(`API Error: ${res.status} ${res.statusText}`);
+            }
+
             const data = await res.json();
             const leads = data.leads || []; 
             
@@ -428,7 +434,7 @@
             }).join('');
         } catch(e) {
             console.error("Fetch Leads Error:", e);
-            tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger); text-align:center;">Failed to fetch leads.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger); text-align:center;">Failed to fetch leads. ' + (e.message || '') + '</td></tr>';
         }
     }
 
@@ -449,6 +455,11 @@
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${idToken}` }
             });
+            
+            if (!res.ok) {
+                throw new Error(`API Error: ${res.status} ${res.statusText}`);
+            }
+
             const data = await res.json();
             // Data now contains 'history' array from the updated Lambda code
             const history = data.history || []; 
@@ -472,7 +483,7 @@
 
         } catch(e) {
             console.error("Fetch History Error:", e);
-            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history. ' + (e.message || '') + '</td></tr>';
         }
     }
 
