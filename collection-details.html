@@ -12,6 +12,7 @@
             --bg: #0f0f0f; --card: #1e1e1e; --border: #333; --text: #e0e0e0;
             --muted: #888; --brand: #4285f4; --brand-hover: #3367d6; /* Google Blue */
             --danger: #ea4335; --ok: #34a853;
+            --warning: #fbbc05;
         }
         * { box-sizing: border-box; }
         body { margin: 0; background-color: var(--bg); color: var(--text); font-family: 'Google Sans', Roboto, Arial, sans-serif; padding-bottom: 60px; }
@@ -59,7 +60,6 @@
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--brand);
-            /* Error fallback for broken Base64 images */
             font-size: 11px;
             text-align: center;
             line-height: 66px;
@@ -113,12 +113,21 @@
             font-weight: 500; 
             height: 44px; /* Match filter row height */
             flex: 0 0 auto;
+            transition: background 0.2s;
         }
+        .btn:hover { background: var(--brand-hover); }
+
         .btn.secondary { 
             background: transparent; 
             border: 1px solid var(--border); 
             color: var(--text);
         }
+        .btn.secondary:hover { 
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--muted);
+        }
+        .btn.danger { background: var(--danger); }
+        .btn.danger:hover { background: #b8332a; }
 
         /* TABLES (FOR HISTORY) */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -130,20 +139,50 @@
         input:focus { border-color: var(--brand); }
         
         /* UPLOAD */
-        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; }
-        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; }
+        #dropZone { 
+            border: 2px dashed var(--border); 
+            border-radius: 12px; 
+            padding: 60px 20px; /* More padding top/bottom */
+            text-align: center; 
+            background: #151515; 
+            transition: background 0.2s, border-color 0.2s;
+        }
+        #dropZone:hover {
+            border-color: var(--brand);
+            background: #181818;
+        }
+        .drop-icon {
+            font-size: 40px; color: var(--muted); margin-bottom: 10px;
+        }
+        .upload-info {
+             font-size: 14px; color: var(--muted); margin-top: 10px;
+        }
+        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; transition: width 0.3s; }
         
         /* Load More */
         .load-more-container { text-align: center; margin-top: 30px; }
 
         /* GALLERY FIXES */
-        /* ✅ FIX: Thumbnail Grid Size Optimization (smaller) */
         .gallery-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
-            gap: 5px; /* Reduced gap */
+            gap: 5px; 
         }
-        .photo-card:hover .photo-info { opacity: 0; display: none; }
+        .date-header {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text);
+            padding: 15px 0 5px 0;
+            margin-top: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .photo-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            aspect-ratio: 1 / 1; /* Square thumbnails */
+        }
         .photo-card img { 
             width: 100%; 
             height: 100%; 
@@ -151,12 +190,29 @@
             opacity: 0; 
             transition: opacity 0.3s; 
         }
+        .photo-card img.loaded { opacity: 1; }
         
-        /* VIEWER FIXES */
+        /* VIEWER IMPROVEMENTS */
+        .viewer {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .viewer.open { display: flex; }
+        #viewerImg {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
         .viewer-close { 
             position: absolute; 
             top: 20px; 
-            left: 20px; 
+            right: 20px; /* Moved close button to top-right */
             color: #fff; 
             font-size: 30px; 
             cursor: pointer; 
@@ -164,10 +220,60 @@
             padding: 5px 12px; 
             border-radius: 50%;
             line-height: 1;
+            transition: background 0.2s;
+        }
+        .viewer-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* New Viewer Metadata Box */
+        .viewer-metadata {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+            font-size: 13px;
+            color: #fff;
+        }
+        .viewer-metadata strong { color: var(--brand); font-weight: 600; display: block; margin-bottom: 5px; }
+        .viewer-metadata span { display: block; margin-top: 3px; color: var(--muted); }
+        .viewer-metadata span.tag { 
+            display: inline-block; 
+            background: #282828; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            margin-right: 5px; 
+            margin-bottom: 5px;
+            color: var(--text);
         }
 
-        /* Hiding unused viewer navigation classes */
-        .viewer-nav { display: none; } 
+        /* CUSTOM MODAL STYLES (for Event Delete) */
+        .custom-modal-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center; align-items: center; z-index: 2000;
+        }
+        .custom-modal-content {
+            background: var(--card); padding: 30px; border-radius: 12px;
+            max-width: 400px; width: 90%; text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        .custom-modal-content h3 { margin-top: 0; color: var(--danger); }
+        .modal-buttons { display: flex; justify-content: space-around; margin-top: 20px; }
+        .modal-buttons button { width: 120px; }
+
+        /* Error Message Style */
+        .error-message { 
+            background: rgba(234, 67, 53, 0.1); 
+            color: var(--danger); 
+            padding: 10px; 
+            border-left: 4px solid var(--danger); 
+            border-radius: 4px; 
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -175,67 +281,68 @@
     
     <div class="top-bar">
         <div>
-            <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
+            <a href="dashboard.html" class="back-link">⬅ डैशबोर्ड</a>
             <h1 id="collectionName">Loading...</h1>
-            <div style="font-size:13px; color:var(--muted);"><span id="totalPhotos">0</span> Photos • <span id="storageUsed">0 MB</span></div>
+            <div style="font-size:13px; color:var(--muted);"><span id="totalPhotos">0</span> फ़ोटो • <span id="storageUsed">0 MB</span></div>
         </div>
         <div style="display:flex; gap:10px;">
-            <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ Staff Upload Link</a>
+            <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ स्टाफ अपलोड लिंक</a>
         </div>
     </div>
 
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('galleryTab')">Photos</div>
-        <div class="tab" onclick="switchTab('eventsTab')">Events</div>
-        <div class="tab" onclick="switchTab('uploadTab')">Upload</div>
-        <div class="tab" onclick="switchTab('linksTab')">Links</div>
-        <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
+        <div class="tab active" onclick="switchTab('galleryTab')">फ़ोटो</div>
+        <div class="tab" onclick="switchTab('eventsTab')">इवेंट्स</div>
+        <div class="tab" onclick="switchTab('uploadTab')">अपलोड</div>
+        <div class="tab" onclick="switchTab('linksTab')">लिंक्स</div>
+        <div class="tab" onclick="switchTab('analyticsTab')">मेहमान / लीड्स</div>
     </div>
 
     <div id="galleryTab" class="tab-content active">
         <div class="filter-row-top">
             <!-- Dropdown styles fixed in CSS -->
-            <select id="filterType" onchange="applyFilters()">
-                <option value="ALL">All Photos</option>
-                <option value="BEST">⭐ Best Shots</option>
-                <option value="HAPPY">😊 Happy</option>
-                <option value="GROUP">👥 Groups</option>
+            <select id="filterType" onchange="applyFilters()" aria-label="फोटो फिल्टर प्रकार">
+                <option value="ALL">सभी फ़ोटो</option>
+                <option value="BEST">⭐ बेस्ट शॉट्स</option>
+                <option value="HAPPY">😊 खुश</option>
+                <option value="GROUP">👥 समूह</option>
             </select>
             <!-- Search input style fixed in CSS -->
-            <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
+            <input type="text" id="tagSearch" placeholder="टैग खोजें (उदा. स्टेज, लाल)" oninput="applyFilters()" aria-label="टैग खोजें">
             <!-- Button style fixed in CSS -->
-            <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
+            <button class="btn secondary" onclick="downloadAllZip()">⬇ ज़िप डाउनलोड करें</button>
         </div>
+        <div id="downloadError" class="error-message" style="display:none; margin-top: -10px;"></div>
 
         <div id="galleryContainer">
-            <p style="text-align:center; padding:40px; color:var(--muted);">Loading photos...</p>
+            <p style="text-align:center; padding:40px; color:var(--muted);">फ़ोटो लोड हो रही हैं...</p>
         </div>
         
         <div class="load-more-container">
-            <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="renderNextBatch()">Load More</button>
+            <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="renderNextBatch()">और लोड करें</button>
         </div>
     </div>
 
     <div id="eventsTab" class="tab-content">
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <h3>Events</h3>
-                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
+                <h3>इवेंट्स</h3>
+                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ नया इवेंट</button>
             </div>
             
             <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <input type="text" id="eventName" placeholder="Event Name">
-                    <input type="date" id="eventDate">
+                    <input type="text" id="eventName" placeholder="इवेंट का नाम" aria-label="इवेंट का नाम">
+                    <input type="date" id="eventDate" aria-label="इवेंट की तारीख">
                 </div>
                 <div style="margin-top:10px; text-align:right;">
-                    <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
-                    <button class="btn" id="saveEventBtn">Save</button>
+                    <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">रद्द करें</button>
+                    <button class="btn" id="saveEventBtn">सेव करें</button>
                 </div>
             </div>
 
             <table>
-                <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+                <thead><tr><th>नाम</th><th>तारीख</th><th>फ़ोटो</th><th>कार्य</th></tr></thead>
                 <tbody id="eventsTbody"></tbody>
             </table>
         </div>
@@ -244,14 +351,16 @@
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
             <div style="margin-bottom:20px;">
-                <label style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
-                <select id="uploadEventSelect"><option value="">Loading...</option></select>
+                <label for="uploadEventSelect" style="display:block; margin-bottom:5px; color:var(--muted);">इवेंट चुनें</label>
+                <select id="uploadEventSelect"><option value="">लोड हो रहा है...</option></select>
             </div>
             <div id="dropZone">
-                <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
-                <p>Drag photos here to upload</p>
+                <div class="drop-icon">☁️</div>
+                <p>अपलोड करने के लिए फ़ोटो यहाँ खींचें (JPEG या PNG)</p>
+                <div class="upload-info">अन्य फ़ॉर्मेट स्वचालित रूप से JPEG में बदल दिए जाएंगे।</div>
                 <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
+            <div id="uploadError" class="error-message" style="display:none; margin-top: 15px;"></div>
             <div id="progress-container" style="display:none;">
                 <div id="progress-bar"></div>
                 <p id="uploadStatus" style="text-align:center; font-size:13px; margin-top:5px; color:var(--muted);"></p>
@@ -261,40 +370,40 @@
 
     <div id="linksTab" class="tab-content">
         <div class="card" style="max-width:600px; margin:0 auto;">
-            <h3>Generate Search Link</h3>
-            <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include.</p>
+            <h3>सर्च लिंक जनरेट करें</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">शामिल करने के लिए इवेंट्स चुनें।</p>
             <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;"></div>
-            <button class="btn" id="genLinkBtn">Generate Link</button>
+            <button class="btn" id="genLinkBtn">लिंक जनरेट करें</button>
             <div id="linkResult" style="margin-top:15px; padding:15px; background:#111; border:1px dashed var(--brand); color:var(--brand); display:none; word-break:break-all;"></div>
         </div>
     </div>
 
     <div id="analyticsTab" class="tab-content">
         <div class="card">
-            <h3>Guest Leads</h3>
+            <h3>मेहमान लीड्स</h3>
             <!-- Filters for Leads -->
             <div class="filter-row-top">
                 <!-- Date Filter -->
-                <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics()">
+                <input type="date" id="dateFilter" placeholder="तारीख के अनुसार फिल्टर करें" onchange="fetchAnalytics()" aria-label="तारीख द्वारा फिल्टर करें">
                 <!-- Mobile Filter -->
-                <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" ononinput="fetchAnalytics()">
+                <input type="tel" id="mobileFilter" placeholder="मोबाइल नंबर द्वारा फिल्टर करें" oninput="debounceAnalyticsFetch(this.value)" aria-label="मोबाइल नंबर द्वारा फिल्टर करें">
             </div>
             <div id="analyticsBodyContainer">
                 <!-- Data will be rendered in this grid (New Card View) -->
                 <div id="leadsGrid" class="lead-grid"></div>
-                <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">Loading leads...</p>
+                <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted);">लीड्स लोड हो रही हैं...</p>
                 
                 <div class="load-more-container">
                     <!-- Pagination Button -->
-                    <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">Load More Leads</button>
+                    <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">और लीड्स लोड करें</button>
                 </div>
             </div>
 
             <div id="historyViewer" style="display:none; margin-top:30px;">
-                <h3 id="historyHeader">Search History</h3>
-                <button class="btn secondary" style="margin-bottom:15px; padding:6px 15px;" onclick="hideHistoryViewer()">← Back to Leads</button>
+                <h3 id="historyHeader">खोज इतिहास</h3>
+                <button class="btn secondary" style="margin-bottom:15px; padding:6px 15px;" onclick="hideHistoryViewer()">← लीड्स पर वापस</button>
                 <table style="font-size:13px;">
-                    <thead><tr><th>Search Time</th><th>Link ID</th><th>Name (Captured)</th></tr></thead>
+                    <thead><tr><th>खोज समय</th><th>लिंक ID</th><th>नाम (कैप्चर किया गया)</th></tr></thead>
                     <tbody id="historyBody"></tbody>
                 </table>
             </div>
@@ -303,12 +412,31 @@
 
 </div>
 
-<!-- ✅ FIX: Viewer simplified (only image is clickable to close) -->
+<!-- Custom Confirmation Modal -->
+<div id="deleteModal" class="custom-modal-backdrop" onclick="this.style.display='none'">
+    <div class="custom-modal-content" onclick="event.stopPropagation()">
+        <h3>इवेंट डिलीट करें</h3>
+        <p>क्या आप वाकई इवेंट <strong id="modalEventName"></strong> को डिलीट करना चाहते हैं? यह कार्य वापस नहीं लिया जा सकता।</p>
+        <div class="modal-buttons">
+            <button class="btn secondary" onclick="document.getElementById('deleteModal').style.display='none'">रद्द करें</button>
+            <button class="btn danger" id="confirmDeleteBtn">डिलीट करें</button>
+        </div>
+    </div>
+</div>
+
+<!-- VIEWER IMPROVED -->
 <div class="viewer" id="viewer" onclick="closeViewer()">
+    <span class="viewer-close" onclick="closeViewer()">×</span>
+    <div class="viewer-metadata">
+        <strong id="viewerEventName"></strong>
+        <span id="viewerDate"></span>
+        <div id="viewerTags" style="margin-top: 10px;"></div>
+    </div>
     <img id="viewerImg" src="" onclick="event.stopPropagation()">
 </div>
 
 <script>
+    // --- CONSTANTS ---
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const GET_EVENTS_API = `${API_BASE}/get-events`;
     const GET_PHOTOS_API = `${API_BASE}/get-photos`;
@@ -318,6 +446,7 @@
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
     const GUEST_API = `${API_BASE}/save-details`; // Leads API
 
+    // --- SETUP & AUTH ---
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
     const collectionNameParam = urlParams.get("name");
@@ -326,18 +455,38 @@
     if (!idToken) window.location.href = 'login.html';
     document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
 
-    // STATE - Photo Gallery
+    // --- STATE ---
     let allPhotos = [];
     let filteredPhotos = [];
     let displayedPhotosCount = 0;
     const PHOTOS_BATCH_SIZE = 50; 
     let viewerIndex = 0;
-
-    // STATE - Leads Analytics
-    let allLeads = []; // Store all fetched leads
+    let eventsMap = new Map(); // Store events for viewer metadata
+    
+    let allLeads = [];
     let filteredLeads = [];
     let leadsDisplayCount = 0;
-    const LEADS_BATCH_SIZE = 10; // New constant for pagination
+    const LEADS_BATCH_SIZE = 10;
+    let analyticsTimeout = null; // for debouncing
+
+    // --- UTILITY FUNCTIONS ---
+    function formatLeadTime(isoString) {
+        if (!isoString) return '-';
+        try {
+             const date = isoString.substring(5, 10);
+             const time = isoString.substring(11, 19);
+             return `${time} (${date})`;
+        } catch {
+             return isoString.substring(0, 10);
+        }
+    }
+    
+    function formatBytes(bytes) {
+        if (!+bytes) return '0 B';
+        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    }
 
     // --- TABS ---
     window.switchTab = function(tabId) {
@@ -347,42 +496,19 @@
         document.getElementById(tabId).classList.add('active');
         
         if(tabId === 'galleryTab') {
-             // If photos haven't been fetched yet, fetch them (only once)
              if(allPhotos.length === 0) {
                 fetchPhotos();
              } else {
-                // If already fetched, just render the current filtered view
                 displayedPhotosCount = 0;
                 document.getElementById('galleryContainer').innerHTML = '';
                 renderNextBatch();
              }
         } else {
-            // ✅ FIX 3: Hide gallery content if switching tabs to prevent bleeding
-             document.getElementById('galleryContainer').innerHTML = '<p style="text-align:center; padding:40px; color:var(--muted);">Loading photos...</p>';
+             document.getElementById('galleryContainer').innerHTML = '<p style="text-align:center; padding:40px; color:var(--muted);">फ़ोटो लोड हो रही हैं...</p>';
         }
 
         if(tabId === 'analyticsTab') fetchAnalytics(true); 
         if(tabId === 'eventsTab') init(); 
-    }
-
-    // --- UTILITY FUNCTIONS ---
-    function formatLeadTime(isoString) {
-        if (!isoString) return '-';
-        // Extracts time (HH:MM:SS) and date (MM-DD)
-        try {
-             const date = isoString.substring(5, 10);
-             const time = isoString.substring(11, 19);
-             return `${time} (${date})`;
-        } catch {
-             return isoString.substring(0, 10); // Fallback to Date only
-        }
-    }
-    
-    function formatBytes(bytes) {
-        if (!+bytes) return '0 B';
-        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
     }
 
     // --- INIT ---
@@ -399,6 +525,9 @@
             document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
             
             const evts = data.events || [];
+            // Create map for quick lookup in viewer
+            eventsMap = new Map(evts.map(e => [e.event_id, e]));
+
             const totalPhotos = summary.photo_count || evts.reduce((sum, e) => sum + (e.photo_count||0), 0);
             const totalStorage = summary.storage_bytes || evts.reduce((sum, e) => sum + (e.storage_bytes||0), 0);
             
@@ -410,7 +539,7 @@
         } catch (e) { console.error(e); }
     }
 
-    // --- PHOTO GALLERY LOGIC (Thumbnail & Load More Fix) ---
+    // --- PHOTO GALLERY LOGIC ---
     async function fetchPhotos() {
         const container = document.getElementById('galleryContainer');
         try {
@@ -427,20 +556,19 @@
             filteredPhotos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
             if(allPhotos.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:40px; color:var(--muted);">No photos uploaded yet.</p>';
+                container.innerHTML = '<p style="text-align:center; padding:40px; color:var(--muted);">अभी तक कोई फ़ोटो अपलोड नहीं हुई है।</p>';
             } else {
                 displayedPhotosCount = 0;
                 container.innerHTML = ''; 
                 renderNextBatch();
             }
         } catch (e) {
-            container.innerHTML = '<p style="text-align:center; color:var(--danger);">Failed to load photos.</p>';
+            container.innerHTML = '<p style="text-align:center; color:var(--danger);">फ़ोटो लोड करने में विफल।</p>';
         }
     }
 
     window.renderNextBatch = function() {
         const container = document.getElementById('galleryContainer');
-        // ✅ FIX: Use PHOTOS_BATCH_SIZE for pagination
         const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
         
         if(nextBatch.length === 0) {
@@ -448,15 +576,17 @@
             return;
         }
 
-        // Group by Date
         let currentGroup = document.querySelector('.gallery-grid:last-child');
         let lastDate = container.lastElementChild?.previousElementSibling?.textContent || '';
+        
+        // Remove 'फ़ोटो लोड हो रही हैं...' message if present
+        if(container.querySelector('p')) container.innerHTML = '';
 
         nextBatch.forEach((p, idx) => {
             const globalIdx = displayedPhotosCount + idx;
-            const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Recent Uploads';
+            const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'हाल के अपलोड';
             
-            if(dateStr !== lastDate) {
+            if(dateStr !== lastDate || !currentGroup) { // Check for !currentGroup on initial run
                 const header = document.createElement('div');
                 header.className = 'date-header';
                 header.textContent = dateStr;
@@ -472,15 +602,12 @@
             card.className = 'photo-card';
             card.onclick = () => openViewer(globalIdx);
             
-            const tags = (p.ai_tags || []).slice(0, 3).join(', ');
-            
-            // ✅ FIX 2: Thumbnail URL. Since we don't have a thumbnail URL, we load the main URL 
-            // but rely on CSS (minmax(100px)) and lazy loading to manage size.
             const thumbnailUrl = p.thumbnail_url || p.url; 
             
             card.innerHTML = `
-                <!-- Added height/width attributes for better layout shift prevention -->
-                <img src="${thumbnailUrl}" loading="lazy" width="120" height="120" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
+                <img src="${thumbnailUrl}" loading="lazy" width="120" height="120" 
+                    onload="this.classList.add('loaded')" 
+                    onerror="this.parentElement.innerHTML='<div style=\\"color:var(--danger); font-size:10px; text-align:center; padding:5px;\\">Broken</div>'">
             `;
             currentGroup.appendChild(card);
         });
@@ -489,29 +616,104 @@
         const btn = document.getElementById('loadMoreBtn');
         btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
+    
+    window.applyFilters = function() {
+        const type = document.getElementById('filterType').value;
+        const query = document.getElementById('tagSearch').value.toLowerCase();
+        
+        filteredPhotos = allPhotos.filter(p => {
+            const matchesType = (type === 'ALL') ||
+                (type === 'BEST' && p.quality_score > 85) ||
+                (type === 'HAPPY' && p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+                (type === 'GROUP' && p.face_count >= 3);
+            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
+            return matchesType && matchesQuery;
+        });
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        document.getElementById('loadMoreBtn').style.display = 'none'; // Hide button before rendering
+        renderNextBatch();
+    }
+    
+    window.downloadAllZip = async function() {
+        const errorBox = document.getElementById('downloadError');
+        errorBox.style.display = 'none';
 
-    // --- VIEWER LOGIC (Updated to remove navigation) ---
+        if(filteredPhotos.length === 0) {
+            errorBox.textContent = "डाउनलोड करने के लिए कोई फ़ोटो नहीं है।";
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const limit = filteredPhotos.slice(0, 30); // KEEPING 30 PHOTO LIMIT as requested not to change backend logic
+        
+        if (filteredPhotos.length > 30) {
+            errorBox.textContent = `⚠️ ध्यान दें: फ्रंटएंड सीमा के कारण केवल पहली 30 फ़ोटो डाउनलोड की जाएंगी।`;
+            errorBox.style.background = 'rgba(251, 188, 5, 0.1)';
+            errorBox.style.borderLeftColor = 'var(--warning)';
+            errorBox.style.color = 'var(--warning)';
+            errorBox.style.display = 'block';
+        }
+        
+        try {
+            // Simple progress tracking for the user
+            errorBox.textContent = `ज़िप तैयार हो रहा है... ${limit.length} फ़ोटो प्रोसेस की जा रही हैं।`;
+            errorBox.style.display = 'block';
+            
+            for(let i=0; i<limit.length; i++) {
+                const b = await fetch(limit[i].url).then(r=>r.blob());
+                folder.file(`photo_${i}.jpg`, b);
+                errorBox.textContent = `ज़िप तैयार हो रहा है... ${i + 1}/${limit.length} फ़ोटो प्रोसेस की गईं।`;
+            }
+            zip.generateAsync({type:"blob"}).then(c => saveAs(c, "photos.zip"));
+            errorBox.textContent = `✅ डाउनलोड शुरू हो रहा है!`;
+            setTimeout(() => { errorBox.style.display = 'none'; }, 3000);
+            
+        } catch(e) {
+            errorBox.textContent = `डाउनलोड विफल: फ़ाइलें प्राप्त करने में त्रुटि।`;
+            errorBox.style.display = 'block';
+            console.error(e);
+        }
+    }
+
+
+    // --- VIEWER LOGIC (Updated to show metadata) ---
     window.openViewer = (idx) => { 
         viewerIndex = idx;
-        document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+        const photo = filteredPhotos[idx];
+        
+        document.getElementById('viewerImg').src = photo.url;
+        
+        const eventInfo = eventsMap.get(photo.event_id) || { name: 'Unknown Event', event_date: 'N/A' };
+        document.getElementById('viewerEventName').textContent = eventInfo.name;
+        document.getElementById('viewerDate').textContent = eventInfo.event_date;
+        
+        const tagsDiv = document.getElementById('viewerTags');
+        tagsDiv.innerHTML = '<strong>टैग्स:</strong> ';
+        
+        if (photo.ai_tags && photo.ai_tags.length > 0) {
+            tagsDiv.innerHTML += photo.ai_tags.slice(0, 10).map(tag => `<span class="tag">${tag}</span>`).join('');
+        } else {
+            tagsDiv.innerHTML += 'कोई टैग नहीं';
+        }
+
         document.getElementById('viewer').classList.add('open');
     }
-    // FIX: closeViewer also resets index
     window.closeViewer = () => {
         document.getElementById('viewer').classList.remove('open');
         viewerIndex = 0; 
+        document.getElementById('viewerImg').src = ''; // Clear image to save memory
     }
-    window.moveViewer = (dir) => { 
-        // This function is now technically unused since buttons are removed, but keeping it empty prevents errors
-    }
-
-    // --- EVENT LOGIC (Delete Button Fix) ---
+    
+    // --- EVENT LOGIC (Custom Modal for Delete) ---
     function renderEvents(events) {
         const tbody = document.getElementById('eventsTbody');
         const uploadSelect = document.getElementById('uploadEventSelect');
         const linkList = document.getElementById('linkEventList');
         tbody.innerHTML = '';
-        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+        uploadSelect.innerHTML = '<option value="">इवेंट चुनें...</option>';
         linkList.innerHTML = '';
         events.forEach(ev => {
             tbody.innerHTML += `
@@ -520,10 +722,9 @@
                     <td>${ev.event_date}</td>
                     <td>${ev.photo_count || 0}</td>
                     <td>
-                        <button class="btn secondary" style="padding:4px 8px; font-size:11px;">Edit</button>
-                        <!-- FIX: Delete Button Added -->
+                        <button class="btn secondary" style="padding:4px 8px; font-size:11px;">एडिट करें</button>
                         <button class="btn secondary danger" style="padding:4px 8px; font-size:11px; margin-left: 5px;" 
-                                onclick="deleteEvent('${ev.event_id}', '${ev.name}')">Delete</button>
+                                onclick="showDeleteModal('${ev.event_id}', '${ev.name}')">डिलीट करें</button>
                     </td>
                 </tr>`;
             uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
@@ -531,36 +732,63 @@
         });
     }
 
-    // FIX: Delete Event Function
-    window.deleteEvent = async function(eventId, eventName) {
-        // Use custom message box instead of alert/confirm
-        if (!window.confirm(`Are you sure you want to delete the event: ${eventName}? This action cannot be undone.`)) return;
+    // New: Show Custom Delete Modal
+    window.showDeleteModal = function(eventId, eventName) {
+        const modal = document.getElementById('deleteModal');
+        document.getElementById('modalEventName').textContent = eventName;
+        
+        // Attach the delete function to the confirm button
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        confirmBtn.onclick = () => { 
+            deleteEvent(eventId, eventName);
+            modal.style.display='none';
+        };
 
+        modal.style.display = 'flex';
+    }
+
+    window.deleteEvent = async function(eventId, eventName) {
+        // Confirmation is now handled by the modal
         try {
-            await fetch(DELETE_EVENT_API, {
+            const res = await fetch(DELETE_EVENT_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
             });
-            window.alert(`${eventName} deleted successfully.`);
+            
+            if (!res.ok) throw new Error("API call failed.");
+
+            // Use simple alert for success/failure
+            alert(`${eventName} सफलतापूर्वक डिलीट कर दिया गया।`);
             init(); // Reload events
         } catch (e) {
-            window.alert(`Failed to delete event: ${eventName}. See console for details.`);
-            console.error(e);
+            alert(`इवेंट डिलीट करने में विफल: ${eventName}.`);
+            console.error("Delete Event Error:", e);
         }
     }
 
 
-    // --- ANALYTICS LOGIC (Card View, Filters, Pagination) ---
+    // --- ANALYTICS LOGIC (Debouncing) ---
+    
+    // New: Debouncing function
+    window.debounceAnalyticsFetch = function(value) {
+        clearTimeout(analyticsTimeout);
+        // Ensure input field updates instantly
+        document.getElementById('mobileFilter').value = value; 
+        
+        analyticsTimeout = setTimeout(() => {
+            fetchAnalytics();
+        }, 500); // Wait 500ms after last keystroke
+    }
 
     async function fetchAnalytics(forceRefetch = false) {
         const dateFilter = document.getElementById('dateFilter').value;
         const mobileFilter = document.getElementById('mobileFilter').value.trim();
         const noLeadsMessage = document.getElementById('noLeadsMessage');
 
-        // Step 1: Fetch data only if required (or on first load)
+        // Step 1: Fetch data only if required
         if (allLeads.length === 0 || forceRefetch) {
-            noLeadsMessage.textContent = 'Loading leads...';
+            noLeadsMessage.textContent = 'लीड्स लोड हो रही हैं...';
             noLeadsMessage.style.display = 'block';
 
             try {
@@ -579,7 +807,7 @@
                 
             } catch(e) {
                 console.error("Fetch Leads Error:", e);
-                noLeadsMessage.textContent = 'Failed to fetch leads. Error: ' + (e.message || '');
+                noLeadsMessage.textContent = 'लीड्स प्राप्त करने में विफल। त्रुटि: ' + (e.message || '');
                 noLeadsMessage.style.color = 'var(--danger)';
                 return;
             }
@@ -588,7 +816,6 @@
         // Step 2: Apply Filters (Frontend side)
         filteredLeads = allLeads.filter(l => {
             const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
-            // Date matching only needs to check the YYYY-MM-DD part of the ISO string
             const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter)); 
             return matchesMobile && matchesDate;
         });
@@ -599,7 +826,7 @@
         noLeadsMessage.style.display = 'none';
 
         if(filteredLeads.length === 0) {
-            noLeadsMessage.textContent = 'No leads found matching criteria.';
+            noLeadsMessage.textContent = 'मापदंड से मेल खाती कोई लीड नहीं मिली।';
             noLeadsMessage.style.display = 'block';
         } else {
             loadMoreLeads();
@@ -617,20 +844,14 @@
 
         const html = nextBatch.map(l => {
             const timeStr = formatLeadTime(l.created_at);
-            // ✅ FIX: Base64 Selfie display with prefix and robust cleaning
             const selfieB64Data = l.selfie_b64;
             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
 
-            // Check if Base64 data is present and correctly format it
             if (selfieB64Data) {
-                // 1. Remove all whitespace (newlines, spaces)
                 const cleanB64 = selfieB64Data.replace(/\s/g, '');
-                
-                // 2. Separate prefix if present
                 const parts = cleanB64.split(';base64,');
                 const payload = parts.length > 1 ? parts[1] : parts[0];
                 
-                // 3. Construct URL assuming JPEG (most common selfie format)
                 if (payload) {
                     selfieSrc = `data:image/jpeg;base64,${payload}`;
                 }
@@ -640,19 +861,18 @@
             
             return `
                 <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name}')">
-                    <!-- Added robust Base64 handling and error fallback -->
                     <img src="${selfieSrc}" class="selfie-img" alt="${l.name || 'Guest'} Selfie" 
                         onerror="this.onerror=null; this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
                     <div class="lead-info">
-                        <div class="lead-name">${l.name || 'Unknown Guest'}</div>
+                        <div class="lead-name">${l.name || 'अज्ञात मेहमान'}</div>
                         <div class="lead-mobile">${l.mobile || '-'}</div>
                         <div class="lead-meta">
-                            <span>Link ID: ${l.link_id || '-'}</span>
-                            <span class="match-count">📸 Found: ${matchCount}</span>
+                            <span>लिंक ID: ${l.link_id || '-'}</span>
+                            <span class="match-count">📸 मिलीं: ${matchCount}</span>
                         </div>
                         <div class="lead-meta">
-                            <span>Latest Search: ${timeStr}</span>
-                            <span>Total Searches: ${l.total_searches || 1}</span> 
+                            <span>नवीनतम खोज: ${timeStr}</span>
+                            <span>कुल खोज: ${l.total_searches || 1}</span> 
                         </div>
                     </div>
                 </div>
@@ -668,14 +888,15 @@
 
 
     window.showGuestHistory = async function(mobile, name) {
+        // ... (History logic remains unchanged, keeping backend calls intact)
         const container = document.getElementById('analyticsBodyContainer');
         const historyViewer = document.getElementById('historyViewer');
         const historyBody = document.getElementById('historyBody');
         
         container.style.display = 'none';
         historyViewer.style.display = 'block';
-        document.getElementById('historyHeader').textContent = `Search History for ${name} (${mobile})`;
-        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+        document.getElementById('historyHeader').textContent = `${name} (${mobile}) का खोज इतिहास`;
+        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">इतिहास लोड हो रहा है...</td></tr>';
         
         try {
             const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
@@ -691,7 +912,7 @@
             const history = data.history || []; 
             
             if(history.length === 0) {
-                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">कोई खोज इवेंट नहीं मिला।</td></tr>';
                 return;
             }
 
@@ -709,14 +930,14 @@
 
         } catch(e) {
             console.error("Fetch History Error:", e);
-            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">इतिहास प्राप्त करने में विफल।</td></tr>';
         }
     }
 
     window.hideHistoryViewer = function() {
         document.getElementById('analyticsBodyContainer').style.display = 'block';
         document.getElementById('historyViewer').style.display = 'none';
-        fetchAnalytics(false); // Reload main grid with existing filters
+        fetchAnalytics(false);
     }
     
     // --- UPLOAD & EVENT LOGIC (Rest of the functions remain the same) ---
@@ -738,54 +959,60 @@
         box.style.display = 'block';
         box.innerHTML = `<a href="${data.searchUrl}" target="_blank" style="color:var(--brand)">${data.searchUrl}</a>`;
     }
+    
+    // --- PHOTO CONVERSION UTILITY ---
+    // Converts non-JPEG/PNG images to JPEG before upload for backend compatibility
+    function convertImageToFile(file, mimeType, quality=0.8) {
+        return new Promise((resolve, reject) => {
+            if (file.type === mimeType) {
+                // If already correct type, just resolve
+                resolve(file);
+                return;
+            }
 
-    function formatBytes(bytes) {
-        if (!+bytes) return '0 B';
-        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-    }
-    
-    window.downloadAllZip = async function() {
-        if(filteredPhotos.length === 0) return alert("No photos");
-        const zip = new JSZip();
-        const folder = zip.folder("photos");
-        const limit = filteredPhotos.slice(0, 30);
-        for(let i=0; i<limit.length; i++) {
-            const b = await fetch(limit[i].url).then(r=>r.blob());
-            folder.file(`photo_${i}.jpg`, b);
-        }
-        zip.generateAsync({type:"blob"}).then(c => saveAs(c, "photos.zip"));
-    }
-    
-    window.applyFilters = function() {
-        const type = document.getElementById('filterType').value;
-        const query = document.getElementById('tagSearch').value.toLowerCase();
-        
-        filteredPhotos = allPhotos.filter(p => {
-            const matchesType = (type === 'ALL') ||
-                (type === 'BEST' && p.quality_score > 85) ||
-                (type === 'HAPPY' && p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
-                (type === 'GROUP' && p.face_count >= 3);
-            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
-            return matchesType && matchesQuery;
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            // Create a new File object with the desired name and type
+                            const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + '.jpg', {
+                                type: mimeType,
+                                lastModified: Date.now()
+                            });
+                            resolve(newFile);
+                        } else {
+                            reject(new Error("Canvas to Blob conversion failed."));
+                        }
+                    }, mimeType, quality);
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
-        displayedPhotosCount = 0;
-        document.getElementById('galleryContainer').innerHTML = '';
-        renderNextBatch();
     }
-    
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    dropZone.onclick = () => fileInput.click();
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
-    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
-    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
-    fileInput.onchange = () => handleFiles(fileInput.files);
 
+    // --- UPLOAD HANDLER IMPROVED ---
     async function handleFiles(files) {
         const eventId = document.getElementById('uploadEventSelect').value;
-        if(!eventId) return alert("Select an event first!");
+        const uploadError = document.getElementById('uploadError');
+        uploadError.style.display = 'none';
+
+        if(!eventId) {
+            uploadError.textContent = "अपलोड करने से पहले एक इवेंट चुनें!";
+            uploadError.style.display = 'block';
+            return;
+        }
         
         const total = files.length;
         if(total === 0) return;
@@ -797,26 +1024,102 @@
         const BATCH_SIZE = 10;
         const fileArr = Array.from(files);
         let uploaded = 0;
+        let failedConversions = 0;
+        let filesToUpload = [];
 
-        for(let i=0; i<total; i+=BATCH_SIZE) {
-            const batch = fileArr.slice(i, i+BATCH_SIZE);
-            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+        status.innerHTML = `फ़ाइलों को प्रोसेस किया जा रहा है... (0/${total})`;
+        
+        // Step 1: Process (Convert to JPEG if necessary) all files upfront
+        for(let file of fileArr) {
             try {
-                const res = await fetch(UPLOAD_URLS_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData }) });
+                // We ensure it is JPEG for best compatibility with backend services (like Rekognition)
+                const processedFile = await convertImageToFile(file, 'image/jpeg');
+                filesToUpload.push(processedFile);
+            } catch (e) {
+                console.error(`Failed to process/convert file ${file.name}:`, e);
+                failedConversions++;
+            }
+        }
+
+        const totalToUpload = filesToUpload.length;
+        if(failedConversions > 0) {
+            uploadError.textContent = `⚠️ चेतावनी: ${failedConversions} फ़ाइलें कनवर्ट नहीं हो सकीं और अपलोड नहीं होंगी।`;
+            uploadError.style.display = 'block';
+        }
+
+        if(totalToUpload === 0) {
+            status.innerHTML = `अपलोड करने के लिए कोई फ़ाइल नहीं।`;
+            setTimeout(() => { document.getElementById('progress-container').style.display = 'none'; }, 3000);
+            return;
+        }
+
+        // Step 2: Upload in Batches
+        for(let i=0; i<totalToUpload; i+=BATCH_SIZE) {
+            const batch = filesToUpload.slice(i, i+BATCH_SIZE);
+            // API only needs the name and type of the file it will receive
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            
+            try {
+                // Get pre-signed URLs
+                const res = await fetch(UPLOAD_URLS_API, { 
+                    method: 'POST', 
+                    headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData }) 
+                });
                 const data = await res.json();
+                
+                // Upload files to S3
                 await Promise.all(data.urls.map(async (u) => {
                     const file = batch.find(f => f.name === u.filename);
-                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
-                    uploaded++;
-                    progressBar.style.width = `${(uploaded/total)*100}%`;
-                    status.innerHTML = `Uploading... ${uploaded}/${total}`;
+                    if (!file) return; // Should not happen
+
+                    const uploadRes = await fetch(u.uploadURL, { 
+                        method: 'PUT', 
+                        body: file, 
+                        headers: { 'Content-Type': file.type } 
+                    });
+                    
+                    if (uploadRes.ok) {
+                        uploaded++;
+                    } else {
+                        // Handle S3 upload failure (e.g., if Content-Type was wrong)
+                        console.error(`S3 Upload failed for ${file.name}:`, await uploadRes.text());
+                        uploadError.textContent = `❌ अपलोड विफल: ${file.name} अपलोड नहीं हो सका।`;
+                        uploadError.style.display = 'block';
+                    }
+                    
+                    // Update progress bar
+                    progressBar.style.width = `${(uploaded/totalToUpload)*100}%`;
+                    status.innerHTML = `अपलोड हो रहा है... ${uploaded}/${totalToUpload}`;
                 }));
-            } catch(err) { console.error(err); }
+                
+            } catch(err) { 
+                console.error("API or Upload batch failed:", err); 
+                uploadError.textContent = `❌ गंभीर त्रुटि: अपलोड बैच विफल हो गया।`;
+                uploadError.style.display = 'block';
+            }
         }
-        status.innerHTML = `✅ Upload Complete!`;
+        
+        status.innerHTML = `✅ अपलोड पूरा हुआ! ${uploaded} फ़ाइलें सफलतापूर्वक अपलोड हुईं।`;
         setTimeout(() => { init(); }, 2000); 
     }
 
+    // --- INITIALIZATION ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; dropZone.style.borderColor = 'var(--brand)'; };
+    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; dropZone.style.borderColor = 'var(--border)'; };
+    dropZone.ondrop = (e) => { e.preventDefault(); dropZone.style.background = '#151515'; dropZone.style.borderColor = 'var(--border)'; handleFiles(e.dataTransfer.files); };
+    fileInput.onchange = () => handleFiles(fileInput.files);
+    window.onresize = () => {
+        // Close viewer on resize for better responsiveness
+        if(document.getElementById('viewer').classList.contains('open')) {
+            closeViewer();
+        }
+    }
+
+    // Start App
     init();
 </script>
 </body>
