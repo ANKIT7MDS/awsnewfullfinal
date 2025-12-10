@@ -211,7 +211,15 @@
                 </table>
             </div>
 
+            <div id="historyViewer" style="display:none; margin-top:30px;">
+                <h3 id="historyHeader">Search History</h3>
+                <button class="btn secondary" style="margin-bottom:15px; padding:6px 15px;" onclick="hideHistoryViewer()">← Back to Leads</button>
+                <table style="font-size:13px;">
+                    <thead><tr><th>Search Time</th><th>Link ID</th><th>Name (Captured)</th></tr></thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
             </div>
+        </div>
     </div>
 
 </div>
@@ -254,7 +262,7 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
         document.getElementById(tabId).classList.add('active');
-        if(tabId === 'analyticsTab') fetchGuestsData(idToken); // CALL NEW FUNCTION HERE
+        if(tabId === 'analyticsTab') fetchAnalytics();
     }
 
     // --- INIT ---
@@ -375,55 +383,105 @@
         document.getElementById('viewerImg').src = filteredPhotos[viewerIndex].url;
     }
 
-    // --- ANALYTICS (REPLACED FUNCTION) ---
+    // --- ANALYTICS (UPDATED FUNCTIONS) ---
 
-    // START OF REPLACED CODE
-    async function fetchGuestsData(idToken) {
+    // ✅ FIX 1: मुख्य लीड्स सूची (Unique Guests) प्राप्त करने के लिए
+    async function fetchAnalytics() {
         const tbody = document.getElementById('analyticsBody');
+        const container = document.getElementById('analyticsBodyContainer');
+        const historyViewer = document.getElementById('historyViewer');
+
+        container.style.display = 'block';
+        historyViewer.style.display = 'none';
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Loading leads...</td></tr>';
         
         try {
-            // Updated URL with collectionId query parameter
-            const url = `${GUEST_API}?collectionId=${collectionId}`;
-
-            console.log("Fetching:", url);
-
-            const response = await fetch(url, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${idToken}`
-                }
+            // GET call without mobile param returns grouped leads (latest entry per guest)
+            const res = await fetch(GUEST_API, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
             });
-
-            const data = await response.json();
-            console.log("Guest Data Received:", data);
-
-            // Assuming 'data' is now the array of leads, based on the replacement code
-            if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">No leads yet.</td></tr>`;
+            const data = await res.json();
+            const leads = data.leads || []; 
+            
+            if(leads.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">No leads yet.</td></tr>';
                 return;
             }
 
-            let rows = "";
-            data.forEach((g) => {
-                rows += `
-                    <tr>
-                        <td>${g.name || "-"}</td>
-                        <td>${g.mobile || "-"}</td>
-                        <td style="color:var(--muted);">${g.created_at ? new Date(g.created_at).toLocaleString() : g.created_at || "-"}</td>
-                        <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${g.link_id || "-"}</span></td>
-                    </tr>`;
-            });
+            // Render main list
+            tbody.innerHTML = leads.map(l => {
+                // Time string: Use substring to avoid parsing issues with ISO format
+                const timeStr = l.created_at ? l.created_at.substring(11, 19) + ' (' + l.created_at.substring(5, 10) + ')' : '-';
 
-            tbody.innerHTML = rows;
-            
-        } catch (err) {
-            console.error("Error fetching guests:", err);
+                return `
+                    <tr>
+                        <td>${l.name || '-'}</td>
+                        <td style="color:var(--brand); text-decoration:underline; cursor:pointer;" 
+                            onclick="showGuestHistory('${l.mobile}', '${l.name}')">
+                            ${l.mobile || '-'}
+                        </td>
+                        <td style="color:var(--muted);">${timeStr}</td>
+                        <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${l.link_id || '-'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        } catch(e) {
+            console.error("Fetch Leads Error:", e);
             tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger); text-align:center;">Failed to fetch leads.</td></tr>';
         }
     }
-    // END OF REPLACED CODE
 
+    // ✅ FIX 2: विशिष्ट गेस्ट की सर्च हिस्ट्री प्राप्त करने के लिए नया फ़ंक्शन
+    window.showGuestHistory = async function(mobile, name) {
+        const container = document.getElementById('analyticsBodyContainer');
+        const historyViewer = document.getElementById('historyViewer');
+        const historyBody = document.getElementById('historyBody');
+        
+        container.style.display = 'none';
+        historyViewer.style.display = 'block';
+        document.getElementById('historyHeader').textContent = `Search History for ${name} (${mobile})`;
+        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+        
+        try {
+            // GET call with 'mobile' query parameter to retrieve all entries for that number
+            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            const data = await res.json();
+            // Data now contains 'history' array from the updated Lambda code
+            const history = data.history || []; 
+            
+            if(history.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+                return;
+            }
+
+            historyBody.innerHTML = history.map(h => {
+                const timeStr = h.created_at ? h.created_at.substring(11, 19) + ' (' + h.created_at.substring(5, 10) + ')' : '-';
+
+                return `
+                    <tr>
+                        <td>${timeStr}</td>
+                        <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
+                        <td style="color:var(--muted);">${h.name || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch(e) {
+            console.error("Fetch History Error:", e);
+            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+        }
+    }
+
+    // ✅ FIX 3: हिस्ट्री व्यूअर को छुपाने और लीड्स पर वापस जाने का फ़ंक्शन
+    window.hideHistoryViewer = function() {
+        document.getElementById('analyticsBodyContainer').style.display = 'block';
+        document.getElementById('historyViewer').style.display = 'none';
+    }
+    
     // --- FILTERS & OTHER FUNCTIONS (UNCHANGED) ---
     window.applyFilters = function() {
         const type = document.getElementById('filterType').value;
