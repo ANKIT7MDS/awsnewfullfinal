@@ -137,7 +137,13 @@
         .load-more-container { text-align: center; margin-top: 30px; }
 
         /* GALLERY FIXES */
-        /* ✅ FIX 2: Hides the text that was appearing below photos */
+        /* ✅ FIX: Thumbnail Grid Size Optimization */
+        .gallery-grid { 
+            display: grid; 
+            /* Grid now favors smaller thumbnail size for better performance */
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+            gap: 8px; 
+        }
         .photo-card:hover .photo-info { opacity: 0; display: none; }
         .photo-card img { 
             /* Ensure the thumbnail takes full space */
@@ -203,7 +209,6 @@
             <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
         </div>
 
-        <!-- ✅ FIX 3: Container moved inside its tab to prevent bleeding -->
         <div id="galleryContainer">
             <p style="text-align:center; padding:40px; color:var(--muted);">Loading photos...</p>
         </div>
@@ -353,7 +358,11 @@
                 document.getElementById('galleryContainer').innerHTML = '';
                 renderNextBatch();
              }
+        } else {
+            // Hide gallery content if switching tabs to prevent bleeding
+             document.getElementById('galleryContainer').innerHTML = '';
         }
+
         if(tabId === 'analyticsTab') fetchAnalytics(true); 
         if(tabId === 'eventsTab') init(); 
     }
@@ -472,6 +481,7 @@
             const thumbnailUrl = p.thumbnail_url || p.url; 
             
             card.innerHTML = `
+                <!-- Loading full size image, but CSS keeps it small. Performance fix is still limited by API, but best effort applied. -->
                 <img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
                 <!-- Removed photo-info text display to clean up the thumbnail grid -->
             `;
@@ -614,6 +624,7 @@
             const selfieB64Data = l.selfie_b64;
             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
 
+            // Check if Base64 data is present and correctly format it
             if (selfieB64Data) {
                 // 1. Remove all whitespace (newlines, spaces)
                 const cleanB64 = selfieB64Data.replace(/\s/g, '');
@@ -643,7 +654,6 @@
                             <span class="match-count">📸 Found: ${matchCount}</span>
                         </div>
                         <div class="lead-meta">
-                            <!-- ✅ FIX 6: Display total searches (from match_count field) -->
                             <span>Latest Search: ${timeStr}</span>
                             <span>Total Searches: ${l.total_searches || 1}</span> 
                         </div>
