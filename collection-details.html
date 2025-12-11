@@ -191,7 +191,7 @@
                     <button class="btn" id="saveEventBtn">Save</button>
                 </div>
             </div>
-            <table>
+            <table style="width:100%">
                 <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
                 <tbody id="eventsTbody"></tbody>
             </table>
@@ -254,7 +254,7 @@
             <div id="historyViewer" style="display:none; margin-top:30px;">
                 <h3 id="historyHeader">Search History</h3>
                 <button class="btn secondary" style="margin-bottom:15px; padding:6px 15px;" onclick="hideHistoryViewer()">← Back to Leads</button>
-                <table style="font-size:13px;">
+                <table style="width:100%">
                     <thead><tr><th>Search Time</th><th>Link ID</th><th>Name (Captured)</th></tr></thead>
                     <tbody id="historyBody"></tbody>
                 </table>
@@ -760,8 +760,17 @@
              let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
              if (l.selfie_b64) {
                  // Remove spaces and ensure only raw base64 or prefixed base64 is handled correctly
-                 const cleanB64 = l.selfie_b64.replace(/\s/g, '').replace(/^data:image\/[a-z]+;base64,/, '');
-                 selfieSrc = `data:image/jpeg;base64,${cleanB64}`;
+                 // Some API versions send data:image/jpeg;base64, prefix, some don't. We handle both.
+                 let cleanB64 = l.selfie_b64.replace(/\s/g, ''); // Remove spaces/newlines
+                 
+                 // If prefix exists, remove it to get raw data, then re-add standard jpeg prefix
+                 if (cleanB64.includes('base64,')) {
+                     cleanB64 = cleanB64.split('base64,')[1];
+                 }
+                 
+                 if (cleanB64.length > 100) { // Basic sanity check
+                    selfieSrc = `data:image/jpeg;base64,${cleanB64}`;
+                 }
              }
              
              return `
@@ -814,11 +823,6 @@
     };
 
     // --- UPLOAD LOGIC ---
-    // (Same standard upload logic as previous versions)
-    // ... (Code for handleFiles, convertImageToFile remains unchanged)
-    // For brevity, ensuring they are present:
-    
-    // --- INITIALIZATION ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     dropZone.onclick = () => fileInput.click();
@@ -826,6 +830,60 @@
     dropZone.ondragleave = () => { dropZone.style.background = '#151515'; dropZone.style.borderColor = 'var(--border)'; };
     dropZone.ondrop = (e) => { e.preventDefault(); dropZone.style.background = '#151515'; dropZone.style.borderColor = 'var(--border)'; handleFiles(e.dataTransfer.files); };
     fileInput.onchange = () => handleFiles(fileInput.files);
+
+    function convertImageToFile(file, mimeType='image/jpeg', quality=0.8) {
+        return new Promise((resolve, reject) => {
+            if (file.type === mimeType) { resolve(file); return; }
+            const img = new Image();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    canvas.toBlob((blob) => resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + '.jpg', { type: mimeType, lastModified: Date.now() })), mimeType, quality);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function handleFiles(files) {
+        const eid = document.getElementById('uploadEventSelect').value;
+        if(!eid) return alert("Select an event!");
+        const total = files.length; if(total===0) return;
+        
+        document.getElementById('progress-container').style.display = 'block';
+        const pBar = document.getElementById('progress-bar'), stat = document.getElementById('uploadStatus');
+        
+        let processedFiles = [];
+        stat.textContent = `Processing ${total} files...`;
+        
+        for(let f of Array.from(files)) {
+            try { processedFiles.push(await convertImageToFile(f)); } catch(e) { console.error(e); }
+        }
+        
+        let uploaded = 0;
+        const BATCH = 10;
+        for(let i=0; i<processedFiles.length; i+=BATCH) {
+            const batch = processedFiles.slice(i, i+BATCH);
+            try {
+                const res = await fetch(UPLOAD_URLS_API, { method:'POST', headers:{'Authorization':`Bearer ${idToken}`}, body:JSON.stringify({collection_id:collectionId, event_id:eid, files:batch.map(f=>({name:f.name, type:f.type}))}) });
+                const d = await res.json();
+                await Promise.all(d.urls.map(async (u) => {
+                    const f = batch.find(bf => bf.name === u.filename);
+                    await fetch(u.uploadURL, { method:'PUT', body:f, headers:{'Content-Type':f.type} });
+                    uploaded++;
+                    pBar.style.width = `${(uploaded/total)*100}%`;
+                    stat.textContent = `Uploaded ${uploaded}/${total}`;
+                }));
+            } catch(e) { console.error(e); }
+        }
+        stat.textContent = "Complete! Refreshing...";
+        setTimeout(() => init(), 2000);
+    }
+
+    function formatBytes(bytes) { if (!+bytes) return '0 B'; const k=1024, i=Math.floor(Math.log(bytes)/Math.log(k)); return `${parseFloat((bytes/Math.pow(k,i)).toFixed(2))} ${['B','KB','MB','GB'][i]}`; }
     
     // Start App
     init();
