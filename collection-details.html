@@ -543,10 +543,10 @@
     <!-- PEOPLE TAB -->
     <div id="faceGroupTab" class="tab-content">
         <div class="card">
-            <h3>People Found in Photos</h3>
-            <p style="color:var(--muted); margin-bottom:15px;">AI detected faces - click to see all photos of a person</p>
+            <h3>People Directory</h3>
+            <p style="color:var(--muted); margin-bottom:15px;">Detected faces from database & photos</p>
             <div id="faceGroupGrid" class="face-group-grid"></div>
-            <p id="noFacesMessage" class="empty-state" style="display:none;">No faces detected yet. If you just uploaded photos, wait for AI processing and click 'Refresh Data'.</p>
+            <p id="noFacesMessage" class="empty-state" style="display:none;">No people found in directory.</p>
         </div>
     </div>
 
@@ -567,6 +567,7 @@
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
     const GUEST_API = `${API_BASE}/save-details`;
+    const LIST_PEOPLE_API = `${API_BASE}/list_people`; // New API Added
 
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
@@ -599,6 +600,7 @@
 
     // STATE - Face Groups
     let faceGroups = {};
+    let directoryPeople = [];
 
     // --- TABS ---
     window.switchTab = function(tabId) {
@@ -620,7 +622,7 @@
                 renderNextBatch();
              }
         } else if(tabId === 'faceGroupTab') {
-            buildFaceGroups();
+            loadPeopleTab(); // Use new function that combines API + Local
         } else if (tabId === 'analyticsTab') {
             fetchAnalytics(true); 
         } else if (tabId === 'eventsTab') {
@@ -685,7 +687,8 @@
             allPhotos = data.photos || [];
             filteredPhotos = [...allPhotos];
             
-            buildFaceGroups(); // Pre-calculate face groups
+            // Build local map immediately for consistency
+            buildLocalFaceMap();
 
             displayedPhotosCount = 0;
             container.innerHTML = '';
@@ -712,7 +715,6 @@
             const globalIdx = displayedPhotosCount + localIdx;
             const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
 
-            // Simple date header logic for current batch
             if (photoDate !== lastDate) {
                 const dateHeader = document.createElement('div');
                 dateHeader.className = 'date-header';
@@ -726,7 +728,6 @@
                 lastDate = photoDate;
             }
 
-            // Find the last grid added
             const currentGrid = container.querySelectorAll('.gallery-grid');
             const targetGrid = currentGrid[currentGrid.length - 1];
 
@@ -747,14 +748,19 @@
         btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
 
-    // --- FACE GROUPS ---
-    function buildFaceGroups() {
-        faceGroups = {};
+    // --- FACE GROUPS (Combined Logic) ---
+    
+    // 1. Build map from loaded photos (Client Side)
+    function buildLocalFaceMap() {
+        faceGroups = {}; // Reset
         allPhotos.forEach(photo => {
             (photo.faces || []).forEach(face => {
+                // Use Name as ID if available, otherwise FaceId, otherwise Random
+                // Prefer FaceId for uniqueness
                 const faceId = face.FaceId || face.ExternalImageId || `unknown-${Math.random()}`;
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
+                        id: faceId,
                         name: face.FaceName || 'Unknown Person',
                         thumbnail: photo.thumbnail_url || photo.url,
                         count: 0,
@@ -765,28 +771,89 @@
                 faceGroups[faceId].photos.push(photo);
             });
         });
+    }
 
+    // 2. Load People Tab (API + Local Merge)
+    async function loadPeopleTab() {
         const grid = document.getElementById('faceGroupGrid');
         const emptyMsg = document.getElementById('noFacesMessage');
         
-        if (Object.keys(faceGroups).length === 0) {
-            emptyMsg.style.display = 'block';
-            grid.innerHTML = '';
-            return;
-        } else {
-            emptyMsg.style.display = 'none';
+        grid.innerHTML = '<p class="loading">Fetching directory...</p>';
+        emptyMsg.style.display = 'none';
+
+        // Fetch from API
+        try {
+            const res = await fetch(LIST_PEOPLE_API, {
+                 method: 'GET', 
+                 headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            const data = await res.json();
+            directoryPeople = data.people || [];
+        } catch(e) {
+            console.error("List People API Error:", e);
+            directoryPeople = [];
+            // Don't return, we still show local data
         }
 
-        grid.innerHTML = Object.entries(faceGroups).sort((a,b) => b[1].count - a[1].count).map(([id, group]) => `
-            <div class="face-group" onclick="showFacePhotos('${id}')">
-                <img src="${group.thumbnail}" class="face-thumb" onerror="this.src='https://placehold.co/120x120/333/fff?text=Face'">
+        // Merge Logic:
+        // We have `directoryPeople` (from DB) and `faceGroups` (from Photos).
+        // Convert directoryPeople to a map for easy lookup
+        const dirMap = {};
+        directoryPeople.forEach(p => {
+             // Assuming DynamoDB items have 'FaceId' and 'Name'
+             if(p.FaceId) dirMap[p.FaceId] = p;
+        });
+
+        // 1. Enhance local groups with DB names
+        Object.keys(faceGroups).forEach(fid => {
+            if (dirMap[fid]) {
+                faceGroups[fid].name = dirMap[fid].Name || dirMap[fid].FaceName || faceGroups[fid].name;
+                // Keep local thumbnail as it is likely a real photo from the collection
+            }
+        });
+
+        // 2. Add people from DB who are NOT in local photos (Optional, but good for "Directory" view)
+        // Note: These won't have photos to click on, unless we find them or use a generic icon.
+        Object.keys(dirMap).forEach(fid => {
+            if (!faceGroups[fid]) {
+                const p = dirMap[fid];
+                faceGroups[fid] = {
+                    id: fid,
+                    name: p.Name || p.FaceName || 'Unknown',
+                    thumbnail: '', // No photo in current collection
+                    count: 0,
+                    photos: []
+                };
+            }
+        });
+
+        // Render
+        const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count); // Sort by photo count
+
+        if (entries.length === 0) {
+            grid.innerHTML = '';
+            emptyMsg.style.display = 'block';
+            return;
+        }
+
+        grid.innerHTML = entries.map(group => {
+            // Placeholder if no thumbnail
+            const thumbSrc = group.thumbnail || `https://placehold.co/120x120/333/fff?text=${group.name.charAt(0)}`;
+            const clickAction = group.count > 0 ? `onclick="showFacePhotos('${group.id}')"` : `style="cursor:default; opacity:0.7;"`;
+            const subtext = group.count > 0 ? `${group.count} photos` : `In Directory (No photos here)`;
+
+            return `
+            <div class="face-group" ${clickAction}>
+                <img src="${thumbSrc}" class="face-thumb" onerror="this.src='https://placehold.co/120x120/333/fff?text=?'">
                 <div class="face-name">${group.name}</div>
-                <div class="face-count">${group.count} photos</div>
-            </div>
-        `).join('');
+                <div class="face-count">${subtext}</div>
+            </div>`;
+        }).join('');
     }
 
     window.showFacePhotos = (faceId) => {
+        if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
+        
         filteredPhotos = faceGroups[faceId].photos;
         displayedPhotosCount = 0;
         document.getElementById('galleryContainer').innerHTML = '';
@@ -796,7 +863,6 @@
 
     // --- VIEWER LOGIC ---
     window.openViewer = (idx) => { 
-        // Map filtered index to actual photo object
         if(!filteredPhotos[idx]) return;
         viewerIndex = idx;
         document.getElementById('viewerImg').src = filteredPhotos[idx].url;
