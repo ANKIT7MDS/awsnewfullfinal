@@ -46,6 +46,7 @@
         .lead-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
         .lead-mobile { color: var(--brand); font-size: 14px; margin-bottom: 4px; }
         .lead-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 8px; border-top: 1px dashed #333; padding-top: 8px; }
+        .match-count { font-weight: 600; color: var(--ok); }
         
         /* CONTROLS */
         .filter-row-top { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -755,13 +756,17 @@
         }
 
         const html = nextBatch.map(l => {
-            // ... (Your existing lead rendering logic) ...
-            // Simplified for brevity, same as before
-             const timeStr = l.created_at ? new Date(l.created_at).toLocaleString() : '-';
-             const selfieSrc = l.selfie_b64 ? `data:image/jpeg;base64,${l.selfie_b64.split(',').pop()}` : 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+            // FIXED: Handle Base64 string robustness for selfies
+             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+             if (l.selfie_b64) {
+                 // Remove spaces and ensure only raw base64 or prefixed base64 is handled correctly
+                 const cleanB64 = l.selfie_b64.replace(/\s/g, '').replace(/^data:image\/[a-z]+;base64,/, '');
+                 selfieSrc = `data:image/jpeg;base64,${cleanB64}`;
+             }
+             
              return `
                 <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name || 'Unknown'}')">
-                    <img src="${selfieSrc}" class="selfie-img">
+                    <img src="${selfieSrc}" class="selfie-img" onerror="this.src='https://placehold.co/70x70/333/fff?text=Error'">
                     <div class="lead-info">
                         <div class="lead-name">${l.name || 'Unknown Guest'}</div>
                         <div class="lead-mobile">${l.mobile || '-'}</div>
