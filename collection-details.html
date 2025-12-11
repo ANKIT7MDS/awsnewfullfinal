@@ -369,6 +369,25 @@
             cursor: pointer;
         }
 
+        /* NEW: Face Name Header */
+        .face-header {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--brand);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .face-header img {
+            width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--brand);
+        }
+        .face-header-content { flex-grow: 1; }
+        .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
+        .face-input-group { display: flex; gap: 10px; max-width: 300px; }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .filter-row-top { flex-direction: column; gap: 10px; }
@@ -439,6 +458,19 @@
             </select>
             <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
             <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
+        </div>
+
+        <!-- Dynamic Header for Face Naming -->
+        <div id="faceNamingHeader" class="face-header" style="display:none;">
+            <img id="faceHeaderImg" src="">
+            <div class="face-header-content">
+                <h3 id="faceHeaderTitle">Who is this?</h3>
+                <div class="face-input-group">
+                    <input type="text" id="faceNameInput" placeholder="Enter Name">
+                    <button class="btn" onclick="saveFaceName()">Save</button>
+                    <button class="btn secondary" onclick="cancelFaceNaming()">Cancel</button>
+                </div>
+            </div>
         </div>
 
         <div id="galleryContainer">
@@ -546,7 +578,7 @@
             <h3>People Directory</h3>
             <p style="color:var(--muted); margin-bottom:15px;">Detected faces from database & photos</p>
             <div id="faceGroupGrid" class="face-group-grid"></div>
-            <p id="noFacesMessage" class="empty-state" style="display:none;">No people found in directory.</p>
+            <p id="noFacesMessage" class="empty-state" style="display:none;">No people found. If you just uploaded, please wait for AI processing.</p>
         </div>
     </div>
 
@@ -567,7 +599,8 @@
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
     const GUEST_API = `${API_BASE}/save-details`;
-    const LIST_PEOPLE_API = `${API_BASE}/list_people`; // New API Added
+    const LIST_PEOPLE_API = `${API_BASE}/list_people`; 
+    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`; // Added for Lambda
 
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
@@ -601,6 +634,7 @@
     // STATE - Face Groups
     let faceGroups = {};
     let directoryPeople = [];
+    let currentNamingFaceId = null; // For naming logic
 
     // --- TABS ---
     window.switchTab = function(tabId) {
@@ -614,15 +648,25 @@
         if(contentEl) contentEl.classList.add('active');
         
         if(tabId === 'galleryTab') {
+             // If manual switch, hide naming header
+             if (!currentNamingFaceId) {
+                 document.getElementById('faceNamingHeader').style.display = 'none';
+                 applyFilters(); // Reset filters
+             }
+
              if(allPhotos.length === 0) {
                 fetchPhotos();
              } else {
-                displayedPhotosCount = 0;
-                document.getElementById('galleryContainer').innerHTML = '';
-                renderNextBatch();
+                // If not in naming mode, render full batch
+                if (!currentNamingFaceId) {
+                    displayedPhotosCount = 0;
+                    document.getElementById('galleryContainer').innerHTML = '';
+                    renderNextBatch();
+                }
              }
         } else if(tabId === 'faceGroupTab') {
-            loadPeopleTab(); // Use new function that combines API + Local
+            currentNamingFaceId = null; // Exit naming mode
+            loadPeopleTab(); 
         } else if (tabId === 'analyticsTab') {
             fetchAnalytics(true); 
         } else if (tabId === 'eventsTab') {
@@ -755,13 +799,13 @@
         faceGroups = {}; // Reset
         allPhotos.forEach(photo => {
             (photo.faces || []).forEach(face => {
-                // Use Name as ID if available, otherwise FaceId, otherwise Random
-                // Prefer FaceId for uniqueness
-                const faceId = face.FaceId || face.ExternalImageId || `unknown-${Math.random()}`;
+                // Handle different casing from Rekognition/Backend
+                const faceId = face.FaceId || face.faceId || face.ExternalImageId || `unknown-${Math.random()}`;
+                
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
                         id: faceId,
-                        name: face.FaceName || 'Unknown Person',
+                        name: face.FaceName || face.Name || 'Unknown Person',
                         thumbnail: photo.thumbnail_url || photo.url,
                         count: 0,
                         photos: []
@@ -792,43 +836,37 @@
         } catch(e) {
             console.error("List People API Error:", e);
             directoryPeople = [];
-            // Don't return, we still show local data
         }
 
-        // Merge Logic:
-        // We have `directoryPeople` (from DB) and `faceGroups` (from Photos).
-        // Convert directoryPeople to a map for easy lookup
+        // Update local groups with names from directory
         const dirMap = {};
         directoryPeople.forEach(p => {
-             // Assuming DynamoDB items have 'FaceId' and 'Name'
-             if(p.FaceId) dirMap[p.FaceId] = p;
+             const fid = p.FaceId || p.faceId;
+             if(fid) dirMap[fid] = p;
         });
 
-        // 1. Enhance local groups with DB names
         Object.keys(faceGroups).forEach(fid => {
             if (dirMap[fid]) {
-                faceGroups[fid].name = dirMap[fid].Name || dirMap[fid].FaceName || faceGroups[fid].name;
-                // Keep local thumbnail as it is likely a real photo from the collection
+                const dbName = dirMap[fid].FaceName || dirMap[fid].Name;
+                if(dbName) faceGroups[fid].name = dbName;
             }
         });
 
-        // 2. Add people from DB who are NOT in local photos (Optional, but good for "Directory" view)
-        // Note: These won't have photos to click on, unless we find them or use a generic icon.
+        // Add people from DB who are NOT in local photos (Ghost entries)
         Object.keys(dirMap).forEach(fid => {
             if (!faceGroups[fid]) {
                 const p = dirMap[fid];
                 faceGroups[fid] = {
                     id: fid,
-                    name: p.Name || p.FaceName || 'Unknown',
-                    thumbnail: '', // No photo in current collection
+                    name: p.FaceName || p.Name || 'Unknown',
+                    thumbnail: '', 
                     count: 0,
                     photos: []
                 };
             }
         });
 
-        // Render
-        const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count); // Sort by photo count
+        const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
 
         if (entries.length === 0) {
             grid.innerHTML = '';
@@ -837,10 +875,9 @@
         }
 
         grid.innerHTML = entries.map(group => {
-            // Placeholder if no thumbnail
             const thumbSrc = group.thumbnail || `https://placehold.co/120x120/333/fff?text=${group.name.charAt(0)}`;
             const clickAction = group.count > 0 ? `onclick="showFacePhotos('${group.id}')"` : `style="cursor:default; opacity:0.7;"`;
-            const subtext = group.count > 0 ? `${group.count} photos` : `In Directory (No photos here)`;
+            const subtext = group.count > 0 ? `${group.count} photos` : `In Directory`;
 
             return `
             <div class="face-group" ${clickAction}>
@@ -851,14 +888,80 @@
         }).join('');
     }
 
+    // --- FACE NAMING LOGIC ---
     window.showFacePhotos = (faceId) => {
         if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
         
-        filteredPhotos = faceGroups[faceId].photos;
+        currentNamingFaceId = faceId; // Enter naming mode
+        const group = faceGroups[faceId];
+        
+        // Show Naming Header
+        const header = document.getElementById('faceNamingHeader');
+        document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
+        document.getElementById('faceNameInput').value = group.name === 'Unknown Person' ? '' : group.name;
+        document.getElementById('faceHeaderTitle').textContent = group.name === 'Unknown Person' ? "Who is this?" : `Photos of ${group.name}`;
+        header.style.display = 'flex';
+
+        // Filter Photos
+        filteredPhotos = group.photos;
         displayedPhotosCount = 0;
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
-        switchTab('galleryTab');
+        
+        // Switch tab visually
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('galleryTab')"]`).classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('galleryTab').classList.add('active');
+        
+        // Hide normal filters when in naming mode
+        document.querySelector('.filter-row-top').style.display = 'none';
+    };
+
+    window.cancelFaceNaming = () => {
+        currentNamingFaceId = null;
+        document.getElementById('faceNamingHeader').style.display = 'none';
+        document.querySelector('.filter-row-top').style.display = 'flex';
+        // Go back to People tab
+        switchTab('faceGroupTab');
+    };
+
+    window.saveFaceName = async () => {
+        const newName = document.getElementById('faceNameInput').value.trim();
+        if(!newName || !currentNamingFaceId) return;
+        
+        const btn = event.target;
+        btn.textContent = "Saving...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(SAVE_FACE_NAME_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, // Lambda expects plain body usually, or wrapped
+                body: JSON.stringify({
+                    FaceId: currentNamingFaceId,
+                    FaceName: newName,
+                    CollectionId: collectionId
+                })
+            });
+
+            if(res.ok) {
+                // Update Local State
+                if(faceGroups[currentNamingFaceId]) {
+                    faceGroups[currentNamingFaceId].name = newName;
+                }
+                alert("Name saved! It will appear in search shortly.");
+                cancelFaceNaming(); // Go back
+            } else {
+                alert("Failed to save name.");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Error saving name.");
+        } finally {
+            btn.textContent = "Save";
+            btn.disabled = false;
+        }
     };
 
     // --- VIEWER LOGIC ---
