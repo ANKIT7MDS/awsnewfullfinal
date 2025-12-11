@@ -6,89 +6,106 @@
     <title>Collection Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
     <style>
-        :root { 
-            --bg: #000000; --card: #1e1e1e; --border: #333; --text: #e0e0e0; 
-            --muted: #888; --brand: #4285f4; --brand-hover: #3367d6; 
-            --danger: #ea4335; --ok: #34a853; 
-        }
-        * { box-sizing: border-box; margin:0; padding:0; }
-        body { background: var(--bg); color: var(--text); font-family: system-ui; padding-bottom: 60px; }
+        :root { --bg: #000000; --card: #1e1e1e; --border: #333; --text: #e0e0e0; --muted: #888; --brand: #4285f4; --brand-hover: #3367d6; --danger: #ea4335; --ok: #34a853; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); font-family: 'Google Sans', Roboto, Arial, sans-serif; padding-bottom: 60px; }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 10px; }
         
+        /* HEADER */
         .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 10px; background: #111; border-radius: 8px; }
         .back-link { color: var(--muted); text-decoration: none; font-size: 14px; display:flex; align-items:center; gap:5px; }
         h1 { font-size: 18px; margin: 0; font-weight: 500; color: white; }
         .stats-line { font-size:12px; color:var(--muted); margin-top:2px; }
         
+        /* TABS */
         .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 15px; overflow-x: auto; padding: 0 10px; }
         .tab { padding: 12px 0; cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500; border-bottom: 2px solid transparent; white-space: nowrap; }
-        .tab.active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+        .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 2px;
+        /* --- GOOGLE PHOTOS STYLE GRID (FIXED SMALL THUMBNAILS) --- */
+        .gallery-grid { 
+            display: grid; 
+            /* मोबाइल और डेस्कटॉप दोनों पर छोटे थंबनेल (80px न्यूनतम) */
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
+            gap: 2px; /* बहुत कम गैप */
         }
-        .photo-card {
-            position: relative;
-            aspect-ratio: 1 / 1;
+        .photo-card { 
+            position: relative; 
+            aspect-ratio: 1 / 1; /* वर्गाकार */
             background: #222;
             overflow: hidden;
             cursor: pointer;
         }
-        .photo-card img {
-            width: 100%; height: 100%; object-fit: cover;
-            transition: opacity 0.2s; opacity: 0;
+        .photo-card img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transition: opacity 0.2s; 
+            opacity: 0; 
         }
         .photo-card img.loaded { opacity: 1; }
-        .date-header {
-            grid-column: 1 / -1;
-            font-size: 14px; font-weight: 500; color: #fff;
-            margin: 20px 0 10px 5px;
+        .date-header { 
+            grid-column: 1 / -1; 
+            font-size: 14px; 
+            font-weight: 500; 
+            color: #fff; 
+            margin: 20px 0 10px 5px; 
         }
-        
+
+        /* PEOPLE GRID */
         .face-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding: 10px; }
-        .face-group { text-align: center; cursor: pointer; padding: 10px; background: #151515; border-radius: 8px; transition: 0.2s; }
-        .face-group:hover { background: #222; }
+        .face-group { text-align: center; cursor: pointer; padding: 10px; background: #151515; border-radius: 8px; }
         .face-thumb { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--brand); margin: 0 auto 5px; background: #333; }
         .face-name { font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .face-count { font-size: 11px; color: var(--muted); }
-        
-        .lead-card { background: #151515; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+
+        /* GUEST LEADS */
+        .lead-card { background: #151515; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; }
+        .lead-card:hover { border-color: var(--brand); }
         .selfie-img { width: 60px; height: 60px; min-width: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--brand); background: #333; }
         .lead-info { flex-grow: 1; overflow: hidden; }
         .lead-name { font-size: 16px; font-weight: 600; color: #fff; }
         .lead-meta { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between; }
-        
+
+        /* VIEWER */
         .viewer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; display: none; justify-content: center; align-items: center; z-index: 2000; }
         .viewer.open { display: flex; }
         #viewerImg { max-width: 100%; max-height: 100%; object-fit: contain; }
         .viewer-close { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 30px; cursor: pointer; z-index: 2001; background: rgba(0,0,0,0.5); width: 40px; height: 40px; text-align: center; line-height: 40px; border-radius: 50%; }
         .viewer-actions { position: absolute; bottom: 20px; display: flex; gap: 20px; z-index: 2001; }
         
+        /* UTILS */
         .btn { background: var(--brand); color: #fff; border: none; border-radius: 20px; padding: 6px 16px; cursor: pointer; font-size: 13px; }
         .btn.secondary { background: #333; }
         .filter-row-top { padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
         input, select { background: #222; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 6px; }
         .loading { text-align: center; padding: 50px; color: var(--muted); }
         
-        .error { color: var(--danger); background: rgba(234,67,53,0.1); padding: 10px; border-radius: 8px; margin: 10px 0; }
-        .success { color: var(--ok); background: rgba(52,168,83,0.1); padding: 10px; border-radius: 8px; margin: 10px 0; }
+        /* MODALS */
+        .custom-modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .custom-modal-content { background: var(--card); padding: 25px; border-radius: 12px; width: 90%; max-width: 350px; text-align: center; }
+        
+        /* DELETE PHOTO BUTTON */
+        .photo-delete-btn { position: absolute; top: 2px; right: 2px; background: rgba(200, 0, 0, 0.7); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: none; font-size: 12px; z-index: 5; }
+        .photo-card:hover .photo-delete-btn { display: block; }
     </style>
 </head>
 <body>
+
 <div class="wrap">
     <div class="top-bar">
         <div>
-            <a href="dashboard.html" class="back-link">Dashboard</a>
+            <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
             <h1><span id="collectionName">Loading...</span></h1>
             <div class="stats-line"><span id="totalPhotos">0</span> Photos • <span id="totalLeads">0</span> Guests</div>
         </div>
-        <a href="#" id="assistantLink" target="_blank" class="btn secondary">Upload Link</a>
+        <a href="#" id="assistantLink" target="_blank" class="btn secondary">⚡ Upload Link</a>
     </div>
+
     <div class="tabs">
         <div class="tab active" onclick="switchTab('galleryTab')">Photos</div>
         <div class="tab" onclick="switchTab('faceGroupTab')">People</div>
@@ -98,7 +115,7 @@
         <div class="tab" onclick="switchTab('linksTab')">Links</div>
     </div>
 
-    <!-- GALLERY -->
+    <!-- 1. GALLERY -->
     <div id="galleryTab" class="tab-content active">
         <div id="galleryContainer">
             <p class="loading">Loading photos...</p>
@@ -108,39 +125,51 @@
         </div>
     </div>
 
-    <!-- PEOPLE -->
+    <!-- 2. PEOPLE (FACES) -->
     <div id="faceGroupTab" class="tab-content">
         <div class="filter-row-top">
-            <button class="btn secondary" onclick="buildFaceGroups(true)">Refresh Faces</button>
+            <button class="btn secondary" onclick="buildFaceGroups(true)">🔄 Refresh Faces</button>
         </div>
         <div id="faceGroupGrid" class="face-group-grid"></div>
-        <p id="noFacesMessage" class="loading" style="display:none;">No faces found yet.</p>
+        <p id="noFacesMessage" class="loading" style="display:none;">No faces found yet. Upload new photos.</p>
     </div>
 
-    <!-- GUESTS -->
+    <!-- 3. GUESTS -->
     <div id="analyticsTab" class="tab-content">
         <div class="filter-row-top">
             <input type="tel" id="mobileFilter" placeholder="Search Mobile" oninput="debounceAnalyticsFetch(this.value)">
         </div>
         <div id="leadsGrid" class="lead-grid"></div>
         <p id="noLeadsMessage" class="loading" style="display:none;">No guest leads yet.</p>
+        
+        <!-- HISTORY VIEWER -->
+        <div id="historyViewer" style="display:none; margin-top:20px; background:#111; padding:15px; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <h3 id="historyHeader" style="margin:0; color:white;">History</h3>
+                <button class="btn secondary" style="padding:4px 10px;" onclick="document.getElementById('historyViewer').style.display='none'; document.getElementById('leadsGrid').style.display='grid';">Close</button>
+            </div>
+            <table style="width:100%; font-size:13px;">
+                <thead><tr style="text-align:left; color:var(--muted);"><th>Time</th><th>Link</th><th>Matches</th></tr></thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- EVENTS -->
+    <!-- 4. EVENTS -->
     <div id="eventsTab" class="tab-content">
         <div style="padding:10px;">
-            <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
+            <button class="btn" onclick="document.getElementById('eventForm').style.display='block'; document.getElementById('saveEventBtn').onclick = saveNewEvent;">+ New Event</button>
         </div>
         <div id="eventForm" style="display:none; padding:15px; background:#151515; margin:10px; border-radius:8px;">
             <input type="text" id="eventName" placeholder="Name" style="margin-bottom:5px; width:100%;">
             <input type="date" id="eventDate" style="margin-bottom:10px; width:100%;">
-            <button class="btn" onclick="saveNewEvent()">Save</button>
+            <button class="btn" id="saveEventBtn">Save</button>
             <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
         </div>
         <div id="eventsList" style="padding:10px;"></div>
     </div>
 
-    <!-- UPLOAD -->
+    <!-- 5. UPLOAD -->
     <div id="uploadTab" class="tab-content">
         <div style="max-width:600px; margin:20px auto; text-align:center;">
             <select id="uploadEventSelect" style="width:100%; margin-bottom:10px; padding:10px;"><option value="">Select Event...</option></select>
@@ -152,16 +181,18 @@
         </div>
     </div>
 
-    <!-- LINKS -->
+    <!-- 6. LINKS -->
     <div id="linksTab" class="tab-content">
         <div style="padding:20px; text-align:center;">
-            <button class="btn" onclick="generateLink()">Generate Search Link</button>
+            <button class="btn" id="genLinkBtn">Generate Search Link</button>
             <div id="linkResult" style="margin-top:20px; display:none;">
                 <a id="generatedLink" href="#" target="_blank" style="color:var(--brand); font-size:16px;"></a>
-                <button class="btn secondary" style="margin-top:10px;" onclick="copyLink()">Copy Link</button>
+                <br><br>
+                <button class="btn secondary" onclick="copyLink()">Copy Link</button>
             </div>
         </div>
     </div>
+
 </div>
 
 <!-- VIEWER -->
@@ -169,28 +200,49 @@
     <div class="viewer-close" onclick="closeViewer()">×</div>
     <img id="viewerImg" src="" onclick="event.stopPropagation()">
     <div class="viewer-actions">
-        <button class="btn" onclick="downloadCurrentPhoto()">Download</button>
+        <button class="btn" onclick="downloadCurrentPhoto()">⬇ Download</button>
+        <button class="btn danger" onclick="deleteCurrentPhoto()">🗑 Delete</button>
+    </div>
+</div>
+
+<!-- Rename Modal -->
+<div id="renameModal" class="custom-modal-backdrop" onclick="this.style.display='none'">
+    <div class="custom-modal-content" onclick="event.stopPropagation()">
+        <h3>Rename</h3>
+        <input type="text" id="renameInput" placeholder="Enter Name" style="margin:10px 0; width:100%;">
+        <button class="btn" id="confirmRenameBtn">Save</button>
     </div>
 </div>
 
 <script>
-    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+    // --- TOP LEVEL HELPERS (Fixed ReferenceError) ---
+    function formatBytes(bytes) { if(!+bytes) return '0 B'; const k=1024, i=Math.floor(Math.log(bytes)/Math.log(k)); return `${parseFloat((bytes/Math.pow(k,i)).toFixed(2))} ${['B','KB','MB','GB'][i]}`; }
+    function formatLeadTime(iso) { if(!iso) return '-'; try { return new Date(iso).toLocaleString(); } catch { return iso; } }
+
+    // --- CONFIG ---
+    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod"; 
+    
+    // --- STATE ---
+    let allPhotos = [], filteredPhotos = [], displayedPhotosCount = 0;
+    const BATCH_SIZE = 50; 
+    let peopleMap = {}, allLeads = [];
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
     const idToken = localStorage.getItem("idToken");
+
     if(!idToken) window.location.href = 'login.html';
     document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}`;
 
-    let allPhotos = [], filteredPhotos = [], displayedPhotosCount = 0;
-    const BATCH_SIZE = 50;
-    let peopleMap = {}, allLeads = [];
-    let debounceTimer;
-
+    // --- MAIN INIT ---
     async function init() {
+        // Load People Names (Async - Non blocking)
+        fetch(`${API_BASE}/list_people`, { headers: { 'Authorization': `Bearer ${idToken}` } })
+            .then(r => r.json()).then(d => {
+                (d.people || []).forEach(p => peopleMap[p.FaceId] = p.FaceName);
+            }).catch(console.warn);
+
+        // Load Events & Summary
         try {
-            // Load people names first
-            await fetchPeople();
-            
             const res = await fetch(`${API_BASE}/get-events`, {
                 method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: collectionId })
@@ -201,29 +253,18 @@
             document.getElementById('collectionName').textContent = summary.name || "Collection";
             document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
             document.getElementById('totalLeads').textContent = summary.leads_count || 0;
+
             renderEventsList(data.events || []);
-            
             fetchPhotos();
+            
         } catch (e) {
             console.error(e);
-            document.body.innerHTML += '<div class="error">Failed to load collection. Check internet or login again.</div>';
+            alert("Error loading collection.");
         }
     }
 
-    async function fetchPeople() {
-        try {
-            const res = await fetch(`${API_BASE}/list_people?collection_id=${collectionId}`, {
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                (data.people || []).forEach(p => peopleMap[p.FaceId] = p.FaceName || 'Unknown');
-            }
-        } catch (e) { console.warn("People fetch failed:", e); }
-    }
-
+    // --- PHOTOS ---
     async function fetchPhotos() {
-        document.getElementById('galleryContainer').innerHTML = '<p class="loading">Loading photos...</p>';
         try {
             const res = await fetch(`${API_BASE}/get-photos`, {
                 method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
@@ -237,10 +278,9 @@
             document.getElementById('galleryContainer').innerHTML = '';
             displayedPhotosCount = 0;
             renderNextBatch();
-            buildFaceGroups();
-        } catch (e) {
-            document.getElementById('galleryContainer').innerHTML = '<p class="error">Failed to load photos.</p>';
-        }
+            buildFaceGroups(); 
+            
+        } catch (e) { console.error(e); }
     }
 
     function renderNextBatch() {
@@ -251,21 +291,16 @@
             container.innerHTML = '<p class="loading">No photos found.</p>';
             return;
         }
-        
-        let lastDate = '';
+
         batch.forEach((p, idx) => {
-            const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Recent';
-            if(dateStr !== lastDate) {
-                const header = document.createElement('div');
-                header.className = 'date-header';
-                header.textContent = dateStr;
-                container.appendChild(header);
-                lastDate = dateStr;
-            }
             const div = document.createElement('div');
             div.className = 'photo-card';
             div.onclick = () => openViewer(displayedPhotosCount + idx);
-            div.innerHTML = `<img src="${p.thumbnail_url || p.url}" loading="lazy" onload="this.classList.add('loaded')">`;
+            // Delete button added
+            div.innerHTML = `
+                <button class="photo-delete-btn" onclick="deletePhoto('${p.photo_id}', event)">×</button>
+                <img src="${p.thumbnail_url || p.url}" loading="lazy" onload="this.classList.add('loaded')">
+            `;
             container.appendChild(div);
         });
         
@@ -273,96 +308,138 @@
         document.getElementById('loadMoreBtn').style.display = displayedPhotosCount < filteredPhotos.length ? 'block' : 'none';
     }
 
-    function buildFaceGroups() {
-        const groups = {};
+    window.deletePhoto = async function(pid, e) {
+        e.stopPropagation();
+        if(!confirm("Delete photo?")) return;
+        // Placeholder for delete API
+        await fetch(`${API_BASE}/delete-photo`, { 
+            method: 'POST', headers: { 'Authorization': `Bearer ${idToken}` }, 
+            body: JSON.stringify({photo_id: pid, collection_id: collectionId})
+        });
+        e.target.parentElement.remove();
+    }
+
+    // --- PEOPLE (FACES) ---
+    function buildFaceGroups(force = false) {
+        let groups = {};
         allPhotos.forEach(p => {
             (p.faces || []).forEach(f => {
                 const fid = f.FaceId;
                 if(!fid) return;
+                // Group logic - uses name if available
                 if(!groups[fid]) groups[fid] = { id: fid, count: 0, thumb: p.thumbnail_url || p.url, name: peopleMap[fid] || 'Unknown' };
                 groups[fid].count++;
             });
         });
-        
+
         const grid = document.getElementById('faceGroupGrid');
         grid.innerHTML = '';
         const sorted = Object.values(groups).sort((a,b) => b.count - a.count);
-        
+
         if(sorted.length === 0) {
             document.getElementById('noFacesMessage').style.display = 'block';
             return;
         }
         document.getElementById('noFacesMessage').style.display = 'none';
-        
+
         sorted.forEach(g => {
             grid.innerHTML += `
-                <div class="face-group" onclick="filterByFace('${g.id}')">
-                    <img src="${g.thumb}" class="face-thumb" onerror="this.src='https://placehold.co/80x80/333/fff?text=?'">
+                <div class="face-group" onclick="openRenameModal('${g.id}', '${g.name}')">
+                    <img src="${g.thumb}" class="face-thumb">
                     <div class="face-name">${g.name}</div>
                     <div class="face-count">${g.count} photos</div>
-                </div>`;
+                </div>
+            `;
         });
     }
 
-    function filterByFace(fid) {
-        filteredPhotos = allPhotos.filter(p => (p.faces || []).some(f => f.FaceId === fid));
-        document.getElementById('galleryContainer').innerHTML = '';
-        displayedPhotosCount = 0;
-        renderNextBatch();
-        switchTab('galleryTab');
+    window.openRenameModal = function(fid, curr) {
+        const modal = document.getElementById('renameModal');
+        const inp = document.getElementById('renameInput');
+        inp.value = curr === 'Unknown' ? '' : curr;
+        document.getElementById('confirmRenameBtn').onclick = async () => {
+            const val = inp.value.trim();
+            if(!val) return;
+            await fetch(`${API_BASE}/save_face_name`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ FaceId: fid, FaceName: val, CollectionId: collectionId })
+            });
+            peopleMap[fid] = val;
+            buildFaceGroups();
+            modal.style.display='none';
+        }
+        modal.style.display='flex';
     }
 
+    // --- GUEST LEADS ---
     async function fetchAnalytics() {
-        document.getElementById('noLeadsMessage').style.display = 'block';
-        document.getElementById('noLeadsMessage').textContent = 'Loading leads...';
+        try {
+            const res = await fetch(`${API_BASE}/save-details`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+            const d = await res.json();
+            allLeads = d.leads || [];
+            renderLeads();
+        } catch(e) { console.error(e); }
+    }
+
+    function renderLeads() {
+        const grid = document.getElementById('leadsGrid');
+        grid.innerHTML = '';
+        if(allLeads.length === 0) {
+            document.getElementById('noLeadsMessage').style.display = 'block';
+            return;
+        }
+        document.getElementById('noLeadsMessage').style.display = 'none';
+
+        allLeads.forEach(l => {
+            // FIXED: Selfie Image Display Logic
+            let src = 'https://placehold.co/60x60/333/fff?text=?';
+            if(l.selfie_b64) {
+                let clean = l.selfie_b64.replace(/\s/g, '').replace(/^data:image\/[a-z]+;base64,/, '');
+                // Check if likely valid length
+                if(clean.length > 100) src = `data:image/jpeg;base64,${clean}`;
+            }
+
+            // Create element with onclick for history
+            const div = document.createElement('div');
+            div.className = 'lead-card';
+            div.onclick = () => showGuestHistory(l.mobile, l.name);
+            div.innerHTML = `
+                <img src="${src}" class="selfie-img">
+                <div class="lead-info">
+                    <div class="lead-name">${l.name || 'Guest'}</div>
+                    <div class="lead-mobile">${l.mobile}</div>
+                    <div class="lead-meta">
+                        <span>Matches: ${l.match_count || 0}</span>
+                        <span>${formatLeadTime(l.created_at)}</span>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    // ADDED: Missing Show History Function
+    window.showGuestHistory = async function(mobile, name) {
+        document.getElementById('leadsGrid').style.display = 'none';
+        document.getElementById('historyViewer').style.display = 'block';
+        document.getElementById('historyHeader').textContent = `History: ${name}`;
+        
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
         
         try {
-            const res = await fetch(`${API_BASE}/save-details?collection_id=${collectionId}`, {
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-            const data = await res.json();
-            allLeads = data.leads || [];
+            const res = await fetch(`${API_BASE}/save-details?mobile=${mobile}`, { headers: { 'Authorization': `Bearer ${idToken}` } });
+            const d = await res.json();
+            const hist = d.history || [];
             
-            const grid = document.getElementById('leadsGrid');
-            grid.innerHTML = '';
-            
-            if(allLeads.length === 0) {
-                document.getElementById('noLeadsMessage').textContent = 'No guest leads yet.';
-                return;
+            if(hist.length === 0) tbody.innerHTML = '<tr><td colspan="3">No history.</td></tr>';
+            else {
+                tbody.innerHTML = hist.map(h => `<tr><td>${formatLeadTime(h.created_at)}</td><td>${h.link_id}</td><td>${h.match_count}</td></tr>`).join('');
             }
-            document.getElementById('noLeadsMessage').style.display = 'none';
-            
-            allLeads.forEach(l => {
-                let selfieSrc = 'https://placehold.co/60x60/333/fff?text=?';
-                if(l.selfie_b64 && l.selfie_b64.length > 50) {
-                    let clean = l.selfie_b64.replace(/\s/g, '');
-                    if(clean.includes('base64,')) clean = clean.split('base64,')[1];
-                    selfieSrc = `data:image/jpeg;base64,${clean}`;
-                }
-                
-                grid.innerHTML += `
-                    <div class="lead-card">
-                        <img src="${selfieSrc}" class="selfie-img" onerror="this.src='https://placehold.co/60x60/333/fff?text=?'">
-                        <div class="lead-info">
-                            <div class="lead-name">${l.name || 'Guest'}</div>
-                            <div class="lead-meta">
-                                <span>${l.mobile || 'No mobile'}</span>
-                                <span>${l.match_count || 0} matches</span>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-        } catch(e) {
-            console.error(e);
-            document.getElementById('noLeadsMessage').textContent = 'Failed to load leads.';
-        }
+        } catch { tbody.innerHTML = '<tr><td colspan="3">Error loading history.</td></tr>'; }
     }
 
-    function debounceAnalyticsFetch(value) {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(fetchAnalytics, 500);
-    }
-
+    // --- EVENTS (Fixed Edit/Delete) ---
     function renderEventsList(events) {
         const list = document.getElementById('eventsList');
         const sel = document.getElementById('uploadEventSelect');
@@ -372,76 +449,54 @@
             sel.innerHTML += `<option value="${e.event_id}">${e.name}</option>`;
             list.innerHTML += `
                 <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
-                    <div><strong>${e.name}</strong><br><small style="color:#888">${e.event_date}</small></div>
+                    <div><strong>${e.name}</strong> <br><small style="color:#888">${e.event_date}</small></div>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span>${e.photo_count||0} photos</span>
-                        <button class="btn danger" style="padding:4px 8px; font-size:12px;" onclick="if(confirm('Delete ${e.name}?')) deleteEvent('${e.event_id}')">Del</button>
+                        <button class="btn secondary" onclick="editEvent('${e.event_id}', '${e.name}', '${e.event_date}')">Edit</button>
+                        <button class="btn danger" onclick="deleteEvent('${e.event_id}')">Del</button>
                     </div>
-                </div>`;
+                </div>
+            `;
         });
     }
 
-    async function saveNewEvent() {
-        const name = document.getElementById('eventName').value.trim();
+    window.saveNewEvent = async () => {
+        const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
-        if(!name) return alert("Event name required");
         await fetch(`${API_BASE}/upsert-event`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
         });
-        document.getElementById('eventForm').style.display='none';
-        init();
+        location.reload();
+    }
+    
+    // Correctly mapped Edit function
+    window.editEvent = function(eid, name, date) {
+        document.getElementById('eventName').value = name;
+        document.getElementById('eventDate').value = date;
+        document.getElementById('saveEventBtn').onclick = async () => {
+             const n = document.getElementById('eventName').value;
+             const d = document.getElementById('eventDate').value;
+             await fetch(`${API_BASE}/upsert-event`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId, event_id: eid, name: n, event_date: d })
+            });
+            location.reload();
+        };
+        document.getElementById('eventForm').style.display = 'block';
     }
 
-    async function deleteEvent(eid) {
+    // Added Missing Delete function
+    window.deleteEvent = async function(eid) {
+        if(!confirm("Delete event?")) return;
         await fetch(`${API_BASE}/delete-event`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId, event_id: eid })
         });
-        init();
+        location.reload();
     }
 
-    const fileInput = document.getElementById('fileInput');
-    fileInput.onchange = async () => {
-        const eid = document.getElementById('uploadEventSelect').value;
-        if(!eid) return alert("Select Event First!");
-        const files = Array.from(fileInput.files);
-        document.getElementById('uploadStatus').innerHTML = `<div class="success">Uploading ${files.length} photos...</div>`;
-        
-        let uploaded = 0;
-        for(let f of files) {
-            try {
-                const res = await fetch(`${API_BASE}/generate-upload-urls`, {
-                    method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ collection_id: collectionId, event_id: eid, files: [{name: f.name, type: 'image/jpeg'}] })
-                });
-                const d = await res.json();
-                await fetch(d.urls[0].uploadURL, { method: 'PUT', body: f, headers: {'Content-Type': 'image/jpeg'} });
-                uploaded++;
-                document.getElementById('uploadStatus').innerHTML = `<div class="success">Uploaded ${uploaded}/${files.length}</div>`;
-            } catch(e) { console.error(e); }
-        }
-        document.getElementById('uploadStatus').innerHTML = `<div class="success">Complete! Reloading...</div>`;
-        setTimeout(() => location.reload(), 2000);
-    };
-
-    async function generateLink() {
-        const res = await fetch(`${API_BASE}/generate-search-link`, {
-            method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        const d = await res.json();
-        const link = d.searchUrl;
-        document.getElementById('generatedLink').href = link;
-        document.getElementById('generatedLink').textContent = link;
-        document.getElementById('linkResult').style.display = 'block';
-    }
-
-    function copyLink() {
-        navigator.clipboard.writeText(document.getElementById('generatedLink').textContent);
-        alert("Link copied!");
-    }
-
+    // --- UTILS ---
     function switchTab(t) {
         document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
@@ -453,12 +508,81 @@
     let currentPhotoIdx = 0;
     function openViewer(idx) {
         currentPhotoIdx = idx;
-        document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+        const p = filteredPhotos[idx];
+        document.getElementById('viewerImg').src = p.url;
         document.getElementById('viewer').classList.add('open');
     }
     function closeViewer() { document.getElementById('viewer').classList.remove('open'); }
     function downloadCurrentPhoto() { saveAs(filteredPhotos[currentPhotoIdx].url, 'photo.jpg'); }
+    
+    // --- UPLOAD LOGIC ---
+    const fileInput = document.getElementById('fileInput');
+    fileInput.onchange = async () => {
+        const eid = document.getElementById('uploadEventSelect').value;
+        if(!eid) return alert("Select Event First!");
+        
+        const files = Array.from(fileInput.files);
+        document.getElementById('uploadStatus').innerText = `Uploading ${files.length} photos...`;
+        
+        let uploaded = 0;
+        for(let f of files) {
+            // Get presigned URL
+            try {
+                // Inline conversion to JPEG
+                const img = new Image();
+                const reader = new FileReader();
+                await new Promise((resolve) => {
+                    reader.onload = (e) => {
+                        img.onload = async () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width; canvas.height = img.height;
+                            canvas.getContext('2d').drawImage(img, 0, 0);
+                            
+                            canvas.toBlob(async (blob) => {
+                                const newFile = new File([blob], f.name.replace(/\.[^/.]+$/, "") + '.jpg', { type: 'image/jpeg' });
+                                
+                                const res = await fetch(`${API_BASE}/generate-upload-urls`, {
+                                    method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ collection_id: collectionId, event_id: eid, files: [{name: newFile.name, type: 'image/jpeg'}] })
+                                });
+                                const d = await res.json();
+                                await fetch(d.urls[0].uploadURL, { method: 'PUT', body: newFile, headers: { 'Content-Type': 'image/jpeg' } });
+                                
+                                uploaded++;
+                                document.getElementById('uploadStatus').innerText = `${uploaded}/${files.length} done`;
+                                resolve();
+                            }, 'image/jpeg', 0.9);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(f);
+                });
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('uploadStatus').innerText = "Done! Reloading...";
+        setTimeout(() => location.reload(), 1000);
+    };
 
+    // --- LINKS (ID Fix) ---
+    document.getElementById('genLinkBtn').onclick = async () => {
+        const selected = Array.from(document.querySelectorAll('.link-check:checked') || []).map(c => c.value);
+        // Allow generating link for entire collection if no event selected
+        const res = await fetch(`${API_BASE}/generate-search-link`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
+        });
+        const d = await res.json();
+        const el = document.getElementById('generatedLink');
+        el.href = d.searchUrl; el.textContent = d.searchUrl;
+        document.getElementById('linkResult').style.display='block';
+    }
+    
+    function copyLink() {
+        navigator.clipboard.writeText(document.getElementById('generatedLink').textContent);
+        alert("Copied");
+    }
+
+    // Start
     init();
 </script>
 </body>
