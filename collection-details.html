@@ -517,9 +517,8 @@
             </div>
             <div id="dropZone">
                 <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
-                <p>Drag photos here (JPG/PNG only) to upload</p>
-                <!-- Updated: Restrict file types -->
-                <input type="file" id="fileInput" multiple style="display:none" accept="image/jpeg, image/png">
+                <p>Drag photos here to upload</p>
+                <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
             <div id="progress-container" style="display:none;">
                 <div id="progress-bar"></div>
@@ -577,9 +576,9 @@
     <div id="faceGroupTab" class="tab-content">
         <div class="card">
             <h3>People Directory</h3>
-            <p style="color:var(--muted); margin-bottom:15px;">Detected faces from database & photos</p>
+            <p style="color:var(--muted); margin-bottom:15px;">Detected faces from photos. Click to name them.</p>
             <div id="faceGroupGrid" class="face-group-grid"></div>
-            <p id="noFacesMessage" class="empty-state" style="display:none;">No people found. If you just uploaded, please wait for AI processing.</p>
+            <p id="noFacesMessage" class="empty-state" style="display:none;">No faces found. Upload more photos.</p>
         </div>
     </div>
 
@@ -823,10 +822,15 @@
         const grid = document.getElementById('faceGroupGrid');
         const emptyMsg = document.getElementById('noFacesMessage');
         
+        // If we have photos but haven't built the map yet, do it now
+        if(Object.keys(faceGroups).length === 0 && allPhotos.length > 0) {
+            buildLocalFaceMap();
+        }
+
         grid.innerHTML = '<p class="loading">Fetching directory...</p>';
         emptyMsg.style.display = 'none';
 
-        // Fetch from API
+        // Fetch from API (List People Lambda)
         try {
             const res = await fetch(LIST_PEOPLE_API, {
                  method: 'GET', 
@@ -839,31 +843,18 @@
             directoryPeople = [];
         }
 
-        // Update local groups with names from directory
+        // Update local groups with names from directory (Database)
         const dirMap = {};
         directoryPeople.forEach(p => {
              const fid = p.FaceId || p.faceId;
              if(fid) dirMap[fid] = p;
         });
 
+        // Merge: Apply names from DB to faces found in photos
         Object.keys(faceGroups).forEach(fid => {
             if (dirMap[fid]) {
                 const dbName = dirMap[fid].FaceName || dirMap[fid].Name;
                 if(dbName) faceGroups[fid].name = dbName;
-            }
-        });
-
-        // Add people from DB who are NOT in local photos (Ghost entries)
-        Object.keys(dirMap).forEach(fid => {
-            if (!faceGroups[fid]) {
-                const p = dirMap[fid];
-                faceGroups[fid] = {
-                    id: fid,
-                    name: p.FaceName || p.Name || 'Unknown',
-                    thumbnail: '', 
-                    count: 0,
-                    photos: []
-                };
             }
         });
 
