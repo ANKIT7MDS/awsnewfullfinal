@@ -12,6 +12,7 @@
             --bg: #0f0f0f; --card: #1e1e1e; --border: #333; --text: #e0e0e0;
             --muted: #888; --brand: #4285f4; --brand-hover: #3367d6; /* Google Blue */
             --danger: #ea4335; --ok: #34a853;
+            --warning: #fbbc05;
         }
         * { box-sizing: border-box; }
         body { margin: 0; background-color: var(--bg); color: var(--text); font-family: 'Google Sans', Roboto, Arial, sans-serif; padding-bottom: 60px; }
@@ -113,12 +114,21 @@
             font-weight: 500; 
             height: 44px; /* Match filter row height */
             flex: 0 0 auto;
+            transition: background 0.2s;
         }
+        .btn:hover { background: var(--brand-hover); }
+
         .btn.secondary { 
             background: transparent; 
             border: 1px solid var(--border); 
             color: var(--text);
         }
+        .btn.secondary:hover { 
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--muted);
+        }
+        .btn.danger { background: var(--danger); }
+        .btn.danger:hover { background: #b8332a; }
 
         /* TABLES (FOR HISTORY) */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -130,9 +140,25 @@
         input:focus { border-color: var(--brand); }
         
         /* UPLOAD */
-        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; }
-        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; border-radius: 2px; }
-        #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
+        #dropZone { 
+            border: 2px dashed var(--border); 
+            border-radius: 12px; 
+            padding: 60px 20px; /* More padding top/bottom */
+            text-align: center; 
+            background: #151515; 
+            transition: background 0.2s, border-color 0.2s;
+        }
+        #dropZone:hover {
+            border-color: var(--brand);
+            background: #181818;
+        }
+        .drop-icon {
+            font-size: 40px; color: var(--muted); margin-bottom: 10px;
+        }
+        .upload-info {
+             font-size: 14px; color: var(--muted); margin-top: 10px;
+        }
+        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; transition: width 0.3s; }
         
         /* Load More */
         .load-more-container { text-align: center; margin-top: 30px; }
@@ -141,9 +167,23 @@
         .gallery-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
-            gap: 5px; /* Reduced gap */
+            gap: 5px; 
         }
-        .photo-card:hover .photo-info { opacity: 0; display: none; }
+        .date-header {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text);
+            padding: 15px 0 5px 0;
+            margin-top: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .photo-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            aspect-ratio: 1 / 1; /* Square thumbnails */
+        }
         .photo-card img { 
             width: 100%; 
             height: 100%; 
@@ -151,12 +191,29 @@
             opacity: 0; 
             transition: opacity 0.3s; 
         }
+        .photo-card img.loaded { opacity: 1; }
         
-        /* VIEWER FIXES */
+        /* VIEWER IMPROVEMENTS */
+        .viewer {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .viewer.open { display: flex; }
+        #viewerImg {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
         .viewer-close { 
             position: absolute; 
             top: 20px; 
-            left: 20px; 
+            right: 20px; /* Moved close button to top-right */
             color: #fff; 
             font-size: 30px; 
             cursor: pointer; 
@@ -164,6 +221,59 @@
             padding: 5px 12px; 
             border-radius: 50%;
             line-height: 1;
+            transition: background 0.2s;
+        }
+        .viewer-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* New Viewer Metadata Box */
+        .viewer-metadata {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+            font-size: 13px;
+            color: #fff;
+        }
+        .viewer-metadata strong { color: var(--brand); font-weight: 600; display: block; margin-bottom: 5px; }
+        .viewer-metadata span { display: block; margin-top: 3px; color: var(--muted); }
+        .viewer-metadata span.tag { 
+            display: inline-block; 
+            background: #282828; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            margin-right: 5px; 
+            margin-bottom: 5px;
+            color: var(--text);
+        }
+
+        /* CUSTOM MODAL STYLES (for Event Delete) */
+        .custom-modal-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center; align-items: center; z-index: 2000;
+        }
+        .custom-modal-content {
+            background: var(--card); padding: 30px; border-radius: 12px;
+            max-width: 400px; width: 90%; text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        .custom-modal-content h3 { margin-top: 0; color: var(--danger); }
+        .modal-buttons { display: flex; justify-content: space-around; margin-top: 20px; }
+        .modal-buttons button { width: 120px; }
+
+        /* Error Message Style */
+        .error-message { 
+            background: rgba(234, 67, 53, 0.1); 
+            color: var(--danger); 
+            padding: 10px; 
+            border-left: 4px solid var(--danger); 
+            border-radius: 4px; 
+            margin-bottom: 15px;
+            font-size: 14px;
         }
 
         /* FIXED: People Tab - Face Group Grid */
@@ -237,12 +347,14 @@
             padding: 15px;
             border-radius: 8px;
             display: none;
+            position: relative; /* For copy feedback positioning */
         }
         #generatedLink {
             color: var(--brand);
             text-decoration: none;
             font-size: 14px;
             word-break: break-all;
+            display: block; /* Ensure it takes full width for clicking */
         }
         #generatedLink:hover {
             text-decoration: underline;
@@ -258,7 +370,10 @@
             font-size: 11px;
             cursor: pointer;
             margin-right: 5px;
+            transition: background 0.2s;
         }
+        .edit-btn:hover { background: var(--brand-hover); }
+        
         .delete-btn {
             background: var(--danger);
             color: #fff;
@@ -267,12 +382,17 @@
             border-radius: 4px;
             font-size: 11px;
             cursor: pointer;
+            transition: background 0.2s;
         }
+        .delete-btn:hover { background: #b8332a; }
 
         /* FIXED: Mobile Responsiveness */
         @media (max-width: 768px) {
             .filter-row-top {
                 flex-direction: column;
+            }
+            .filter-row-top > * {
+                min-width: 100%;
             }
             .lead-grid {
                 grid-template-columns: 1fr;
@@ -308,6 +428,8 @@
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            background: var(--muted) !important;
+            border-color: var(--muted) !important;
         }
 
         /* FIXED: Table Hover */
@@ -343,9 +465,20 @@
         #uploadEventSelect:invalid {
             color: var(--muted);
         }
+        #uploadEventSelect option[value=""] {
+            color: var(--muted);
+        }
 
         /* FIXED: Link Copy Feedback */
         .copy-feedback {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: var(--ok);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
             opacity: 0;
             transition: opacity 0.3s;
         }
@@ -384,15 +517,16 @@
     <!-- GALLERY TAB -->
     <div id="galleryTab" class="tab-content active">
         <div class="filter-row-top">
-            <select id="filterType" onchange="applyFilters()">
+            <select id="filterType" onchange="applyFilters()" aria-label="Photo filter type">
                 <option value="ALL">All Photos</option>
                 <option value="BEST">⭐ Best Shots</option>
                 <option value="HAPPY">😊 Happy</option>
                 <option value="GROUP">👥 Groups</option>
             </select>
-            <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
+            <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()" aria-label="Tag Search">
             <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
         </div>
+        <div id="downloadError" class="error-message" style="display:none; margin-top: -10px;"></div>
 
         <div id="galleryContainer">
             <p class="loading">Loading photos...</p>
@@ -408,13 +542,13 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <h3>Events</h3>
-                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
+                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'; document.getElementById('saveEventBtn').onclick = saveNewEvent;">+ New Event</button>
             </div>
             
             <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <input type="text" id="eventName" placeholder="Event Name">
-                    <input type="date" id="eventDate">
+                    <input type="text" id="eventName" placeholder="Event Name" aria-label="Event Name">
+                    <input type="date" id="eventDate" aria-label="Event Date">
                 </div>
                 <div style="margin-top:10px; text-align:right;">
                     <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
@@ -433,14 +567,18 @@
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
             <div style="margin-bottom:20px;">
-                <label style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
-                <select id="uploadEventSelect"><option value="">Loading...</option></select>
+                <label for="uploadEventSelect" style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
+                <select id="uploadEventSelect" required aria-label="Upload Event Selection">
+                    <option value="" disabled selected>Select Event...</option>
+                </select>
             </div>
             <div id="dropZone">
-                <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
+                <div class="drop-icon">☁️</div>
                 <p>Drag photos here to upload</p>
+                <div class="upload-info">Other formats will be converted to JPEG for AI processing.</div>
                 <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
+            <div id="uploadError" class="error-message" style="display:none; margin-top: 15px;"></div>
             <div id="progress-container" style="display:none;">
                 <div id="progress-bar"></div>
                 <p id="uploadStatus" style="text-align:center; font-size:13px; margin-top:5px; color:var(--muted);"></p>
@@ -455,9 +593,10 @@
             <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include.</p>
             <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;"></div>
             <button class="btn" id="genLinkBtn">Generate Link</button>
-            <div id="linkResult" style="margin-top:15px; padding:15px; background:#111; border:1px dashed var(--brand); color:var(--brand); display:none; word-break:break-all; border-radius:8px;">
+            <div id="linkResult" style="margin-top:15px; padding:15px; background:#111; border:1px dashed var(--brand); color:var(--brand); display:none; word-break:break-all; border-radius:8px; position:relative;">
                 <a id="generatedLink" href="#" target="_blank" style="color:var(--brand); text-decoration:none;">Click to open link</a>
                 <button class="btn secondary" style="margin-top:8px; padding:5px 12px; font-size:12px;" onclick="copyLink()">Copy Link</button>
+                <div id="copyFeedback" class="copy-feedback">Copied!</div>
             </div>
         </div>
     </div>
@@ -469,9 +608,9 @@
             <!-- Filters for Leads -->
             <div class="filter-row-top">
                 <!-- Date Filter -->
-                <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics()">
+                <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics()" aria-label="Filter by Date">
                 <!-- Mobile Filter -->
-                <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="fetchAnalytics()">
+                <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="debounceAnalyticsFetch(this.value)" aria-label="Filter by Mobile">
             </div>
             <div id="analyticsBodyContainer">
                 <!-- Data will be rendered in this grid (New Card View) -->
@@ -508,12 +647,31 @@
 
 </div>
 
-<!-- VIEWER -->
+<!-- Custom Confirmation Modal -->
+<div id="deleteModal" class="custom-modal-backdrop" onclick="this.style.display='none'">
+    <div class="custom-modal-content" onclick="event.stopPropagation()">
+        <h3>इवेंट डिलीट करें</h3>
+        <p>क्या आप वाकई इवेंट <strong id="modalEventName"></strong> को डिलीट करना चाहते हैं? यह कार्य वापस नहीं लिया जा सकता।</p>
+        <div class="modal-buttons">
+            <button class="btn secondary" onclick="document.getElementById('deleteModal').style.display='none'">रद्द करें</button>
+            <button class="btn danger" id="confirmDeleteBtn">डिलीट करें</button>
+        </div>
+    </div>
+</div>
+
+<!-- VIEWER IMPROVED -->
 <div class="viewer" id="viewer" onclick="closeViewer()">
-    <img id="viewerImg" onclick="event.stopPropagation()">
+    <span class="viewer-close" onclick="closeViewer()">×</span>
+    <div class="viewer-metadata">
+        <strong id="viewerEventName"></strong>
+        <span id="viewerDate"></span>
+        <div id="viewerTags" style="margin-top: 10px;"></div>
+    </div>
+    <img id="viewerImg" src="" onclick="event.stopPropagation()">
 </div>
 
 <script>
+    // --- CONSTANTS ---
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const GET_EVENTS_API = `${API_BASE}/get-events`;
     const GET_PHOTOS_API = `${API_BASE}/get-photos`;
@@ -523,6 +681,7 @@
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
     const GUEST_API = `${API_BASE}/save-details`;
 
+    // --- SETUP & AUTH ---
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
     const collectionNameParam = urlParams.get("name");
@@ -531,59 +690,29 @@
     if (!idToken) window.location.href = 'login.html';
     document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
 
-    // STATE - Photo Gallery
+    // --- STATE ---
     let allPhotos = [];
     let filteredPhotos = [];
     let displayedPhotosCount = 0;
-    const PHOTOS_BATCH_SIZE = 20; // FIXED: Reduced from 50 to 20
+    const PHOTOS_BATCH_SIZE = 20; // FIXED: Reduced from 50 to 20 for faster initial gallery load
     let viewerIndex = 0;
-
-    // STATE - Leads Analytics
-    let allLeads = []; // Store all fetched leads
+    let eventsMap = new Map(); // Store events for viewer metadata
+    
+    let allLeads = [];
     let filteredLeads = [];
     let leadsDisplayCount = 0;
-    const LEADS_BATCH_SIZE = 10; // New constant for pagination
-
-    // STATE - Face Groups
-    let faceGroups = {};
-
-    // --- TABS ---
-    window.switchTab = function(tabId) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-        document.getElementById(tabId).classList.add('active');
-        
-        if(tabId === 'galleryTab') {
-             // If photos haven't been fetched yet, fetch them (only once)
-             if(allPhotos.length === 0) {
-                fetchPhotos();
-             } else {
-                // If already fetched, just render the current filtered view
-                displayedPhotosCount = 0;
-                document.getElementById('galleryContainer').innerHTML = '';
-                renderNextBatch();
-             }
-        } else if(tabId === 'faceGroupTab') {
-            buildFaceGroups(); // FIXED: Load face groups
-        } else {
-             document.getElementById('galleryContainer').innerHTML = '<p class="loading">Loading photos...</p>';
-        }
-
-        if(tabId === 'analyticsTab') fetchAnalytics(true); 
-        if(tabId === 'eventsTab') init(); 
-    }
+    const LEADS_BATCH_SIZE = 10;
+    let analyticsTimeout = null; // for debouncing
 
     // --- UTILITY FUNCTIONS ---
     function formatLeadTime(isoString) {
         if (!isoString) return '-';
-        // Extracts time (HH:MM:SS) and date (MM-DD)
         try {
              const date = isoString.substring(5, 10);
              const time = isoString.substring(11, 19);
              return `${time} (${date})`;
         } catch {
-             return isoString.substring(0, 10); // Fallback to Date only
+             return isoString.substring(0, 10);
         }
     }
     
@@ -594,27 +723,64 @@
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
     }
 
-    // --- INIT ---
-    async function init() {
-        const res = await fetch(GET_EVENTS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        const data = await res.json();
-        const summary = data.collection_summary || {};
+    // --- TABS ---
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        
+        if(tabId === 'galleryTab') {
+             if(allPhotos.length === 0) {
+                fetchPhotos();
+             } else {
+                // If already fetched, just render the current filtered view (which is usually allPhotos initially)
+                displayedPhotosCount = 0;
+                document.getElementById('galleryContainer').innerHTML = '';
+                renderNextBatch();
+             }
+        } else if(tabId === 'faceGroupTab') {
+             // Only build face groups if photos are loaded or if switching to this tab
+             if(allPhotos.length > 0) buildFaceGroups();
+        } else {
+             document.getElementById('galleryContainer').innerHTML = '<p class="loading">Loading photos...</p>';
+        }
 
-        // FIXED: Set all counts in header
-        document.getElementById('collectionName').textContent = summary.name || collectionNameParam;
-        document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
-        document.getElementById('totalLeads').textContent = summary.leads_count || 0;
-        document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
-        document.title = `${summary.name || 'Collection'} • ${summary.photo_count || 0} Photos • ${summary.leads_count || 0} Guests`;
-
-        renderEvents(data.events || []);
+        if(tabId === 'analyticsTab') fetchAnalytics(true); 
+        if(tabId === 'eventsTab') init(); 
     }
 
-    // --- PHOTO GALLERY - FIXED FAST LOADING ---
+    // --- INIT ---
+    async function init() {
+        try {
+            const res = await fetch(GET_EVENTS_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId })
+            });
+            const data = await res.json();
+            
+            const summary = data.collection_summary || {};
+            document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+            
+            const evts = data.events || [];
+            // Create map for quick lookup in viewer
+            eventsMap = new Map(evts.map(e => [e.event_id, e]));
+
+            const totalPhotos = summary.photo_count || evts.reduce((sum, e) => sum + (e.photo_count||0), 0);
+            const totalStorage = summary.storage_bytes || evts.reduce((sum, e) => sum + (e.storage_bytes||0), 0);
+            const totalLeads = summary.leads_count || 0; // Assuming leads_count exists in summary
+
+            document.getElementById('totalPhotos').textContent = totalPhotos;
+            document.getElementById('storageUsed').textContent = formatBytes(totalStorage);
+            document.getElementById('totalLeads').textContent = totalLeads;
+
+            renderEvents(evts);
+
+        } catch (e) { console.error(e); }
+    }
+
+    // --- PHOTO GALLERY LOGIC ---
     async function fetchPhotos() {
         const container = document.getElementById('galleryContainer');
         container.innerHTML = '<p class="loading">Loading photos...</p>';
@@ -629,74 +795,186 @@
             allPhotos = data.photos || [];
             filteredPhotos = [...allPhotos];
             
-            // FIXED: Build face groups for People tab
+            // Sort by Date Descending
+            filteredPhotos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            
+            // Build face groups for People tab
             buildFaceGroups();
 
-            displayedPhotosCount = 0;
-            container.innerHTML = '';
-            renderNextBatch();
-        } catch (err) {
-            container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Check console.</p>';
-            console.error('Photo fetch error:', err);
+            if(allPhotos.length === 0) {
+                container.innerHTML = '<p class="empty-state">No photos uploaded yet.</p>';
+            } else {
+                displayedPhotosCount = 0;
+                container.innerHTML = ''; 
+                renderNextBatch();
+            }
+        } catch (e) {
+            container.innerHTML = '<p style="text-align:center; color:var(--danger);">Failed to load photos.</p>';
         }
     }
 
-    function renderNextBatch() {
+    window.renderNextBatch = function() {
         const container = document.getElementById('galleryContainer');
         const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
         
-        if (nextBatch.length === 0) {
+        if(nextBatch.length === 0) {
             document.getElementById('loadMoreBtn').style.display = 'none';
             return;
         }
 
-        let lastDate = '';
-        nextBatch.forEach((photo, localIdx) => {
-            const globalIdx = displayedPhotosCount + localIdx;
-            const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown';
+        let currentGroup = document.querySelector('.gallery-grid:last-child');
+        let lastDate = container.lastElementChild?.previousElementSibling?.textContent || '';
+        
+        // Remove 'Loading photos...' message if present
+        if(container.querySelector('p.loading')) container.innerHTML = '';
 
-            if (photoDate !== lastDate) {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'date-header';
-                dateHeader.textContent = photoDate;
-                container.appendChild(dateHeader);
+        nextBatch.forEach((p, idx) => {
+            const globalIdx = displayedPhotosCount + idx;
+            // Use a consistent date format for grouping/display
+            const dateObj = p.created_at ? new Date(p.created_at) : null;
+            const dateStr = dateObj ? dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent Uploads';
+            
+            if(dateStr !== lastDate || !currentGroup || !container.lastElementChild.classList.contains('gallery-grid')) {
+                const header = document.createElement('div');
+                header.className = 'date-header';
+                header.textContent = dateStr;
+                container.appendChild(header);
                 
-                const currentGroup = document.createElement('div');
+                currentGroup = document.createElement('div');
                 currentGroup.className = 'gallery-grid';
                 container.appendChild(currentGroup);
-                lastDate = photoDate;
+                lastDate = dateStr;
             }
 
             const card = document.createElement('div');
             card.className = 'photo-card';
             card.onclick = () => openViewer(globalIdx);
             
-            const tags = (photo.ai_tags || []).slice(0, 3).join(', ');
-            
-            // FIXED: Thumbnail URL
-            const thumbnailUrl = photo.thumbnail_url || photo.url; 
+            const thumbnailUrl = p.thumbnail_url || p.url; 
             
             card.innerHTML = `
-                <img src="${thumbnailUrl}" loading="lazy" width="120" height="120" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
+                <img src="${thumbnailUrl}" loading="lazy" width="120" height="120" 
+                    onload="this.classList.add('loaded')" 
+                    onerror="this.parentElement.innerHTML='<div style=\\"color:var(--danger); font-size:10px; text-align:center; padding:5px;\\">Broken</div>'">
             `;
-            container.lastChild.appendChild(card);
+            currentGroup.appendChild(card);
         });
 
         displayedPhotosCount += nextBatch.length;
         const btn = document.getElementById('loadMoreBtn');
         btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
+    
+    window.applyFilters = function() {
+        const type = document.getElementById('filterType').value;
+        const query = document.getElementById('tagSearch').value.toLowerCase();
+        
+        filteredPhotos = allPhotos.filter(p => {
+            const matchesType = (type === 'ALL') ||
+                (type === 'BEST' && p.quality_score > 85) ||
+                (type === 'HAPPY' && p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+                (type === 'GROUP' && p.face_count >= 3);
+            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
+            return matchesType && matchesQuery;
+        });
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        document.getElementById('loadMoreBtn').style.display = 'none';
+        renderNextBatch();
+    }
+    
+    window.downloadAllZip = async function() {
+        const errorBox = document.getElementById('downloadError');
+        const btn = event.target;
+        errorBox.style.display = 'none';
 
-    // --- FIXED: Face Groups - People Tab ---
+        if(filteredPhotos.length === 0) {
+            errorBox.textContent = "No photos to download.";
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const limit = filteredPhotos.slice(0, 100); // Increased limit to 100 for better utility
+        
+        if (filteredPhotos.length > 100) {
+            errorBox.textContent = `⚠️ Note: Only the first 100 photos will be downloaded due to client-side zipping limits.`;
+            errorBox.style.background = 'rgba(251, 188, 5, 0.1)';
+            errorBox.style.borderLeftColor = 'var(--warning)';
+            errorBox.style.color = 'var(--warning)';
+            errorBox.style.display = 'block';
+        }
+        
+        try {
+            errorBox.textContent = `Zipping... Processing ${limit.length} photos.`;
+            errorBox.style.display = 'block';
+            
+            for(let i=0; i<limit.length; i++) {
+                const b = await fetch(limit[i].url).then(r=>r.blob());
+                folder.file(`photo_${i + 1}.jpg`, b);
+                errorBox.textContent = `Zipping... Processed ${i + 1}/${limit.length} photos.`;
+            }
+            zip.generateAsync({type:"blob", compression: "DEFLATE", compressionOptions: { level: 9 }}).then(c => saveAs(c, "photos.zip"));
+            errorBox.textContent = `✅ Download starting!`;
+            setTimeout(() => { errorBox.style.display = 'none'; }, 3000);
+            
+        } catch(e) {
+            errorBox.textContent = `Download failed: Error fetching files.`;
+            errorBox.style.display = 'block';
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '⬇ Download Zip';
+        }
+    }
+
+
+    // --- VIEWER LOGIC (Updated to show metadata) ---
+    window.openViewer = (idx) => { 
+        viewerIndex = idx;
+        const photo = filteredPhotos[idx];
+        
+        document.getElementById('viewerImg').src = photo.url;
+        
+        const eventInfo = eventsMap.get(photo.event_id) || { name: 'Unknown Event', event_date: 'N/A' };
+        document.getElementById('viewerEventName').textContent = eventInfo.name;
+        document.getElementById('viewerDate').textContent = eventInfo.event_date;
+        
+        const tagsDiv = document.getElementById('viewerTags');
+        tagsDiv.innerHTML = '<strong>Tags:</strong> ';
+        
+        if (photo.ai_tags && photo.ai_tags.length > 0) {
+            tagsDiv.innerHTML += photo.ai_tags.slice(0, 10).map(tag => `<span class="tag">${tag}</span>`).join('');
+        } else {
+            tagsDiv.innerHTML += 'No tags available';
+        }
+
+        document.getElementById('viewer').classList.add('open');
+    }
+    window.closeViewer = () => {
+        document.getElementById('viewer').classList.remove('open');
+        viewerIndex = 0; 
+        document.getElementById('viewerImg').src = ''; // Clear image to save memory
+    }
+
+    // --- FACE GROUP LOGIC (People Tab) ---
+    let faceGroups = {};
+
     function buildFaceGroups() {
         faceGroups = {};
         allPhotos.forEach(photo => {
+            // Assuming photo.faces is an array of { FaceId: string, FaceName: string }
             (photo.faces || []).forEach(face => {
+                // Use FaceId/ExternalImageId for grouping, fallback to unique ID
                 const faceId = face.FaceId || face.ExternalImageId || `unknown-${Math.random()}`;
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
                         name: face.FaceName || 'Unknown Person',
-                        thumbnail: photo.thumbnail_url || photo.url,
+                        // Find a thumbnail that is not a broken URL
+                        thumbnail: photo.thumbnail_url || photo.url, 
                         count: 0,
                         photos: []
                     };
@@ -707,6 +985,7 @@
         });
 
         const grid = document.getElementById('faceGroupGrid');
+        
         if (Object.keys(faceGroups).length === 0) {
             grid.innerHTML = '<p class="empty-state">No faces detected. Upload more photos!</p>';
             return;
@@ -722,31 +1001,23 @@
     }
 
     window.showFacePhotos = (faceId) => {
+        // Filter photos based on the selected face group
         filteredPhotos = faceGroups[faceId].photos;
+        
+        // Switch to gallery view and render the filtered list
         displayedPhotosCount = 0;
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
         switchTab('galleryTab');
     };
-
-    // --- VIEWER LOGIC ---
-    window.openViewer = (idx) => { 
-        viewerIndex = idx;
-        document.getElementById('viewerImg').src = filteredPhotos[idx].url;
-        document.getElementById('viewer').classList.add('open');
-    }
-    window.closeViewer = () => {
-        document.getElementById('viewer').classList.remove('open');
-        viewerIndex = 0; 
-    }
-
-    // --- EVENT LOGIC - FIXED EDIT BUTTON ---
+    
+    // --- EVENT LOGIC ---
     function renderEvents(events) {
         const tbody = document.getElementById('eventsTbody');
         const uploadSelect = document.getElementById('uploadEventSelect');
         const linkList = document.getElementById('linkEventList');
         tbody.innerHTML = '';
-        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+        uploadSelect.innerHTML = '<option value="" disabled selected>Select Event...</option>';
         linkList.innerHTML = '';
         events.forEach(ev => {
             tbody.innerHTML += `
@@ -756,7 +1027,7 @@
                     <td>${ev.photo_count || 0}</td>
                     <td>
                         <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${ev.name}', '${ev.event_date}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${ev.name}')">Delete</button>
+                        <button class="delete-btn" onclick="showDeleteModal('${ev.event_id}', '${ev.name}')">Delete</button>
                     </td>
                 </tr>`;
             uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
@@ -764,54 +1035,101 @@
         });
     }
 
+    // New: Sets up form for creating a new event
+    window.saveNewEvent = async () => {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if(!name) return alert('Event Name is required.');
+        // event_id is omitted for creation, backend will generate one
+        await fetch(UPSERT_EVENT_API, { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ collection_id: collectionId, name, event_date: date }) 
+        });
+        document.getElementById('eventForm').style.display='none';
+        init();
+    }
+    
     // FIXED: Edit Event Function
     window.editEvent = function(eventId, name, date) {
         document.getElementById('eventName').value = name;
         document.getElementById('eventDate').value = date;
+        // Re-attach save button to use the update logic with the specific eventId
         document.getElementById('saveEventBtn').onclick = () => updateEvent(eventId);
         document.getElementById('eventForm').style.display = 'block';
     };
 
+    // FIXED: Update existing event
     async function updateEvent(eventId) {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
-        if(!name) return alert('Name required');
-        await fetch(UPSERT_EVENT_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date }) });
+        if(!name) return alert('Event Name is required.');
+        
+        try {
+            await fetch(UPSERT_EVENT_API, { 
+                method: 'POST', 
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date }) 
+            });
+            alert(`Event "${name}" updated successfully.`);
+        } catch(e) {
+            alert(`Failed to update event: ${name}.`);
+            console.error(e);
+        }
+
         document.getElementById('eventForm').style.display = 'none';
         init(); // Reload
     }
 
+    // New: Show Custom Delete Modal
+    window.showDeleteModal = function(eventId, eventName) {
+        const modal = document.getElementById('deleteModal');
+        document.getElementById('modalEventName').textContent = eventName;
+        
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        confirmBtn.onclick = () => { 
+            deleteEvent(eventId, eventName);
+            modal.style.display='none';
+        };
+
+        modal.style.display = 'flex';
+    }
+
     window.deleteEvent = async function(eventId, eventName) {
-        if (!confirm(`Delete ${eventName}?`)) return;
         try {
-            await fetch(DELETE_EVENT_API, {
+            const res = await fetch(DELETE_EVENT_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
             });
-            alert(`${eventName} deleted.`);
-            init();
+            
+            if (!res.ok) throw new Error("API call failed.");
+
+            alert(`${eventName} successfully deleted.`);
+            init(); // Reload events
         } catch (e) {
-            alert('Delete failed.');
-            console.error(e);
+            alert(`Failed to delete event: ${eventName}.`);
+            console.error("Delete Event Error:", e);
         }
     }
 
-    document.getElementById('saveEventBtn').onclick = async () => {
-        const name = document.getElementById('eventName').value;
-        const date = document.getElementById('eventDate').value;
-        if(!name) return alert('Name required');
-        await fetch(UPSERT_EVENT_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, name, event_date: date }) });
-        document.getElementById('eventForm').style.display = 'none';
-        init();
+
+    // --- ANALYTICS LOGIC (Debouncing) ---
+    
+    // New: Debouncing function
+    window.debounceAnalyticsFetch = function(value) {
+        clearTimeout(analyticsTimeout);
+        analyticsTimeout = setTimeout(() => {
+            fetchAnalytics(false); // Only filter, no need to force refetch all leads
+        }, 500); // Wait 500ms after last keystroke
     }
 
-    // --- ANALYTICS LOGIC - FIXED SELFIE & CLICK ---
     async function fetchAnalytics(forceRefetch = false) {
         const dateFilter = document.getElementById('dateFilter').value;
         const mobileFilter = document.getElementById('mobileFilter').value.trim();
         const noLeadsMessage = document.getElementById('noLeadsMessage');
 
+        // Step 1: Fetch data only if required
         if (allLeads.length === 0 || forceRefetch) {
             noLeadsMessage.textContent = 'Loading leads...';
             noLeadsMessage.style.display = 'block';
@@ -838,14 +1156,14 @@
             }
         }
         
-        // Apply Filters (Frontend side)
+        // Step 2: Apply Filters (Frontend side)
         filteredLeads = allLeads.filter(l => {
             const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
             const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter)); 
             return matchesMobile && matchesDate;
         });
 
-        // Reset display and render
+        // Step 3: Reset display and render
         leadsDisplayCount = 0;
         document.getElementById('leadsGrid').innerHTML = '';
         noLeadsMessage.style.display = 'none';
@@ -869,19 +1187,15 @@
 
         const html = nextBatch.map(l => {
             const timeStr = formatLeadTime(l.created_at);
-            // FIXED: Base64 Selfie - Robust Cleaning
             const selfieB64Data = l.selfie_b64;
             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
 
+            // FIXED: Base64 Selfie - Robust Cleaning
             if (selfieB64Data) {
-                // Remove whitespace
                 const cleanB64 = selfieB64Data.replace(/\s/g, '');
-                
-                // Separate prefix
                 const parts = cleanB64.split(';base64,');
                 const payload = parts.length > 1 ? parts[1] : parts[0];
                 
-                // Construct URL
                 if (payload) {
                     selfieSrc = `data:image/jpeg;base64,${payload}`;
                 }
@@ -916,7 +1230,7 @@
         btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
     }
 
-    // FIXED: Show Guest History - Now Clickable
+
     window.showGuestHistory = async function(mobile, name) {
         const container = document.getElementById('analyticsBodyContainer');
         const historyViewer = document.getElementById('historyViewer');
@@ -968,134 +1282,208 @@
         document.getElementById('historyViewer').style.display = 'none';
         fetchAnalytics(false); // Reload main grid with existing filters
     }
+    
+    // --- LINK GENERATION & COPY ---
 
-    // --- FIXED: Link Generation - Clickable Link ---
     document.getElementById('genLinkBtn').onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
         if (selected.length === 0) return alert('Select at least one event');
-        const res = await fetch(GENERATE_LINK_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_ids: selected }) });
+
+        const res = await fetch(GENERATE_LINK_API, { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ collection_id: collectionId, event_ids: selected }) 
+        });
         const data = await res.json();
         const box = document.getElementById('linkResult');
         const linkEl = document.getElementById('generatedLink');
+        
         linkEl.href = data.searchUrl;
         linkEl.textContent = data.searchUrl;
         box.style.display = 'block';
     };
 
-    // FIXED: Copy Link Function
     window.copyLink = function() {
         const linkText = document.getElementById('generatedLink').textContent;
-        navigator.clipboard.writeText(linkText).then(() => {
-            const feedback = document.createElement('div');
-            feedback.textContent = 'Copied!';
-            feedback.style.cssText = 'position:absolute; top:0; left:0; background:var(--ok); color:white; padding:5px 10px; border-radius:4px; font-size:12px;';
-            document.getElementById('linkResult').appendChild(feedback);
-            setTimeout(() => feedback.remove(), 2000);
-        }).catch(err => alert('Copy failed'));
+        // Use document.execCommand('copy') for better compatibility in iFrames
+        try {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = linkText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            const feedback = document.getElementById('copyFeedback');
+            feedback.classList.add('show');
+            setTimeout(() => feedback.classList.remove('show'), 2000);
+
+        } catch (err) {
+            console.error('Copy failed:', err);
+            alert('Copy failed. Please manually copy the link.');
+        }
     };
 
-    // --- UPLOAD LOGIC - FIXED STATUS ---
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    dropZone.onclick = () => fileInput.click();
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
-    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
-    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
-    fileInput.onchange = () => handleFiles(fileInput.files);
+    // --- PHOTO CONVERSION & UPLOAD LOGIC ---
+    
+    // Converts image File/Blob object to a new File object in the specified mimeType
+    function convertImageToFile(file, mimeType, quality=0.8) {
+        return new Promise((resolve, reject) => {
+            if (file.type === mimeType && file.type !== 'image/heic' && file.type !== 'image/heif') {
+                // If already correct type (and not HEIC/HEIF), resolve immediately
+                resolve(file);
+                return;
+            }
+
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            // Create a new File object with the original name (but changed extension)
+                            const newFileName = file.name.replace(/\.[^/.]+$/, "") + '.jpg';
+                            const newFile = new File([blob], newFileName, {
+                                type: mimeType,
+                                lastModified: Date.now()
+                            });
+                            resolve(newFile);
+                        } else {
+                            reject(new Error("Canvas to Blob conversion failed."));
+                        }
+                    }, mimeType, quality);
+                };
+                img.onerror = () => reject(new Error("Image loading failed."));
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error("File reading failed."));
+            reader.readAsDataURL(file);
+        });
+    }
 
     async function handleFiles(files) {
         const eventId = document.getElementById('uploadEventSelect').value;
-        if(!eventId) return alert("Select an event first!");
+        const uploadError = document.getElementById('uploadError');
+        const status = document.getElementById('uploadStatus');
+        uploadError.style.display = 'none';
+
+        if(!eventId) {
+            uploadError.textContent = "Select an event first!";
+            uploadError.style.display = 'block';
+            return;
+        }
         
-        const total = files.length;
+        const fileArr = Array.from(files);
+        const total = fileArr.length;
         if(total === 0) return;
 
         document.getElementById('progress-container').style.display = 'block';
         const progressBar = document.getElementById('progress-bar');
-        const status = document.getElementById('uploadStatus');
         
         const BATCH_SIZE = 10;
-        const fileArr = Array.from(files);
         let uploaded = 0;
+        let failedConversions = 0;
+        let filesToUpload = [];
 
-        status.innerHTML = 'Starting upload...';
-
-        for(let i=0; i<total; i+=BATCH_SIZE) {
-            const batch = fileArr.slice(i, i+BATCH_SIZE);
-            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+        status.innerHTML = `Processing files... (0/${total})`;
+        progressBar.style.width = '0%';
+        
+        // Step 1: Process (Convert to JPEG) all files upfront
+        for(let file of fileArr) {
             try {
-                const res = await fetch(UPLOAD_URLS_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData }) });
-                const data = await res.json();
-                await Promise.all(data.urls.map(async (u, idx) => {
-                    const file = batch[idx];
-                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
-                    uploaded++;
-                    progressBar.style.width = `${(uploaded/total)*100}%`;
-                    status.innerHTML = `Uploading... ${uploaded}/${total}`;
-                }));
-            } catch(err) { 
-                status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-                console.error(err); 
+                const processedFile = await convertImageToFile(file, 'image/jpeg');
+                filesToUpload.push(processedFile);
+            } catch (e) {
+                console.error(`Failed to process/convert file ${file.name}:`, e);
+                failedConversions++;
             }
         }
-        status.innerHTML = '<span class="success">✅ Upload Complete! Indexing in progress...</span>';
-        setTimeout(() => { 
-            init(); // FIXED: Auto refresh after upload
-            status.innerHTML = 'Photos indexed and ready!';
-        }, 3000); 
-    }
 
-    // --- FILTERS - FIXED AI TAGS & SCORE ---
-    window.applyFilters = function() {
-        const type = document.getElementById('filterType').value;
-        const query = document.getElementById('tagSearch').value.toLowerCase();
-        
-        filteredPhotos = allPhotos.filter(p => {
-            const matchesType = (type === 'ALL') ||
-                (type === 'BEST' && p.quality_score > 85) ||
-                (type === 'HAPPY' && p.emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
-                (type === 'GROUP' && p.face_count >= 3);
-            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
-            return matchesType && matchesQuery;
-        });
-        displayedPhotosCount = 0;
-        document.getElementById('galleryContainer').innerHTML = '';
-        renderNextBatch();
-    }
+        const totalToUpload = filesToUpload.length;
+        if(failedConversions > 0) {
+            uploadError.textContent = `⚠️ Warning: ${failedConversions} files could not be converted and will not be uploaded.`;
+            uploadError.style.display = 'block';
+        }
 
-    // --- DOWNLOAD ZIP - FIXED DISABLE ---
-    window.downloadAllZip = async function() {
-        if(filteredPhotos.length === 0) {
-            alert("No photos to download");
+        if(totalToUpload === 0) {
+            status.innerHTML = `No files left to upload.`;
+            setTimeout(() => { document.getElementById('progress-container').style.display = 'none'; }, 3000);
             return;
         }
-        const btn = event.target;
-        btn.disabled = true;
-        btn.textContent = 'Zipping...';
-        const zip = new JSZip();
-        const folder = zip.folder("photos");
-        const limit = filteredPhotos.slice(0, 100); // Limit to 100
-        for(let i=0; i<limit.length; i++) {
+
+        // Step 2: Upload in Batches
+        for(let i=0; i<totalToUpload; i+=BATCH_SIZE) {
+            const batch = filesToUpload.slice(i, i+BATCH_SIZE);
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            
             try {
-                const b = await fetch(limit[i].url).then(r=>r.blob());
-                folder.file(`photo_${i+1}.jpg`, b);
-            } catch(e) {
-                console.error('Download error for photo', i);
+                // Get pre-signed URLs
+                const res = await fetch(UPLOAD_URLS_API, { 
+                    method: 'POST', 
+                    headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData }) 
+                });
+                const data = await res.json();
+                
+                // Upload files to S3
+                await Promise.all(data.urls.map(async (u) => {
+                    const file = batch.find(f => f.name === u.filename);
+                    if (!file) return; 
+
+                    const uploadRes = await fetch(u.uploadURL, { 
+                        method: 'PUT', 
+                        body: file, 
+                        headers: { 'Content-Type': file.type } 
+                    });
+                    
+                    if (uploadRes.ok) {
+                        uploaded++;
+                    } else {
+                        console.error(`S3 Upload failed for ${file.name}:`, await uploadRes.text());
+                        uploadError.textContent = `❌ Upload failed for: ${file.name}.`;
+                        uploadError.style.display = 'block';
+                    }
+                    
+                    // Update progress bar
+                    progressBar.style.width = `${(uploaded/totalToUpload)*100}%`;
+                    status.innerHTML = `Uploading... ${uploaded}/${totalToUpload}`;
+                }));
+                
+            } catch(err) { 
+                console.error("API or Upload batch failed:", err); 
+                uploadError.textContent = `❌ Critical Error: Upload batch failed.`;
+                uploadError.style.display = 'block';
             }
         }
-        zip.generateAsync({type:"blob"}).then(c => saveAs(c, "photos.zip")).finally(() => {
-            btn.disabled = false;
-            btn.textContent = 'Download Zip';
-        });
+        
+        status.innerHTML = `<span class="success">✅ Upload Complete! ${uploaded} files successfully uploaded.</span>`;
+        setTimeout(() => { 
+            status.innerHTML = `Indexing in progress...`;
+            init(); // Refresh data/summary
+        }, 2000); 
     }
 
-    // --- FIXED: All Other Functions (Original + Improvements) ---
-    // (To reach 800+ lines, I've expanded with comments and minor fixes, but core is same)
+    // --- INITIALIZATION ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; dropZone.style.borderColor = 'var(--brand)'; };
+    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; dropZone.style.borderColor = 'var(--border)'; };
+    dropZone.ondrop = (e) => { e.preventDefault(); dropZone.style.background = '#151515'; dropZone.style.borderColor = 'var(--border)'; handleFiles(e.dataTransfer.files); };
+    fileInput.onchange = () => handleFiles(fileInput.files);
+    
+    // Set up default save behavior for new event form
+    document.getElementById('saveEventBtn').onclick = window.saveNewEvent;
 
-    // AI Tags & Score: Yes, connected to backend - filters use p.ai_tags and p.quality_score from API response
-    // Duplicate Face: Lambda (Rekognition) handles it - frontend just displays
-
-    init(); // Start everything
+    // Start App
+    init();
 </script>
 </body>
 </html>
