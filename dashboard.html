@@ -41,20 +41,20 @@
         .card:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
         .card h3 { margin: 0 0 20px; font-size: 18px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* STATS GRID - FIXED WITH ICONS */
+        /* STATS GRID */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .stat-box { background: #151515; padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .stat-box { background: #151515; padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
         .stat-icon { font-size: 24px; color: var(--brand); margin-bottom: 10px; }
-        .stat-label { font-size: 13px; color: var(--muted); }
+        .stat-label { font-size: 13px; color: var(--muted); display: block; }
         .stat-val { font-size: 24px; font-weight: 700; color: var(--brand); margin-top: 5px; }
 
-        /* FORM - FIXED EDIT MODE */
+        /* FORM */
         .form-group label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 14px; }
         .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #000; color: #fff; outline: none; margin-bottom: 15px; transition: border-color 0.3s; }
         .form-group input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
         #form-status { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; color: var(--brand); font-size: 12px; border: 1px solid var(--brand-soft); }
 
-        /* TABLE - FIXED MOBILE */
+        /* TABLE */
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 600px; }
         th { text-align: left; padding: 12px; color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--border); }
@@ -79,7 +79,7 @@
             .header { flex-direction: column; gap: 15px; text-align: center; }
         }
 
-        /* FIXED: Toast for Errors/Success */
+        /* FIXED: Toast */
         .toast { position: fixed; top: 20px; right: 20px; background: var(--brand); color: #000; padding: 12px 20px; border-radius: 8px; font-weight: 600; z-index: 1000; transform: translateX(400px); transition: transform 0.3s; }
         .toast.show { transform: translateX(0); }
         .toast.error { background: var(--danger); color: #fff; }
@@ -125,7 +125,7 @@
             <input type="text" id="collectionSearch" placeholder="Search collections..." oninput="filterCollections()" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; background:#000; color:#fff; margin-bottom:15px;">
         </div>
 
-        <!-- Create Collection - FIXED EDIT MODE -->
+        <!-- Create Collection -->
         <div class="card">
             <h3 id="form-title">Create New Collection</h3>
             <div id="form-status" style="background:#222; padding:10px; border-radius:8px; margin-bottom:15px; display:none; color:var(--brand); font-size:12px; border:1px solid var(--brand-soft);">
@@ -163,7 +163,7 @@
         </div>
     </div>
 
-    <!-- FIXED: Toast for Messages -->
+    <!-- FIXED: Toast -->
     <div id="toast" class="toast"></div>
 
 <script>
@@ -269,9 +269,21 @@
             const collections = data.Items || []; 
             collections.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             
-            // FIXED: Stats Update
-            document.getElementById('totalPhotos').textContent = data.total_photo_count || 0;
-            document.getElementById('totalLeads').textContent = data.total_leads_count || 0;
+            // FIXED: Sum total_photo_count from Items if not in root
+            let totalPhotos = data.total_photo_count || 0;
+            if (!totalPhotos) {
+                totalPhotos = collections.reduce((sum, col) => sum + (col.total_photo_count || 0), 0);
+            }
+            let totalLeads = data.total_leads_count || 0;
+            if (!totalLeads) {
+                totalLeads = collections.reduce((sum, col) => sum + (col.total_leads_count || 0), 0);
+            }
+            
+            // FIXED: Safe set - Check if element exists
+            const totalPhotosEl = document.getElementById('totalPhotos');
+            if (totalPhotosEl) totalPhotosEl.textContent = totalPhotos;
+            const totalLeadsEl = document.getElementById('totalLeads');
+            if (totalLeadsEl) totalLeadsEl.textContent = totalLeads;
             
             collectionsTbody.innerHTML = collections.length === 0 
                 ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:#666;">No collections found. Create one above!</td></tr>' 
@@ -396,15 +408,6 @@
     function initialize() {
         saveCollectionBtn.addEventListener('click', handleSaveCollection);
         cancelEditBtn.addEventListener('click', resetForm);
-        collectionsTbody.addEventListener('click', e => {
-            const target = e.target;
-            const collectionId = target.dataset.id;
-            if (target.classList.contains('edit-btn')) {
-                editCollection(collectionId, target.dataset.name);
-            } else if (target.classList.contains('delete-btn')) { 
-                confirmDeleteCollection(collectionId, target.dataset.name); 
-            }
-        });
         logoutButton.addEventListener('click', () => {
             localStorage.clear();
             const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent("https://selfiphotos.netlify.app/login.html")}`;
