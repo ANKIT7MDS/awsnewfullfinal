@@ -41,8 +41,8 @@
         .lead-mobile { color: var(--brand); font-size: 14px; margin-bottom: 4px; }
         .lead-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 8px; border-top: 1px dashed #333; padding-top: 8px; }
         
-        /* PHOTO GALLERY */
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+        /* PHOTO GALLERY - Fixed Thumbnail Size */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 5px; }
         .date-header { font-size: 16px; font-weight: 500; color: var(--text); padding: 15px 0 5px 0; margin-top: 20px; border-bottom: 1px solid var(--border); }
         .photo-card { position: relative; overflow: hidden; border-radius: 8px; cursor: pointer; aspect-ratio: 1 / 1; group; }
         .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
@@ -74,7 +74,7 @@
         .btn.danger { background: var(--danger); }
         
         /* People Grid */
-        .face-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-top: 20px; }
+        .face-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-top: 20px; }
         .face-group { text-align: center; cursor: pointer; padding: 15px; background: #151515; border: 1px solid var(--border); border-radius: 12px; transition: 0.3s; position: relative; }
         .face-group:hover { border-color: var(--brand); transform: translateY(-3px); }
         .face-thumb { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--brand); margin: 0 auto 10px; background: #222; }
@@ -218,12 +218,14 @@
                 <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">No leads found.</p>
                 <div class="load-more-container"><button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">Load More</button></div>
             </div>
-            <!-- History Viewer -->
+            <!-- History Viewer (FIXED) -->
             <div id="historyViewer" style="display:none; margin-top:20px;">
-                <button class="btn secondary" onclick="hideHistoryViewer()">← Back</button>
-                <h3 id="historyHeader" style="margin-top:10px;">History</h3>
-                <table style="width:100%; margin-top:10px;">
-                    <thead><tr><th>Time</th><th>Link Used</th><th>Selfie Match</th></tr></thead>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button class="btn secondary" onclick="hideHistoryViewer()">← Back</button>
+                    <h3 id="historyHeader" style="margin:0;">History</h3>
+                </div>
+                <table style="width:100%; margin-top:15px;">
+                    <thead><tr><th>Time</th><th>Link Used</th><th>Matches Found</th></tr></thead>
                     <tbody id="historyBody"></tbody>
                 </table>
             </div>
@@ -237,7 +239,7 @@
                 <h3>People</h3>
                 <button class="btn secondary" onclick="buildFaceGroups(true)">🔄 Refresh</button>
             </div>
-            <p style="color:var(--muted);">AI detected faces. Click to view photos.</p>
+            <p style="color:var(--muted);">AI detected faces. Click to view photos. (Upload new photos to see people here)</p>
             <div id="faceGroupGrid" class="face-group-grid"></div>
             <p id="noFacesMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">No faces detected yet.</p>
         </div>
@@ -251,7 +253,6 @@
     <img id="viewerImg" src="" onclick="event.stopPropagation()">
     <div class="viewer-actions" onclick="event.stopPropagation()">
         <button class="btn" onclick="downloadCurrentViewerPhoto()">⬇ Download</button>
-        <!-- Delete Photo from Viewer is safer to implement if needed -->
     </div>
 </div>
 
@@ -268,7 +269,7 @@
 </div>
 
 <script>
-    // --- HELPER FUNCTIONS ---
+    // --- HELPER FUNCTIONS (Top Level) ---
     function formatBytes(bytes) {
         if (!+bytes) return '0 B';
         const k=1024, i=Math.floor(Math.log(bytes)/Math.log(k));
@@ -292,7 +293,6 @@
     const GUEST_API = `${API_BASE}/save-details`;
     const SAVE_FACE_NAME_API = `${API_BASE}/save_face_name`;
     const LIST_PEOPLE_API = `${API_BASE}/list_people`;
-    // New: Delete Photo API (Placeholder - Needs Lambda)
     const DELETE_PHOTO_API = `${API_BASE}/delete-photo`; 
 
     // --- AUTH & STATE ---
@@ -313,10 +313,9 @@
     // --- INIT ---
     async function init() {
         try {
-            // Load people names in background
+            // Safe Load
             fetchPeople();
 
-            // Load Events & Summary
             const res = await fetch(GET_EVENTS_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
@@ -362,7 +361,6 @@
             const data = await res.json();
             allPhotos = data.photos || [];
             filteredPhotos = [...allPhotos];
-            // Sort new first
             filteredPhotos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
             
             document.getElementById('galleryContainer').innerHTML = '';
@@ -396,31 +394,20 @@
         document.getElementById('loadMoreBtn').style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
 
-    // --- DELETE PHOTO (Complete Feature) ---
     window.deletePhoto = async function(photoId, e) {
         e.stopPropagation();
-        if (!confirm("Delete this photo? This cannot be undone.")) return;
-        
+        if (!confirm("Delete this photo?")) return;
         try {
-            // NOTE: You need to create 'delete_photo' lambda for this endpoint to work
             const res = await fetch(DELETE_PHOTO_API, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ photo_id: photoId, collection_id: collectionId })
             });
-            
             if (res.ok) {
-                // Remove from local array and UI
                 allPhotos = allPhotos.filter(p => p.photo_id !== photoId);
                 filteredPhotos = filteredPhotos.filter(p => p.photo_id !== photoId);
                 e.target.parentElement.remove();
-            } else {
-                alert("Failed to delete. Ensure 'delete_photo' Lambda is connected.");
-            }
-        } catch (err) {
-            console.error("Delete Error:", err);
-            alert("Error deleting photo.");
-        }
+            } else { alert("Failed to delete."); }
+        } catch (err) { console.error(err); }
     }
 
     // --- PEOPLE ---
@@ -438,7 +425,6 @@
     function buildFaceGroups() {
         const grid = document.getElementById('faceGroupGrid');
         grid.innerHTML = '';
-        
         let groups = {};
         allPhotos.forEach(p => {
             (p.faces || []).forEach(f => {
@@ -448,14 +434,9 @@
                 groups[fid].count++;
             });
         });
-
         const sorted = Object.values(groups).sort((a,b) => b.count - a.count);
-        if (sorted.length === 0) {
-            document.getElementById('noFacesMessage').style.display = 'block';
-            return;
-        }
+        if (sorted.length === 0) { document.getElementById('noFacesMessage').style.display = 'block'; return; }
         document.getElementById('noFacesMessage').style.display = 'none';
-
         sorted.forEach(g => {
             const name = peopleMap[g.id] || 'Unknown';
             grid.innerHTML += `
@@ -464,8 +445,7 @@
                     <img src="${g.thumb}" class="face-thumb">
                     <div style="font-weight:600; margin-top:5px;">${name}</div>
                     <div style="font-size:12px; color:#888;">${g.count} photos</div>
-                </div>
-            `;
+                </div>`;
         });
     }
 
@@ -477,16 +457,18 @@
         switchTab('galleryTab');
     }
 
-    // --- EVENTS ---
+    // --- EVENTS (Fixed Edit/Delete) ---
     function renderEvents(evts) {
         const tb = document.getElementById('eventsTbody');
         const sel = document.getElementById('uploadEventSelect');
         const lnk = document.getElementById('linkEventList');
-        
         tb.innerHTML = ''; sel.innerHTML = '<option value="">Select Event...</option>'; lnk.innerHTML = '';
-        
         evts.forEach(e => {
-            tb.innerHTML += `<tr><td>${e.name}</td><td>${e.event_date}</td><td>${e.photo_count||0}</td><td><button class="btn secondary" onclick="editEvent('${e.event_id}')">Edit</button></td></tr>`;
+            // FIXED: Passing arguments correctly to editEvent
+            tb.innerHTML += `<tr><td>${e.name}</td><td>${e.event_date}</td><td>${e.photo_count||0}</td><td>
+                <button class="btn secondary" style="padding:4px 8px; font-size:11px;" onclick="editEvent('${e.event_id}', '${e.name}', '${e.event_date}')">Edit</button> 
+                <button class="btn danger" style="padding:4px 8px; font-size:11px; margin-left:5px;" onclick="deleteEvent('${e.event_id}', '${e.name}')">Delete</button>
+            </td></tr>`;
             sel.innerHTML += `<option value="${e.event_id}">${e.name}</option>`;
             lnk.innerHTML += `<label style="display:block; margin:5px 0;"><input type="checkbox" value="${e.event_id}" class="link-check"> ${e.name}</label>`;
         });
@@ -494,6 +476,8 @@
 
     window.openEventModal = () => {
         document.getElementById('eventForm').style.display = 'block';
+        document.getElementById('eventName').value = '';
+        document.getElementById('eventDate').value = '';
         document.getElementById('saveEventBtn').onclick = saveNewEvent;
     }
 
@@ -501,31 +485,36 @@
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
         if (!name) return alert("Name required");
-        
-        await fetch(UPSERT_EVENT_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-        });
+        await fetch(UPSERT_EVENT_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, name, event_date: date }) });
         document.getElementById('eventForm').style.display = 'none';
         init();
     }
+    
+    window.editEvent = function(eventId, name, date) {
+        document.getElementById('eventName').value = name || '';
+        document.getElementById('eventDate').value = date || '';
+        document.getElementById('saveEventBtn').onclick = () => updateEvent(eventId);
+        document.getElementById('eventForm').style.display = 'block';
+    };
 
-    // --- VIEWER ---
-    let currentViewerIdx = 0;
-    function openViewer(idx) {
-        currentViewerIdx = idx;
-        const p = filteredPhotos[idx];
-        document.getElementById('viewerImg').src = p.url;
-        document.getElementById('viewer').classList.add('open');
-    }
-    window.closeViewer = () => document.getElementById('viewer').classList.remove('open');
-    window.downloadCurrentViewerPhoto = () => {
-        const p = filteredPhotos[currentViewerIdx];
-        saveAs(p.url, `photo_${p.photo_id}.jpg`);
+    async function updateEvent(eventId) {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if(!name) return alert('Event Name is required.');
+        await fetch(UPSERT_EVENT_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date }) });
+        document.getElementById('eventForm').style.display = 'none';
+        init(); 
     }
 
-    // --- ANALYTICS ---
+    window.deleteEvent = async function(eventId, eventName) {
+        if (!confirm(`Delete ${eventName}?`)) return;
+        try {
+            await fetch(DELETE_EVENT_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ event_id: eventId, collection_id: collectionId }) });
+            init(); 
+        } catch (e) { alert("Delete failed"); }
+    }
+
+    // --- ANALYTICS & HISTORY ---
     async function fetchAnalytics(force=false) {
         if(allLeads.length === 0 || force) {
             try {
@@ -541,7 +530,6 @@
         const grid = document.getElementById('leadsGrid');
         grid.innerHTML = '';
         const mFilter = document.getElementById('mobileFilter').value;
-        
         const show = allLeads.filter(l => !mFilter || l.mobile.includes(mFilter));
         
         if(show.length === 0) document.getElementById('noLeadsMessage').style.display = 'block';
@@ -550,12 +538,15 @@
         show.slice(0, 50).forEach(l => {
             let src = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
             if(l.selfie_b64) {
-                // Robust cleanup
-                const clean = l.selfie_b64.replace(/\s/g, '').replace(/^data:image\/[a-z]+;base64,/, '');
-                src = `data:image/jpeg;base64,${clean}`;
+                // Try to handle truncated/corrupt base64 gracefully
+                try {
+                    let clean = l.selfie_b64.replace(/\s/g, '').replace(/^data:image\/[a-z]+;base64,/, '');
+                    // Only display if it looks somewhat valid length (even if truncated, browser tries)
+                    if(clean.length > 100) src = `data:image/jpeg;base64,${clean}`;
+                } catch(e){}
             }
             grid.innerHTML += `
-                <div class="lead-card">
+                <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name || 'Guest'}')">
                     <img src="${src}" class="selfie-img">
                     <div class="lead-info">
                         <div class="lead-name">${l.name || 'Guest'}</div>
@@ -567,7 +558,138 @@
         });
     }
     
+    // MISSING FUNCTION ADDED: showGuestHistory
+    window.showGuestHistory = async function(mobile, name) {
+        document.getElementById('analyticsBodyContainer').style.display = 'none';
+        document.getElementById('historyViewer').style.display = 'block';
+        document.getElementById('historyHeader').textContent = `History: ${name} (${mobile})`;
+        
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = '<tr><td colspan="3" class="loading">Loading history...</td></tr>';
+        
+        try {
+            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            const data = await res.json();
+            const history = data.history || [];
+            
+            if(history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No search history found.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = history.map(h => `
+                <tr>
+                    <td>${formatLeadTime(h.created_at)}</td>
+                    <td>${h.link_id || '-'}</td>
+                    <td>${h.match_count || 0} Photos</td>
+                </tr>
+            `).join('');
+            
+        } catch(e) {
+            console.error("History Error", e);
+            tbody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to load history.</td></tr>';
+        }
+    }
+
+    window.hideHistoryViewer = function() {
+        document.getElementById('historyViewer').style.display = 'none';
+        document.getElementById('analyticsBodyContainer').style.display = 'block';
+    }
+    
     window.debounceAnalyticsFetch = (v) => { clearTimeout(analyticsTimeout); analyticsTimeout = setTimeout(renderLeads, 500); }
+
+    // --- LINK GENERATION ---
+    document.getElementById('genLinkBtn').onclick = async () => {
+        const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
+        if (selected.length === 0) return alert('Select at least one event');
+        const res = await fetch(GENERATE_LINK_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId, event_ids: selected }) });
+        const data = await res.json();
+        document.getElementById('generatedLink').href = data.searchUrl;
+        document.getElementById('generatedLink').textContent = data.searchUrl;
+        document.getElementById('linkResult').style.display = 'block';
+    };
+    window.copyLink = function() {
+        const linkText = document.getElementById('generatedLink').textContent;
+        navigator.clipboard.writeText(linkText).then(() => alert("Copied!"));
+    };
+
+    // --- VIEWER & DOWNLOAD ---
+    let currentViewerIdx = 0;
+    function openViewer(idx) {
+        currentViewerIdx = idx;
+        const p = filteredPhotos[idx];
+        document.getElementById('viewerImg').src = p.url;
+        document.getElementById('viewer').classList.add('open');
+    }
+    window.closeViewer = () => document.getElementById('viewer').classList.remove('open');
+    window.downloadCurrentViewerPhoto = () => {
+        const p = filteredPhotos[currentViewerIdx];
+        saveAs(p.url, `photo_${p.photo_id}.jpg`);
+    }
+
+    // --- UPLOAD LOGIC ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--brand)'; };
+    dropZone.ondragleave = (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--border)'; };
+    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+    fileInput.onchange = () => handleFiles(fileInput.files);
+
+    function convertImageToFile(file, mimeType='image/jpeg', quality=0.8) {
+        return new Promise((resolve, reject) => {
+            if (file.type === mimeType) { resolve(file); return; }
+            const img = new Image();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    canvas.toBlob((blob) => resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + '.jpg', { type: mimeType, lastModified: Date.now() })), mimeType, quality);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function handleFiles(files) {
+        const eid = document.getElementById('uploadEventSelect').value;
+        if(!eid) return alert("Select an event!");
+        const total = files.length; if(total===0) return;
+        
+        document.getElementById('progress-container').style.display = 'block';
+        const pBar = document.getElementById('progress-bar'), stat = document.getElementById('uploadStatus');
+        
+        let processedFiles = [];
+        stat.textContent = `Processing ${total} files...`;
+        
+        for(let f of Array.from(files)) {
+            try { processedFiles.push(await convertImageToFile(f)); } catch(e) { console.error(e); }
+        }
+        
+        let uploaded = 0;
+        const BATCH = 10;
+        for(let i=0; i<processedFiles.length; i+=BATCH) {
+            const batch = processedFiles.slice(i, i+BATCH);
+            try {
+                const res = await fetch(UPLOAD_URLS_API, { method:'POST', headers:{'Authorization':`Bearer ${idToken}`}, body:JSON.stringify({collection_id:collectionId, event_id:eid, files:batch.map(f=>({name:f.name, type:f.type}))}) });
+                const d = await res.json();
+                await Promise.all(d.urls.map(async (u) => {
+                    const f = batch.find(bf => bf.name === u.filename);
+                    await fetch(u.uploadURL, { method:'PUT', body:f, headers:{'Content-Type':f.type} });
+                    uploaded++;
+                    pBar.style.width = `${(uploaded/total)*100}%`;
+                    stat.textContent = `Uploaded ${uploaded}/${total}`;
+                }));
+            } catch(e) { console.error(e); }
+        }
+        stat.textContent = "Complete! Refreshing...";
+        setTimeout(() => init(), 2000);
+    }
 
     // --- START ---
     init();
