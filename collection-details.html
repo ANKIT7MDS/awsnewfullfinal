@@ -517,8 +517,9 @@
             </div>
             <div id="dropZone">
                 <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
-                <p>Drag photos here to upload</p>
-                <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
+                <p>Drag photos here (JPG/PNG only) to upload</p>
+                <!-- Updated: Restrict file types -->
+                <input type="file" id="fileInput" multiple style="display:none" accept="image/jpeg, image/png">
             </div>
             <div id="progress-container" style="display:none;">
                 <div id="progress-bar"></div>
@@ -1265,18 +1266,28 @@
         const total = files.length;
         if(total === 0) return;
 
+        // Filter valid image types
+        const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
+        
+        if (validFiles.length < total) {
+            alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
+        }
+
+        if (validFiles.length === 0) return;
+
         document.getElementById('progress-container').style.display = 'block';
         const progressBar = document.getElementById('progress-bar');
         const status = document.getElementById('uploadStatus');
         
         const BATCH_SIZE = 10;
-        const fileArr = Array.from(files);
+        const fileArr = validFiles;
+        const totalValid = fileArr.length;
         let uploaded = 0;
 
         status.className = '';
         status.innerHTML = 'Starting upload...';
 
-        for(let i=0; i<total; i+=BATCH_SIZE) {
+        for(let i=0; i<totalValid; i+=BATCH_SIZE) {
             const batch = fileArr.slice(i, i+BATCH_SIZE);
             const fileData = batch.map(f => ({ name: f.name, type: f.type }));
             try {
@@ -1293,8 +1304,8 @@
                     const file = batch[idx];
                     await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
                     uploaded++;
-                    progressBar.style.width = `${(uploaded/total)*100}%`;
-                    status.innerHTML = `Uploading... ${uploaded}/${total}`;
+                    progressBar.style.width = `${(uploaded/totalValid)*100}%`;
+                    status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
                 }));
             } catch(err) { 
                 status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
