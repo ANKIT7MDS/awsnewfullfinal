@@ -34,29 +34,55 @@
         .btn.danger:hover { background-color: var(--danger); color: #fff; }
         .btn.secondary { background-color: var(--card); color: var(--text); border: 1px solid var(--border); }
         .btn.secondary:hover { border-color: var(--brand); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
         /* CARDS */
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: box-shadow 0.3s; }
+        .card:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
         .card h3 { margin: 0 0 20px; font-size: 18px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* STATS GRID */
+        /* STATS GRID - FIXED WITH ICONS */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .stat-box { background: #151515; padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+        .stat-box { background: #151515; padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .stat-icon { font-size: 24px; color: var(--brand); margin-bottom: 10px; }
+        .stat-label { font-size: 13px; color: var(--muted); }
         .stat-val { font-size: 24px; font-weight: 700; color: var(--brand); margin-top: 5px; }
 
-        /* FORM */
+        /* FORM - FIXED EDIT MODE */
         .form-group label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 14px; }
-        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #000; color: #fff; outline: none; margin-bottom: 15px; }
-        .form-group input:focus { border-color: var(--brand); }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #000; color: #fff; outline: none; margin-bottom: 15px; transition: border-color 0.3s; }
+        .form-group input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+        #form-status { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; color: var(--brand); font-size: 12px; border: 1px solid var(--brand-soft); }
 
-        /* TABLE */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        /* TABLE - FIXED MOBILE */
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 600px; }
         th { text-align: left; padding: 12px; color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--border); }
         td { padding: 16px 12px; border-bottom: 1px solid #1a1a1a; font-size: 14px; }
         tr:hover td { background: #151515; }
-        .action-btns { display: flex; gap: 8px; }
+        .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .edit-btn { background: var(--brand); color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        .delete-btn { background: var(--danger); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+
+        /* FIXED: Loading Overlay */
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 999; align-items: center; justify-content: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--muted); border-top: 4px solid var(--brand); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* FIXED: Search Input */
+        #collectionSearch { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #000; color: #fff; margin-bottom: 15px; }
         
+        /* FIXED: Mobile */
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .action-btns { flex-direction: column; gap: 4px; }
+            .header { flex-direction: column; gap: 15px; text-align: center; }
+        }
+
+        /* FIXED: Toast for Errors/Success */
+        .toast { position: fixed; top: 20px; right: 20px; background: var(--brand); color: #000; padding: 12px 20px; border-radius: 8px; font-weight: 600; z-index: 1000; transform: translateX(400px); transition: transform 0.3s; }
+        .toast.show { transform: translateX(0); }
+        .toast.error { background: var(--danger); color: #fff; }
     </style>
 </head>
 <body>
@@ -69,24 +95,42 @@
             </div>
         </div>
 
-        <!-- Account Status -->
+        <!-- FIXED: Loading Overlay -->
+        <div id="loadingOverlay">
+            <div style="text-align:center; color:#fff;">
+                <div class="spinner"></div>
+                <p style="margin-top:15px;">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Account Status - FIXED WITH ICONS -->
         <div class="card">
              <h3>Account Overview</h3>
              <div class="stats-grid">
                  <div class="stat-box">
-                     <span style="font-size: 13px; color: var(--muted);">Data Used</span>
+                     <div class="stat-icon">📊</div>
+                     <span class="stat-label">Data Used</span>
                      <div id="dataUsageText" class="stat-val">Loading...</div>
                  </div>
                  <div class="stat-box">
-                     <span style="font-size: 13px; color: var(--muted);">Expiry Date</span>
+                     <div class="stat-icon">📅</div>
+                     <span class="stat-label">Expiry Date</span>
                      <div id="expiryDateText" class="stat-val" style="color:#fff;">Loading...</div>
                  </div>
              </div>
         </div>
 
-        <!-- Create Collection -->
+        <!-- FIXED: Collection Search -->
+        <div class="card">
+            <input type="text" id="collectionSearch" placeholder="Search collections..." oninput="filterCollections()" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; background:#000; color:#fff; margin-bottom:15px;">
+        </div>
+
+        <!-- Create Collection - FIXED EDIT MODE -->
         <div class="card">
             <h3 id="form-title">Create New Collection</h3>
+            <div id="form-status" style="background:#222; padding:10px; border-radius:8px; margin-bottom:15px; display:none; color:var(--brand); font-size:12px; border:1px solid var(--brand-soft);">
+                Editing <span id="editingName"></span> - Changes will update existing collection
+            </div>
             <div class="form-group">
                 <label for="collectionNameInput">Collection Name (e.g. Rahul & Priya Wedding)</label>
                 <input type="text" id="collectionNameInput" placeholder="Enter name...">
@@ -119,6 +163,9 @@
         </div>
     </div>
 
+    <!-- FIXED: Toast for Messages -->
+    <div id="toast" class="toast"></div>
+
 <script>
     const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
     const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
@@ -139,8 +186,25 @@
     const collectionIdToEdit = document.getElementById('collectionIdToEdit');
     const formTitle = document.getElementById('form-title');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const toast = document.getElementById('toast');
     
     let idToken = null;
+
+    function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = `toast ${type}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function showLoading() {
+        loadingOverlay.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        loadingOverlay.style.display = 'none';
+    }
 
     function formatBytes(bytes = 0, decimals = 2) {
         if (!+bytes) return '0 Bytes';
@@ -162,13 +226,24 @@
         collectionNameInput.value = "";
         collectionIdToEdit.value = "";
         cancelEditBtn.style.display = 'none';
+        document.getElementById('form-status').style.display = 'none';
         saveCollectionBtn.disabled = false;
     }
 
+    // FIXED: Collection Search
+    function filterCollections() {
+        const q = document.getElementById('collectionSearch').value.toLowerCase();
+        document.querySelectorAll('#collectionsTbody tr').forEach(row => {
+            const name = row.cells[0].textContent.toLowerCase();
+            row.style.display = name.includes(q) ? '' : 'none';
+        });
+    }
+
     async function fetchAccountStatus() {
+        showLoading();
         try {
             const response = await fetch(GET_ACCOUNT_STATUS_API, { headers: { 'Authorization': `Bearer ${idToken}` } });
-            if (!response.ok) throw new Error('Failed');
+            if (!response.ok) throw new Error('Failed to fetch account status');
             const data = await response.json();
             const dataUsageEl = document.getElementById('dataUsageText');
             const expiryDateEl = document.getElementById('expiryDateText');
@@ -178,17 +253,25 @@
                 : `${formatBytes(data.total_storage_used_bytes || 0)} (Unlimited)`;
             
             expiryDateEl.textContent = data.expiry_date ? new Date(data.expiry_date).toLocaleDateString('en-IN') : 'Lifetime';
-        } catch (error) { console.error(error); }
+        } catch (error) { 
+            showToast('Failed to load account status', 'error');
+            console.error(error); 
+        } finally { hideLoading(); }
     }
 
     async function fetchCollections() {
+        showLoading();
         collectionsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Loading collections...</td></tr>';
         try {
             const response = await fetch(GET_COLLECTIONS_API, { headers: { 'Authorization': `Bearer ${idToken}` } });
-            if (!response.ok) throw new Error('Failed to fetch');
+            if (!response.ok) throw new Error('Failed to fetch collections');
             const data = await response.json();
             const collections = data.Items || []; 
             collections.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            // FIXED: Stats Update
+            document.getElementById('totalPhotos').textContent = data.total_photo_count || 0;
+            document.getElementById('totalLeads').textContent = data.total_leads_count || 0;
             
             collectionsTbody.innerHTML = collections.length === 0 
                 ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:#666;">No collections found. Create one above!</td></tr>' 
@@ -204,40 +287,67 @@
                     <td>${formatBytes(col.storage_bytes)}</td>
                     <td>
                         <div class="action-btns">
-                            <button class="btn secondary edit-btn" style="padding:6px 12px; font-size:12px;" data-id="${col.collection_id}" data-name="${col.name}">Edit</button>
-                            <button class="btn danger delete-btn" style="padding:6px 12px; font-size:12px;" data-id="${col.collection_id}">Delete</button>
+                            <button class="btn secondary edit-btn" style="padding:6px 12px; font-size:12px;" onclick="editCollection('${col.collection_id}', '${col.name}')">Edit</button>
+                            <button class="btn danger delete-btn" style="padding:6px 12px; font-size:12px;" onclick="confirmDeleteCollection('${col.collection_id}', '${col.name}')">Delete</button>
                             <a href="quick-upload.html?id=${col.collection_id}&name=${encodeURIComponent(col.name)}" target="_blank" class="btn secondary" style="padding:6px 12px; font-size:12px; color:var(--brand); border-color:var(--brand);">⚡ Link</a>
                         </div>
                     </td>`;
                 collectionsTbody.appendChild(row);
             });
+            showToast('Collections loaded successfully');
         } catch (error) { 
             collectionsTbody.innerHTML = `<tr><td colspan="6" style="color:red;">Error: ${error.message}</td></tr>`; 
-        }
+            showToast('Failed to load collections', 'error');
+        } finally { hideLoading(); }
     }
 
     async function handleSaveCollection() {
         const collectionName = collectionNameInput.value.trim();
-        if (!collectionName) return;
+        if (!collectionName) return showToast('Name is required', 'error');
         const payload = { name: collectionName };
         if (collectionIdToEdit.value) payload.collection_id = collectionIdToEdit.value;
         saveCollectionBtn.disabled = true;
         saveCollectionBtn.textContent = "Saving...";
+        showLoading();
         try {
             const response = await fetch(UPSERT_COLLECTION_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if(!response.ok) throw new Error('Failed');
+            if(!response.ok) throw new Error('Failed to save');
             resetForm();
             fetchCollections();
-        } catch (error) { alert(error.message); } 
-        finally { saveCollectionBtn.disabled = false; saveCollectionBtn.textContent = "Create Collection"; }
+            showToast(collectionIdToEdit.value ? 'Collection updated!' : 'Collection created!');
+        } catch (error) { 
+            showToast(error.message, 'error');
+            console.error(error); 
+        } finally { 
+            saveCollectionBtn.disabled = false; 
+            saveCollectionBtn.textContent = "Create Collection"; 
+            hideLoading(); 
+        }
     }
 
-    async function handleDeleteCollection(collectionId) {
-        if (!confirm("Delete this collection? This cannot be undone.")) return;
+    function editCollection(id, name) {
+        formTitle.textContent = "Edit Collection";
+        saveCollectionBtn.textContent = "Update";
+        collectionNameInput.value = name;
+        collectionIdToEdit.value = id;
+        cancelEditBtn.style.display = 'inline-block';
+        document.getElementById('form-status').style.display = 'block';
+        document.getElementById('editingName').textContent = name;
+        collectionNameInput.focus();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function confirmDeleteCollection(collectionId, name) {
+        if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+        showLoading();
         try {
             await fetch(DELETE_COLLECTION_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId }) });
             fetchCollections();
-        } catch (error) { alert(error.message); }
+            showToast(`${name} deleted.`);
+        } catch (error) { 
+            showToast('Delete failed', 'error');
+            console.error(error); 
+        } finally { hideLoading(); }
     }
     
     async function handleAuth() {
@@ -246,6 +356,7 @@
         idToken = localStorage.getItem('idToken');
 
         if (code) {
+            showLoading();
             welcomeMessage.textContent = 'Logging in...';
             try {
                 const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
@@ -263,17 +374,17 @@
                 console.error(error);
                 window.location.href = `login.html`;
                 return;
-            }
+            } finally { hideLoading(); }
         }
 
         if (!idToken) { window.location.href = 'login.html'; return; }
         
         try {
             const payload = JSON.parse(atob(idToken.split('.')[1]));
-            if (Date.now() > payload.exp * 1000) throw new Error("Expired");
+            if (Date.now() > payload.exp * 1000) throw new Error("Token expired");
             if ((payload['cognito:groups'] || []).includes('MasterAdmins')) { window.location.href = 'super-admin.html'; return; }
 
-            welcomeMessage.textContent = `Hi, ${payload.email.split('@')[0]}`;
+            welcomeMessage.textContent = `Hi, ${payload.email.split('@')[0]} - ${new Date().toLocaleDateString('en-IN')}`;
             fetchCollections();
             fetchAccountStatus();
         } catch (e) {
@@ -289,14 +400,9 @@
             const target = e.target;
             const collectionId = target.dataset.id;
             if (target.classList.contains('edit-btn')) {
-                formTitle.textContent = "Edit Collection";
-                saveCollectionBtn.textContent = "Update";
-                collectionNameInput.value = target.dataset.name;
-                collectionIdToEdit.value = collectionId;
-                cancelEditBtn.style.display = 'inline-block';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                editCollection(collectionId, target.dataset.name);
             } else if (target.classList.contains('delete-btn')) { 
-                handleDeleteCollection(collectionId); 
+                confirmDeleteCollection(collectionId, target.dataset.name); 
             }
         });
         logoutButton.addEventListener('click', () => {
@@ -304,6 +410,15 @@
             const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent("https://selfiphotos.netlify.app/login.html")}`;
             window.location.href = logoutUrl;
         });
+        // FIXED: Keyboard Shortcuts
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                collectionNameInput.focus();
+            }
+        });
+        // FIXED: Auto Refresh on Focus
+        window.addEventListener('focus', () => fetchCollections());
         handleAuth();
     }
     
