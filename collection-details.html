@@ -413,7 +413,8 @@
                 <span id="storageUsed">0 MB</span>
             </div>
         </div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button class="btn secondary" style="font-size:12px; padding:6px 12px;" onclick="window.location.reload()">Refresh Data 🔄</button>
             <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ Staff Upload Link</a>
         </div>
     </div>
@@ -545,7 +546,7 @@
             <h3>People Found in Photos</h3>
             <p style="color:var(--muted); margin-bottom:15px;">AI detected faces - click to see all photos of a person</p>
             <div id="faceGroupGrid" class="face-group-grid"></div>
-            <p id="noFacesMessage" class="empty-state" style="display:none;">No faces detected yet. Upload more photos!</p>
+            <p id="noFacesMessage" class="empty-state" style="display:none;">No faces detected yet. If you just uploaded photos, wait for AI processing and click 'Refresh Data'.</p>
         </div>
     </div>
 
@@ -706,10 +707,6 @@
         }
 
         let lastDate = '';
-        // If appending to existing list, find last date from DOM or state? 
-        // For simplicity, in this batch rendering we might duplicate date headers if splitting same day across batches.
-        // A robust solution checks the LAST rendered date. 
-        // Here we just render headers for current batch.
         
         nextBatch.forEach((photo, localIdx) => {
             const globalIdx = displayedPhotosCount + localIdx;
@@ -717,19 +714,11 @@
 
             // Simple date header logic for current batch
             if (photoDate !== lastDate) {
-                // Check if the very last element in container is a grid with same date? 
-                // For now, simpler to just append header if different from previous in this loop.
                 const dateHeader = document.createElement('div');
                 dateHeader.className = 'date-header';
                 dateHeader.textContent = photoDate;
                 container.appendChild(dateHeader);
                 
-                // Start a new grid section? Or just keep appending to one grid?
-                // The CSS uses a flat list of cards inside galleryContainer mostly, 
-                // but the prompt had a .gallery-grid. Let's wrap cards in grid.
-                // Actually, standard approach: One big container, cards flow. 
-                // But prompt code had `currentGroup.className = 'gallery-grid'`. 
-                // We will create a new grid for each date section.
                 const grid = document.createElement('div');
                 grid.className = 'gallery-grid';
                 grid.id = `grid-${globalIdx}`;
@@ -778,9 +767,14 @@
         });
 
         const grid = document.getElementById('faceGroupGrid');
+        const emptyMsg = document.getElementById('noFacesMessage');
+        
         if (Object.keys(faceGroups).length === 0) {
-            grid.innerHTML = '<p class="empty-state">No faces detected yet.</p>';
+            emptyMsg.style.display = 'block';
+            grid.innerHTML = '';
             return;
+        } else {
+            emptyMsg.style.display = 'none';
         }
 
         grid.innerHTML = Object.entries(faceGroups).sort((a,b) => b[1].count - a[1].count).map(([id, group]) => `
@@ -967,15 +961,25 @@
 
         const html = nextBatch.map(l => {
             const timeStr = formatLeadTime(l.created_at);
-            // Process Base64 Selfie
+            // Robust Base64 Selfie processing to prevent ERR_INVALID_URL
             const selfieB64Data = l.selfie_b64;
             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
 
-            if (selfieB64Data) {
-                const cleanB64 = selfieB64Data.replace(/\s/g, '');
-                const parts = cleanB64.split(';base64,');
-                const payload = parts.length > 1 ? parts[1] : parts[0];
-                if (payload) selfieSrc = `data:image/jpeg;base64,${payload}`;
+            if (selfieB64Data && selfieB64Data.length > 50) {
+                try {
+                    let cleanB64 = selfieB64Data.replace(/[\n\r\s]/g, ''); // Remove all whitespace
+                    // If it doesn't contain header, we assume it's just payload.
+                    // But some payloads might include 'data:image...'. 
+                    // Best bet: use the split logic but sanitize first.
+                    const parts = cleanB64.split(';base64,');
+                    const payload = parts.length > 1 ? parts[1] : parts[0];
+                    
+                    if (payload) {
+                        selfieSrc = `data:image/jpeg;base64,${payload}`;
+                    }
+                } catch(e) {
+                    console.error('Selfie render error', e);
+                }
             }
             
             const matchCount = l.match_count || 0;
