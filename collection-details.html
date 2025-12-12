@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
+    <!-- External Libraries for Zip Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -14,7 +15,7 @@
             --text: #e0e0e0;
             --muted: #888;
             --brand: #4285f4;
-            --brand-hover: #3367d6;
+            --brand-hover: #3367d6; /* Google Blue */
             --danger: #ea4335;
             --ok: #34a853;
         }
@@ -253,25 +254,48 @@
             border-radius: 50%;
             line-height: 1;
         }
-        /* Face Icons Bar - New for Grouping */
-        #faceIconsBar {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+        /* People Tab - Face Group Grid */
+        .face-group-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
         }
-        .face-icon {
-            width: 50px;
-            height: 50px;
+        .face-group {
+            text-align: center;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 12px;
+            transition: 0.3s;
+            background: #151515;
+            border: 1px solid transparent;
+        }
+        .face-group:hover {
+            background: #222;
+            border-color: var(--brand);
+        }
+        .face-thumb {
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid var(--brand);
-            cursor: pointer;
-            transition: transform 0.2s;
+            border: 3px solid var(--brand);
+            margin: 0 auto 10px;
+            background: #000;
         }
-        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
-        .face-icon:hover { transform: scale(1.1); }
+        .face-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .face-count {
+            font-size: 12px;
+            color: var(--muted);
+        }
         /* History Viewer */
         #historyViewer {
             display: none;
@@ -292,6 +316,7 @@
             font-size: 16px;
         }
         .empty-state button { margin-top: 20px; }
+        /* Link Result */
         #linkResult {
             background: #111;
             border: 1px dashed var(--brand);
@@ -309,6 +334,7 @@
             margin-bottom: 8px;
         }
         #generatedLink:hover { text-decoration: underline; }
+        /* Edit Event Button */
         .edit-btn {
             background: var(--brand);
             color: #fff;
@@ -328,6 +354,7 @@
             font-size: 11px;
             cursor: pointer;
         }
+        /* NEW: Face Name Header */
         .face-header {
             background: var(--card);
             padding: 15px;
@@ -345,6 +372,7 @@
         .face-header-content { flex-grow: 1; }
         .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
         .face-input-group { display: flex; gap: 10px; max-width: 300px; }
+        /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .filter-row-top { flex-direction: column; gap: 10px; }
             .filter-row-top > * { width: 100%; }
@@ -352,14 +380,23 @@
             .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
             .tabs { gap: 20px; }
         }
+        /* Loading Spinner */
         .loading {
             text-align: center;
             padding: 40px;
             color: var(--muted);
         }
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        /* People Tab Empty */
+        #faceGroupGrid.empty {
+            text-align: center;
+            padding: 60px;
+            color: var(--muted);
+        }
+       
         #uploadEventSelect:invalid { color: var(--muted); }
     </style>
 </head>
@@ -400,9 +437,9 @@
             <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
             <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
         </div>
-        <!-- Face Icons Bar -->
-        <div id="faceIconsBar"></div>
-        <!-- Face Naming Header -->
+        <!-- New Face Icons Bar -->
+        <div id="faceIconsBar" class="face-group-grid"></div>
+        <!-- Dynamic Header for Face Naming -->
         <div id="faceNamingHeader" class="face-header" style="display:none;">
             <img id="faceHeaderImg" src="">
             <div class="face-header-content">
@@ -470,7 +507,7 @@
             <h3>Generate Search Link</h3>
             <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include in the guest search link.</p>
             <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px; background:#111;"></div>
-            <input type="number" id="expiryHours" placeholder="Expiry in hours (default 24)" style="margin-bottom:10px;">
+            <input type="number" id="expiryHours" placeholder="Expiry in hours (0 for no expiry)" style="margin-bottom:10px;">
             <input type="password" id="linkPassword" placeholder="Optional password" style="margin-bottom:15px;">
             <button class="btn" id="genLinkBtn">Generate Link</button>
             <div id="linkResult">
@@ -529,11 +566,8 @@
     const collectionId = urlParams.get("id");
     const collectionNameParam = urlParams.get("name");
     const idToken = localStorage.getItem("idToken");
-    // Auth Guard
     if (!idToken) {
         console.warn("No idToken found. Some API calls may fail.");
-        // For test, set dummy if no real token
-        localStorage.setItem('idToken', 'dummy-token-for-test');
     }
     if (document.getElementById('assistantLink')) {
         document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
@@ -626,7 +660,7 @@
             const res = await fetch(GET_PHOTOS_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.dumps(body)
+                body: JSON.stringify({ collection_id: collectionId })
             });
             const data = await res.json();
             allPhotos = data.photos || [];
@@ -685,12 +719,15 @@
         const btn = document.getElementById('loadMoreBtn');
         btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
-    // --- FACE GROUPS ---
+    // --- FACE GROUPS (Combined Logic) ---
+   
+    // 1. Build map from loaded photos (Client Side)
     function buildLocalFaceMap() {
         faceGroups = {}; // Reset
         allPhotos.forEach(photo => {
             (photo.faces || []).forEach(face => {
-                const faceId = face.FaceId || face.faceId || 'unknown-' + Math.random();
+                // Handle different casing from Rekognition/Backend
+                const faceId = face.FaceId || face.faceId || face.ExternalImageId || `unknown-${Math.random()}`;
                
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
@@ -779,12 +816,6 @@
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
        
-        // Switch tab visually
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[onclick="switchTab('galleryTab')"]`).classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById('galleryTab').classList.add('active');
-       
         // Hide normal filters when in naming mode
         document.querySelector('.filter-row-top').style.display = 'none';
     };
@@ -792,8 +823,7 @@
         currentNamingFaceId = null;
         document.getElementById('faceNamingHeader').style.display = 'none';
         document.querySelector('.filter-row-top').style.display = 'flex';
-        // Go back to People tab
-        switchTab('faceGroupTab');
+        applyFilters();
     };
     window.saveFaceName = async () => {
         const newName = document.getElementById('faceNameInput').value.trim();
@@ -805,7 +835,7 @@
         try {
             const res = await fetch(SAVE_FACE_NAME_API, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }, // Lambda expects plain body usually, or wrapped
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     FaceId: currentNamingFaceId,
                     FaceName: newName,
@@ -813,17 +843,14 @@
                 })
             });
             if(res.ok) {
-                // Update Local State
-                if(faceGroups[currentNamingFaceId]) {
-                    faceGroups[currentNamingFaceId].name = newName;
-                }
-                alert("Name saved! It will appear in search shortly.");
-                cancelFaceNaming(); // Go back
+                faceGroups[currentNamingFaceId].name = newName;
+                renderFaceIcons();
+                alert("Name saved!");
+                cancelFaceNaming();
             } else {
                 alert("Failed to save name.");
             }
         } catch(e) {
-            console.error(e);
             alert("Error saving name.");
         } finally {
             btn.textContent = "Save";
@@ -895,14 +922,12 @@
         });
        
         document.getElementById('eventForm').style.display = 'none';
-        // Reset button for Create mode
         const btn = document.getElementById('saveEventBtn');
         btn.textContent = "Save";
         btn.onclick = createEvent;
        
         init();
     }
-    // Default create handler
     async function createEvent() {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
@@ -916,7 +941,6 @@
         document.getElementById('eventForm').style.display = 'none';
         init();
     }
-    // Bind initial create handler
     document.getElementById('saveEventBtn').onclick = createEvent;
     window.deleteEvent = async function(eventId, name) {
         if (!confirm(`Delete ${name}?`)) return;
@@ -1108,7 +1132,6 @@
             const batch = fileArr.slice(i, i+BATCH_SIZE);
             const fileData = batch.map(f => ({ name: f.name, type: f.type }));
             try {
-                // Get Presigned URLs
                 const res = await fetch(UPLOAD_URLS_API, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
@@ -1116,7 +1139,6 @@
                 });
                 const data = await res.json();
                
-                // Upload files
                 await Promise.all(data.urls.map(async (u, idx) => {
                     const file = batch[idx];
                     await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
