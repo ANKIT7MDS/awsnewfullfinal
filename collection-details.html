@@ -7,7 +7,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        /* Tere original style same, no change */
         :root {
             --bg: #0f0f0f;
             --card: #1e1e1e;
@@ -20,6 +19,7 @@
             --ok: #34a853;
         }
         * { box-sizing: border-box; }
+       
         body {
             margin: 0;
             background-color: var(--bg);
@@ -28,6 +28,8 @@
             padding-bottom: 60px;
         }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
+       
+        /* HEADER */
         .top-bar {
             display: flex;
             align-items: center;
@@ -45,8 +47,12 @@
             gap:5px;
         }
         h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
+       
+        /* STATS LINE */
         .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
         .stats-line b { color:white; font-weight:600; }
+       
+        /* TABS */
         .tabs {
             display: flex;
             gap: 30px;
@@ -65,8 +71,11 @@
         }
         .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
         .tab:hover { color: var(--brand-hover); }
+       
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+       
+        /* CARDS */
         .card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -77,6 +86,7 @@
             transition: box-shadow 0.2s;
         }
         .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        /* ANALYTICS NEW VIEW - SELFIE + CLICK */
         .lead-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -117,6 +127,8 @@
             padding-top: 8px;
         }
         .match-count { font-weight: 600; color: var(--ok); }
+       
+        /* Dropdown and Search Layout */
         .filter-row-top {
             display: flex;
             gap: 10px;
@@ -127,6 +139,7 @@
             flex: 1 1 150px;
             min-width: 150px;
         }
+        /* Select/Input Style */
         .filter-row-top select, .filter-row-top input {
             background: #111;
             border: 1px solid var(--border);
@@ -134,8 +147,10 @@
             border-radius: 8px;
             color: #fff;
             outline: none;
-            height: 44px;
+            height: 44px; /* Uniform height */
         }
+       
+        /* Button style consistency */
         .btn {
             background: var(--brand);
             color: #fff;
@@ -145,7 +160,7 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            height: 44px;
+            height: 44px; /* Match filter row height */
             flex: 0 0 auto;
             display: inline-flex;
             align-items: center;
@@ -161,20 +176,28 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        /* TABLES */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
         td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
         tr:hover { background: rgba(66, 133, 244, 0.1); }
+       
+        /* FORMS */
         input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
         input:focus { border-color: var(--brand); }
         input::placeholder { color: var(--muted); }
+       
+        /* UPLOAD */
         #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
         #dropZone:hover { border-color: var(--brand); }
         #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; border-radius: 2px; transition: width 0.3s ease; }
         #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
         #uploadStatus.error { color: var(--danger); }
         #uploadStatus.success { color: var(--ok); }
+       
+        /* Load More */
         .load-more-container { text-align: center; margin-top: 30px; }
+        /* GALLERY FIXES */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -196,6 +219,8 @@
             transition: opacity 0.3s;
         }
         .photo-card img.loaded { opacity: 1; }
+       
+        /* DATE HEADERS IN GALLERY */
         .date-header {
             grid-column: 1 / -1;
             color: var(--muted);
@@ -205,6 +230,7 @@
             padding-bottom: 5px;
             border-bottom: 1px solid #222;
         }
+        /* VIEWER */
         .viewer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95);
@@ -227,6 +253,7 @@
             border-radius: 50%;
             line-height: 1;
         }
+        /* Face Icons Bar - New for Grouping */
         #faceIconsBar {
             display: flex;
             gap: 10px;
@@ -245,6 +272,7 @@
         }
         .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
         .face-icon:hover { transform: scale(1.1); }
+        /* History Viewer */
         #historyViewer {
             display: none;
             margin-top: 30px;
@@ -256,6 +284,7 @@
         #historyViewer table {
             font-size: 13px;
         }
+        /* Empty States */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -441,8 +470,8 @@
             <h3>Generate Search Link</h3>
             <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include in the guest search link.</p>
             <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px; background:#111;"></div>
-            <input type="number" id="expiryHours" placeholder="Expiry in hours (default 24)" style="width:100%; margin-bottom:10px; padding:10px; background:#111; border:1px solid var(--border); border-radius:8px; color:#fff;">
-            <input type="password" id="linkPassword" placeholder="Optional password" style="width:100%; margin-bottom:15px; padding:10px; background:#111; border:1px solid var(--border); border-radius:8px; color:#fff;">
+            <input type="number" id="expiryHours" placeholder="Expiry in hours (default 24)" style="margin-bottom:10px;">
+            <input type="password" id="linkPassword" placeholder="Optional password" style="margin-bottom:15px;">
             <button class="btn" id="genLinkBtn">Generate Link</button>
             <div id="linkResult">
                 <a id="generatedLink" href="#" target="_blank">Click to open link</a>
@@ -500,35 +529,42 @@
     const collectionId = urlParams.get("id");
     const collectionNameParam = urlParams.get("name");
     const idToken = localStorage.getItem("idToken");
+    // Auth Guard
     if (!idToken) {
         console.warn("No idToken found. Some API calls may fail.");
+        // For test, set dummy if no real token
+        localStorage.setItem('idToken', 'dummy-token-for-test');
     }
     if (document.getElementById('assistantLink')) {
         document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
     }
-    // STATE
+    // STATE - Photo Gallery
     let allPhotos = [];
     let filteredPhotos = [];
     let displayedPhotosCount = 0;
     const PHOTOS_BATCH_SIZE = 20;
     let viewerIndex = 0;
+    // STATE - Leads Analytics
     let allLeads = [];
     let filteredLeads = [];
     let leadsDisplayCount = 0;
     const LEADS_BATCH_SIZE = 10;
+    // STATE - Face Groups
     let faceGroups = {};
     let directoryPeople = [];
     let currentNamingFaceId = null;
     let selectedFaces = new Set();
-    let nextToken = null;
     // --- TABS ---
     window.switchTab = function(tabId) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+       
+        // Activate Tab UI
         const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
         if(tabEl) tabEl.classList.add('active');
         const contentEl = document.getElementById(tabId);
         if(contentEl) contentEl.classList.add('active');
+       
         if(tabId === 'galleryTab') {
              if(allPhotos.length === 0) {
                 fetchPhotos();
@@ -544,12 +580,17 @@
             init();
         }
     }
-    // --- UTILITY ---
+    // --- UTILITY FUNCTIONS ---
     function formatLeadTime(isoString) {
         if (!isoString) return '-';
-        const dateObj = new Date(isoString);
-        return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        try {
+             const dateObj = new Date(isoString);
+             return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        } catch {
+             return isoString.substring(0, 10);
+        }
     }
+   
     function formatBytes(bytes) {
         if (!+bytes) return '0 B';
         const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -577,45 +618,85 @@
             document.getElementById('collectionName').textContent = "Error Loading";
         }
     }
-    // --- PHOTO GALLERY WITH PAGINATION ---
+    // --- PHOTO GALLERY ---
     async function fetchPhotos() {
         const container = document.getElementById('galleryContainer');
         container.innerHTML = '<p class="loading">Loading photos...</p>';
         try {
-            const body = { collection_id: collectionId };
             const res = await fetch(GET_PHOTOS_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.dumps(body)
             });
             const data = await res.json();
             allPhotos = data.photos || [];
             filteredPhotos = [...allPhotos];
+           
+            // Build local map immediately for consistency
             buildLocalFaceMap();
             displayedPhotosCount = 0;
             container.innerHTML = '';
             renderNextBatch();
-            renderFaceIcons();
         } catch (err) {
             container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Check console/network.</p>';
             console.error('Photo fetch error:', err);
         }
     }
-    // Render Next Batch (same as original)
     function renderNextBatch() {
-        // Your original code here
+        const container = document.getElementById('galleryContainer');
+        const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
+       
+        if (nextBatch.length === 0 && displayedPhotosCount === 0) {
+            container.innerHTML = '<p class="empty-state">No photos found.</p>';
+            document.getElementById('loadMoreBtn').style.display = 'none';
+            return;
+        }
+        let lastDate = '';
+       
+        nextBatch.forEach((photo, localIdx) => {
+            const globalIdx = displayedPhotosCount + localIdx;
+            const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
+            if (photoDate !== lastDate) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'date-header';
+                dateHeader.textContent = photoDate;
+                container.appendChild(dateHeader);
+               
+                const grid = document.createElement('div');
+                grid.className = 'gallery-grid';
+                grid.id = `grid-${globalIdx}`;
+                container.appendChild(grid);
+                lastDate = photoDate;
+            }
+            const currentGrid = container.querySelectorAll('.gallery-grid');
+            const targetGrid = currentGrid[currentGrid.length - 1];
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.onclick = () => openViewer(globalIdx);
+           
+            const thumbnailUrl = photo.thumbnail_url || photo.url;
+           
+            card.innerHTML = `
+                <img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
+            `;
+            targetGrid.appendChild(card);
+        });
+        displayedPhotosCount += nextBatch.length;
+        const btn = document.getElementById('loadMoreBtn');
+        btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
-    // --- FACE GROUPING & NAMING (New) ---
+    // --- FACE GROUPS ---
     function buildLocalFaceMap() {
-        faceGroups = {};
+        faceGroups = {}; // Reset
         allPhotos.forEach(photo => {
             (photo.faces || []).forEach(face => {
                 const faceId = face.FaceId || face.faceId || 'unknown-' + Math.random();
+               
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
                         id: faceId,
-                        name: face.FaceName || 'Unknown Person',
-                        thumbnail: photo.url,
+                        name: face.FaceName || face.Name || 'Unknown Person',
+                        thumbnail: photo.thumbnail_url || photo.url,
                         count: 0,
                         photos: []
                     };
@@ -625,49 +706,106 @@
             });
         });
     }
-    function renderFaceIcons() {
-        const bar = document.getElementById('faceIconsBar');
-        bar.innerHTML = '';
-        bar.style.display = 'flex';
-        const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
-        entries.forEach(group => {
-            const img = document.createElement('img');
-            img.className = 'face-icon';
-            img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${group.name.charAt(0)}`;
-            img.onclick = (e) => {
-                if (e.shiftKey) {
-                    if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
-                    else selectedFaces.add(group.id);
-                } else {
-                    selectedFaces.clear();
-                    selectedFaces.add(group.id);
-                }
-                applyFaceFilter();
-                img.classList.toggle('selected', selectedFaces.has(group.id));
-            };
-            bar.appendChild(img);
-        });
-    }
-    function applyFaceFilter() {
-        if (selectedFaces.size === 0) {
-            filteredPhotos = [...allPhotos];
-        } else {
-            filteredPhotos = allPhotos.filter(photo => {
-                const photoFaces = photo.face_ids || [];
-                return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
-            });
+    // 2. Load People Tab (API + Local Merge)
+    async function loadPeopleTab() {
+        const grid = document.getElementById('faceGroupGrid');
+        const emptyMsg = document.getElementById('noFacesMessage');
+       
+        // If we have photos but haven't built the map yet, do it now
+        if(Object.keys(faceGroups).length === 0 && allPhotos.length > 0) {
+            buildLocalFaceMap();
         }
+        grid.innerHTML = '<p class="loading">Fetching directory...</p>';
+        emptyMsg.style.display = 'none';
+        // Fetch from API (List People Lambda)
+        try {
+            const res = await fetch(LIST_PEOPLE_API, {
+                 method: 'GET',
+                 headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            const data = await res.json();
+            directoryPeople = data.people || [];
+        } catch(e) {
+            console.error("List People API Error:", e);
+            directoryPeople = [];
+        }
+        // Update local groups with names from directory (Database)
+        const dirMap = {};
+        directoryPeople.forEach(p => {
+             const fid = p.FaceId || p.faceId;
+             if(fid) dirMap[fid] = p;
+        });
+        // Merge: Apply names from DB to faces found in photos
+        Object.keys(faceGroups).forEach(fid => {
+            if (dirMap[fid]) {
+                const dbName = dirMap[fid].FaceName || dirMap[fid].Name;
+                if(dbName) faceGroups[fid].name = dbName;
+            }
+        });
+        const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
+        if (entries.length === 0) {
+            grid.innerHTML = '';
+            emptyMsg.style.display = 'block';
+            return;
+        }
+        grid.innerHTML = entries.map(group => {
+            const thumbSrc = group.thumbnail || `https://placehold.co/120x120/333/fff?text=${group.name.charAt(0)}`;
+            const clickAction = group.count > 0 ? `onclick="showFacePhotos('${group.id}')"` : `style="cursor:default; opacity:0.7;"`;
+            const subtext = group.count > 0 ? `${group.count} photos` : `In Directory`;
+            return `
+            <div class="face-group" ${clickAction}>
+                <img src="${thumbSrc}" class="face-thumb" onerror="this.src='https://placehold.co/120x120/333/fff?text=?'">
+                <div class="face-name">${group.name}</div>
+                <div class="face-count">${subtext}</div>
+            </div>`;
+        }).join('');
+    }
+    // --- FACE NAMING LOGIC ---
+    window.showFacePhotos = (faceId) => {
+        if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
+       
+        currentNamingFaceId = faceId; // Enter naming mode
+        const group = faceGroups[faceId];
+       
+        // Show Naming Header
+        const header = document.getElementById('faceNamingHeader');
+        document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
+        document.getElementById('faceNameInput').value = group.name === 'Unknown Person' ? '' : group.name;
+        document.getElementById('faceHeaderTitle').textContent = group.name === 'Unknown Person' ? "Who is this?" : `Photos of ${group.name}`;
+        header.style.display = 'flex';
+        // Filter Photos
+        filteredPhotos = group.photos;
         displayedPhotosCount = 0;
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
-    }
+       
+        // Switch tab visually
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('galleryTab')"]`).classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('galleryTab').classList.add('active');
+       
+        // Hide normal filters when in naming mode
+        document.querySelector('.filter-row-top').style.display = 'none';
+    };
+    window.cancelFaceNaming = () => {
+        currentNamingFaceId = null;
+        document.getElementById('faceNamingHeader').style.display = 'none';
+        document.querySelector('.filter-row-top').style.display = 'flex';
+        // Go back to People tab
+        switchTab('faceGroupTab');
+    };
     window.saveFaceName = async () => {
         const newName = document.getElementById('faceNameInput').value.trim();
         if(!newName || !currentNamingFaceId) return;
+       
+        const btn = event.target;
+        btn.textContent = "Saving...";
+        btn.disabled = true;
         try {
             const res = await fetch(SAVE_FACE_NAME_API, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' }, // Lambda expects plain body usually, or wrapped
                 body: JSON.stringify({
                     FaceId: currentNamingFaceId,
                     FaceName: newName,
@@ -675,28 +813,251 @@
                 })
             });
             if(res.ok) {
-                faceGroups[currentNamingFaceId].name = newName;
-                renderFaceIcons();
-                alert("Name saved!");
-                cancelFaceNaming();
+                // Update Local State
+                if(faceGroups[currentNamingFaceId]) {
+                    faceGroups[currentNamingFaceId].name = newName;
+                }
+                alert("Name saved! It will appear in search shortly.");
+                cancelFaceNaming(); // Go back
             } else {
                 alert("Failed to save name.");
             }
         } catch(e) {
+            console.error(e);
             alert("Error saving name.");
+        } finally {
+            btn.textContent = "Save";
+            btn.disabled = false;
         }
     };
-    // --- LINK GENERATION WITH EXPIRY/PASSWORD ---
+    // --- VIEWER LOGIC ---
+    window.openViewer = (idx) => {
+        if(!filteredPhotos[idx]) return;
+        viewerIndex = idx;
+        document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+        document.getElementById('viewer').classList.add('open');
+    }
+    window.closeViewer = () => {
+        document.getElementById('viewer').classList.remove('open');
+    }
+    // --- EVENT LOGIC ---
+    function renderEvents(events) {
+        const tbody = document.getElementById('eventsTbody');
+        const uploadSelect = document.getElementById('uploadEventSelect');
+        const linkList = document.getElementById('linkEventList');
+       
+        tbody.innerHTML = '';
+        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+        linkList.innerHTML = '';
+       
+        events.forEach(ev => {
+            // Table Row
+            tbody.innerHTML += `
+                <tr>
+                    <td>${ev.name}</td>
+                    <td>${ev.event_date || '-'}</td>
+                    <td>${ev.photo_count || 0}</td>
+                    <td>
+                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${ev.name}', '${ev.event_date}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${ev.name}')">Delete</button>
+                    </td>
+                </tr>`;
+           
+            // Upload Dropdown
+            uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+           
+            // Link Checkbox
+            linkList.innerHTML += `
+                <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+                    <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
+                </label>`;
+        });
+    }
+    window.editEvent = function(eventId, name, date) {
+        document.getElementById('eventName').value = name;
+        document.getElementById('eventDate').value = date;
+       
+        const btn = document.getElementById('saveEventBtn');
+        btn.onclick = () => updateEvent(eventId);
+        btn.textContent = "Update";
+       
+        document.getElementById('eventForm').style.display = 'block';
+    };
+    async function updateEvent(eventId) {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if(!name) return alert('Name required');
+       
+        await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
+        });
+       
+        document.getElementById('eventForm').style.display = 'none';
+        // Reset button for Create mode
+        const btn = document.getElementById('saveEventBtn');
+        btn.textContent = "Save";
+        btn.onclick = createEvent;
+       
+        init();
+    }
+    // Default create handler
+    async function createEvent() {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if(!name) return alert('Name required');
+       
+        await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+        });
+        document.getElementById('eventForm').style.display = 'none';
+        init();
+    }
+    // Bind initial create handler
+    document.getElementById('saveEventBtn').onclick = createEvent;
+    window.deleteEvent = async function(eventId, name) {
+        if (!confirm(`Delete ${name}?`)) return;
+        try {
+            await fetch(DELETE_EVENT_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
+            });
+            init();
+        } catch (e) {
+            alert('Delete failed.');
+            console.error(e);
+        }
+    }
+    // --- ANALYTICS LOGIC ---
+    async function fetchAnalytics(forceRefetch = false) {
+        const dateFilter = document.getElementById('dateFilter').value;
+        const mobileFilter = document.getElementById('mobileFilter').value.trim();
+        const noLeadsMessage = document.getElementById('noLeadsMessage');
+        if (allLeads.length === 0 || forceRefetch) {
+            noLeadsMessage.textContent = 'Loading leads...';
+            noLeadsMessage.style.display = 'block';
+            try {
+                const res = await fetch(GUEST_API, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                });
+               
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+                allLeads = data.leads || [];
+            } catch(e) {
+                console.error("Fetch Leads Error:", e);
+                noLeadsMessage.textContent = 'Failed to fetch leads.';
+                return;
+            }
+        }
+       
+        filteredLeads = allLeads.filter(l => {
+            const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
+            const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
+            return matchesMobile && matchesDate;
+        });
+        leadsDisplayCount = 0;
+        document.getElementById('leadsGrid').innerHTML = '';
+        noLeadsMessage.style.display = 'none';
+        if(filteredLeads.length === 0) {
+            noLeadsMessage.textContent = 'No leads found matching criteria.';
+            noLeadsMessage.style.display = 'block';
+        } else {
+            loadMoreLeads();
+        }
+    }
+    window.loadMoreLeads = function() {
+        const leadsGrid = document.getElementById('leadsGrid');
+        const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
+       
+        if (nextBatch.length === 0) {
+            document.getElementById('loadMoreLeadsBtn').style.display = 'none';
+            return;
+        }
+        const html = nextBatch.map(l => {
+            const timeStr = formatLeadTime(l.created_at);
+            let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+            if (l.selfie_b64) {
+                selfieSrc = `data:image/jpeg;base64,${l.selfie_b64.split(';base64,')[1] || l.selfie_b64}`;
+            }
+            const matchCount = l.match_count || 0;
+           
+            return `
+                <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name || 'Unknown'}')">
+                    <img src="${selfieSrc}" class="selfie-img" alt="Selfie" onerror="this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
+                    <div class="lead-info">
+                        <div class="lead-name">${l.name || 'Unknown Guest'}</div>
+                        <div class="lead-mobile">${l.mobile || '-'}</div>
+                        <div class="lead-meta">
+                            <span>Link ID: ${l.link_id || '-'}</span>
+                            <span class="match-count">📸 Found: ${matchCount}</span>
+                        </div>
+                        <div class="lead-meta">
+                            <span>Last: ${timeStr}</span>
+                            <span>Total Searches: ${l.total_searches || 1}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+       
+        leadsGrid.innerHTML += html;
+        leadsDisplayCount += nextBatch.length;
+        const btn = document.getElementById('loadMoreLeadsBtn');
+        btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
+    }
+    window.showGuestHistory = async function(mobile, name) {
+        const container = document.getElementById('analyticsBodyContainer');
+        const historyViewer = document.getElementById('historyViewer');
+        const historyBody = document.getElementById('historyBody');
+       
+        container.style.display = 'none';
+        historyViewer.style.display = 'block';
+        document.getElementById('historyHeader').textContent = `${name}`;
+        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+       
+        try {
+            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+            const history = data.history || [];
+           
+            if(history.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+                return;
+            }
+            historyBody.innerHTML = history.map(h => `
+                <tr>
+                    <td>${formatLeadTime(h.created_at)}</td>
+                    <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
+                    <td style="color:var(--muted);">${h.name || '-'} (Found: ${h.match_count || 0})</td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+        }
+    }
+    window.hideHistoryViewer = function() {
+        document.getElementById('analyticsBodyContainer').style.display = 'block';
+        document.getElementById('historyViewer').style.display = 'none';
+    }
+    // --- LINK GENERATION ---
     document.getElementById('genLinkBtn').onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
-        const expiry = document.getElementById('expiryHours').value || 24;
-        const password = document.getElementById('linkPassword').value || '';
         if (selected.length === 0) return alert('Select at least one event');
        
         const res = await fetch(GENERATE_LINK_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_ids: selected, expiry_hours: expiry, password: password })
+            body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
         });
         const data = await res.json();
         const box = document.getElementById('linkResult');
@@ -705,12 +1066,127 @@
         linkEl.textContent = data.searchUrl;
         box.style.display = 'block';
     };
-    // --- ANALYTICS WITH SELFIE ---
-    async function fetchAnalytics(forceRefetch = false) {
-        // Your original code + selfie img
-        // (Add img src = `data:image/jpeg;base64,${l.selfie_b64.split(';base64,')[1] || l.selfie_b64}` in lead-card)
+    window.copyLink = function() {
+        const linkText = document.getElementById('generatedLink').textContent;
+        navigator.clipboard.writeText(linkText).then(() => {
+            alert('Link copied to clipboard');
+        }).catch(err => alert('Copy failed'));
+    };
+    // --- UPLOAD LOGIC ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+   
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
+    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
+    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+    fileInput.onchange = () => handleFiles(fileInput.files);
+    async function handleFiles(files) {
+        const eventId = document.getElementById('uploadEventSelect').value;
+        if(!eventId) return alert("Select an event first!");
+       
+        const total = files.length;
+        if(total === 0) return;
+        // Filter valid image types
+        const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
+       
+        if (validFiles.length < total) {
+            alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
+        }
+        if (validFiles.length === 0) return;
+        document.getElementById('progress-container').style.display = 'block';
+        const progressBar = document.getElementById('progress-bar');
+        const status = document.getElementById('uploadStatus');
+       
+        const BATCH_SIZE = 10;
+        const fileArr = validFiles;
+        const totalValid = fileArr.length;
+        let uploaded = 0;
+        status.className = '';
+        status.innerHTML = 'Starting upload...';
+        for(let i=0; i<totalValid; i+=BATCH_SIZE) {
+            const batch = fileArr.slice(i, i+BATCH_SIZE);
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            try {
+                // Get Presigned URLs
+                const res = await fetch(UPLOAD_URLS_API, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+                });
+                const data = await res.json();
+               
+                // Upload files
+                await Promise.all(data.urls.map(async (u, idx) => {
+                    const file = batch[idx];
+                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+                    uploaded++;
+                    progressBar.style.width = `${(uploaded/totalValid)*100}%`;
+                    status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
+                }));
+            } catch(err) {
+                status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+                console.error(err);
+            }
+        }
+        status.className = 'success';
+        status.innerHTML = '✅ Upload Complete! Indexing in progress...';
+        setTimeout(() => {
+            init();
+            status.innerHTML = 'Photos indexed and ready!';
+        }, 3000);
     }
-    // Rest of your original JS (renderEvents, upload, etc.)
+    // --- FILTERS ---
+    window.applyFilters = function() {
+        const type = document.getElementById('filterType').value;
+        const query = document.getElementById('tagSearch').value.toLowerCase();
+       
+        filteredPhotos = allPhotos.filter(p => {
+            const matchesType = (type === 'ALL') ||
+                (type === 'BEST' && (p.quality_score || 0) > 85) ||
+                (type === 'HAPPY' && (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+                (type === 'GROUP' && (p.face_count || 0) >= 3);
+           
+            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
+            return matchesType && matchesQuery;
+        });
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+    }
+    // --- DOWNLOAD ZIP ---
+    window.downloadAllZip = async function() {
+        if(filteredPhotos.length === 0) return alert("No photos to download");
+       
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const limit = filteredPhotos.slice(0, 100); // Browser limitation safeguard
+       
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Zipping...';
+       
+        let count = 0;
+        for(let i=0; i<limit.length; i++) {
+            try {
+                const response = await fetch(limit[i].url);
+                const blob = await response.blob();
+                folder.file(`photo_${i+1}.jpg`, blob);
+                count++;
+                btn.textContent = `Zipping ${count}/${limit.length}`;
+            } catch(e) {
+                console.error('Download error for photo', i);
+            }
+        }
+       
+        zip.generateAsync({type:"blob"}).then(c => {
+            saveAs(c, "photos.zip");
+        }).finally(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
+    }
     // Start App
     init();
 </script>
