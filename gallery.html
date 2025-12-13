@@ -1,479 +1,456 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EventLens – गैलरी</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-  <style>
-    /* यहाँ वही gallery वाली styles रख रहे हैं जो ऊपर index में हैं,
-       ताकि दोनों pages का look & feel एक जैसा रहे।
-       चाहो तो इसको अलग CSS file में भी रख सकते हो।
-    */
-    :root {
-      --bg: #050505;
-      --card: #101010;
-      --accent: #00e676;
-      --accent-soft: rgba(0, 230, 118, 0.15);
-      --accent-strong: #00c853;
-      --accent-secondary: #00b0ff;
-      --danger: #ff5252;
-      --text: #ffffff;
-      --muted: #a0a0a0;
-      --border: #262626;
-      --chip-bg: #181818;
-    }
-    * { box-sizing: border-box; margin:0; padding:0; }
-    body {
-      background: radial-gradient(circle at top, #202020 0, #050505 45%);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height: 100vh;
-    }
-    .page { max-width: 1200px; margin: 0 auto; padding: 18px 14px 40px; }
-    header { margin-bottom: 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
-    header h1 { font-size: clamp(22px, 4vw, 28px); font-weight: 700; }
-    header p { font-size: 13px; color: var(--muted); }
-
-    .card {
-      background: rgba(0, 0, 0, 0.82);
-      border-radius: 18px;
-      border: 1px solid var(--border);
-      padding: 18px 16px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.9);
-    }
-
-    .gallery-header {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .gallery-title { font-size: 16px; font-weight: 600; }
-    .gallery-sub { font-size: 13px; color: var(--muted); }
-
-    .chip-row { display:flex; flex-wrap:wrap; gap:8px; }
-    .chip {
-      border-radius:999px; padding:6px 12px; background:var(--chip-bg);
-      border:1px solid #262626; font-size:12px; cursor:pointer;
-      color:var(--muted); display:inline-flex; align-items:center; gap:6px;
-    }
-    .chip span.dot { width:6px; height:6px; border-radius:999px; background:var(--accent); }
-    .chip.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
-
-    .selection-toolbar {
-      margin-top: 10px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      background: #050505;
-      border: 1px solid var(--border);
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 13px;
-    }
-    .selection-toolbar strong { color:var(--accent); }
-
-    .btn {
-      border:none; outline:none; cursor:pointer; border-radius:999px;
-      font-size:13px; font-weight:600; padding:7px 14px;
-      display:inline-flex; align-items:center; gap:6px;
-      background:var(--accent); color:#000;
-    }
-    .btn-secondary { background:#181818; color:var(--text); }
-    .btn:disabled { opacity:.4; cursor:default; }
-
-    .grid {
-      margin-top:10px;
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:6px;
-    }
-    @media (min-width:640px){ .grid{ grid-template-columns: repeat(3,minmax(0,1fr)); gap:8px;} }
-    @media (min-width:960px){ .grid{ grid-template-columns: repeat(4,minmax(0,1fr)); gap:10px;} }
-
-    .tile {
-      position:relative; border-radius:10px; overflow:hidden;
-      cursor:zoom-in; background:#111; border:1px solid #101010;
-      transform-origin:center; transition:transform .15s, box-shadow .15s, border-color .15s;
-    }
-    .tile img { width:100%; height:100%; object-fit:cover; display:block; }
-    .tile:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,.8); border-color:#333; }
-    .tile-selected { box-shadow:0 0 0 2px var(--accent), 0 10px 32px rgba(0,230,118,.5); }
-
-    .tile-badge {
-      position:absolute; top:6px; right:6px;
-      background:rgba(0,0,0,.7); border-radius:999px;
-      padding:3px 8px; font-size:11px; display:inline-flex;
-      align-items:center; gap:4px; cursor:pointer;
-      border:1px solid rgba(255,255,255,.2);
-    }
-    .tile-badge span.check {
-      width:14px; height:14px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.6);
-      display:inline-flex; align-items:center; justify-content:center;
-      font-size:11px;
-    }
-    .tile-badge.selected {
-      background:rgba(0,230,118,.9); border-color:rgba(0,0,0,.4); color:#000;
-    }
-    .tile-badge.selected span.check { border-color:transparent; background:#000; }
-
-    .tile-footer {
-      position:absolute; left:0; right:0; bottom:0;
-      padding:4px 6px 6px;
-      background:linear-gradient(to top, rgba(0,0,0,.96), transparent);
-      font-size:11px; display:flex; justify-content:space-between; align-items:center;
-    }
-    .tile-footer span.small { font-size:10px; color:#c6c6c6; }
-
-    /* viewer */
-    .viewer-backdrop {
-      position:fixed; inset:0; background:rgba(0,0,0,.95);
-      display:none; align-items:center; justify-content:center; z-index:999;
-    }
-    .viewer-backdrop.open { display:flex; }
-    .viewer-inner { max-width:96vw; max-height:94vh; display:flex; flex-direction:column; gap:10px; }
-    .viewer-topbar, .viewer-bottombar {
-      display:flex; justify-content:space-between; align-items:center;
-      font-size:13px; color:#f5f5f5;
-    }
-    .viewer-img-wrap {
-      flex:1; display:flex; align-items:center; justify-content:center; position:relative;
-    }
-    .viewer-img-wrap img {
-      max-width:100%; max-height:100%;
-      border-radius:12px; box-shadow:0 18px 60px rgba(0,0,0,.9);
-      object-fit:contain;
-    }
-    .viewer-arrow {
-      position:absolute; top:50%; transform:translateY(-50%);
-      width:34px; height:34px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(0,0,0,.6); display:flex; align-items:center;
-      justify-content:center; cursor:pointer; color:#fff; font-size:18px;
-    }
-    .viewer-arrow.left { left:8px; }
-    .viewer-arrow.right { right:8px; }
-    .viewer-close { cursor:pointer; font-size:18px; padding:4px 6px; }
-    .viewer-count { color:#b0b0b0; }
-    .viewer-btn {
-      border-radius:999px; border:1px solid rgba(255,255,255,.18);
-      background:rgba(0,0,0,.5); padding:6px 10px; font-size:13px;
-      cursor:pointer; color:#fff;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Collection Manager</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --card: #1e1e1e;
+            --border: #333;
+            --text: #e0e0e0;
+            --muted: #888;
+            --brand: #4285f4;
+            --brand-hover: #3367d6; /* Google Blue */
+            --danger: #ea4335;
+            --ok: #34a853;
+        }
+        * { box-sizing: border-box; }
+       
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Google Sans', Roboto, Arial, sans-serif;
+            padding-bottom: 60px;
+        }
+        .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
+       
+        /* HEADER */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .back-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            display:flex;
+            align-items:center;
+            gap:5px;
+        }
+        h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
+       
+        /* STATS LINE */
+        .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
+        .stats-line b { color:white; font-weight:600; }
+       
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 30px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 12px 0;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+        .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+        .tab:hover { color: var(--brand-hover); }
+       
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+       
+        /* CARDS */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        /* ANALYTICS NEW VIEW - SELFIE + CLICK */
+        .lead-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .lead-card {
+            background: #151515;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+            cursor: pointer;
+        }
+        .lead-card:hover { border-color: var(--brand); }
+        .selfie-img {
+            width: 70px;
+            height: 70px;
+            min-width: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--brand);
+            background: #222;
+        }
+        .lead-info { flex-grow: 1; }
+        .lead-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .lead-mobile { color: var(--brand); font-size: 14px; margin-bottom: 4px; }
+        .lead-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 8px;
+            border-top: 1px dashed #333;
+            padding-top: 8px;
+        }
+        .match-count { font-weight: 600; color: var(--ok); }
+       
+        /* Dropdown and Search Layout */
+        .filter-row-top {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-row-top > * {
+            flex: 1 1 150px;
+            min-width: 150px;
+        }
+        /* Select/Input Style */
+        .filter-row-top select, .filter-row-top input {
+            background: #111;
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+            height: 44px; /* Uniform height */
+        }
+       
+        /* Button style consistency */
+        .btn {
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            height: 44px; /* Match filter row height */
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+        .btn.secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* TABLES */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+        td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
+        tr:hover { background: rgba(66, 133, 244, 0.1); }
+       
+        /* FORMS */
+        input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
+        input:focus { border-color: var(--brand); }
+        input::placeholder { color: var(--muted); }
+       
+        /* UPLOAD */
+        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
+        #dropZone:hover { border-color: var(--brand); }
+        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; border-radius: 2px; transition: width 0.3s ease; }
+        #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
+        #uploadStatus.error { color: var(--danger); }
+        #uploadStatus.success { color: var(--ok); }
+       
+        /* Load More */
+        .load-more-container { text-align: center; margin-top: 30px; }
+        /* GALLERY FIXES */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 5px;
+        }
+        .photo-card {
+            aspect-ratio: 1;
+            overflow: hidden;
+            background: #000;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .photo-card img.loaded { opacity: 1; }
+       
+        /* DATE HEADERS IN GALLERY */
+        .date-header {
+            grid-column: 1 / -1;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 500;
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #222;
+        }
+        /* VIEWER */
+        .viewer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .viewer.open { opacity: 1; pointer-events: auto; }
+        .viewer img { max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .viewer-close {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 12px;
+            border-radius: 50%;
+            line-height: 1;
+        }
+        /* Face Icons Bar - New for Grouping */
+        #faceIconsBar {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .face-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--brand);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
+        .face-icon:hover { transform: scale(1.1); }
+        /* History Viewer */
+        #historyViewer {
+            display: none;
+            margin-top: 30px;
+            background: #151515;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        #historyViewer table {
+            font-size: 13px;
+        }
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--muted);
+            font-size: 16px;
+        }
+        .empty-state button { margin-top: 20px; }
+        /* Link Result */
+        #linkResult {
+            background: #111;
+            border: 1px dashed var(--brand);
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            margin-top: 15px;
+        }
+        #generatedLink {
+            color: var(--brand);
+            text-decoration: none;
+            font-size: 14px;
+            word-break: break-all;
+            display: block;
+            margin-bottom: 8px;
+        }
+        #generatedLink:hover { text-decoration: underline; }
+        /* Edit Event Button */
+        .edit-btn {
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .delete-btn {
+            background: var(--danger);
+            color: #fff;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        /* NEW: Face Name Header */
+        .face-header {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--brand);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .face-header img {
+            width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--brand);
+        }
+        .face-header-content { flex-grow: 1; }
+        .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
+        .face-input-group { display: flex; gap: 10px; max-width: 300px; }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .filter-row-top { flex-direction: column; gap: 10px; }
+            .filter-row-top > * { width: 100%; }
+            .lead-grid { grid-template-columns: 1fr; }
+            .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+            .tabs { gap: 20px; }
+        }
+        /* Loading Spinner */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        #uploadEventSelect:invalid { color: var(--muted); }
+    </style>
 </head>
 <body>
-  <div class="page">
-    <header>
-      <div>
-        <h1>EventLens – गैलरी</h1>
-        <p id="headerInfo">फोटो लोड हो रही हैं…</p>
-      </div>
-    </header>
-
-    <section class="card">
-      <div class="gallery-header">
+<div class="wrap">
+   
+    <div class="top-bar">
         <div>
-          <div class="gallery-title" id="galleryTitle">कलेक्शन गैलरी</div>
-          <div class="gallery-sub" id="gallerySub">–</div>
+            <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
+            <h1 id="collectionName">Loading...</h1>
+            <div class="stats-line">
+                <span id="totalPhotos">0</span> Photos •
+                <span id="totalLeads">0</span> Guests •
+                <span id="storageUsed">0 MB</span>
+            </div>
         </div>
-        <div class="chip-row" id="tagChips"></div>
-      </div>
-
-      <div class="selection-toolbar">
-        <span>कुल <strong id="photoCount">0</strong> फोटो • चुनी गई: <strong id="selCount">0</strong></span>
-        <div>
-          <button class="btn btn-secondary" id="btnSelectAll">सभी चुनें</button>
-          <button class="btn btn-secondary" id="btnClear">सब हटाएँ</button>
-          <button class="btn" id="btnZip">ZIP डाउनलोड</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button class="btn secondary" style="font-size:12px; padding:6px 12px;" onclick="window.location.reload()">Refresh Data 🔄</button>
+            <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ Staff Upload Link</a>
         </div>
-      </div>
-
-      <div class="grid" id="grid"></div>
-    </section>
-  </div>
-
-  <!-- viewer -->
-  <div class="viewer-backdrop" id="viewer">
-    <div class="viewer-inner">
-      <div class="viewer-topbar">
-        <div id="vTitle">फोटो</div>
-        <div class="viewer-close" id="vClose">✕</div>
-      </div>
-      <div class="viewer-img-wrap">
-        <div class="viewer-arrow left" id="vPrev">‹</div>
-        <img id="vImg" alt="Preview" />
-        <div class="viewer-arrow right" id="vNext">›</div>
-      </div>
-      <div class="viewer-bottombar">
-        <div class="viewer-count" id="vCount">1 / 1</div>
-        <div>
-          <button class="viewer-btn" id="vToggleSel">✓ चयन करें / हटाएँ</button>
-          <a id="vDownload" class="viewer-btn" download target="_blank" rel="noopener noreferrer">⬇ डाउनलोड</a>
-        </div>
-      </div>
     </div>
-  </div>
-
-  <script>
-    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
-    const GALLERY_API_URL = API_BASE + "/get-photos";
-
-    const params = new URLSearchParams(window.location.search);
-    const collectionId = params.get("collectionId");
-
-    const headerInfo = document.getElementById("headerInfo");
-    const galleryTitle = document.getElementById("galleryTitle");
-    const gallerySub = document.getElementById("gallerySub");
-    const tagChips = document.getElementById("tagChips");
-    const grid = document.getElementById("grid");
-    const photoCount = document.getElementById("photoCount");
-    const selCount = document.getElementById("selCount");
-    const btnSelectAll = document.getElementById("btnSelectAll");
-    const btnClear = document.getElementById("btnClear");
-    const btnZip = document.getElementById("btnZip");
-
-    const viewer = document.getElementById("viewer");
-    const vImg = document.getElementById("vImg");
-    const vTitle = document.getElementById("vTitle");
-    const vCount = document.getElementById("vCount");
-    const vDownload = document.getElementById("vDownload");
-    const vClose = document.getElementById("vClose");
-    const vPrev = document.getElementById("vPrev");
-    const vNext = document.getElementById("vNext");
-    const vToggleSel = document.getElementById("vToggleSel");
-
-    let photos = [];
-    let filtered = [];
-    let selected = new Map();
-    let currentIndex = 0;
-    let currentTag = "ALL";
-
-    function updateSelCount() {
-      selCount.textContent = Array.from(selected.values()).filter(Boolean).length;
-    }
-
-    function applyTagFilter(tag) {
-      currentTag = tag;
-      if (tag === "ALL") {
-        filtered = [...photos];
-      } else {
-        filtered = photos.filter(p => (p.ai_tags || []).includes(tag));
-      }
-      renderGrid();
-    }
-
-    function buildTagChips() {
-      const tagsSet = new Set();
-      photos.forEach(p => (p.ai_tags || []).forEach(t => tagsSet.add(t)));
-
-      tagChips.innerHTML = "";
-      const allChip = document.createElement("button");
-      allChip.type = "button";
-      allChip.className = "chip active";
-      allChip.dataset.tag = "ALL";
-      allChip.innerHTML = `<span class="dot"></span> सभी`;
-      tagChips.appendChild(allChip);
-
-      Array.from(tagsSet).slice(0, 12).forEach(tag => {
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "chip";
-        chip.dataset.tag = tag;
-        chip.textContent = tag;
-        tagChips.appendChild(chip);
-      });
-
-      tagChips.querySelectorAll(".chip").forEach(chip => {
-        chip.addEventListener("click", () => {
-          tagChips.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-          chip.classList.add("active");
-          applyTagFilter(chip.dataset.tag);
-        });
-      });
-    }
-
-    function renderGrid() {
-      grid.innerHTML = "";
-      photoCount.textContent = filtered.length;
-      updateSelCount();
-
-      filtered.forEach((p, idx) => {
-        const tile = document.createElement("div");
-        tile.className = "tile";
-        const img = document.createElement("img");
-        img.src = p.url;
-        tile.appendChild(img);
-
-        const badge = document.createElement("div");
-        badge.className = "tile-badge";
-        badge.innerHTML = `<span class="check">✓</span><span class="txt">सेलेक्ट</span>`;
-        tile.appendChild(badge);
-
-        const footer = document.createElement("div");
-        footer.className = "tile-footer";
-        const left = document.createElement("span");
-        left.textContent = (p.ai_tags && p.ai_tags[0]) || "फोटो";
-        const right = document.createElement("span");
-        right.className = "small";
-        right.textContent = `${idx + 1}`;
-        footer.appendChild(left);
-        footer.appendChild(right);
-        tile.appendChild(footer);
-
-        if (!selected.has(p.photo_id)) selected.set(p.photo_id, false);
-        if (selected.get(p.photo_id)) {
-          tile.classList.add("tile-selected");
-          badge.classList.add("selected");
-          badge.querySelector(".txt").textContent = "चुना गया";
-        }
-
-        tile.addEventListener("click", (e) => {
-          if (e.target.closest(".tile-badge")) return;
-          openViewer(idx);
-        });
-
-        badge.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const cur = selected.get(p.photo_id) || false;
-          selected.set(p.photo_id, !cur);
-          if (!cur) {
-            tile.classList.add("tile-selected");
-            badge.classList.add("selected");
-            badge.querySelector(".txt").textContent = "चुना गया";
-          } else {
-            tile.classList.remove("tile-selected");
-            badge.classList.remove("selected");
-            badge.querySelector(".txt").textContent = "सेलेक्ट";
-          }
-          updateSelCount();
-        });
-
-        grid.appendChild(tile);
-      });
-
-      gallerySub.textContent = filtered.length
-        ? `कुल ${filtered.length} फोटो`
-        : "कोई फोटो नहीं।";
-    }
-
-    function openViewer(idx) {
-      if (!filtered.length) return;
-      currentIndex = idx;
-      const p = filtered[idx];
-      vImg.src = p.url;
-      vTitle.textContent = (p.ai_tags && p.ai_tags[0]) || "फोटो";
-      vCount.textContent = `${idx + 1} / ${filtered.length}`;
-      vDownload.href = p.url;
-      viewer.classList.add("open");
-    }
-
-    function closeViewer() { viewer.classList.remove("open"); }
-    function moveViewer(delta) {
-      if (!filtered.length) return;
-      currentIndex = (currentIndex + delta + filtered.length) % filtered.length;
-      openViewer(currentIndex);
-    }
-    function toggleViewerSel() {
-      if (!filtered.length) return;
-      const p = filtered[currentIndex];
-      const cur = selected.get(p.photo_id) || false;
-      selected.set(p.photo_id, !cur);
-      updateSelCount();
-      renderGrid();
-    }
-
-    async function downloadZip() {
-      const ids = Array.from(selected.entries())
-        .filter(([_, val]) => val)
-        .map(([id]) => id);
-      if (!ids.length) {
-        alert("कृपया कुछ फोटो चुनें।");
-        return;
-      }
-      btnZip.disabled = true;
-      btnZip.textContent = "तैयार हो रहा है…";
-      try {
-        const urls = filtered.filter(p => ids.includes(p.photo_id)).map(p => p.url);
-        const zip = new JSZip();
-        const folder = zip.folder("photos");
-        let i = 1;
-        for (const url of urls) {
-          const r = await fetch(url);
-          const b = await r.blob();
-          folder.file("photo_" + (i++) + ".jpg", b);
-        }
-        const blob = await zip.generateAsync({ type: "blob" });
-        saveAs(blob, "EventLens_Gallery.zip");
-      } catch (err) {
-        console.error(err);
-        alert("ZIP बनाते समय त्रुटि: " + err.message);
-      } finally {
-        btnZip.disabled = false;
-        btnZip.textContent = "ZIP डाउनलोड";
-      }
-    }
-
-    // events
-    vClose.addEventListener("click", closeViewer);
-    vPrev.addEventListener("click", () => moveViewer(-1));
-    vNext.addEventListener("click", () => moveViewer(1));
-    vToggleSel.addEventListener("click", toggleViewerSel);
-    viewer.addEventListener("click", (e) => { if (e.target === viewer) closeViewer(); });
-    window.addEventListener("keydown", (e) => {
-      if (!viewer.classList.contains("open")) return;
-      if (e.key === "Escape") closeViewer();
-      if (e.key === "ArrowLeft") moveViewer(-1);
-      if (e.key === "ArrowRight") moveViewer(1);
-    });
-
-    btnSelectAll.addEventListener("click", () => {
-      filtered.forEach(p => selected.set(p.photo_id, true));
-      renderGrid();
-    });
-    btnClear.addEventListener("click", () => {
-      filtered.forEach(p => selected.set(p.photo_id, false));
-      renderGrid();
-    });
-    btnZip.addEventListener("click", downloadZip);
-
-    async function init() {
-      if (!collectionId) {
-        headerInfo.textContent = "collectionId URL में नहीं मिला।";
-        return;
-      }
-      headerInfo.textContent = "कलेक्शन " + collectionId + " की फोटो लोड हो रही हैं…";
-
-      try {
-        const res = await fetch(GALLERY_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ collection_id: collectionId })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || data.message || "Server error");
-        photos = data.photos || [];
-        filtered = [...photos];
-        galleryTitle.textContent = "कलेक्शन गैलरी";
-        headerInfo.textContent = "कुल " + photos.length + " फोटो मिलीं।";
-        buildTagChips();
-        renderGrid();
-      } catch (err) {
-        console.error(err);
-        headerInfo.textContent = "फोटो लोड करने में समस्या: " + err.message;
-      }
-    }
-
-    init();
-  </script>
-</body>
-</html>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('galleryTab')">Photos</div>
+        <div class="tab" onclick="switchTab('eventsTab')">Events</div>
+        <div class="tab" onclick="switchTab('uploadTab')">Upload</div>
+        <div class="tab" onclick="switchTab('linksTab')">Links</div>
+        <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
+    </div>
+    <!-- GALLERY TAB -->
+    <div id="galleryTab" class="tab-content active">
+        <div class="filter-row-top">
+            <select id="filterType" onchange="applyFilters()">
+                <option value="ALL">All Photos</option>
+                <option value="BEST">⭐ Best Shots</option>
+                <option value="HAPPY">😊 Happy</option>
+                <option value="GROUP">👥 Groups</option>
+            </select>
+            <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
+            <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
+        </div>
+        <!-- New Face Icons Bar -->
+        <div id="faceIconsBar" class="face-group-grid"></div>
+        <!-- Dynamic Header for Face Naming -->
+        <div id="faceNamingHeader" class="face-header" style="display:none;">
+            <img id="faceHeaderImg" src="">
+            <div class="face-header-content">
+                <h3 id="faceHeaderTitle">Who is this?</h3>
+                <div class="face-input-group">
+                    <input type="text" id="faceNameInput" placeholder="Enter Name">
+                    <button class="btn" onclick="saveFaceName()">Save</button>
+                    <button class="btn secondary" onclick="cancelFaceNaming()">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div id="galleryContainer">
+            <p class="loading">Loading photos...</p>
+        </div>
+       
+        <div class="load-more-container">
+            <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="renderNextBatch()">Load More</button>
+        </div>
+    </div>
+    <!-- EVENTS TAB -->
+    <div id="eventsTab" class="tab-content">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                <h3>Events</h3>
+                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
+            </div>
+           
+            <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="eventName" placeholder="Event Name">
+                    <input type="date" id="eventDate">
+                </div>
+                <div style="text-align:right;">
+                    <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
+                    <button class="btn" id="saveEventBtn">Save</button>
+                </div>
+            </div>
+            <table>
+                <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+                <tbody id="eventsTbody"></tbody>
+            </table>
+        </div>
+    </div>
+    <!-- UPLOAD TAB -->
+    <div id="uploadTab" class="tab
