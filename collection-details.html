@@ -19,7 +19,7 @@
             --ok: #34a853;
         }
         * { box-sizing: border-box; }
-      
+       
         body {
             margin: 0;
             background-color: var(--bg);
@@ -28,7 +28,7 @@
             padding-bottom: 60px;
         }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
-      
+       
         /* HEADER */
         .top-bar {
             display: flex;
@@ -47,11 +47,11 @@
             gap:5px;
         }
         h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
-      
+       
         /* STATS LINE */
         .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
         .stats-line b { color:white; font-weight:600; }
-      
+       
         /* TABS */
         .tabs {
             display: flex;
@@ -71,10 +71,10 @@
         }
         .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
         .tab:hover { color: var(--brand-hover); }
-      
+       
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-      
+       
         /* CARDS */
         .card {
             background: var(--card);
@@ -127,7 +127,7 @@
             padding-top: 8px;
         }
         .match-count { font-weight: 600; color: var(--ok); }
-      
+       
         /* Dropdown and Search Layout */
         .filter-row-top {
             display: flex;
@@ -149,7 +149,7 @@
             outline: none;
             height: 44px; /* Uniform height */
         }
-      
+       
         /* Button style consistency */
         .btn {
             background: var(--brand);
@@ -181,12 +181,12 @@
         th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
         td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
         tr:hover { background: rgba(66, 133, 244, 0.1); }
-      
+       
         /* FORMS */
         input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
         input:focus { border-color: var(--brand); }
         input::placeholder { color: var(--muted); }
-      
+       
         /* UPLOAD */
         #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
         #dropZone:hover { border-color: var(--brand); }
@@ -194,7 +194,7 @@
         #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
         #uploadStatus.error { color: var(--danger); }
         #uploadStatus.success { color: var(--ok); }
-      
+       
         /* Load More */
         .load-more-container { text-align: center; margin-top: 30px; }
         /* GALLERY FIXES */
@@ -219,7 +219,7 @@
             transition: opacity 0.3s;
         }
         .photo-card img.loaded { opacity: 1; }
-      
+       
         /* DATE HEADERS IN GALLERY */
         .date-header {
             grid-column: 1 / -1;
@@ -270,6 +270,7 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
+        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
         .face-icon:hover { transform: scale(1.1); }
         /* History Viewer */
         #historyViewer {
@@ -370,7 +371,7 @@
 </head>
 <body>
 <div class="wrap">
-  
+   
     <div class="top-bar">
         <div>
             <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
@@ -403,11 +404,10 @@
                 <option value="GROUP">👥 Groups</option>
             </select>
             <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
-            <input type="text" id="faceSearch" placeholder="Search face name" oninput="handleFaceSearch(this.value)">
             <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
         </div>
         <!-- New Face Icons Bar -->
-        <div id="faceIconsBar"></div>
+        <div id="faceIconsBar" class="face-group-grid"></div>
         <!-- Dynamic Header for Face Naming -->
         <div id="faceNamingHeader" class="face-header" style="display:none;">
             <img id="faceHeaderImg" src="">
@@ -423,7 +423,7 @@
         <div id="galleryContainer">
             <p class="loading">Loading photos...</p>
         </div>
-      
+       
         <div class="load-more-container">
             <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="renderNextBatch()">Load More</button>
         </div>
@@ -435,7 +435,7 @@
                 <h3>Events</h3>
                 <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
             </div>
-          
+           
             <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
                     <input type="text" id="eventName" placeholder="Event Name">
@@ -496,7 +496,7 @@
             <div id="analyticsBodyContainer">
                 <div id="leadsGrid" class="lead-grid"></div>
                 <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">Loading leads...</p>
-              
+               
                 <div class="load-more-container">
                     <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">Load More Leads</button>
                 </div>
@@ -529,6 +529,7 @@
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
     const GUEST_API = `${API_BASE}/save-details`;
+    const LIST_PEOPLE_API = `${API_BASE}/list_people`;
     const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
@@ -554,19 +555,19 @@
     const LEADS_BATCH_SIZE = 10;
     // STATE - Face Groups
     let faceGroups = {};
+    let directoryPeople = [];
     let currentNamingFaceId = null;
-    let faceSearchQuery = '';
     // --- TABS ---
     window.switchTab = function(tabId) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
+       
         // Activate Tab UI
         const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
         if(tabEl) tabEl.classList.add('active');
         const contentEl = document.getElementById(tabId);
         if(contentEl) contentEl.classList.add('active');
-      
+       
         if(tabId === 'galleryTab') {
              if(allPhotos.length === 0) {
                 fetchPhotos();
@@ -592,7 +593,7 @@
              return isoString.substring(0, 10);
         }
     }
-  
+   
     function formatBytes(bytes) {
         if (!+bytes) return '0 B';
         const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -633,13 +634,12 @@
             const data = await res.json();
             allPhotos = data.photos || [];
             filteredPhotos = [...allPhotos];
-          
+           
             // Build local map immediately for consistency
             buildLocalFaceMap();
             displayedPhotosCount = 0;
             container.innerHTML = '';
             renderNextBatch();
-            renderFaceIcons();
         } catch (err) {
             container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Check console/network.</p>';
             console.error('Photo fetch error:', err);
@@ -648,14 +648,14 @@
     function renderNextBatch() {
         const container = document.getElementById('galleryContainer');
         const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
-      
+       
         if (nextBatch.length === 0 && displayedPhotosCount === 0) {
             container.innerHTML = '<p class="empty-state">No photos found.</p>';
             document.getElementById('loadMoreBtn').style.display = 'none';
             return;
         }
         let lastDate = '';
-      
+       
         nextBatch.forEach((photo, localIdx) => {
             const globalIdx = displayedPhotosCount + localIdx;
             const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
@@ -664,7 +664,7 @@
                 dateHeader.className = 'date-header';
                 dateHeader.textContent = photoDate;
                 container.appendChild(dateHeader);
-              
+               
                 const grid = document.createElement('div');
                 grid.className = 'gallery-grid';
                 grid.id = `grid-${globalIdx}`;
@@ -676,9 +676,9 @@
             const card = document.createElement('div');
             card.className = 'photo-card';
             card.onclick = () => openViewer(globalIdx);
-          
+           
             const thumbnailUrl = photo.thumbnail_url || photo.url;
-          
+           
             card.innerHTML = `
                 <img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
             `;
@@ -689,14 +689,14 @@
         btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
     // --- FACE GROUPS (Combined Logic) ---
-  
+   
     // 1. Build map from loaded photos (Client Side)
     function buildLocalFaceMap() {
         faceGroups = {}; // Reset
         allPhotos.forEach(photo => {
             (photo.faces || []).forEach(face => {
-                const faceId = face.FaceId || face.face_id || face.faceId || 'unknown-' + Math.random();
-              
+                const faceId = face.FaceId || face.faceId || 'unknown-' + Math.random();
+               
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
                         id: faceId,
@@ -710,20 +710,15 @@
                 faceGroups[faceId].photos.push(photo);
             });
         });
-        if (Object.keys(faceGroups).length === 0) {
-            console.warn('No faces detected in photos.');
-        }
     }
     // --- Render Face Icons (Google Photos Jaisa) ---
     function renderFaceIcons() {
         const bar = document.getElementById('faceIconsBar');
         bar.innerHTML = '';
         bar.style.display = 'flex';
-        let filteredGroups = Object.values(faceGroups).filter(group => group.name.toLowerCase().includes(faceSearchQuery));
-        const entries = filteredGroups.sort((a,b) => b.count - a.count);
+        const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
         if (entries.length === 0) {
             bar.style.display = 'none';
-            bar.innerHTML = '<p style="color:var(--muted);">No face groups detected or matching search. Upload photos with faces or check API data.</p>';
             return;
         }
         entries.forEach(group => {
@@ -731,22 +726,41 @@
             img.className = 'face-icon';
             img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${group.name.charAt(0)}`;
             img.title = group.name + ' (' + group.count + ' photos)';
-            img.onclick = () => showFacePhotos(group.id);
+            img.onclick = (e) => {
+                if (e.shiftKey) {
+                    if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
+                    else selectedFaces.add(group.id);
+                } else {
+                    selectedFaces.clear();
+                    selectedFaces.add(group.id);
+                }
+                applyFaceFilter();
+                img.classList.toggle('selected', selectedFaces.has(group.id));
+            };
             bar.appendChild(img);
         });
     }
-    // --- Handle Face Search ---
-    window.handleFaceSearch = function(value) {
-        faceSearchQuery = value.toLowerCase();
-        renderFaceIcons();
-    };
+    // --- Apply Face Filter (Single/Multi) ---
+    function applyFaceFilter() {
+        if (selectedFaces.size === 0) {
+            filteredPhotos = [...allPhotos];
+        } else {
+            filteredPhotos = allPhotos.filter(photo => {
+                const photoFaces = photo.face_ids || [];
+                return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
+            });
+        }
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+    }
     // --- FACE NAMING LOGIC ---
     window.showFacePhotos = (faceId) => {
         if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
-      
+       
         currentNamingFaceId = faceId; // Enter naming mode
         const group = faceGroups[faceId];
-      
+       
         // Show Naming Header
         const header = document.getElementById('faceNamingHeader');
         document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
@@ -758,7 +772,7 @@
         displayedPhotosCount = 0;
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
-      
+       
         // Hide normal filters when in naming mode
         document.querySelector('.filter-row-top').style.display = 'none';
     };
@@ -766,24 +780,20 @@
         currentNamingFaceId = null;
         document.getElementById('faceNamingHeader').style.display = 'none';
         document.querySelector('.filter-row-top').style.display = 'flex';
-        // Reset to all photos
-        filteredPhotos = [...allPhotos];
-        displayedPhotosCount = 0;
-        document.getElementById('galleryContainer').innerHTML = '';
-        renderNextBatch();
-        renderFaceIcons();
+        // Go back to People tab
+        switchTab('faceGroupTab');
     };
     window.saveFaceName = async () => {
         const newName = document.getElementById('faceNameInput').value.trim();
         if(!newName || !currentNamingFaceId) return;
-      
+       
         const btn = event.target;
         btn.textContent = "Saving...";
         btn.disabled = true;
         try {
             const res = await fetch(SAVE_FACE_NAME_API, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     FaceId: currentNamingFaceId,
                     FaceName: newName,
@@ -820,11 +830,11 @@
         const tbody = document.getElementById('eventsTbody');
         const uploadSelect = document.getElementById('uploadEventSelect');
         const linkList = document.getElementById('linkEventList');
-      
+       
         tbody.innerHTML = '';
         uploadSelect.innerHTML = '<option value="">Select Event...</option>';
         linkList.innerHTML = '';
-      
+       
         events.forEach(ev => {
             // Table Row
             tbody.innerHTML += `
@@ -837,10 +847,10 @@
                         <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${ev.name}')">Delete</button>
                     </td>
                 </tr>`;
-          
+           
             // Upload Dropdown
             uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-          
+           
             // Link Checkbox
             linkList.innerHTML += `
                 <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
@@ -851,29 +861,29 @@
     window.editEvent = function(eventId, name, date) {
         document.getElementById('eventName').value = name;
         document.getElementById('eventDate').value = date;
-      
+       
         const btn = document.getElementById('saveEventBtn');
         btn.onclick = () => updateEvent(eventId);
         btn.textContent = "Update";
-      
+       
         document.getElementById('eventForm').style.display = 'block';
     };
     async function updateEvent(eventId) {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
         if(!name) return alert('Name required');
-      
+       
         await fetch(UPSERT_EVENT_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
         });
-      
+       
         document.getElementById('eventForm').style.display = 'none';
         const btn = document.getElementById('saveEventBtn');
         btn.textContent = "Save";
         btn.onclick = createEvent;
-      
+       
         init();
     }
     // Default create handler
@@ -881,7 +891,7 @@
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
         if(!name) return alert('Name required');
-      
+       
         await fetch(UPSERT_EVENT_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
@@ -919,7 +929,7 @@
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${idToken}` }
                 });
-              
+               
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 allLeads = data.leads || [];
@@ -929,7 +939,7 @@
                 return;
             }
         }
-      
+       
         filteredLeads = allLeads.filter(l => {
             const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
             const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
@@ -948,7 +958,7 @@
     window.loadMoreLeads = function() {
         const leadsGrid = document.getElementById('leadsGrid');
         const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
-      
+       
         if (nextBatch.length === 0) {
             document.getElementById('loadMoreLeadsBtn').style.display = 'none';
             return;
@@ -957,10 +967,10 @@
             const timeStr = formatLeadTime(l.created_at);
             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
             if (l.selfie_b64) {
-                selfieSrc = l.selfie_b64.startsWith('data:') ? l.selfie_b64 : `data:image/jpeg;base64,${l.selfie_b64}`;
+                selfieSrc = `data:image/jpeg;base64,${l.selfie_b64.split(';base64,')[1] || l.selfie_b64}`;
             }
             const matchCount = l.match_count || 0;
-          
+           
             return `
                 <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name || 'Unknown'}')">
                     <img src="${selfieSrc}" class="selfie-img" alt="Selfie" onerror="this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
@@ -979,66 +989,21 @@
                 </div>
             `;
         }).join('');
-      
+       
         leadsGrid.innerHTML += html;
         leadsDisplayCount += nextBatch.length;
         const btn = document.getElementById('loadMoreLeadsBtn');
         btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
     }
-    window.showGuestHistory = async function(mobile, name) {
-        const container = document.getElementById('analyticsBodyContainer');
-        const historyViewer = document.getElementById('historyViewer');
-        const historyBody = document.getElementById('historyBody');
-      
-        container.style.display = 'none';
-        historyViewer.style.display = 'block';
-        document.getElementById('historyHeader').textContent = `${name}`;
-        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
-      
-        try {
-            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-            if (!res.ok) throw new Error('API Error');
-            const data = await res.json();
-            const history = data.history || [];
-          
-            if(history.length === 0) {
-                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
-                return;
-            }
-            historyBody.innerHTML = history.map(h => `
-                <tr>
-                    <td>${formatLeadTime(h.created_at)}</td>
-                    <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
-                    <td style="color:var(--muted);">${h.name || '-'} (Found: ${h.match_count || 0})</td>
-                </tr>
-            `).join('');
-        } catch(e) {
-            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
-        }
-    }
-    window.hideHistoryViewer = function() {
-        document.getElementById('analyticsBodyContainer').style.display = 'block';
-        document.getElementById('historyViewer').style.display = 'none';
-    }
     // --- LINK GENERATION ---
     document.getElementById('genLinkBtn').onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
         if (selected.length === 0) return alert('Select at least one event');
-        const expiry = document.getElementById('expiryHours').value;
-        const password = document.getElementById('linkPassword').value;
-      
+       
         const res = await fetch(GENERATE_LINK_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                collection_id: collectionId, 
-                event_ids: selected,
-                expiry_hours: expiry ? parseInt(expiry) : 0,
-                password: password || null
-            })
+            body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
         });
         const data = await res.json();
         const box = document.getElementById('linkResult');
@@ -1056,7 +1021,7 @@
     // --- UPLOAD LOGIC ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
-  
+   
     dropZone.onclick = () => fileInput.click();
     dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
     dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
@@ -1065,12 +1030,12 @@
     async function handleFiles(files) {
         const eventId = document.getElementById('uploadEventSelect').value;
         if(!eventId) return alert("Select an event first!");
-      
+       
         const total = files.length;
         if(total === 0) return;
         // Filter valid image types
         const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
-      
+       
         if (validFiles.length < total) {
             alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
         }
@@ -1078,7 +1043,7 @@
         document.getElementById('progress-container').style.display = 'block';
         const progressBar = document.getElementById('progress-bar');
         const status = document.getElementById('uploadStatus');
-      
+       
         const BATCH_SIZE = 10;
         const fileArr = validFiles;
         const totalValid = fileArr.length;
@@ -1095,7 +1060,7 @@
                     body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
                 });
                 const data = await res.json();
-              
+               
                 await Promise.all(data.urls.map(async (u, idx) => {
                     const file = batch[idx];
                     await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
@@ -1119,13 +1084,13 @@
     window.applyFilters = function() {
         const type = document.getElementById('filterType').value;
         const query = document.getElementById('tagSearch').value.toLowerCase();
-      
+       
         filteredPhotos = allPhotos.filter(p => {
             const matchesType = (type === 'ALL') ||
                 (type === 'BEST' && (p.quality_score || 0) > 85) ||
                 (type === 'HAPPY' && (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
                 (type === 'GROUP' && (p.face_count || 0) >= 3);
-          
+           
             const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
             return matchesType && matchesQuery;
         });
@@ -1136,16 +1101,16 @@
     // --- DOWNLOAD ZIP ---
     window.downloadAllZip = async function() {
         if(filteredPhotos.length === 0) return alert("No photos to download");
-      
+       
         const zip = new JSZip();
         const folder = zip.folder("photos");
         const limit = filteredPhotos.slice(0, 100); // Browser limitation safeguard
-      
+       
         const btn = event.target;
         const originalText = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Zipping...';
-      
+       
         let count = 0;
         for(let i=0; i<limit.length; i++) {
             try {
@@ -1158,7 +1123,7 @@
                 console.error('Download error for photo', i);
             }
         }
-      
+       
         zip.generateAsync({type:"blob"}).then(c => {
             saveAs(c, "photos.zip");
         }).finally(() => {
