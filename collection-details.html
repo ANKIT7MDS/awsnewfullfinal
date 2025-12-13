@@ -569,20 +569,13 @@
         if(contentEl) contentEl.classList.add('active');
        
         if(tabId === 'galleryTab') {
-             // If manual switch, hide naming header
-             if (!currentNamingFaceId) {
-                 document.getElementById('faceNamingHeader').style.display = 'none';
-                 applyFilters(); // Reset filters
-             }
              if(allPhotos.length === 0) {
                 fetchPhotos();
              } else {
-                // If not in naming mode, render full batch
-                if (!currentNamingFaceId) {
-                    displayedPhotosCount = 0;
-                    document.getElementById('galleryContainer').innerHTML = '';
-                    renderNextBatch();
-                }
+                displayedPhotosCount = 0;
+                document.getElementById('galleryContainer').innerHTML = '';
+                renderNextBatch();
+                renderFaceIcons();
              }
         } else if (tabId === 'analyticsTab') {
             fetchAnalytics(true);
@@ -800,7 +793,7 @@
         try {
             const res = await fetch(SAVE_FACE_NAME_API, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }, // Lambda expects plain body usually, or wrapped
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     FaceId: currentNamingFaceId,
                     FaceName: newName,
@@ -808,17 +801,14 @@
                 })
             });
             if(res.ok) {
-                // Update Local State
-                if(faceGroups[currentNamingFaceId]) {
-                    faceGroups[currentNamingFaceId].name = newName;
-                }
-                alert("Name saved! It will appear in search shortly.");
-                cancelFaceNaming(); // Go back
+                faceGroups[currentNamingFaceId].name = newName;
+                renderFaceIcons();
+                alert("Name saved!");
+                cancelFaceNaming();
             } else {
                 alert("Failed to save name.");
             }
         } catch(e) {
-            console.error(e);
             alert("Error saving name.");
         } finally {
             btn.textContent = "Save";
@@ -890,6 +880,7 @@
         });
        
         document.getElementById('eventForm').style.display = 'none';
+        // Reset button for Create mode
         const btn = document.getElementById('saveEventBtn');
         btn.textContent = "Save";
         btn.onclick = createEvent;
@@ -1179,55 +1170,8 @@
             btn.textContent = originalText;
         });
     }
-let selectedFaces = new Set();
-async function loadFaces() {
-    try {
-        const res = await fetch(LIST_PEOPLE_API, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-        const data = await res.json();
-        directoryPeople = data.people || [];
-    } catch(e) {
-        console.error("List People API Error:", e);
-        directoryPeople = [];
-    }
-    const dirMap = {};
-    directoryPeople.forEach(p => dirMap[p.FaceId] = p);
-    Object.keys(faceGroups).forEach(fid => {
-        if (dirMap[fid]) {
-            faceGroups[fid].name = dirMap[fid].FaceName || faceGroups[fid].name;
-        }
-    });
-}
-function renderFaceIcons() {
-    const bar = document.getElementById('faceIconsBar');
-    bar.innerHTML = '';
-    const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
-    entries.forEach(group => {
-        const img = document.createElement('img');
-        img.className = 'face-icon';
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${group.name.charAt(0)}`;
-        img.onclick = (e) => {
-            if (e.shiftKey) {
-                selectedFaces.toggle(group.id);
-            } else {
-                selectedFaces.clear();
-                selectedFaces.add(group.id);
-            }
-            applyFaceFilter();
-        };
-        bar.appendChild(img);
-    });
-}
-function applyFaceFilter() {
-    filteredPhotos = allPhotos.filter(photo => Array.from(selectedFaces).every(fid => photo.face_ids.includes(fid)));
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-}    // Start App
+    // Start App
     init();
 </script>
 </body>
 </html>
-
