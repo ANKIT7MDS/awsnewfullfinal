@@ -530,11 +530,11 @@
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
     const GUEST_API = `${API_BASE}/save-details`;
     const LIST_PEOPLE_API = `${API_BASE}/list_people`;
-    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`; // Added for Lambda
+    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
     const collectionNameParam = urlParams.get("name");
-    const idToken = localStorage.get("idToken");
+    const idToken = localStorage.getItem("idToken");
     // Auth Guard
     if (!idToken) {
         // Uncomment in production:
@@ -559,7 +559,6 @@
     let faceGroups = {};
     let directoryPeople = [];
     let currentNamingFaceId = null;
-    let selectedFaces = new Set();
     // --- TABS ---
     window.switchTab = function(tabId) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -572,14 +571,24 @@
         if(contentEl) contentEl.classList.add('active');
        
         if(tabId === 'galleryTab') {
+             // If manual switch, hide naming header
+             if (!currentNamingFaceId) {
+                 document.getElementById('faceNamingHeader').style.display = 'none';
+                 applyFilters(); // Reset filters
+             }
              if(allPhotos.length === 0) {
                 fetchPhotos();
              } else {
-                displayedPhotosCount = 0;
-                document.getElementById('galleryContainer').innerHTML = '';
-                renderNextBatch();
-                renderFaceIcons();
+                // If not in naming mode, render full batch
+                if (!currentNamingFaceId) {
+                    displayedPhotosCount = 0;
+                    document.getElementById('galleryContainer').innerHTML = '';
+                    renderNextBatch();
+                }
              }
+        } else if(tabId === 'faceGroupTab') {
+            currentNamingFaceId = null; // Exit naming mode
+            loadPeopleTab();
         } else if (tabId === 'analyticsTab') {
             fetchAnalytics(true);
         } else if (tabId === 'eventsTab') {
@@ -775,6 +784,12 @@
         displayedPhotosCount = 0;
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
+       
+        // Switch tab visually
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('galleryTab')"]`).classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('galleryTab').classList.add('active');
        
         // Hide normal filters when in naming mode
         document.querySelector('.filter-row-top').style.display = 'none';
@@ -1002,15 +1017,17 @@
         const btn = document.getElementById('loadMoreLeadsBtn');
         btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
     }
-    // --- LINK GENERATION ---
+    // --- LINK GENERATION (With Expiry/Password) ---
     document.getElementById('genLinkBtn').onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
+        const expiry = document.getElementById('expiryHours').value || 24;
+        const password = document.getElementById('linkPassword').value || '';
         if (selected.length === 0) return alert('Select at least one event');
        
         const res = await fetch(GENERATE_LINK_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
+            body: JSON.stringify({ collection_id: collectionId, event_ids: selected, expiry_hours: expiry, password: password })
         });
         const data = await res.json();
         const box = document.getElementById('linkResult');
