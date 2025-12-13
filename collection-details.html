@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
-    <!-- External Libraries for Zip Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -254,48 +253,25 @@
             border-radius: 50%;
             line-height: 1;
         }
-        /* People Tab - Face Group Grid */
-        .face-group-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
+        /* Face Icons Bar - New for Grouping */
+        #faceIconsBar {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
         }
-        .face-group {
-            text-align: center;
-            cursor: pointer;
-            padding: 15px;
-            border-radius: 12px;
-            transition: 0.3s;
-            background: #151515;
-            border: 1px solid transparent;
-        }
-        .face-group:hover {
-            background: #222;
-            border-color: var(--brand);
-        }
-        .face-thumb {
-            width: 100px;
-            height: 100px;
+        .face-icon {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid var(--brand);
-            margin: 0 auto 10px;
-            background: #000;
+            border: 2px solid var(--brand);
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-        .face-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 2px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .face-count {
-            font-size: 12px;
-            color: var(--muted);
-        }
+        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
+        .face-icon:hover { transform: scale(1.1); }
         /* History Viewer */
         #historyViewer {
             display: none;
@@ -390,13 +366,6 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        /* People Tab Empty */
-        #faceGroupGrid.empty {
-            text-align: center;
-            padding: 60px;
-            color: var(--muted);
-        }
-       
         #uploadEventSelect:invalid { color: var(--muted); }
     </style>
 </head>
@@ -561,12 +530,15 @@
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
     const GUEST_API = `${API_BASE}/save-details`;
     const LIST_PEOPLE_API = `${API_BASE}/list_people`;
-    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
+    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`; // Added for Lambda
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
     const collectionNameParam = urlParams.get("name");
-    const idToken = localStorage.getItem("idToken");
+    const idToken = localStorage.get("idToken");
+    // Auth Guard
     if (!idToken) {
+        // Uncomment in production:
+        // window.location.href = 'login.html';
         console.warn("No idToken found. Some API calls may fail.");
     }
     if (document.getElementById('assistantLink')) {
@@ -726,14 +698,13 @@
         faceGroups = {}; // Reset
         allPhotos.forEach(photo => {
             (photo.faces || []).forEach(face => {
-                // Handle different casing from Rekognition/Backend
-                const faceId = face.FaceId || face.faceId || face.ExternalImageId || `unknown-${Math.random()}`;
+                const faceId = face.FaceId || face.faceId || 'unknown-' + Math.random();
                
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
                         id: faceId,
-                        name: face.FaceName || face.Name || 'Unknown Person',
-                        thumbnail: photo.thumbnail_url || photo.url,
+                        name: face.FaceName || 'Unknown Person',
+                        thumbnail: photo.url,
                         count: 0,
                         photos: []
                     };
@@ -743,59 +714,48 @@
             });
         });
     }
-    // 2. Load People Tab (API + Local Merge)
-    async function loadPeopleTab() {
-        const grid = document.getElementById('faceGroupGrid');
-        const emptyMsg = document.getElementById('noFacesMessage');
-       
-        // If we have photos but haven't built the map yet, do it now
-        if(Object.keys(faceGroups).length === 0 && allPhotos.length > 0) {
-            buildLocalFaceMap();
-        }
-        grid.innerHTML = '<p class="loading">Fetching directory...</p>';
-        emptyMsg.style.display = 'none';
-        // Fetch from API (List People Lambda)
-        try {
-            const res = await fetch(LIST_PEOPLE_API, {
-                 method: 'GET',
-                 headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-            const data = await res.json();
-            directoryPeople = data.people || [];
-        } catch(e) {
-            console.error("List People API Error:", e);
-            directoryPeople = [];
-        }
-        // Update local groups with names from directory (Database)
-        const dirMap = {};
-        directoryPeople.forEach(p => {
-             const fid = p.FaceId || p.faceId;
-             if(fid) dirMap[fid] = p;
-        });
-        // Merge: Apply names from DB to faces found in photos
-        Object.keys(faceGroups).forEach(fid => {
-            if (dirMap[fid]) {
-                const dbName = dirMap[fid].FaceName || dirMap[fid].Name;
-                if(dbName) faceGroups[fid].name = dbName;
-            }
-        });
+    // --- Render Face Icons (Google Photos Jaisa) ---
+    function renderFaceIcons() {
+        const bar = document.getElementById('faceIconsBar');
+        bar.innerHTML = '';
+        bar.style.display = 'flex';
         const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
         if (entries.length === 0) {
-            grid.innerHTML = '';
-            emptyMsg.style.display = 'block';
+            bar.style.display = 'none';
             return;
         }
-        grid.innerHTML = entries.map(group => {
-            const thumbSrc = group.thumbnail || `https://placehold.co/120x120/333/fff?text=${group.name.charAt(0)}`;
-            const clickAction = group.count > 0 ? `onclick="showFacePhotos('${group.id}')"` : `style="cursor:default; opacity:0.7;"`;
-            const subtext = group.count > 0 ? `${group.count} photos` : `In Directory`;
-            return `
-            <div class="face-group" ${clickAction}>
-                <img src="${thumbSrc}" class="face-thumb" onerror="this.src='https://placehold.co/120x120/333/fff?text=?'">
-                <div class="face-name">${group.name}</div>
-                <div class="face-count">${subtext}</div>
-            </div>`;
-        }).join('');
+        entries.forEach(group => {
+            const img = document.createElement('img');
+            img.className = 'face-icon';
+            img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${group.name.charAt(0)}`;
+            img.title = group.name + ' (' + group.count + ' photos)';
+            img.onclick = (e) => {
+                if (e.shiftKey) {
+                    if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
+                    else selectedFaces.add(group.id);
+                } else {
+                    selectedFaces.clear();
+                    selectedFaces.add(group.id);
+                }
+                applyFaceFilter();
+                img.classList.toggle('selected', selectedFaces.has(group.id));
+            };
+            bar.appendChild(img);
+        });
+    }
+    // --- Apply Face Filter (Single/Multi) ---
+    function applyFaceFilter() {
+        if (selectedFaces.size === 0) {
+            filteredPhotos = [...allPhotos];
+        } else {
+            filteredPhotos = allPhotos.filter(photo => {
+                const photoFaces = photo.face_ids || [];
+                return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
+            });
+        }
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
     }
     // --- FACE NAMING LOGIC ---
     window.showFacePhotos = (faceId) => {
@@ -823,7 +783,8 @@
         currentNamingFaceId = null;
         document.getElementById('faceNamingHeader').style.display = 'none';
         document.querySelector('.filter-row-top').style.display = 'flex';
-        applyFilters();
+        // Go back to People tab
+        switchTab('faceGroupTab');
     };
     window.saveFaceName = async () => {
         const newName = document.getElementById('faceNameInput').value.trim();
@@ -835,7 +796,7 @@
         try {
             const res = await fetch(SAVE_FACE_NAME_API, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' }, // Lambda expects plain body usually, or wrapped
                 body: JSON.stringify({
                     FaceId: currentNamingFaceId,
                     FaceName: newName,
@@ -843,14 +804,17 @@
                 })
             });
             if(res.ok) {
-                faceGroups[currentNamingFaceId].name = newName;
-                renderFaceIcons();
-                alert("Name saved!");
-                cancelFaceNaming();
+                // Update Local State
+                if(faceGroups[currentNamingFaceId]) {
+                    faceGroups[currentNamingFaceId].name = newName;
+                }
+                alert("Name saved! It will appear in search shortly.");
+                cancelFaceNaming(); // Go back
             } else {
                 alert("Failed to save name.");
             }
         } catch(e) {
+            console.error(e);
             alert("Error saving name.");
         } finally {
             btn.textContent = "Save";
@@ -922,12 +886,14 @@
         });
        
         document.getElementById('eventForm').style.display = 'none';
+        // Reset button for Create mode
         const btn = document.getElementById('saveEventBtn');
         btn.textContent = "Save";
         btn.onclick = createEvent;
        
         init();
     }
+    // Default create handler
     async function createEvent() {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
@@ -941,6 +907,7 @@
         document.getElementById('eventForm').style.display = 'none';
         init();
     }
+    // Bind initial create handler
     document.getElementById('saveEventBtn').onclick = createEvent;
     window.deleteEvent = async function(eventId, name) {
         if (!confirm(`Delete ${name}?`)) return;
@@ -1034,44 +1001,6 @@
         leadsDisplayCount += nextBatch.length;
         const btn = document.getElementById('loadMoreLeadsBtn');
         btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
-    }
-    window.showGuestHistory = async function(mobile, name) {
-        const container = document.getElementById('analyticsBodyContainer');
-        const historyViewer = document.getElementById('historyViewer');
-        const historyBody = document.getElementById('historyBody');
-       
-        container.style.display = 'none';
-        historyViewer.style.display = 'block';
-        document.getElementById('historyHeader').textContent = `${name}`;
-        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
-       
-        try {
-            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-            if (!res.ok) throw new Error('API Error');
-            const data = await res.json();
-            const history = data.history || [];
-           
-            if(history.length === 0) {
-                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
-                return;
-            }
-            historyBody.innerHTML = history.map(h => `
-                <tr>
-                    <td>${formatLeadTime(h.created_at)}</td>
-                    <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
-                    <td style="color:var(--muted);">${h.name || '-'} (Found: ${h.match_count || 0})</td>
-                </tr>
-            `).join('');
-        } catch(e) {
-            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
-        }
-    }
-    window.hideHistoryViewer = function() {
-        document.getElementById('analyticsBodyContainer').style.display = 'block';
-        document.getElementById('historyViewer').style.display = 'none';
     }
     // --- LINK GENERATION ---
     document.getElementById('genLinkBtn').onclick = async () => {
