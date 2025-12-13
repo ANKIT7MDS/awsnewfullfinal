@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EventLens – Smart AI Gallery</title>
 
   <!-- NEW: Confetti for celebration -->
@@ -707,7 +707,7 @@
       }
     };
 
-    // 7. VIEWER LOGIC
+    // 7. VIEWER LOGIC (ENHANCED)
     function openViewer(index) {
       currentViewerIndex = index;
       updateViewer();
@@ -736,13 +736,6 @@
     window.toggleViewerSelect = function() {
       const url = filteredPhotos[currentViewerIndex].url;
       toggleSelect(url);
-    }
-
-    // 8. WHATSAPP SHARE
-    function shareOnWhatsApp() {
-      const message = `Found ${matchCount} amazing photos from the event! Download them here: ${window.location.origin}/download?linkId=${linkId}`;
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
     }
 
     // Initialize
