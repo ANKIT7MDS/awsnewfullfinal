@@ -270,7 +270,6 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
-        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
         .face-icon:hover { transform: scale(1.1); }
         /* History Viewer */
         #historyViewer {
@@ -555,7 +554,6 @@
     const LEADS_BATCH_SIZE = 10;
     // STATE - Face Groups
     let faceGroups = {};
-    let selectedFaces = new Set();
     let currentNamingFaceId = null;
     let faceSearchQuery = '';
     // --- TABS ---
@@ -733,21 +731,7 @@
             img.className = 'face-icon';
             img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${group.name.charAt(0)}`;
             img.title = group.name + ' (' + group.count + ' photos)';
-            img.onclick = (e) => {
-                if (e.shiftKey) {
-                    if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
-                    else selectedFaces.add(group.id);
-                } else {
-                    selectedFaces.clear();
-                    selectedFaces.add(group.id);
-                }
-                applyFaceFilter();
-                renderFaceIcons(); // Re-render to update selected classes
-            };
-            img.dataset.faceId = group.id;
-            if (selectedFaces.has(group.id)) {
-                img.classList.add('selected');
-            }
+            img.onclick = () => showFacePhotos(group.id);
             bar.appendChild(img);
         });
     }
@@ -756,20 +740,6 @@
         faceSearchQuery = value.toLowerCase();
         renderFaceIcons();
     };
-    // --- Apply Face Filter (Single/Multi) ---
-    function applyFaceFilter() {
-        if (selectedFaces.size === 0) {
-            filteredPhotos = [...allPhotos];
-        } else {
-            filteredPhotos = allPhotos.filter(photo => {
-                const photoFaces = (photo.faces || []).map(f => f.FaceId || f.face_id || f.faceId);
-                return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
-            });
-        }
-        displayedPhotosCount = 0;
-        document.getElementById('galleryContainer').innerHTML = '';
-        renderNextBatch();
-    }
     // --- FACE NAMING LOGIC ---
     window.showFacePhotos = (faceId) => {
         if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
@@ -796,8 +766,12 @@
         currentNamingFaceId = null;
         document.getElementById('faceNamingHeader').style.display = 'none';
         document.querySelector('.filter-row-top').style.display = 'flex';
-        // Go back to gallery tab
-        switchTab('galleryTab');
+        // Reset to all photos
+        filteredPhotos = [...allPhotos];
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+        renderFaceIcons();
     };
     window.saveFaceName = async () => {
         const newName = document.getElementById('faceNameInput').value.trim();
