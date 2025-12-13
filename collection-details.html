@@ -4,10 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
     <style>
         :root {
             --bg: #0f0f0f;
@@ -16,11 +14,12 @@
             --text: #e0e0e0;
             --muted: #888;
             --brand: #4285f4;
-            --brand-hover: #3367d6;
+            --brand-hover: #3367d6; /* Google Blue */
             --danger: #ea4335;
             --ok: #34a853;
         }
         * { box-sizing: border-box; }
+      
         body {
             margin: 0;
             background-color: var(--bg);
@@ -29,7 +28,7 @@
             padding-bottom: 60px;
         }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
-
+      
         /* HEADER */
         .top-bar {
             display: flex;
@@ -48,11 +47,11 @@
             gap:5px;
         }
         h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
-
+      
         /* STATS LINE */
         .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
         .stats-line b { color:white; font-weight:600; }
-
+      
         /* TABS */
         .tabs {
             display: flex;
@@ -72,9 +71,10 @@
         }
         .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
         .tab:hover { color: var(--brand-hover); }
+      
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
+      
         /* CARDS */
         .card {
             background: var(--card);
@@ -86,7 +86,6 @@
             transition: box-shadow 0.2s;
         }
         .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-
         /* ANALYTICS NEW VIEW - SELFIE + CLICK */
         .lead-grid {
             display: grid;
@@ -128,7 +127,7 @@
             padding-top: 8px;
         }
         .match-count { font-weight: 600; color: var(--ok); }
-
+      
         /* Dropdown and Search Layout */
         .filter-row-top {
             display: flex;
@@ -140,6 +139,7 @@
             flex: 1 1 150px;
             min-width: 150px;
         }
+        /* Select/Input Style */
         .filter-row-top select, .filter-row-top input {
             background: #111;
             border: 1px solid var(--border);
@@ -147,9 +147,9 @@
             border-radius: 8px;
             color: #fff;
             outline: none;
-            height: 44px;
+            height: 44px; /* Uniform height */
         }
-
+      
         /* Button style consistency */
         .btn {
             background: var(--brand);
@@ -160,7 +160,7 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            height: 44px;
+            height: 44px; /* Match filter row height */
             flex: 0 0 auto;
             display: inline-flex;
             align-items: center;
@@ -176,18 +176,17 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-
         /* TABLES */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
         td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
         tr:hover { background: rgba(66, 133, 244, 0.1); }
-
+      
         /* FORMS */
         input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
         input:focus { border-color: var(--brand); }
         input::placeholder { color: var(--muted); }
-
+      
         /* UPLOAD */
         #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
         #dropZone:hover { border-color: var(--brand); }
@@ -195,11 +194,10 @@
         #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
         #uploadStatus.error { color: var(--danger); }
         #uploadStatus.success { color: var(--ok); }
-
+      
         /* Load More */
         .load-more-container { text-align: center; margin-top: 30px; }
-
-        /* GALLERY */
+        /* GALLERY FIXES */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -221,8 +219,8 @@
             transition: opacity 0.3s;
         }
         .photo-card img.loaded { opacity: 1; }
-
-        /* DATE HEADERS */
+      
+        /* DATE HEADERS IN GALLERY */
         .date-header {
             grid-column: 1 / -1;
             color: var(--muted);
@@ -232,7 +230,6 @@
             padding-bottom: 5px;
             border-bottom: 1px solid #222;
         }
-
         /* VIEWER */
         .viewer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -256,8 +253,7 @@
             border-radius: 50%;
             line-height: 1;
         }
-
-        /* FACE ICONS */
+        /* Face Icons Bar - New for Grouping */
         #faceIconsBar {
             display: flex;
             gap: 10px;
@@ -276,7 +272,6 @@
         }
         .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
         .face-icon:hover { transform: scale(1.1); }
-
         /* History Viewer */
         #historyViewer {
             display: none;
@@ -286,8 +281,9 @@
             border-radius: 12px;
             border: 1px solid var(--border);
         }
-        #historyViewer table { font-size: 13px; }
-
+        #historyViewer table {
+            font-size: 13px;
+        }
         /* Empty States */
         .empty-state {
             text-align: center;
@@ -296,7 +292,6 @@
             font-size: 16px;
         }
         .empty-state button { margin-top: 20px; }
-
         /* Link Result */
         #linkResult {
             background: #111;
@@ -315,8 +310,7 @@
             margin-bottom: 8px;
         }
         #generatedLink:hover { text-decoration: underline; }
-
-        /* Edit/Delete Event */
+        /* Edit Event Button */
         .edit-btn {
             background: var(--brand);
             color: #fff;
@@ -336,8 +330,7 @@
             font-size: 11px;
             cursor: pointer;
         }
-
-        /* Face Name Header */
+        /* NEW: Face Name Header */
         .face-header {
             background: var(--card);
             padding: 15px;
@@ -355,97 +348,30 @@
         .face-header-content { flex-grow: 1; }
         .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
         .face-input-group { display: flex; gap: 10px; max-width: 300px; }
-
-        /* Mobile */
+        /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .filter-row-top { flex-direction: column; gap: 10px; }
             .filter-row-top > * { width: 100%; }
             .lead-grid { grid-template-columns: 1fr; }
             .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
             .tabs { gap: 20px; }
-            .face-input-group { flex-direction: column; max-width: 100%; }
         }
-
-        .loading { text-align: center; padding: 40px; color: var(--muted); }
-
+        /* Loading Spinner */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
         #uploadEventSelect:invalid { color: var(--muted); }
-
-        /* DEBUG PANEL */
-        #debugBox {
-            position: fixed;
-            right: 12px;
-            bottom: 12px;
-            width: 420px;
-            max-height: 55vh;
-            overflow: auto;
-            background: rgba(15, 15, 15, 0.98);
-            border: 1px solid rgba(234, 67, 53, 0.65);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border-radius: 12px;
-            z-index: 9999;
-            display: none;
-        }
-        #debugBoxHeader {
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:10px;
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        #debugBoxHeader b { color: #fff; font-size: 13px; }
-        #debugBoxHeader .pill {
-            font-size: 11px;
-            color: #ffd0d0;
-            background: rgba(234, 67, 53, 0.12);
-            border: 1px solid rgba(234, 67, 53, 0.35);
-            border-radius: 999px;
-            padding: 3px 10px;
-            user-select:none;
-        }
-        #debugBoxHeader .close {
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
-            padding: 2px 8px;
-            border-radius: 8px;
-            color: #fff;
-            background: rgba(255,255,255,0.06);
-        }
-        #debugBoxHeader .close:hover { background: rgba(255,255,255,0.12); }
-        #debugContent {
-            margin: 0;
-            padding: 12px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 11px;
-            color: #eaeaea;
-            white-space: pre-wrap;
-        }
-        #debugActions {
-            display:flex;
-            gap:8px;
-            padding: 0 12px 12px 12px;
-        }
-        #debugActions button {
-            height: 34px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.10);
-            background: rgba(255,255,255,0.06);
-            color: #fff;
-            cursor:pointer;
-            padding: 0 10px;
-            font-size: 12px;
-        }
-        #debugActions button:hover { background: rgba(255,255,255,0.10); }
     </style>
 </head>
 <body>
 <div class="wrap">
-
+  
     <div class="top-bar">
         <div>
             <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
@@ -461,7 +387,6 @@
             <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ Staff Upload Link</a>
         </div>
     </div>
-
     <div class="tabs">
         <div class="tab active" onclick="switchTab('galleryTab')">Photos</div>
         <div class="tab" onclick="switchTab('eventsTab')">Events</div>
@@ -469,7 +394,6 @@
         <div class="tab" onclick="switchTab('linksTab')">Links</div>
         <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
     </div>
-
     <!-- GALLERY TAB -->
     <div id="galleryTab" class="tab-content active">
         <div class="filter-row-top">
@@ -480,34 +404,31 @@
                 <option value="GROUP">👥 Groups</option>
             </select>
             <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
-            <button class="btn secondary" onclick="downloadAllZip(this)">⬇ Download Zip</button>
+            <input type="text" id="faceSearch" placeholder="Search face name" oninput="handleFaceSearch(this.value)">
+            <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
         </div>
-
-        <!-- Face Icons Bar -->
+        <!-- New Face Icons Bar -->
         <div id="faceIconsBar"></div>
-
         <!-- Dynamic Header for Face Naming -->
         <div id="faceNamingHeader" class="face-header" style="display:none;">
-            <img id="faceHeaderImg" src="" alt="Face">
+            <img id="faceHeaderImg" src="">
             <div class="face-header-content">
                 <h3 id="faceHeaderTitle">Who is this?</h3>
                 <div class="face-input-group">
                     <input type="text" id="faceNameInput" placeholder="Enter Name">
-                    <button class="btn" onclick="saveFaceName(this)">Save</button>
+                    <button class="btn" onclick="saveFaceName()">Save</button>
                     <button class="btn secondary" onclick="cancelFaceNaming()">Cancel</button>
                 </div>
             </div>
         </div>
-
         <div id="galleryContainer">
             <p class="loading">Loading photos...</p>
         </div>
-
+      
         <div class="load-more-container">
             <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="renderNextBatch()">Load More</button>
         </div>
     </div>
-
     <!-- EVENTS TAB -->
     <div id="eventsTab" class="tab-content">
         <div class="card">
@@ -515,7 +436,7 @@
                 <h3>Events</h3>
                 <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
             </div>
-
+          
             <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
                     <input type="text" id="eventName" placeholder="Event Name">
@@ -526,14 +447,12 @@
                     <button class="btn" id="saveEventBtn">Save</button>
                 </div>
             </div>
-
             <table>
                 <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
                 <tbody id="eventsTbody"></tbody>
             </table>
         </div>
     </div>
-
     <!-- UPLOAD TAB -->
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
@@ -552,7 +471,6 @@
             </div>
         </div>
     </div>
-
     <!-- LINKS TAB -->
     <div id="linksTab" class="tab-content">
         <div class="card" style="max-width:600px; margin:0 auto;">
@@ -568,7 +486,6 @@
             </div>
         </div>
     </div>
-
     <!-- GUESTS TAB -->
     <div id="analyticsTab" class="tab-content">
         <div class="card">
@@ -577,16 +494,15 @@
                 <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics()">
                 <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="fetchAnalytics()">
             </div>
-
             <div id="analyticsBodyContainer">
                 <div id="leadsGrid" class="lead-grid"></div>
                 <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">Loading leads...</p>
-
+              
                 <div class="load-more-container">
                     <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">Load More Leads</button>
                 </div>
             </div>
-
+            <!-- History Viewer -->
             <div id="historyViewer">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h3 id="historyHeader" style="margin:0;">Search History</h3>
@@ -600,842 +516,684 @@
         </div>
     </div>
 </div>
-
 <!-- PHOTO VIEWER -->
 <div class="viewer" id="viewer" onclick="closeViewer()">
     <div class="viewer-close" onclick="closeViewer()">×</div>
     <img id="viewerImg" onclick="event.stopPropagation()">
 </div>
-
-<!-- DEBUG PANEL -->
-<div id="debugBox">
-    <div id="debugBoxHeader">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <b>⚠ Debug</b>
-            <span class="pill" id="debugCountPill">0 errors</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span class="close" onclick="hideDebug()">×</span>
-        </div>
-    </div>
-    <pre id="debugContent"></pre>
-    <div id="debugActions">
-        <button onclick="copyDebug()">Copy</button>
-        <button onclick="clearDebug()">Clear</button>
-    </div>
-</div>
-
 <script>
-/* =====================================================
-   DEBUG + SAFE FETCH
-===================================================== */
-let __debugErrors = [];
-function hideDebug(){ document.getElementById('debugBox').style.display='none'; }
-function clearDebug(){ __debugErrors = []; renderDebug(); hideDebug(); }
-function copyDebug(){
-    const txt = __debugErrors.map(e => JSON.stringify(e, null, 2)).join("\\n\\n---\\n\\n");
-    navigator.clipboard.writeText(txt).then(()=>alert("Debug copied")).catch(()=>alert("Copy failed"));
-}
-function renderDebug(){
-    const pill = document.getElementById('debugCountPill');
-    pill.textContent = `${__debugErrors.length} error${__debugErrors.length===1?'':'s'}`;
-    const pre = document.getElementById('debugContent');
-    pre.textContent = __debugErrors.slice(-10).map((e,i)=>`#${__debugErrors.length-10+i+1}\\n${JSON.stringify(e,null,2)}`).join("\\n\\n---\\n\\n");
-}
-function showDebugError(obj){
-    obj.time = new Date().toISOString();
-    __debugErrors.push(obj);
-    console.error("DEBUG:", obj);
-    renderDebug();
-    document.getElementById('debugBox').style.display='block';
-}
-window.onerror = function (msg, url, line, col, error) {
-    showDebugError({
-        type: "JS Runtime Error",
-        message: String(msg),
-        file: url,
-        line, col,
-        stack: error && error.stack ? error.stack : null
-    });
-};
-window.onunhandledrejection = function (event) {
-    showDebugError({
-        type: "Unhandled Promise Rejection",
-        message: event && event.reason ? (event.reason.message || String(event.reason)) : "Unknown",
-        stack: event && event.reason && event.reason.stack ? event.reason.stack : null
-    });
-};
-
-async function safeFetch(url, options, label) {
-    const start = performance.now();
-    try {
-        const res = await fetch(url, options);
-        const text = await res.text();
-        let json = null;
-        try { json = text ? JSON.parse(text) : null; } catch (_) { /* non-json */ }
-
-        if (!res.ok) {
-            showDebugError({
-                type: "API Error",
-                api: label,
-                url,
-                status: res.status,
-                statusText: res.statusText,
-                request: {
-                    method: options?.method || "GET",
-                    headers: options?.headers || {},
-                    body: options?.body ? (options.body.length > 800 ? options.body.slice(0,800) + "…(truncated)" : options.body) : null
-                },
-                responseText: text && text.length > 2000 ? text.slice(0,2000) + "…(truncated)" : text,
-                ms: Math.round(performance.now() - start)
-            });
-            throw new Error(`${label} failed (${res.status})`);
+    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+    const GET_EVENTS_API = `${API_BASE}/get-events`;
+    const GET_PHOTOS_API = `${API_BASE}/get-photos`;
+    const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
+    const DELETE_EVENT_API = `${API_BASE}/delete-event`;
+    const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
+    const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
+    const GUEST_API = `${API_BASE}/save-details`;
+    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
+    const urlParams = new URLSearchParams(window.location.search);
+    const collectionId = urlParams.get("id");
+    const collectionNameParam = urlParams.get("name");
+    const idToken = localStorage.getItem("idToken");
+    // Auth Guard
+    if (!idToken) {
+        console.warn("No idToken found. Some API calls may fail.");
+    }
+    if (document.getElementById('assistantLink')) {
+        document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
+    }
+    // STATE - Photo Gallery
+    let allPhotos = [];
+    let filteredPhotos = [];
+    let displayedPhotosCount = 0;
+    const PHOTOS_BATCH_SIZE = 20;
+    let viewerIndex = 0;
+    // STATE - Leads Analytics
+    let allLeads = [];
+    let filteredLeads = [];
+    let leadsDisplayCount = 0;
+    const LEADS_BATCH_SIZE = 10;
+    // STATE - Face Groups
+    let faceGroups = {};
+    let selectedFaces = new Set();
+    let currentNamingFaceId = null;
+    let faceSearchQuery = '';
+    // --- TABS ---
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+        // Activate Tab UI
+        const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
+        if(tabEl) tabEl.classList.add('active');
+        const contentEl = document.getElementById(tabId);
+        if(contentEl) contentEl.classList.add('active');
+      
+        if(tabId === 'galleryTab') {
+             if(allPhotos.length === 0) {
+                fetchPhotos();
+             } else {
+                displayedPhotosCount = 0;
+                document.getElementById('galleryContainer').innerHTML = '';
+                renderNextBatch();
+                renderFaceIcons();
+             }
+        } else if (tabId === 'analyticsTab') {
+            fetchAnalytics(true);
+        } else if (tabId === 'eventsTab') {
+            init();
         }
-        return json ?? {};
-    } catch (e) {
-        showDebugError({
-            type: "Network/Fetch Error",
-            api: label,
-            url,
-            message: e?.message || String(e),
-            stack: e?.stack || null
-        });
-        throw e;
     }
-}
-
-/* =====================================================
-   CONFIG
-===================================================== */
-const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
-const GET_EVENTS_API = `${API_BASE}/get-events`;
-const GET_PHOTOS_API = `${API_BASE}/get-photos`;
-const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
-const DELETE_EVENT_API = `${API_BASE}/delete-event`;
-const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
-const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
-const GUEST_API = `${API_BASE}/save-details`;
-const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
-
-const urlParams = new URLSearchParams(window.location.search);
-const collectionId = urlParams.get("id");
-const collectionNameParam = urlParams.get("name");
-const idToken = localStorage.getItem("idToken");
-
-/* =====================================================
-   STATE
-===================================================== */
-let allPhotos = [];
-let filteredPhotos = [];
-let displayedPhotosCount = 0;
-const PHOTOS_BATCH_SIZE = 20;
-let viewerIndex = 0;
-
-let allLeads = [];
-let filteredLeads = [];
-let leadsDisplayCount = 0;
-const LEADS_BATCH_SIZE = 10;
-
-let faceGroups = {};
-let currentNamingFaceId = null;
-let selectedFaces = new Set(); // ✅ FIX: missing in your code
-
-/* =====================================================
-   STARTUP
-===================================================== */
-if (!idToken) console.warn("No idToken found. Some API calls may fail.");
-const assistantLinkEl = document.getElementById('assistantLink');
-if (assistantLinkEl) {
-    assistantLinkEl.href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
-}
-
-/* =====================================================
-   TABS
-===================================================== */
-window.switchTab = function(tabId) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-    const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
-    if (tabEl) tabEl.classList.add('active');
-    const contentEl = document.getElementById(tabId);
-    if (contentEl) contentEl.classList.add('active');
-
-    if (tabId === 'galleryTab') {
-        if (allPhotos.length === 0) fetchPhotos();
-        else {
-            displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
-            renderNextBatch();
-            renderFaceIcons();
-        }
-    } else if (tabId === 'analyticsTab') {
-        fetchAnalytics(true);
-    } else if (tabId === 'eventsTab') {
-        init();
-    }
-};
-
-/* =====================================================
-   UTILS
-===================================================== */
-function formatLeadTime(isoString) {
-    if (!isoString) return '-';
-    try {
-        const dateObj = new Date(isoString);
-        return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    } catch {
-        return isoString.substring(0, 10);
-    }
-}
-function formatBytes(bytes) {
-    if (!+bytes) return '0 B';
-    const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
-/* =====================================================
-   INIT
-===================================================== */
-async function init() {
-    try {
-        const data = await safeFetch(GET_EVENTS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        }, "GET_EVENTS");
-
-        const summary = data.collection_summary || {};
-        document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-        document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
-        document.getElementById('totalLeads').textContent = summary.leads_count || 0;
-        document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
-        document.title = `${summary.name || 'Collection'} • Manager`;
-        renderEvents(data.events || []);
-    } catch (e) {
-        document.getElementById('collectionName').textContent = "Error Loading";
-    }
-}
-
-/* =====================================================
-   PHOTOS
-===================================================== */
-async function fetchPhotos() {
-    const container = document.getElementById('galleryContainer');
-    container.innerHTML = '<p class="loading">Loading photos...</p>';
-    try {
-        const data = await safeFetch(GET_PHOTOS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        }, "GET_PHOTOS");
-
-        allPhotos = data.photos || [];
-        filteredPhotos = [...allPhotos];
-
-        buildLocalFaceMap();
-        displayedPhotosCount = 0;
-        container.innerHTML = '';
-        renderNextBatch();
-        renderFaceIcons();
-    } catch (_) {
-        container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Open Debug panel for details.</p>';
-    }
-}
-
-function renderNextBatch() {
-    const container = document.getElementById('galleryContainer');
-    const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
-
-    if (nextBatch.length === 0 && displayedPhotosCount === 0) {
-        container.innerHTML = '<p class="empty-state">No photos found.</p>';
-        document.getElementById('loadMoreBtn').style.display = 'none';
-        return;
-    }
-    let lastDate = '';
-
-    nextBatch.forEach((photo, localIdx) => {
-        const globalIdx = displayedPhotosCount + localIdx;
-        const photoDate = photo.created_at
-            ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-            : 'Unknown Date';
-
-        if (photoDate !== lastDate) {
-            const dateHeader = document.createElement('div');
-            dateHeader.className = 'date-header';
-            dateHeader.textContent = photoDate;
-            container.appendChild(dateHeader);
-
-            const grid = document.createElement('div');
-            grid.className = 'gallery-grid';
-            container.appendChild(grid);
-            lastDate = photoDate;
-        }
-
-        const currentGrid = container.querySelectorAll('.gallery-grid');
-        const targetGrid = currentGrid[currentGrid.length - 1];
-
-        const card = document.createElement('div');
-        card.className = 'photo-card';
-        card.onclick = () => openViewer(globalIdx);
-
-        const thumbnailUrl = photo.thumbnail_url || photo.url;
-        card.innerHTML = `<img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">`;
-        targetGrid.appendChild(card);
-    });
-
-    displayedPhotosCount += nextBatch.length;
-    const btn = document.getElementById('loadMoreBtn');
-    btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
-}
-
-/* =====================================================
-   FACE GROUPS (FIXED)
-   ✅ Fixes:
-   - selectedFaces missing (added)
-   - photo.face_ids mismatch (we derive ids from photo.faces)
-   - random unknown ids removed (better to skip if no FaceId)
-===================================================== */
-function buildLocalFaceMap() {
-    faceGroups = {};
-    allPhotos.forEach(photo => {
-        (photo.faces || []).forEach(face => {
-            const faceId = face.FaceId || face.faceId;
-            if (!faceId) return; // ✅ don't create random fake IDs
-
-            if (!faceGroups[faceId]) {
-                faceGroups[faceId] = {
-                    id: faceId,
-                    name: face.FaceName || 'Unknown Person',
-                    thumbnail: photo.thumbnail_url || photo.url, // ✅ better thumb
-                    count: 0,
-                    photos: []
-                };
-            }
-            faceGroups[faceId].count++;
-            faceGroups[faceId].photos.push(photo);
-        });
-    });
-}
-
-/* Face Icons (Click = filter, Shift+Click = multi, Alt+Click = rename flow) */
-function renderFaceIcons() {
-    const bar = document.getElementById('faceIconsBar');
-    bar.innerHTML = '';
-    const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
-
-    if (entries.length === 0) {
-        bar.style.display = 'none';
-        return;
-    }
-    bar.style.display = 'flex';
-
-    entries.forEach(group => {
-        const img = document.createElement('img');
-        img.className = 'face-icon';
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${(group.name||'U').charAt(0)}`;
-        img.title = `${group.name} (${group.count} photos)`;
-
-        // keep selected state consistent
-        if (selectedFaces.has(group.id)) img.classList.add('selected');
-
-        img.onclick = (e) => {
-            // Alt + click => open naming header + show photos
-            if (e.altKey) {
-                showFacePhotos(group.id);
-                return;
-            }
-
-            if (e.shiftKey) {
-                if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
-                else selectedFaces.add(group.id);
-            } else {
-                selectedFaces.clear();
-                selectedFaces.add(group.id);
-            }
-
-            applyFaceFilter();
-            renderFaceIcons(); // ✅ update selection visuals
-        };
-
-        bar.appendChild(img);
-    });
-}
-
-function applyFaceFilter() {
-    if (selectedFaces.size === 0) {
-        filteredPhotos = [...allPhotos];
-    } else {
-        // ✅ FIX: derive FaceIds from photo.faces, not photo.face_ids
-        filteredPhotos = allPhotos.filter(photo => {
-            const ids = (photo.faces || []).map(f => f.FaceId || f.faceId).filter(Boolean);
-            return Array.from(selectedFaces).every(fid => ids.includes(fid));
-        });
-    }
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-}
-
-/* =====================================================
-   FACE NAMING (FIXED)
-   ✅ Fixes:
-   - cancelFaceNaming wrong tabId
-   - saveFaceName uses global 'event' (broken). We pass button.
-===================================================== */
-window.showFacePhotos = (faceId) => {
-    if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
-
-    currentNamingFaceId = faceId;
-    const group = faceGroups[faceId];
-
-    const header = document.getElementById('faceNamingHeader');
-    document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
-    document.getElementById('faceNameInput').value = (group.name === 'Unknown Person' ? '' : group.name);
-    document.getElementById('faceHeaderTitle').textContent = group.name === 'Unknown Person' ? "Who is this?" : `Photos of ${group.name}`;
-    header.style.display = 'flex';
-
-    filteredPhotos = group.photos;
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-
-    // Hide normal filters when in naming mode
-    const fr = document.querySelector('.filter-row-top');
-    if (fr) fr.style.display = 'none';
-};
-
-window.cancelFaceNaming = () => {
-    currentNamingFaceId = null;
-    document.getElementById('faceNamingHeader').style.display = 'none';
-    const fr = document.querySelector('.filter-row-top');
-    if (fr) fr.style.display = 'flex';
-
-    // ✅ FIX: don't switch to non-existing tab; just restore gallery state
-    selectedFaces.clear();
-    filteredPhotos = [...allPhotos];
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-    renderFaceIcons();
-};
-
-window.saveFaceName = async (btn) => {
-    const newName = document.getElementById('faceNameInput').value.trim();
-    if (!newName || !currentNamingFaceId) return;
-
-    btn.textContent = "Saving...";
-    btn.disabled = true;
-    try {
-        const res = await safeFetch(SAVE_FACE_NAME_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                FaceId: currentNamingFaceId,
-                FaceName: newName,
-                CollectionId: collectionId
-            })
-        }, "SAVE_FACE_NAME");
-
-        // If API returns ok, update locally
-        faceGroups[currentNamingFaceId].name = newName;
-        renderFaceIcons();
-        alert("Name saved!");
-        cancelFaceNaming();
-    } catch (e) {
-        alert("Error saving name. Open Debug panel.");
-    } finally {
-        btn.textContent = "Save";
-        btn.disabled = false;
-    }
-};
-
-/* =====================================================
-   VIEWER
-===================================================== */
-window.openViewer = (idx) => {
-    if (!filteredPhotos[idx]) return;
-    viewerIndex = idx;
-    document.getElementById('viewerImg').src = filteredPhotos[idx].url;
-    document.getElementById('viewer').classList.add('open');
-};
-window.closeViewer = () => {
-    document.getElementById('viewer').classList.remove('open');
-};
-
-/* =====================================================
-   EVENTS
-===================================================== */
-function renderEvents(events) {
-    const tbody = document.getElementById('eventsTbody');
-    const uploadSelect = document.getElementById('uploadEventSelect');
-    const linkList = document.getElementById('linkEventList');
-
-    tbody.innerHTML = '';
-    uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-    linkList.innerHTML = '';
-
-    events.forEach(ev => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${ev.name}</td>
-                <td>${ev.event_date || '-'}</td>
-                <td>${ev.photo_count || 0}</td>
-                <td>
-                    <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeHtml(ev.name)}', '${ev.event_date || ''}')">Edit</button>
-                    <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeHtml(ev.name)}')">Delete</button>
-                </td>
-            </tr>`;
-
-        uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-
-        linkList.innerHTML += `
-            <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
-                <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
-            </label>`;
-    });
-}
-
-function escapeHtml(str){
-    return String(str||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
-}
-
-window.editEvent = function(eventId, name, date) {
-    document.getElementById('eventName').value = name;
-    document.getElementById('eventDate').value = date;
-
-    const btn = document.getElementById('saveEventBtn');
-    btn.onclick = () => updateEvent(eventId);
-    btn.textContent = "Update";
-
-    document.getElementById('eventForm').style.display = 'block';
-};
-
-async function updateEvent(eventId) {
-    const name = document.getElementById('eventName').value;
-    const date = document.getElementById('eventDate').value;
-    if (!name) return alert('Name required');
-
-    await safeFetch(UPSERT_EVENT_API, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
-    }, "UPSERT_EVENT");
-
-    document.getElementById('eventForm').style.display = 'none';
-    const btn = document.getElementById('saveEventBtn');
-    btn.textContent = "Save";
-    btn.onclick = createEvent;
-
-    init();
-}
-
-async function createEvent() {
-    const name = document.getElementById('eventName').value;
-    const date = document.getElementById('eventDate').value;
-    if (!name) return alert('Name required');
-
-    await safeFetch(UPSERT_EVENT_API, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-    }, "CREATE_EVENT");
-
-    document.getElementById('eventForm').style.display = 'none';
-    init();
-}
-document.getElementById('saveEventBtn').onclick = createEvent;
-
-window.deleteEvent = async function(eventId, name) {
-    if (!confirm(`Delete ${name}?`)) return;
-    await safeFetch(DELETE_EVENT_API, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
-    }, "DELETE_EVENT");
-    init();
-};
-
-/* =====================================================
-   ANALYTICS
-===================================================== */
-async function fetchAnalytics(forceRefetch = false) {
-    const dateFilter = document.getElementById('dateFilter').value;
-    const mobileFilter = document.getElementById('mobileFilter').value.trim();
-    const noLeadsMessage = document.getElementById('noLeadsMessage');
-
-    if (allLeads.length === 0 || forceRefetch) {
-        noLeadsMessage.textContent = 'Loading leads...';
-        noLeadsMessage.style.display = 'block';
+    // --- UTILITY FUNCTIONS ---
+    function formatLeadTime(isoString) {
+        if (!isoString) return '-';
         try {
-            const data = await safeFetch(GUEST_API, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            }, "GET_LEADS");
-            allLeads = data.leads || [];
-        } catch (e) {
-            noLeadsMessage.textContent = 'Failed to fetch leads. Open Debug.';
-            return;
+             const dateObj = new Date(isoString);
+             return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        } catch {
+             return isoString.substring(0, 10);
         }
     }
-
-    filteredLeads = allLeads.filter(l => {
-        const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
-        const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
-        return matchesMobile && matchesDate;
-    });
-
-    leadsDisplayCount = 0;
-    document.getElementById('leadsGrid').innerHTML = '';
-    noLeadsMessage.style.display = 'none';
-
-    if (filteredLeads.length === 0) {
-        noLeadsMessage.textContent = 'No leads found matching criteria.';
-        noLeadsMessage.style.display = 'block';
-    } else {
-        loadMoreLeads();
+  
+    function formatBytes(bytes) {
+        if (!+bytes) return '0 B';
+        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
     }
-}
-
-window.loadMoreLeads = function() {
-    const leadsGrid = document.getElementById('leadsGrid');
-    const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
-
-    if (nextBatch.length === 0) {
-        document.getElementById('loadMoreLeadsBtn').style.display = 'none';
-        return;
-    }
-
-    const html = nextBatch.map(l => {
-        const timeStr = formatLeadTime(l.created_at);
-        let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
-        if (l.selfie_b64) {
-            selfieSrc = `data:image/jpeg;base64,${l.selfie_b64.split(';base64,')[1] || l.selfie_b64}`;
-        }
-        const matchCount = l.match_count || 0;
-
-        return `
-            <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${escapeHtml(l.name || 'Unknown')}')">
-                <img src="${selfieSrc}" class="selfie-img" alt="Selfie" onerror="this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
-                <div class="lead-info">
-                    <div class="lead-name">${escapeHtml(l.name || 'Unknown Guest')}</div>
-                    <div class="lead-mobile">${escapeHtml(l.mobile || '-')}</div>
-                    <div class="lead-meta">
-                        <span>Link ID: ${escapeHtml(l.link_id || '-')}</span>
-                        <span class="match-count">📸 Found: ${matchCount}</span>
-                    </div>
-                    <div class="lead-meta">
-                        <span>Last: ${timeStr}</span>
-                        <span>Total Searches: ${l.total_searches || 1}</span>
-                    </div>
-                </div>
-            </div>`;
-    }).join('');
-
-    leadsGrid.innerHTML += html;
-    leadsDisplayCount += nextBatch.length;
-    const btn = document.getElementById('loadMoreLeadsBtn');
-    btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
-};
-
-window.showGuestHistory = async function(mobile, name) {
-    const container = document.getElementById('analyticsBodyContainer');
-    const historyViewer = document.getElementById('historyViewer');
-    const historyBody = document.getElementById('historyBody');
-
-    container.style.display = 'none';
-    historyViewer.style.display = 'block';
-    document.getElementById('historyHeader').textContent = `${name}`;
-    historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
-
-    try {
-        const data = await safeFetch(`${GUEST_API}?mobile=${encodeURIComponent(mobile)}`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${idToken}` }
-        }, "GET_HISTORY");
-
-        const history = data.history || [];
-        if (history.length === 0) {
-            historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
-            return;
-        }
-
-        historyBody.innerHTML = history.map(h => `
-            <tr>
-                <td>${formatLeadTime(h.created_at)}</td>
-                <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${escapeHtml(h.link_id || '-')}</span></td>
-                <td style="color:var(--muted);">${escapeHtml(h.name || '-')} (Found: ${h.match_count || 0})</td>
-            </tr>
-        `).join('');
-    } catch(e) {
-        historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history. Open Debug.</td></tr>';
-    }
-};
-
-window.hideHistoryViewer = function() {
-    document.getElementById('analyticsBodyContainer').style.display = 'block';
-    document.getElementById('historyViewer').style.display = 'none';
-};
-
-/* =====================================================
-   LINK GENERATION
-===================================================== */
-document.getElementById('genLinkBtn').onclick = async () => {
-    const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
-    if (selected.length === 0) return alert('Select at least one event');
-
-    const data = await safeFetch(GENERATE_LINK_API, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
-    }, "GENERATE_LINK");
-
-    const box = document.getElementById('linkResult');
-    const linkEl = document.getElementById('generatedLink');
-    linkEl.href = data.searchUrl;
-    linkEl.textContent = data.searchUrl;
-    box.style.display = 'block';
-};
-
-window.copyLink = function() {
-    const linkText = document.getElementById('generatedLink').textContent;
-    navigator.clipboard.writeText(linkText).then(() => alert('Link copied')).catch(() => alert('Copy failed'));
-};
-
-/* =====================================================
-   UPLOAD
-===================================================== */
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-
-dropZone.onclick = () => fileInput.click();
-dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
-dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
-dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
-fileInput.onchange = () => handleFiles(fileInput.files);
-
-async function handleFiles(files) {
-    const eventId = document.getElementById('uploadEventSelect').value;
-    if (!eventId) return alert("Select an event first!");
-
-    const total = files.length;
-    if (total === 0) return;
-
-    const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
-    if (validFiles.length < total) alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
-    if (validFiles.length === 0) return;
-
-    document.getElementById('progress-container').style.display = 'block';
-    const progressBar = document.getElementById('progress-bar');
-    const status = document.getElementById('uploadStatus');
-
-    const BATCH_SIZE = 10;
-    const fileArr = validFiles;
-    const totalValid = fileArr.length;
-    let uploaded = 0;
-    status.className = '';
-    status.innerHTML = 'Starting upload...';
-
-    for (let i = 0; i < totalValid; i += BATCH_SIZE) {
-        const batch = fileArr.slice(i, i + BATCH_SIZE);
-        const fileData = batch.map(f => ({ name: f.name, type: f.type }));
-
+    // --- INIT ---
+    async function init() {
         try {
-            const data = await safeFetch(UPLOAD_URLS_API, {
+            const res = await fetch(GET_EVENTS_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
-            }, "GENERATE_UPLOAD_URLS");
-
-            await Promise.all((data.urls || []).map(async (u, idx) => {
-                const file = batch[idx];
-                await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
-                uploaded++;
-                progressBar.style.width = `${(uploaded/totalValid)*100}%`;
-                status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
-            }));
+                body: JSON.stringify({ collection_id: collectionId })
+            });
+            const data = await res.json();
+            const summary = data.collection_summary || {};
+            document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+            document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
+            document.getElementById('totalLeads').textContent = summary.leads_count || 0;
+            document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
+            document.title = `${summary.name || 'Collection'} • Manager`;
+            renderEvents(data.events || []);
+        } catch (e) {
+            console.error("Init failed:", e);
+            document.getElementById('collectionName').textContent = "Error Loading";
+        }
+    }
+    // --- PHOTO GALLERY ---
+    async function fetchPhotos() {
+        const container = document.getElementById('galleryContainer');
+        container.innerHTML = '<p class="loading">Loading photos...</p>';
+        try {
+            const res = await fetch(GET_PHOTOS_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId })
+            });
+            const data = await res.json();
+            allPhotos = data.photos || [];
+            filteredPhotos = [...allPhotos];
+          
+            // Build local map immediately for consistency
+            buildLocalFaceMap();
+            displayedPhotosCount = 0;
+            container.innerHTML = '';
+            renderNextBatch();
+            renderFaceIcons();
         } catch (err) {
-            status.className = 'error';
-            status.innerHTML = `Upload failed. Open Debug.`;
+            container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Check console/network.</p>';
+            console.error('Photo fetch error:', err);
+        }
+    }
+    function renderNextBatch() {
+        const container = document.getElementById('galleryContainer');
+        const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
+      
+        if (nextBatch.length === 0 && displayedPhotosCount === 0) {
+            container.innerHTML = '<p class="empty-state">No photos found.</p>';
+            document.getElementById('loadMoreBtn').style.display = 'none';
             return;
         }
+        let lastDate = '';
+      
+        nextBatch.forEach((photo, localIdx) => {
+            const globalIdx = displayedPhotosCount + localIdx;
+            const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
+            if (photoDate !== lastDate) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'date-header';
+                dateHeader.textContent = photoDate;
+                container.appendChild(dateHeader);
+              
+                const grid = document.createElement('div');
+                grid.className = 'gallery-grid';
+                grid.id = `grid-${globalIdx}`;
+                container.appendChild(grid);
+                lastDate = photoDate;
+            }
+            const currentGrid = container.querySelectorAll('.gallery-grid');
+            const targetGrid = currentGrid[currentGrid.length - 1];
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.onclick = () => openViewer(globalIdx);
+          
+            const thumbnailUrl = photo.thumbnail_url || photo.url;
+          
+            card.innerHTML = `
+                <img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
+            `;
+            targetGrid.appendChild(card);
+        });
+        displayedPhotosCount += nextBatch.length;
+        const btn = document.getElementById('loadMoreBtn');
+        btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
-
-    status.className = 'success';
-    status.innerHTML = '✅ Upload Complete! Indexing in progress...';
-    setTimeout(() => {
-        init();
-        fetchPhotos();
-        status.innerHTML = 'Photos indexed and ready!';
-    }, 2500);
-}
-
-/* =====================================================
-   FILTERS
-===================================================== */
-window.applyFilters = function() {
-    const type = document.getElementById('filterType').value;
-    const query = document.getElementById('tagSearch').value.toLowerCase();
-
-    selectedFaces.clear(); // clear face filter if user uses main filters
-    renderFaceIcons();
-
-    filteredPhotos = allPhotos.filter(p => {
-        const matchesType = (type === 'ALL') ||
-            (type === 'BEST' && (p.quality_score || 0) > 85) ||
-            (type === 'HAPPY' && (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
-            (type === 'GROUP' && (p.face_count || 0) >= 3);
-
-        const matchesQuery = !query || (p.ai_tags || []).some(t => String(t).toLowerCase().includes(query));
-        return matchesType && matchesQuery;
-    });
-
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-};
-
-/* =====================================================
-   DOWNLOAD ZIP (FIXED: no global event usage)
-===================================================== */
-window.downloadAllZip = async function(btn) {
-    if (filteredPhotos.length === 0) return alert("No photos to download");
-
-    const zip = new JSZip();
-    const folder = zip.folder("photos");
-    const limit = filteredPhotos.slice(0, 100);
-
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Zipping...';
-
-    let count = 0;
-    for (let i = 0; i < limit.length; i++) {
-        try {
-            const response = await fetch(limit[i].url);
-            const blob = await response.blob();
-            folder.file(`photo_${i+1}.jpg`, blob);
-            count++;
-            btn.textContent = `Zipping ${count}/${limit.length}`;
-        } catch (e) {
-            showDebugError({ type: "ZIP_DOWNLOAD_ERROR", index: i, url: limit[i].url, message: e?.message || String(e) });
+    // --- FACE GROUPS (Combined Logic) ---
+  
+    // 1. Build map from loaded photos (Client Side)
+    function buildLocalFaceMap() {
+        faceGroups = {}; // Reset
+        allPhotos.forEach(photo => {
+            (photo.faces || []).forEach(face => {
+                const faceId = face.FaceId || face.face_id || face.faceId || 'unknown-' + Math.random();
+              
+                if (!faceGroups[faceId]) {
+                    faceGroups[faceId] = {
+                        id: faceId,
+                        name: face.FaceName || 'Unknown Person',
+                        thumbnail: photo.url,
+                        count: 0,
+                        photos: []
+                    };
+                }
+                faceGroups[faceId].count++;
+                faceGroups[faceId].photos.push(photo);
+            });
+        });
+        if (Object.keys(faceGroups).length === 0) {
+            console.warn('No faces detected in photos.');
         }
     }
-
-    zip.generateAsync({type:"blob"}).then(c => {
-        saveAs(c, "photos.zip");
-    }).finally(() => {
-        btn.disabled = false;
-        btn.textContent = originalText;
-    });
-};
-
-/* =====================================================
-   START APP
-===================================================== */
-init();
-fetchPhotos(); // also load photos on first open
+    // --- Render Face Icons (Google Photos Jaisa) ---
+    function renderFaceIcons() {
+        const bar = document.getElementById('faceIconsBar');
+        bar.innerHTML = '';
+        bar.style.display = 'flex';
+        let filteredGroups = Object.values(faceGroups).filter(group => group.name.toLowerCase().includes(faceSearchQuery));
+        const entries = filteredGroups.sort((a,b) => b.count - a.count);
+        if (entries.length === 0) {
+            bar.style.display = 'none';
+            bar.innerHTML = '<p style="color:var(--muted);">No face groups detected or matching search. Upload photos with faces or check API data.</p>';
+            return;
+        }
+        entries.forEach(group => {
+            const img = document.createElement('img');
+            img.className = 'face-icon';
+            img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${group.name.charAt(0)}`;
+            img.title = group.name + ' (' + group.count + ' photos)';
+            img.onclick = (e) => {
+                if (e.shiftKey) {
+                    if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
+                    else selectedFaces.add(group.id);
+                } else {
+                    selectedFaces.clear();
+                    selectedFaces.add(group.id);
+                }
+                applyFaceFilter();
+                renderFaceIcons(); // Re-render to update selected classes
+            };
+            img.dataset.faceId = group.id;
+            if (selectedFaces.has(group.id)) {
+                img.classList.add('selected');
+            }
+            bar.appendChild(img);
+        });
+    }
+    // --- Handle Face Search ---
+    window.handleFaceSearch = function(value) {
+        faceSearchQuery = value.toLowerCase();
+        renderFaceIcons();
+    };
+    // --- Apply Face Filter (Single/Multi) ---
+    function applyFaceFilter() {
+        if (selectedFaces.size === 0) {
+            filteredPhotos = [...allPhotos];
+        } else {
+            filteredPhotos = allPhotos.filter(photo => {
+                const photoFaces = (photo.faces || []).map(f => f.FaceId || f.face_id || f.faceId);
+                return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
+            });
+        }
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+    }
+    // --- FACE NAMING LOGIC ---
+    window.showFacePhotos = (faceId) => {
+        if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
+      
+        currentNamingFaceId = faceId; // Enter naming mode
+        const group = faceGroups[faceId];
+      
+        // Show Naming Header
+        const header = document.getElementById('faceNamingHeader');
+        document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
+        document.getElementById('faceNameInput').value = group.name === 'Unknown Person' ? '' : group.name;
+        document.getElementById('faceHeaderTitle').textContent = group.name === 'Unknown Person' ? "Who is this?" : `Photos of ${group.name}`;
+        header.style.display = 'flex';
+        // Filter Photos
+        filteredPhotos = group.photos;
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+      
+        // Hide normal filters when in naming mode
+        document.querySelector('.filter-row-top').style.display = 'none';
+    };
+    window.cancelFaceNaming = () => {
+        currentNamingFaceId = null;
+        document.getElementById('faceNamingHeader').style.display = 'none';
+        document.querySelector('.filter-row-top').style.display = 'flex';
+        // Go back to gallery tab
+        switchTab('galleryTab');
+    };
+    window.saveFaceName = async () => {
+        const newName = document.getElementById('faceNameInput').value.trim();
+        if(!newName || !currentNamingFaceId) return;
+      
+        const btn = event.target;
+        btn.textContent = "Saving...";
+        btn.disabled = true;
+        try {
+            const res = await fetch(SAVE_FACE_NAME_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    FaceId: currentNamingFaceId,
+                    FaceName: newName,
+                    CollectionId: collectionId
+                })
+            });
+            if(res.ok) {
+                faceGroups[currentNamingFaceId].name = newName;
+                renderFaceIcons();
+                alert("Name saved!");
+                cancelFaceNaming();
+            } else {
+                alert("Failed to save name.");
+            }
+        } catch(e) {
+            alert("Error saving name.");
+        } finally {
+            btn.textContent = "Save";
+            btn.disabled = false;
+        }
+    };
+    // --- VIEWER LOGIC ---
+    window.openViewer = (idx) => {
+        if(!filteredPhotos[idx]) return;
+        viewerIndex = idx;
+        document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+        document.getElementById('viewer').classList.add('open');
+    }
+    window.closeViewer = () => {
+        document.getElementById('viewer').classList.remove('open');
+    }
+    // --- EVENT LOGIC ---
+    function renderEvents(events) {
+        const tbody = document.getElementById('eventsTbody');
+        const uploadSelect = document.getElementById('uploadEventSelect');
+        const linkList = document.getElementById('linkEventList');
+      
+        tbody.innerHTML = '';
+        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+        linkList.innerHTML = '';
+      
+        events.forEach(ev => {
+            // Table Row
+            tbody.innerHTML += `
+                <tr>
+                    <td>${ev.name}</td>
+                    <td>${ev.event_date || '-'}</td>
+                    <td>${ev.photo_count || 0}</td>
+                    <td>
+                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${ev.name}', '${ev.event_date}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${ev.name}')">Delete</button>
+                    </td>
+                </tr>`;
+          
+            // Upload Dropdown
+            uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+          
+            // Link Checkbox
+            linkList.innerHTML += `
+                <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+                    <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
+                </label>`;
+        });
+    }
+    window.editEvent = function(eventId, name, date) {
+        document.getElementById('eventName').value = name;
+        document.getElementById('eventDate').value = date;
+      
+        const btn = document.getElementById('saveEventBtn');
+        btn.onclick = () => updateEvent(eventId);
+        btn.textContent = "Update";
+      
+        document.getElementById('eventForm').style.display = 'block';
+    };
+    async function updateEvent(eventId) {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if(!name) return alert('Name required');
+      
+        await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
+        });
+      
+        document.getElementById('eventForm').style.display = 'none';
+        const btn = document.getElementById('saveEventBtn');
+        btn.textContent = "Save";
+        btn.onclick = createEvent;
+      
+        init();
+    }
+    // Default create handler
+    async function createEvent() {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if(!name) return alert('Name required');
+      
+        await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+        });
+        document.getElementById('eventForm').style.display = 'none';
+        init();
+    }
+    // Bind initial create handler
+    document.getElementById('saveEventBtn').onclick = createEvent;
+    window.deleteEvent = async function(eventId, name) {
+        if (!confirm(`Delete ${name}?`)) return;
+        try {
+            await fetch(DELETE_EVENT_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
+            });
+            init();
+        } catch (e) {
+            alert('Delete failed.');
+            console.error(e);
+        }
+    }
+    // --- ANALYTICS LOGIC ---
+    async function fetchAnalytics(forceRefetch = false) {
+        const dateFilter = document.getElementById('dateFilter').value;
+        const mobileFilter = document.getElementById('mobileFilter').value.trim();
+        const noLeadsMessage = document.getElementById('noLeadsMessage');
+        if (allLeads.length === 0 || forceRefetch) {
+            noLeadsMessage.textContent = 'Loading leads...';
+            noLeadsMessage.style.display = 'block';
+            try {
+                const res = await fetch(GUEST_API, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                });
+              
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+                allLeads = data.leads || [];
+            } catch(e) {
+                console.error("Fetch Leads Error:", e);
+                noLeadsMessage.textContent = 'Failed to fetch leads.';
+                return;
+            }
+        }
+      
+        filteredLeads = allLeads.filter(l => {
+            const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
+            const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
+            return matchesMobile && matchesDate;
+        });
+        leadsDisplayCount = 0;
+        document.getElementById('leadsGrid').innerHTML = '';
+        noLeadsMessage.style.display = 'none';
+        if(filteredLeads.length === 0) {
+            noLeadsMessage.textContent = 'No leads found matching criteria.';
+            noLeadsMessage.style.display = 'block';
+        } else {
+            loadMoreLeads();
+        }
+    }
+    window.loadMoreLeads = function() {
+        const leadsGrid = document.getElementById('leadsGrid');
+        const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
+      
+        if (nextBatch.length === 0) {
+            document.getElementById('loadMoreLeadsBtn').style.display = 'none';
+            return;
+        }
+        const html = nextBatch.map(l => {
+            const timeStr = formatLeadTime(l.created_at);
+            let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+            if (l.selfie_b64) {
+                selfieSrc = l.selfie_b64.startsWith('data:') ? l.selfie_b64 : `data:image/jpeg;base64,${l.selfie_b64}`;
+            }
+            const matchCount = l.match_count || 0;
+          
+            return `
+                <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name || 'Unknown'}')">
+                    <img src="${selfieSrc}" class="selfie-img" alt="Selfie" onerror="this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
+                    <div class="lead-info">
+                        <div class="lead-name">${l.name || 'Unknown Guest'}</div>
+                        <div class="lead-mobile">${l.mobile || '-'}</div>
+                        <div class="lead-meta">
+                            <span>Link ID: ${l.link_id || '-'}</span>
+                            <span class="match-count">📸 Found: ${matchCount}</span>
+                        </div>
+                        <div class="lead-meta">
+                            <span>Last: ${timeStr}</span>
+                            <span>Total Searches: ${l.total_searches || 1}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+      
+        leadsGrid.innerHTML += html;
+        leadsDisplayCount += nextBatch.length;
+        const btn = document.getElementById('loadMoreLeadsBtn');
+        btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
+    }
+    window.showGuestHistory = async function(mobile, name) {
+        const container = document.getElementById('analyticsBodyContainer');
+        const historyViewer = document.getElementById('historyViewer');
+        const historyBody = document.getElementById('historyBody');
+      
+        container.style.display = 'none';
+        historyViewer.style.display = 'block';
+        document.getElementById('historyHeader').textContent = `${name}`;
+        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+      
+        try {
+            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+            const history = data.history || [];
+          
+            if(history.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+                return;
+            }
+            historyBody.innerHTML = history.map(h => `
+                <tr>
+                    <td>${formatLeadTime(h.created_at)}</td>
+                    <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
+                    <td style="color:var(--muted);">${h.name || '-'} (Found: ${h.match_count || 0})</td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+        }
+    }
+    window.hideHistoryViewer = function() {
+        document.getElementById('analyticsBodyContainer').style.display = 'block';
+        document.getElementById('historyViewer').style.display = 'none';
+    }
+    // --- LINK GENERATION ---
+    document.getElementById('genLinkBtn').onclick = async () => {
+        const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
+        if (selected.length === 0) return alert('Select at least one event');
+        const expiry = document.getElementById('expiryHours').value;
+        const password = document.getElementById('linkPassword').value;
+      
+        const res = await fetch(GENERATE_LINK_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                collection_id: collectionId, 
+                event_ids: selected,
+                expiry_hours: expiry ? parseInt(expiry) : 0,
+                password: password || null
+            })
+        });
+        const data = await res.json();
+        const box = document.getElementById('linkResult');
+        const linkEl = document.getElementById('generatedLink');
+        linkEl.href = data.searchUrl;
+        linkEl.textContent = data.searchUrl;
+        box.style.display = 'block';
+    };
+    window.copyLink = function() {
+        const linkText = document.getElementById('generatedLink').textContent;
+        navigator.clipboard.writeText(linkText).then(() => {
+            alert('Link copied to clipboard');
+        }).catch(err => alert('Copy failed'));
+    };
+    // --- UPLOAD LOGIC ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+  
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
+    dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
+    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+    fileInput.onchange = () => handleFiles(fileInput.files);
+    async function handleFiles(files) {
+        const eventId = document.getElementById('uploadEventSelect').value;
+        if(!eventId) return alert("Select an event first!");
+      
+        const total = files.length;
+        if(total === 0) return;
+        // Filter valid image types
+        const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
+      
+        if (validFiles.length < total) {
+            alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
+        }
+        if (validFiles.length === 0) return;
+        document.getElementById('progress-container').style.display = 'block';
+        const progressBar = document.getElementById('progress-bar');
+        const status = document.getElementById('uploadStatus');
+      
+        const BATCH_SIZE = 10;
+        const fileArr = validFiles;
+        const totalValid = fileArr.length;
+        let uploaded = 0;
+        status.className = '';
+        status.innerHTML = 'Starting upload...';
+        for(let i=0; i<totalValid; i+=BATCH_SIZE) {
+            const batch = fileArr.slice(i, i+BATCH_SIZE);
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+            try {
+                const res = await fetch(UPLOAD_URLS_API, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+                });
+                const data = await res.json();
+              
+                await Promise.all(data.urls.map(async (u, idx) => {
+                    const file = batch[idx];
+                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+                    uploaded++;
+                    progressBar.style.width = `${(uploaded/totalValid)*100}%`;
+                    status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
+                }));
+            } catch(err) {
+                status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+                console.error(err);
+            }
+        }
+        status.className = 'success';
+        status.innerHTML = '✅ Upload Complete! Indexing in progress...';
+        setTimeout(() => {
+            init();
+            status.innerHTML = 'Photos indexed and ready!';
+        }, 3000);
+    }
+    // --- FILTERS ---
+    window.applyFilters = function() {
+        const type = document.getElementById('filterType').value;
+        const query = document.getElementById('tagSearch').value.toLowerCase();
+      
+        filteredPhotos = allPhotos.filter(p => {
+            const matchesType = (type === 'ALL') ||
+                (type === 'BEST' && (p.quality_score || 0) > 85) ||
+                (type === 'HAPPY' && (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+                (type === 'GROUP' && (p.face_count || 0) >= 3);
+          
+            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
+            return matchesType && matchesQuery;
+        });
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+    }
+    // --- DOWNLOAD ZIP ---
+    window.downloadAllZip = async function() {
+        if(filteredPhotos.length === 0) return alert("No photos to download");
+      
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const limit = filteredPhotos.slice(0, 100); // Browser limitation safeguard
+      
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Zipping...';
+      
+        let count = 0;
+        for(let i=0; i<limit.length; i++) {
+            try {
+                const response = await fetch(limit[i].url);
+                const blob = await response.blob();
+                folder.file(`photo_${i+1}.jpg`, blob);
+                count++;
+                btn.textContent = `Zipping ${count}/${limit.length}`;
+            } catch(e) {
+                console.error('Download error for photo', i);
+            }
+        }
+      
+        zip.generateAsync({type:"blob"}).then(c => {
+            saveAs(c, "photos.zip");
+        }).finally(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
+    }
+    // Start App
+    init();
 </script>
 </body>
 </html>
