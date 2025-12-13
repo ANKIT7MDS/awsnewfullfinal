@@ -19,7 +19,7 @@
             --ok: #34a853;
         }
         * { box-sizing: border-box; }
-        
+       
         body {
             margin: 0;
             background-color: var(--bg);
@@ -28,7 +28,7 @@
             padding-bottom: 60px;
         }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        
+       
         /* HEADER */
         .top-bar {
             display: flex;
@@ -47,11 +47,11 @@
             gap:5px;
         }
         h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
-        
+       
         /* STATS LINE */
         .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
         .stats-line b { color:white; font-weight:600; }
-        
+       
         /* TABS */
         .tabs {
             display: flex;
@@ -71,10 +71,10 @@
         }
         .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
         .tab:hover { color: var(--brand-hover); }
-        
+       
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
+       
         /* CARDS */
         .card {
             background: var(--card);
@@ -127,7 +127,7 @@
             padding-top: 8px;
         }
         .match-count { font-weight: 600; color: var(--ok); }
-        
+       
         /* Dropdown and Search Layout */
         .filter-row-top {
             display: flex;
@@ -149,7 +149,7 @@
             outline: none;
             height: 44px; /* Uniform height */
         }
-        
+       
         /* Button style consistency */
         .btn {
             background: var(--brand);
@@ -181,12 +181,12 @@
         th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
         td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
         tr:hover { background: rgba(66, 133, 244, 0.1); }
-        
+       
         /* FORMS */
         input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
         input:focus { border-color: var(--brand); }
         input::placeholder { color: var(--muted); }
-        
+       
         /* UPLOAD */
         #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
         #dropZone:hover { border-color: var(--brand); }
@@ -194,7 +194,7 @@
         #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
         #uploadStatus.error { color: var(--danger); }
         #uploadStatus.success { color: var(--ok); }
-        
+       
         /* Load More */
         .load-more-container { text-align: center; margin-top: 30px; }
         /* GALLERY FIXES */
@@ -219,7 +219,7 @@
             transition: opacity 0.3s;
         }
         .photo-card img.loaded { opacity: 1; }
-        
+       
         /* DATE HEADERS IN GALLERY */
         .date-header {
             grid-column: 1 / -1;
@@ -264,12 +264,11 @@
         .face-icon {
             width: 50px;
             height: 50px;
-            min-width: 50px; /* Important for overflow */
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--brand);
             cursor: pointer;
-            transition: transform 0.2s, border-color 0.2s;
+            transition: transform 0.2s;
         }
         .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
         .face-icon:hover { transform: scale(1.1); }
@@ -372,7 +371,7 @@
 </head>
 <body>
 <div class="wrap">
-    
+   
     <div class="top-bar">
         <div>
             <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
@@ -395,6 +394,7 @@
         <div class="tab" onclick="switchTab('linksTab')">Links</div>
         <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
     </div>
+    <!-- GALLERY TAB -->
     <div id="galleryTab" class="tab-content active">
         <div class="filter-row-top">
             <select id="filterType" onchange="applyFilters()">
@@ -406,7 +406,9 @@
             <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
             <button class="btn secondary" onclick="downloadAllZip()">⬇ Download Zip</button>
         </div>
-        <div id="faceIconsBar"></div>
+        <!-- New Face Icons Bar -->
+        <div id="faceIconsBar" class="face-group-grid"></div>
+        <!-- Dynamic Header for Face Naming -->
         <div id="faceNamingHeader" class="face-header" style="display:none;">
             <img id="faceHeaderImg" src="">
             <div class="face-header-content">
@@ -421,25 +423,26 @@
         <div id="galleryContainer">
             <p class="loading">Loading photos...</p>
         </div>
-        
+       
         <div class="load-more-container">
             <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="renderNextBatch()">Load More</button>
         </div>
     </div>
+    <!-- EVENTS TAB -->
     <div id="eventsTab" class="tab-content">
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
                 <h3>Events</h3>
-                <button class="btn" onclick="showNewEventForm()">+ New Event</button>
+                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
             </div>
-            
+           
             <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
                     <input type="text" id="eventName" placeholder="Event Name">
                     <input type="date" id="eventDate">
                 </div>
                 <div style="text-align:right;">
-                    <button class="btn secondary" onclick="hideEventForm()">Cancel</button>
+                    <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
                     <button class="btn" id="saveEventBtn">Save</button>
                 </div>
             </div>
@@ -449,6 +452,7 @@
             </table>
         </div>
     </div>
+    <!-- UPLOAD TAB -->
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
             <div style="margin-bottom:20px;">
@@ -466,6 +470,7 @@
             </div>
         </div>
     </div>
+    <!-- LINKS TAB -->
     <div id="linksTab" class="tab-content">
         <div class="card" style="max-width:600px; margin:0 auto;">
             <h3>Generate Search Link</h3>
@@ -480,6 +485,7 @@
             </div>
         </div>
     </div>
+    <!-- GUESTS TAB -->
     <div id="analyticsTab" class="tab-content">
         <div class="card">
             <h3>Guest Leads</h3>
@@ -490,11 +496,12 @@
             <div id="analyticsBodyContainer">
                 <div id="leadsGrid" class="lead-grid"></div>
                 <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">Loading leads...</p>
-                
+               
                 <div class="load-more-container">
                     <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">Load More Leads</button>
                 </div>
             </div>
+            <!-- History Viewer -->
             <div id="historyViewer">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h3 id="historyHeader" style="margin:0;">Search History</h3>
@@ -508,12 +515,12 @@
         </div>
     </div>
 </div>
+<!-- PHOTO VIEWER -->
 <div class="viewer" id="viewer" onclick="closeViewer()">
     <div class="viewer-close" onclick="closeViewer()">×</div>
     <img id="viewerImg" onclick="event.stopPropagation()">
 </div>
 <script>
-    // --- API ENDPOINTS (MUST BE VALID FOR CODE TO WORK) ---
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const GET_EVENTS_API = `${API_BASE}/get-events`;
     const GET_PHOTOS_API = `${API_BASE}/get-photos`;
@@ -521,61 +528,85 @@
     const DELETE_EVENT_API = `${API_BASE}/delete-event`;
     const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
     const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
-    const GUEST_API = `${API_BASE}/get-leads`; // Updated endpoint for clarity
-    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`; 
-    
+    const GUEST_API = `${API_BASE}/save-details`;
+    const LIST_PEOPLE_API = `${API_BASE}/list_people`;
+    const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
     const urlParams = new URLSearchParams(window.location.search);
     const collectionId = urlParams.get("id");
     const collectionNameParam = urlParams.get("name");
-    // NOTE: Replace this with your actual method of retrieving the Cognito ID Token
-    // For this code to work, you must be logged in and the token must be in localStorage.
-    const idToken = localStorage.getItem("idToken"); 
-    
+    const idToken = localStorage.getItem("idToken");
     // Auth Guard
     if (!idToken) {
-        console.error("Auth Token Missing. Please login.");
-        // alert("Please login first (idToken missing).");
-        // window.location.href = 'login.html'; // Uncomment to enforce login redirection
+        console.warn("No idToken found. Some API calls may fail.");
     }
-
     if (document.getElementById('assistantLink')) {
         document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
     }
-
-    // --- STATE MANAGEMENT ---
+    // STATE - Photo Gallery
     let allPhotos = [];
     let filteredPhotos = [];
     let displayedPhotosCount = 0;
     const PHOTOS_BATCH_SIZE = 20;
-    let selectedFaces = new Set(); // FIXED: Initialized Set for face selection
-    
+    let viewerIndex = 0;
+    // STATE - Leads Analytics
     let allLeads = [];
     let filteredLeads = [];
     let leadsDisplayCount = 0;
     const LEADS_BATCH_SIZE = 10;
-    
+    // STATE - Face Groups
     let faceGroups = {};
+    let directoryPeople = [];
     let currentNamingFaceId = null;
-    let currentEventIdToEdit = null; // For event form management
-
+    // --- TABS ---
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+       
+        // Activate Tab UI
+        const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
+        if(tabEl) tabEl.classList.add('active');
+        const contentEl = document.getElementById(tabId);
+        if(contentEl) contentEl.classList.add('active');
+       
+        if(tabId === 'galleryTab') {
+             // If manual switch, hide naming header
+             if (!currentNamingFaceId) {
+                 document.getElementById('faceNamingHeader').style.display = 'none';
+                 applyFilters(); // Reset filters
+             }
+             if(allPhotos.length === 0) {
+                fetchPhotos();
+             } else {
+                // If not in naming mode, render full batch
+                if (!currentNamingFaceId) {
+                    displayedPhotosCount = 0;
+                    document.getElementById('galleryContainer').innerHTML = '';
+                    renderNextBatch();
+                }
+             }
+        } else if (tabId === 'analyticsTab') {
+            fetchAnalytics(true);
+        } else if (tabId === 'eventsTab') {
+            init();
+        }
+    }
     // --- UTILITY FUNCTIONS ---
     function formatLeadTime(isoString) {
         if (!isoString) return '-';
         try {
-            const dateObj = new Date(isoString);
-            return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+             const dateObj = new Date(isoString);
+             return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
         } catch {
-            return isoString.substring(0, 10);
+             return isoString.substring(0, 10);
         }
     }
-    
+   
     function formatBytes(bytes) {
         if (!+bytes) return '0 B';
         const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
     }
-
     // --- INIT ---
     async function init() {
         try {
@@ -597,32 +628,6 @@
             document.getElementById('collectionName').textContent = "Error Loading";
         }
     }
-
-    // --- TAB SWITCHING ---
-    window.switchTab = function(tabId) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
-        if(tabEl) tabEl.classList.add('active');
-        const contentEl = document.getElementById(tabId);
-        if(contentEl) contentEl.classList.add('active');
-        
-        if(tabId === 'galleryTab') {
-            if(allPhotos.length === 0) {
-                fetchPhotos();
-            } else {
-                // Re-render gallery if data is present
-                applyFilters(true); // Re-apply existing filters
-                renderFaceIcons();
-            }
-        } else if (tabId === 'analyticsTab') {
-            fetchAnalytics(true); // Force refetch/initial load
-        } else if (tabId === 'eventsTab') {
-            init(); // Refresh event list
-        }
-    }
-
     // --- PHOTO GALLERY ---
     async function fetchPhotos() {
         const container = document.getElementById('galleryContainer');
@@ -635,255 +640,167 @@
             });
             const data = await res.json();
             allPhotos = data.photos || [];
-            
-            buildLocalFaceMap(); // Build face groups map
-            renderFaceIcons(); // Render face icons
-            applyFilters(true); // Apply any existing filters and render photos
+            filteredPhotos = [...allPhotos];
+           
+            // Build local map immediately for consistency
+            buildLocalFaceMap();
+            displayedPhotosCount = 0;
+            container.innerHTML = '';
+            renderNextBatch();
         } catch (err) {
             container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Check console/network.</p>';
             console.error('Photo fetch error:', err);
         }
     }
-
     function renderNextBatch() {
         const container = document.getElementById('galleryContainer');
         const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
-        
+       
         if (nextBatch.length === 0 && displayedPhotosCount === 0) {
-            container.innerHTML = '<p class="empty-state">No photos found matching the criteria.</p>';
+            container.innerHTML = '<p class="empty-state">No photos found.</p>';
             document.getElementById('loadMoreBtn').style.display = 'none';
             return;
         }
-
         let lastDate = '';
-        
+       
         nextBatch.forEach((photo, localIdx) => {
             const globalIdx = displayedPhotosCount + localIdx;
             const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
-            
-            // Group by date
-            if (photoDate !== lastDate || displayedPhotosCount === 0) {
-                if (displayedPhotosCount > 0 && container.lastChild && container.lastChild.classList.contains('gallery-grid')) {
-                    // This fixes the date header issue in continuous loading, by not adding redundant headers if the date is the same.
-                    lastDate = photoDate;
-                } else {
-                    const dateHeader = document.createElement('div');
-                    dateHeader.className = 'date-header';
-                    dateHeader.textContent = photoDate;
-                    container.appendChild(dateHeader);
-                    lastDate = photoDate;
-                }
-                
+            if (photoDate !== lastDate) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'date-header';
+                dateHeader.textContent = photoDate;
+                container.appendChild(dateHeader);
+               
                 const grid = document.createElement('div');
                 grid.className = 'gallery-grid';
-                grid.id = `grid-${photoDate.replace(/\s/g, '-')}`; // Unique ID for the grid
+                grid.id = `grid-${globalIdx}`;
                 container.appendChild(grid);
+                lastDate = photoDate;
             }
-            
-            const currentGrid = container.lastChild;
-            if (!currentGrid || !currentGrid.classList.contains('gallery-grid')) {
-                 // Fallback if somehow grid is not the last child (shouldn't happen with the fix above)
-                console.warn('Gallery grid structure error, recreating.');
-                const grid = document.createElement('div');
-                grid.className = 'gallery-grid';
-                grid.id = `grid-fallback`;
-                container.appendChild(grid);
-            }
-
+            const currentGrid = container.querySelectorAll('.gallery-grid');
+            const targetGrid = currentGrid[currentGrid.length - 1];
             const card = document.createElement('div');
             card.className = 'photo-card';
-            // Use the index in the *filtered* list for the viewer
-            card.onclick = () => openViewer(globalIdx); 
-            
+            card.onclick = () => openViewer(globalIdx);
+           
             const thumbnailUrl = photo.thumbnail_url || photo.url;
-            
+           
             card.innerHTML = `
                 <img src="${thumbnailUrl}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">
             `;
-            container.lastChild.appendChild(card);
+            targetGrid.appendChild(card);
         });
-        
         displayedPhotosCount += nextBatch.length;
         const btn = document.getElementById('loadMoreBtn');
         btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
     }
-
     // --- FACE GROUPS (Combined Logic) ---
+   
+    // 1. Build map from loaded photos (Client Side)
     function buildLocalFaceMap() {
         faceGroups = {}; // Reset
         allPhotos.forEach(photo => {
             (photo.faces || []).forEach(face => {
-                const faceId = face.FaceId || face.faceId;
-                if (!faceId) return; // Skip if no valid FaceId
-
+                const faceId = face.FaceId || face.faceId || 'unknown-' + Math.random();
+               
                 if (!faceGroups[faceId]) {
                     faceGroups[faceId] = {
                         id: faceId,
                         name: face.FaceName || 'Unknown Person',
-                        thumbnail: photo.thumbnail_url || photo.url, // Use photo thumbnail as group thumbnail
+                        thumbnail: photo.url,
                         count: 0,
                         photos: []
                     };
                 }
                 faceGroups[faceId].count++;
-                // Add the whole photo object to the group
                 faceGroups[faceId].photos.push(photo);
             });
         });
     }
-
+    // --- Render Face Icons (Google Photos Jaisa) ---
     function renderFaceIcons() {
         const bar = document.getElementById('faceIconsBar');
         bar.innerHTML = '';
+        bar.style.display = 'flex';
         const entries = Object.values(faceGroups).sort((a,b) => b.count - a.count);
-        
         if (entries.length === 0) {
             bar.style.display = 'none';
             return;
         }
-        bar.style.display = 'flex';
-        
-        // Add an icon to show all photos (reset filter)
-        const allBtn = document.createElement('div');
-        allBtn.className = 'face-icon';
-        allBtn.style.textAlign = 'center';
-        allBtn.style.lineHeight = '50px';
-        allBtn.style.fontSize = '24px';
-        allBtn.style.color = 'var(--text)';
-        allBtn.style.backgroundColor = '#111';
-        allBtn.style.border = '2px solid transparent';
-        allBtn.title = 'Show All Faces (Shift+Click to clear selection)';
-        allBtn.textContent = '🖼️';
-        allBtn.onclick = () => {
-             selectedFaces.clear();
-             document.querySelectorAll('.face-icon').forEach(i => i.classList.remove('selected'));
-             applyFilters(true);
-        };
-        bar.appendChild(allBtn);
-
-
         entries.forEach(group => {
             const img = document.createElement('img');
             img.className = 'face-icon';
             img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${group.name.charAt(0)}`;
-            img.title = `${group.name} (${group.count} photos)`;
-            img.classList.toggle('selected', selectedFaces.has(group.id));
-            
+            img.title = group.name + ' (' + group.count + ' photos)';
             img.onclick = (e) => {
                 if (e.shiftKey) {
-                    // Shift+Click for multi-select
                     if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
                     else selectedFaces.add(group.id);
                 } else {
-                    // Single click for single select/toggle
-                    if (selectedFaces.size === 1 && selectedFaces.has(group.id)) {
-                        selectedFaces.clear(); // Clear if already selected
-                    } else {
-                        selectedFaces.clear();
-                        selectedFaces.add(group.id);
-                    }
+                    selectedFaces.clear();
+                    selectedFaces.add(group.id);
                 }
-                // Update UI state and apply filter
-                document.querySelectorAll('.face-icon').forEach(i => {
-                    const iconFaceId = i.title.split(' ')[0] === group.name ? group.id : null;
-                    if(iconFaceId) { // Basic check, better to use data attribute if available
-                        i.classList.toggle('selected', selectedFaces.has(iconFaceId));
-                    }
-                });
+                applyFaceFilter();
                 img.classList.toggle('selected', selectedFaces.has(group.id));
-                applyFilters(true);
             };
-            
-            // Double click to enter naming mode (Show Face Photos is more of a detail view)
-            img.ondblclick = () => showFaceNaming(group.id); 
-
             bar.appendChild(img);
         });
     }
-
-    // --- APPLY FILTERS (The main filtering logic) ---
-    window.applyFilters = function(resetScroll = false) {
-        // Reset face filter UI selection state for all icons
-        document.querySelectorAll('#faceIconsBar .face-icon').forEach(i => i.classList.remove('selected'));
-        Array.from(selectedFaces).forEach(fid => {
-             const icon = document.querySelector(`.face-icon[title*="${faceGroups[fid]?.name}"]`);
-             if (icon) icon.classList.add('selected');
-        });
-        
-        const type = document.getElementById('filterType').value;
-        const query = document.getElementById('tagSearch').value.toLowerCase();
-        
-        filteredPhotos = allPhotos.filter(p => {
-            // 1. Type Filter (BEST, HAPPY, GROUP)
-            const matchesType = (type === 'ALL') ||
-                (type === 'BEST' && (p.quality_score || 0) > 85) ||
-                (type === 'HAPPY' && (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
-                (type === 'GROUP' && (p.face_count || 0) >= 3);
-            
-            // 2. Tag Search Filter
-            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
-
-            // 3. Face Filter (Multiple face IDs selection)
-            const matchesFaces = selectedFaces.size === 0 || 
-                Array.from(selectedFaces).every(fid => (p.face_ids || []).includes(fid));
-
-            return matchesType && matchesQuery && matchesFaces;
-        });
-
-        if (resetScroll) {
-            displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
+    // --- Apply Face Filter (Single/Multi) ---
+    function applyFaceFilter() {
+        if (selectedFaces.size === 0) {
+            filteredPhotos = [...allPhotos];
+        } else {
+            filteredPhotos = allPhotos.filter(photo => {
+                const photoFaces = photo.face_ids || [];
+                return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
+            });
         }
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
     }
-    
     // --- FACE NAMING LOGIC ---
-    window.showFaceNaming = (faceId) => {
-        if (!faceGroups[faceId]) return;
-        
+    window.showFacePhotos = (faceId) => {
+        if (!faceGroups[faceId] || faceGroups[faceId].photos.length === 0) return;
+       
         currentNamingFaceId = faceId; // Enter naming mode
         const group = faceGroups[faceId];
-        
-        // Hide Filters/Icons and Show Naming Header
-        document.getElementById('faceIconsBar').style.display = 'none';
-        document.querySelector('.filter-row-top').style.display = 'none';
-        
+       
+        // Show Naming Header
         const header = document.getElementById('faceNamingHeader');
         document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
         document.getElementById('faceNameInput').value = group.name === 'Unknown Person' ? '' : group.name;
         document.getElementById('faceHeaderTitle').textContent = group.name === 'Unknown Person' ? "Who is this?" : `Photos of ${group.name}`;
         header.style.display = 'flex';
-
-        // Filter Photos to show only those matching the face
+        // Filter Photos
         filteredPhotos = group.photos;
         displayedPhotosCount = 0;
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
+       
+        // Hide normal filters when in naming mode
+        document.querySelector('.filter-row-top').style.display = 'none';
     };
-
     window.cancelFaceNaming = () => {
         currentNamingFaceId = null;
         document.getElementById('faceNamingHeader').style.display = 'none';
-        document.getElementById('faceIconsBar').style.display = 'flex';
         document.querySelector('.filter-row-top').style.display = 'flex';
-        
-        // Go back to the default photo view
-        selectedFaces.clear(); // Clear face filter on cancel
-        applyFilters(true);
-        renderFaceIcons();
+        // Go back to People tab
+        switchTab('faceGroupTab');
     };
-
     window.saveFaceName = async () => {
         const newName = document.getElementById('faceNameInput').value.trim();
         if(!newName || !currentNamingFaceId) return;
-        
+       
         const btn = event.target;
         btn.textContent = "Saving...";
         btn.disabled = true;
         try {
             const res = await fetch(SAVE_FACE_NAME_API, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' }, // Lambda expects plain body usually, or wrapped
                 body: JSON.stringify({
                     FaceId: currentNamingFaceId,
                     FaceName: newName,
@@ -891,12 +808,12 @@
                 })
             });
             if(res.ok) {
-                // Update Local State for immediate feedback
+                // Update Local State
                 if(faceGroups[currentNamingFaceId]) {
                     faceGroups[currentNamingFaceId].name = newName;
                 }
-                alert("Name saved successfully! Face icons and filters updated.");
-                cancelFaceNaming(); 
+                alert("Name saved! It will appear in search shortly.");
+                cancelFaceNaming(); // Go back
             } else {
                 alert("Failed to save name.");
             }
@@ -908,7 +825,6 @@
             btn.disabled = false;
         }
     };
-
     // --- VIEWER LOGIC ---
     window.openViewer = (idx) => {
         if(!filteredPhotos[idx]) return;
@@ -919,17 +835,16 @@
     window.closeViewer = () => {
         document.getElementById('viewer').classList.remove('open');
     }
-    
     // --- EVENT LOGIC ---
     function renderEvents(events) {
         const tbody = document.getElementById('eventsTbody');
         const uploadSelect = document.getElementById('uploadEventSelect');
         const linkList = document.getElementById('linkEventList');
-        
+       
         tbody.innerHTML = '';
-        uploadSelect.innerHTML = '<option value="" disabled selected>Select Event...</option>';
+        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
         linkList.innerHTML = '';
-        
+       
         events.forEach(ev => {
             // Table Row
             tbody.innerHTML += `
@@ -938,96 +853,67 @@
                     <td>${ev.event_date || '-'}</td>
                     <td>${ev.photo_count || 0}</td>
                     <td>
-                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${ev.name.replace(/'/g, "\\'")}', '${ev.event_date || ''}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${ev.name.replace(/'/g, "\\'")}')">Delete</button>
+                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${ev.name}', '${ev.event_date}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${ev.name}')">Delete</button>
                     </td>
                 </tr>`;
-            
+           
             // Upload Dropdown
             uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-            
+           
             // Link Checkbox
             linkList.innerHTML += `
                 <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
                     <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
                 </label>`;
         });
-
-        // Ensure default option is selected if no event is picked
-        if (!uploadSelect.value) {
-            uploadSelect.querySelector('option[disabled]').selected = true;
-        }
     }
-    
-    window.showNewEventForm = function() {
-        document.getElementById('eventName').value = '';
-        document.getElementById('eventDate').value = '';
-        document.getElementById('eventForm').style.display = 'block';
-        currentEventIdToEdit = null;
-        document.getElementById('saveEventBtn').textContent = "Save";
-        document.getElementById('saveEventBtn').onclick = createOrUpdateEvent;
-    }
-
-    window.hideEventForm = function() {
-        document.getElementById('eventForm').style.display = 'none';
-        currentEventIdToEdit = null;
-    }
-
     window.editEvent = function(eventId, name, date) {
         document.getElementById('eventName').value = name;
         document.getElementById('eventDate').value = date;
-        currentEventIdToEdit = eventId;
-        
+       
         const btn = document.getElementById('saveEventBtn');
+        btn.onclick = () => updateEvent(eventId);
         btn.textContent = "Update";
-        btn.onclick = createOrUpdateEvent;
-        
+       
         document.getElementById('eventForm').style.display = 'block';
     };
-
-    async function createOrUpdateEvent() {
+    async function updateEvent(eventId) {
         const name = document.getElementById('eventName').value;
         const date = document.getElementById('eventDate').value;
-        if(!name) return alert('Event Name is required');
-
+        if(!name) return alert('Name required');
+       
+        await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
+        });
+       
+        document.getElementById('eventForm').style.display = 'none';
         const btn = document.getElementById('saveEventBtn');
-        const originalText = btn.textContent;
-        btn.textContent = 'Processing...';
-        btn.disabled = true;
-        
-        try {
-            const payload = { 
-                collection_id: collectionId, 
-                name, 
-                event_date: date 
-            };
-            if (currentEventIdToEdit) {
-                payload.event_id = currentEventIdToEdit;
-            }
-
-            const res = await fetch(UPSERT_EVENT_API, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                 hideEventForm();
-                 init(); // Re-load events
-            } else {
-                throw new Error('API failed');
-            }
-        } catch(e) {
-            console.error(e);
-            alert('Operation failed. Check API endpoint/auth.');
-        } finally {
-            btn.textContent = originalText;
-            btn.disabled = false;
-        }
+        btn.textContent = "Save";
+        btn.onclick = createEvent;
+       
+        init();
     }
-
+    // Default create handler
+    async function createEvent() {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if(!name) return alert('Name required');
+       
+        await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+        });
+        document.getElementById('eventForm').style.display = 'none';
+        init();
+    }
+    // Bind initial create handler
+    document.getElementById('saveEventBtn').onclick = createEvent;
     window.deleteEvent = async function(eventId, name) {
-        if (!confirm(`Are you sure you want to delete event: ${name}? All associated photos will lose their event link.`)) return;
+        if (!confirm(`Delete ${name}?`)) return;
         try {
             await fetch(DELETE_EVENT_API, {
                 method: 'POST',
@@ -1040,86 +926,63 @@
             console.error(e);
         }
     }
-
     // --- ANALYTICS LOGIC ---
     async function fetchAnalytics(forceRefetch = false) {
         const dateFilter = document.getElementById('dateFilter').value;
         const mobileFilter = document.getElementById('mobileFilter').value.trim();
         const noLeadsMessage = document.getElementById('noLeadsMessage');
-
         if (allLeads.length === 0 || forceRefetch) {
             noLeadsMessage.textContent = 'Loading leads...';
             noLeadsMessage.style.display = 'block';
             try {
-                // Note: The API must be configured to return leads for the collection/user
-                const res = await fetch(`${GUEST_API}?collection_id=${collectionId}`, { 
+                const res = await fetch(GUEST_API, {
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${idToken}` }
                 });
-                
-                if (!res.ok) throw new Error('Failed to fetch leads from API');
+               
+                if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 allLeads = data.leads || [];
             } catch(e) {
                 console.error("Fetch Leads Error:", e);
-                noLeadsMessage.textContent = 'Failed to fetch leads. (Check API endpoint)';
+                noLeadsMessage.textContent = 'Failed to fetch leads.';
                 return;
             }
         }
-        
+       
         filteredLeads = allLeads.filter(l => {
             const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
             const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
             return matchesMobile && matchesDate;
         });
-
         leadsDisplayCount = 0;
         document.getElementById('leadsGrid').innerHTML = '';
         noLeadsMessage.style.display = 'none';
-        
         if(filteredLeads.length === 0) {
             noLeadsMessage.textContent = 'No leads found matching criteria.';
             noLeadsMessage.style.display = 'block';
-            document.getElementById('loadMoreLeadsBtn').style.display = 'none';
         } else {
             loadMoreLeads();
         }
     }
-
     window.loadMoreLeads = function() {
         const leadsGrid = document.getElementById('leadsGrid');
         const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
-        
+       
         if (nextBatch.length === 0) {
             document.getElementById('loadMoreLeadsBtn').style.display = 'none';
             return;
         }
-
         const html = nextBatch.map(l => {
             const timeStr = formatLeadTime(l.created_at);
             let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
-            
-            // FIX: Base64 image logic corrected to safely construct data URL
             if (l.selfie_b64) {
-                // Ensure only the pure Base64 part is used.
-                let base64Data = l.selfie_b64;
-                if (base64Data.includes(';base64,')) {
-                    base64Data = base64Data.split(';base64,').pop();
-                }
-                // Check if the resulting string is likely a short placeholder or a real image
-                if (base64Data.length > 100) { 
-                    selfieSrc = `data:image/jpeg;base64,${base64Data}`;
-                } else {
-                     // If data is too short, use fallback and log warning (or keep selfieSrc as default)
-                     console.warn('Skipping short/invalid selfie_b64 for lead:', l.mobile);
-                }
+                selfieSrc = `data:image/jpeg;base64,${l.selfie_b64.split(';base64,')[1] || l.selfie_b64}`;
             }
-
             const matchCount = l.match_count || 0;
-            
-            // Note: The onerror handler helps with the Base64 images that fail to load
+           
             return `
-                <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name ? l.name.replace(/'/g, "\\'") : 'Unknown'}')">
+                <div class="lead-card" onclick="showGuestHistory('${l.mobile}', '${l.name || 'Unknown'}')">
                     <img src="${selfieSrc}" class="selfie-img" alt="Selfie" onerror="this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
                     <div class="lead-info">
                         <div class="lead-name">${l.name || 'Unknown Guest'}</div>
@@ -1136,33 +999,31 @@
                 </div>
             `;
         }).join('');
-        
+       
         leadsGrid.innerHTML += html;
         leadsDisplayCount += nextBatch.length;
         const btn = document.getElementById('loadMoreLeadsBtn');
         btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
     }
-
     window.showGuestHistory = async function(mobile, name) {
         const container = document.getElementById('analyticsBodyContainer');
         const historyViewer = document.getElementById('historyViewer');
         const historyBody = document.getElementById('historyBody');
-        
+       
         container.style.display = 'none';
         historyViewer.style.display = 'block';
-        document.getElementById('historyHeader').textContent = `${name} (${mobile})`;
+        document.getElementById('historyHeader').textContent = `${name}`;
         historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
-        
+       
         try {
-            // NOTE: Assuming your GUEST_API endpoint can handle a query parameter for history
-            const res = await fetch(`${GUEST_API}/history?mobile=${mobile}&collection_id=${collectionId}`, {
+            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${idToken}` }
             });
-            if (!res.ok) throw new Error('API Error fetching history');
+            if (!res.ok) throw new Error('API Error');
             const data = await res.json();
             const history = data.history || [];
-            
+           
             if(history.length === 0) {
                 historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
                 return;
@@ -1178,215 +1039,148 @@
             historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
         }
     }
-
     window.hideHistoryViewer = function() {
         document.getElementById('analyticsBodyContainer').style.display = 'block';
         document.getElementById('historyViewer').style.display = 'none';
     }
-
     // --- LINK GENERATION ---
     document.getElementById('genLinkBtn').onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
-        const expiryHours = document.getElementById('expiryHours').value;
-        const password = document.getElementById('linkPassword').value;
-
         if (selected.length === 0) return alert('Select at least one event');
-        
-        const btn = event.target;
-        btn.disabled = true;
-        btn.textContent = 'Generating...';
-
-        try {
-             const res = await fetch(GENERATE_LINK_API, {
-                 method: 'POST',
-                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                 body: JSON.stringify({ 
-                    collection_id: collectionId, 
-                    event_ids: selected,
-                    expiry_hours: expiryHours, // Pass additional fields
-                    password: password
-                })
-             });
-             const data = await res.json();
-
-             if (data.searchUrl) {
-                 const box = document.getElementById('linkResult');
-                 const linkEl = document.getElementById('generatedLink');
-                 linkEl.href = data.searchUrl;
-                 linkEl.textContent = data.searchUrl;
-                 box.style.display = 'block';
-             } else {
-                 alert('Link generation failed. Check API response.');
-             }
-        } catch (e) {
-            console.error(e);
-            alert('Error generating link.');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Generate Link';
-        }
+       
+        const res = await fetch(GENERATE_LINK_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
+        });
+        const data = await res.json();
+        const box = document.getElementById('linkResult');
+        const linkEl = document.getElementById('generatedLink');
+        linkEl.href = data.searchUrl;
+        linkEl.textContent = data.searchUrl;
+        box.style.display = 'block';
     };
-    
     window.copyLink = function() {
         const linkText = document.getElementById('generatedLink').textContent;
         navigator.clipboard.writeText(linkText).then(() => {
             alert('Link copied to clipboard');
-        }).catch(err => alert('Copy failed. Try manually.'));
+        }).catch(err => alert('Copy failed'));
     };
-
     // --- UPLOAD LOGIC ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
-    
+   
     dropZone.onclick = () => fileInput.click();
     dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
     dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
-    dropZone.ondrop = (e) => { e.preventDefault(); dropZone.style.background = '#151515'; handleFiles(e.dataTransfer.files); };
+    dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
     fileInput.onchange = () => handleFiles(fileInput.files);
-    
     async function handleFiles(files) {
         const eventId = document.getElementById('uploadEventSelect').value;
         if(!eventId) return alert("Select an event first!");
-        
+       
         const total = files.length;
         if(total === 0) return;
-        
+        // Filter valid image types
         const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
-        
+       
         if (validFiles.length < total) {
             alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
         }
         if (validFiles.length === 0) return;
-
         document.getElementById('progress-container').style.display = 'block';
         const progressBar = document.getElementById('progress-bar');
         const status = document.getElementById('uploadStatus');
-        progressBar.style.width = '0%';
-
+       
         const BATCH_SIZE = 10;
         const fileArr = validFiles;
         const totalValid = fileArr.length;
         let uploaded = 0;
         status.className = '';
         status.innerHTML = 'Starting upload...';
-        
         for(let i=0; i<totalValid; i+=BATCH_SIZE) {
             const batch = fileArr.slice(i, i+BATCH_SIZE);
-            const fileData = batch.map(f => ({ 
-                name: f.name, 
-                type: f.type,
-                // Ensure unique name or use a dynamic key
-                key: `${collectionId}/${eventId}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9.]/g, '_')}` 
-            })); 
-
+            const fileData = batch.map(f => ({ name: f.name, type: f.type }));
             try {
-                // Step 1: Get signed URLs
                 const res = await fetch(UPLOAD_URLS_API, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
                 });
                 const data = await res.json();
-                
-                // Step 2: Upload files to S3 (in parallel within the batch)
-                const uploadPromises = data.urls.map(async (u, idx) => {
+               
+                await Promise.all(data.urls.map(async (u, idx) => {
                     const file = batch[idx];
-                    try {
-                        await fetch(u.uploadURL, { 
-                            method: 'PUT', 
-                            body: file, 
-                            headers: { 'Content-Type': file.type } 
-                        });
-                        uploaded++;
-                        // Update progress bar
-                        progressBar.style.width = `${(uploaded/totalValid)*100}%`;
-                        status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
-                    } catch(e) {
-                         console.error(`S3 upload failed for ${file.name}:`, e);
-                         // Don't increment 'uploaded' count for failed uploads
-                    }
-                });
-                await Promise.all(uploadPromises);
-
+                    await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+                    uploaded++;
+                    progressBar.style.width = `${(uploaded/totalValid)*100}%`;
+                    status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
+                }));
             } catch(err) {
-                status.innerHTML = `<span class="error">Error in batch ${i/BATCH_SIZE + 1}: ${err.message}</span>`;
+                status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
                 console.error(err);
-                break; // Stop further processing on API/Batch failure
             }
         }
-
         status.className = 'success';
-        status.innerHTML = `✅ Upload Complete! ${uploaded} photos uploaded. Indexing in progress...`;
-        
-        // Wait a few seconds, then re-init to update stats and photos
+        status.innerHTML = '✅ Upload Complete! Indexing in progress...';
         setTimeout(() => {
-            init(); 
-            // If currently on gallery tab, refresh photos
-            if(document.getElementById('galleryTab').classList.contains('active')) {
-                fetchPhotos(); 
-            }
-        }, 5000); // 5 seconds to allow indexing to start
+            init();
+            status.innerHTML = 'Photos indexed and ready!';
+        }, 3000);
     }
-
+    // --- FILTERS ---
+    window.applyFilters = function() {
+        const type = document.getElementById('filterType').value;
+        const query = document.getElementById('tagSearch').value.toLowerCase();
+       
+        filteredPhotos = allPhotos.filter(p => {
+            const matchesType = (type === 'ALL') ||
+                (type === 'BEST' && (p.quality_score || 0) > 85) ||
+                (type === 'HAPPY' && (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+                (type === 'GROUP' && (p.face_count || 0) >= 3);
+           
+            const matchesQuery = !query || (p.ai_tags || []).some(t => t.toLowerCase().includes(query));
+            return matchesType && matchesQuery;
+        });
+        displayedPhotosCount = 0;
+        document.getElementById('galleryContainer').innerHTML = '';
+        renderNextBatch();
+    }
     // --- DOWNLOAD ZIP ---
     window.downloadAllZip = async function() {
         if(filteredPhotos.length === 0) return alert("No photos to download");
-        
+       
         const zip = new JSZip();
         const folder = zip.folder("photos");
-        const limit = filteredPhotos.slice(0, 100); 
-        
+        const limit = filteredPhotos.slice(0, 100); // Browser limitation safeguard
+       
         const btn = event.target;
         const originalText = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Zipping...';
-        
+       
         let count = 0;
-        let failedCount = 0;
-
-        // Using Promise.all for faster, concurrent downloads
-        await Promise.all(limit.map(async (photo, i) => {
+        for(let i=0; i<limit.length; i++) {
             try {
-                const response = await fetch(photo.url);
-                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-                
+                const response = await fetch(limit[i].url);
                 const blob = await response.blob();
-                // Use a proper filename based on key or index
-                const filename = photo.photo_key ? photo.photo_key.split('/').pop() : `photo_${i+1}.jpg`; 
-                folder.file(filename, blob);
-                
+                folder.file(`photo_${i+1}.jpg`, blob);
                 count++;
                 btn.textContent = `Zipping ${count}/${limit.length}`;
             } catch(e) {
-                console.error('Download error for photo', i, e);
-                failedCount++;
+                console.error('Download error for photo', i);
             }
-        }));
-
-        if (failedCount > 0) {
-            alert(`${failedCount} photo(s) failed to download and were skipped.`);
         }
-        
-        btn.textContent = 'Generating Zip...';
-
+       
         zip.generateAsync({type:"blob"}).then(c => {
-            saveAs(c, `${collectionNameParam || 'collection'}_photos.zip`);
+            saveAs(c, "photos.zip");
         }).finally(() => {
             btn.disabled = false;
             btn.textContent = originalText;
         });
     }
-
     // Start App
     init();
-    // Default to the Gallery tab after initial load
-    document.addEventListener('DOMContentLoaded', () => {
-        // Only run fetchPhotos if it wasn't triggered by switchTab('galleryTab') in init()
-        if (allPhotos.length === 0) {
-            fetchPhotos();
-        }
-    });
-
 </script>
 </body>
 </html>
