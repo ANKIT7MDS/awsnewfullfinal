@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
+    <!-- External Libraries for Zip Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -537,8 +538,6 @@
     const idToken = localStorage.getItem("idToken");
     // Auth Guard
     if (!idToken) {
-        // Uncomment in production:
-        // window.location.href = 'login.html';
         console.warn("No idToken found. Some API calls may fail.");
     }
     if (document.getElementById('assistantLink')) {
@@ -571,24 +570,14 @@
         if(contentEl) contentEl.classList.add('active');
        
         if(tabId === 'galleryTab') {
-             // If manual switch, hide naming header
-             if (!currentNamingFaceId) {
-                 document.getElementById('faceNamingHeader').style.display = 'none';
-                 applyFilters(); // Reset filters
-             }
              if(allPhotos.length === 0) {
                 fetchPhotos();
              } else {
-                // If not in naming mode, render full batch
-                if (!currentNamingFaceId) {
-                    displayedPhotosCount = 0;
-                    document.getElementById('galleryContainer').innerHTML = '';
-                    renderNextBatch();
-                }
+                displayedPhotosCount = 0;
+                document.getElementById('galleryContainer').innerHTML = '';
+                renderNextBatch();
+                renderFaceIcons();
              }
-        } else if(tabId === 'faceGroupTab') {
-            currentNamingFaceId = null; // Exit naming mode
-            loadPeopleTab();
         } else if (tabId === 'analyticsTab') {
             fetchAnalytics(true);
         } else if (tabId === 'eventsTab') {
@@ -1010,17 +999,53 @@
         const btn = document.getElementById('loadMoreLeadsBtn');
         btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
     }
-    // --- LINK GENERATION (With Expiry/Password) ---
+    window.showGuestHistory = async function(mobile, name) {
+        const container = document.getElementById('analyticsBodyContainer');
+        const historyViewer = document.getElementById('historyViewer');
+        const historyBody = document.getElementById('historyBody');
+       
+        container.style.display = 'none';
+        historyViewer.style.display = 'block';
+        document.getElementById('historyHeader').textContent = `${name}`;
+        historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+       
+        try {
+            const res = await fetch(`${GUEST_API}?mobile=${mobile}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+            const history = data.history || [];
+           
+            if(history.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+                return;
+            }
+            historyBody.innerHTML = history.map(h => `
+                <tr>
+                    <td>${formatLeadTime(h.created_at)}</td>
+                    <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
+                    <td style="color:var(--muted);">${h.name || '-'} (Found: ${h.match_count || 0})</td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+        }
+    }
+    window.hideHistoryViewer = function() {
+        document.getElementById('analyticsBodyContainer').style.display = 'block';
+        document.getElementById('historyViewer').style.display = 'none';
+    }
+    // --- LINK GENERATION ---
     document.getElementById('genLinkBtn').onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
-        const expiry = document.getElementById('expiryHours').value || 24;
-        const password = document.getElementById('linkPassword').value || '';
         if (selected.length === 0) return alert('Select at least one event');
        
         const res = await fetch(GENERATE_LINK_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_ids: selected, expiry_hours: expiry, password: password })
+            body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
         });
         const data = await res.json();
         const box = document.getElementById('linkResult');
