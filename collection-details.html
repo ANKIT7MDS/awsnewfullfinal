@@ -785,12 +785,6 @@
         document.getElementById('galleryContainer').innerHTML = '';
         renderNextBatch();
        
-        // Switch tab visually
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[onclick="switchTab('galleryTab')"]`).classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById('galleryTab').classList.add('active');
-       
         // Hide normal filters when in naming mode
         document.querySelector('.filter-row-top').style.display = 'none';
     };
@@ -901,7 +895,6 @@
         });
        
         document.getElementById('eventForm').style.display = 'none';
-        // Reset button for Create mode
         const btn = document.getElementById('saveEventBtn');
         btn.textContent = "Save";
         btn.onclick = createEvent;
