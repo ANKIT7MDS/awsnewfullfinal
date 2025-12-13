@@ -4,14 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EventLens – Smart AI Gallery</title>
-
   <!-- NEW: Confetti for celebration -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  
+ 
   <!-- Zip download libs (unchanged) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
   <style>
     :root {
       --bg: #050505;
@@ -22,9 +20,7 @@
       --muted: #a0a0a0;
       --border: #262626;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       background: #050505;
       color: var(--text);
@@ -32,13 +28,11 @@
       min-height: 100vh;
       padding-bottom: 40px;
     }
-
     .container {
       max-width: 600px; /* Mobile focused width */
       margin: 0 auto;
       padding: 16px;
     }
-
     /* HEADER */
     header {
       text-align: center;
@@ -51,7 +45,6 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
     /* CARDS */
     .card {
       background: #101010;
@@ -61,7 +54,6 @@
       margin-bottom: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-
     .step-title {
       font-size: 16px;
       font-weight: 600;
@@ -70,7 +62,6 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-
     /* CUSTOM CAMERA BUTTONS */
     .camera-btn {
       display: flex;
@@ -99,7 +90,6 @@
       font-size: 16px;
       color: var(--muted);
     }
-
     /* PREVIEW */
     #previewContainer {
       display: none;
@@ -146,7 +136,6 @@
       border-color: var(--accent);
       color: var(--accent);
     }
-
     /* STEP 2 */
     #step2 {
       display: none;
@@ -187,7 +176,6 @@
       border-color: var(--accent);
       outline: none;
     }
-
     /* STEP 3 */
     #step3 {
       display: none;
@@ -310,7 +298,6 @@
     .whatsapp-btn:hover {
       background: #1DA851;
     }
-
     /* VIEWER */
     .viewer {
       position: fixed;
@@ -365,7 +352,6 @@
       cursor: pointer;
       font-size: 16px;
     }
-
     /* LOADING */
     .loading-dots {
       display: inline-block;
@@ -380,7 +366,6 @@
       60% { content: '..'; }
       80%, 100% { content: '...'; }
     }
-
     /* MOBILE OPTIMIZATIONS */
     @media (max-width: 480px) {
       .container {
@@ -408,7 +393,6 @@
       <h1>EventLens</h1>
       <p class="match-text">AI Powered Photo Finder</p>
     </header>
-
     <div id="step1" class="card">
       <h3 class="step-title">1. Upload Your Selfie</h3>
       <div class="camera-btn">
@@ -426,7 +410,6 @@
       </div>
       <p id="loadingText" class="loading-text" style="display:none">Scanning faces with AI<span class="loading-dots"></span></p>
     </div>
-
     <!-- STEP 2: ENTER DETAILS -->
     <div id="step2" class="card">
       <h3 class="step-title">2. Enter Your Details</h3>
@@ -444,7 +427,6 @@
       </div>
       <button class="btn btn-primary" onclick="showGallery()" id="showGalleryBtn">Show Gallery</button>
     </div>
-
     <!-- STEP 3: GALLERY -->
     <div id="step3">
       <div class="search-wrapper">
@@ -468,7 +450,6 @@
       <div class="photo-grid" id="photoGrid"></div>
       <button class="whatsapp-btn" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
     </div>
-
     <!-- VIEWER -->
     <div class="viewer" id="viewer">
       <button class="viewer-close" onclick="closeViewer()">×</button>
@@ -480,7 +461,6 @@
       </div>
     </div>
   </div>
-
   <script>
     // API Configuration
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
