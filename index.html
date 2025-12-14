@@ -2,14 +2,16 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EventLens – Smart AI Gallery</title>
-  <!-- NEW: Confetti for celebration -->
+
+  <!-- NEW: Confetti for celebration (same as old) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
- 
+  
   <!-- Zip download libs (unchanged) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
   <style>
     :root {
       --bg: #050505;
@@ -20,7 +22,9 @@
       --muted: #a0a0a0;
       --border: #262626;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       background: #050505;
       color: var(--text);
@@ -28,11 +32,13 @@
       min-height: 100vh;
       padding-bottom: 40px;
     }
+
     .container {
       max-width: 600px; /* Mobile focused width */
       margin: 0 auto;
       padding: 16px;
     }
+
     /* HEADER */
     header {
       text-align: center;
@@ -45,6 +51,7 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
+
     /* CARDS */
     .card {
       background: #101010;
@@ -54,6 +61,7 @@
       margin-bottom: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
+
     .step-title {
       font-size: 16px;
       font-weight: 600;
@@ -62,6 +70,7 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
+
     /* CUSTOM CAMERA BUTTONS */
     .camera-btn {
       display: flex;
@@ -69,661 +78,730 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      height: 200px;
-      border: 3px dashed var(--accent);
-      border-radius: 20px;
-      background: var(--accent-soft);
+      padding: 30px;
+      background: #1a1a1a;
+      border: 2px dashed var(--accent);
+      border-radius: 16px;
+      color: white;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: 0.2s;
+      margin-bottom: 12px;
     }
-    .camera-btn:hover {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      transform: scale(1.02);
+    .camera-btn:active {
+      background: #252525; 
+      transform: scale(0.98);
     }
     .camera-icon {
-      font-size: 60px;
-      margin-bottom: 10px;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .gallery-link {
       color: var(--accent);
-    }
-    .camera-text {
-      font-size: 16px;
-      color: var(--muted);
-    }
-    /* PREVIEW */
-    #previewContainer {
-      display: none;
-      text-align: center;
-      margin: 20px 0;
-    }
-    #previewImg {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      border: 4px solid var(--accent);
-      object-fit: cover;
-      margin-bottom: 15px;
-    }
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 25px;
+      text-decoration: underline;
       cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      transition: all 0.3s;
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
-    .btn-primary:hover {
-      background: #00d15f;
-      transform: translateY(-2px);
-    }
-    .btn-secondary {
-      background: transparent;
-      color: var(--muted);
-      border: 2px solid var(--border);
-    }
-    .btn-secondary:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    /* STEP 2 */
-    #step2 {
-      display: none;
-    }
-    .match-info {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .match-number {
-      font-size: 48px;
-      font-weight: 700;
-      color: var(--accent);
-      margin: 0;
-    }
-    .match-text {
-      color: var(--muted);
       font-size: 14px;
+      padding: 5px;
     }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .form-group input {
+
+    /* INPUTS & BUTTONS */
+    input[type="text"], input[type="tel"] {
       width: 100%;
-      padding: 12px;
+      padding: 14px 16px;
+      background: #000;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #111;
-      color: var(--text);
+      border-radius: 12px;
+      color: white;
       font-size: 16px;
-    }
-    .form-group input:focus {
-      border-color: var(--accent);
+      margin-bottom: 12px;
       outline: none;
     }
-    /* STEP 3 */
-    #step3 {
-      display: none;
+    input:focus { 
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft); /* NEW: Focus glow */
     }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 50px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #000;
+      transition: transform 0.2s, box-shadow 0.2s; /* NEW: Smoother transition */
+    }
+    .btn:hover { 
+      opacity: 0.9; 
+      transform: scale(1.02);
+      box-shadow: 0 8px 25px rgba(0,230,118,0.3); /* NEW: Hover glow */
+    }
+    .btn:disabled { 
+      opacity: 0.5; 
+      cursor: wait; 
+      transform: none; /* NEW: No scale on disabled */
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      font-size: 13px;
+      width: auto;
+    }
+
+    .btn-retake {
+      background: #333 !important; /* NEW: Retake button style */
+      margin-top: 10px;
+    }
+
+    .btn-whatsapp {
+      background: #25D366 !important; /* NEW: WhatsApp green */
+      color: white !important;
+      margin-top: 15px;
+    }
+
+    /* PREVIEW IMG */
+    #previewImg {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 20px auto;
+      display: block;
+      border: 4px solid var(--accent);
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
+      transition: transform 0.3s; /* NEW: Smooth preview animation */
+    }
+    #previewImg:hover {
+      transform: scale(1.05); /* NEW: Subtle zoom on hover */
+    }
+
+    /* NEW: Loading Animation */
+    .loading-text {
+      text-align: center;
+      color: var(--accent);
+      font-size: 14px;
+      margin-top: 15px;
+      font-weight: 500;
+    }
+    .dots {
+      display: inline-block;
+      animation: loading-dots 1.5s infinite;
+    }
+    @keyframes loading-dots {
+      0%, 20% { content: ' .'; }
+      40% { content: ' ..'; }
+      60% { content: ' ...'; }
+      80%, 100% { content: ' ....'; }
+    }
+
+    /* SEARCH BAR (Google Photos Style) */
     .search-wrapper {
       position: relative;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
-    #searchInput {
+    .search-wrapper input {
       width: 100%;
-      padding: 12px 40px 12px 50px;
-      border: 1px solid var(--border);
-      border-radius: 25px;
-      background: #111;
-      color: var(--text);
-      font-size: 16px;
-    }
-    #searchInput:focus {
-      border-color: var(--accent);
+      padding: 12px 16px 12px 40px;
+      border-radius: 50px;
+      background: #1a1a1a;
+      border: none;
+      color: white;
+      font-size: 15px;
       outline: none;
     }
     .search-icon {
       position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
+      left: 14px;
+      top: 12px;
       color: var(--muted);
-      font-size: 20px;
     }
+
+    /* FILTER CHIPS */
     .filter-row {
       display: flex;
       gap: 10px;
       overflow-x: auto;
-      margin-bottom: 20px;
       padding-bottom: 10px;
+      margin-bottom: 15px;
+      scrollbar-width: none;
     }
-    .filter-chip {
-      padding: 8px 16px;
-      background: #111;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      color: var(--text);
-      font-size: 14px;
-      cursor: pointer;
+    .filter-row::-webkit-scrollbar { display: none; }
+
+    .chip {
       white-space: nowrap;
-      transition: all 0.3s;
-    }
-    .filter-chip.active {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-    .filter-chip:hover {
-      border-color: var(--accent);
-    }
-    .action-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .selected-count {
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-    }
-    .photo-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 8px;
-    }
-    .photo-item {
-      aspect-ratio: 1;
-      overflow: hidden;
-      border-radius: 10px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #ccc;
+      font-size: 13px;
       cursor: pointer;
+      transition: 0.2s;
+    }
+    .chip.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* PHOTO GRID */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+    @media(min-width: 768px) { 
+      .grid { 
+        grid-template-columns: repeat(5, 1fr); 
+        gap: 10px; 
+      } 
+    }
+
+    .photo-item {
       position: relative;
-      transition: transform 0.3s;
+      aspect-ratio: 1;
+      background: #111;
+      overflow: hidden;
+      cursor: pointer;
+      border-radius: 8px; /* NEW: Rounded corners */
+      transition: transform 0.2s; /* NEW: Smooth selection */
     }
     .photo-item:hover {
-      transform: scale(1.05);
+      transform: scale(1.02); /* NEW: Hover effect */
     }
     .photo-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: 0.3s;
     }
-    .select-overlay {
+    .photo-item.selected img { 
+      opacity: 0.5; 
+      transform: scale(0.95); 
+    }
+    
+    .check-mark {
       position: absolute;
-      top: 5px;
+      top: 5px; 
       right: 5px;
-      width: 30px;
-      height: 30px;
-      background: var(--accent);
+      width: 22px; 
+      height: 22px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.5);
       border-radius: 50%;
-      display: none;
-      align-items: center;
+      display: flex; 
+      align-items: center; 
       justify-content: center;
-      color: white;
-      font-weight: bold;
+      color: transparent;
+      font-size: 12px;
+      transition: all 0.2s; /* NEW: Smooth checkmark */
     }
-    .photo-item.selected .select-overlay {
-      display: flex;
+    .photo-item.selected .check-mark {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
     }
-    .whatsapp-btn {
-      display: none;
-      background: #25D366;
-      color: white;
-      border: none;
-      border-radius: 25px;
-      padding: 12px 24px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 20px;
-      transition: all 0.3s;
-    }
-    .whatsapp-btn:hover {
-      background: #1DA851;
-    }
-    /* VIEWER */
+
+    /* VIEWER OVERLAY */
     .viewer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
       height: 100%;
       background: rgba(0,0,0,0.95);
-      display: flex;
-      align-items: center;
+      z-index: 999;
+      display: none;
+      flex-direction: column;
       justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
+      align-items: center;
     }
-    .viewer.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .viewer.open { display: flex; }
     .viewer img {
-      max-width: 90%;
-      max-height: 90vh;
-      border-radius: 10px;
-      box-shadow: 0 0 50px rgba(0,0,0,0.8);
-    }
-    .viewer-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      color: white;
-      font-size: 30px;
-      cursor: pointer;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 12px;
-      border-radius: 50%;
+      max-width: 95%; 
+      max-height: 80vh;
+      object-fit: contain;
+      border-radius: 8px;
     }
     .viewer-controls {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
+      position: absolute; 
+      bottom: 30px;
+      display: flex; 
+      gap: 20px;
     }
-    .viewer-btn {
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 25px;
+    .close-viewer {
+      position: absolute; 
+      top: 20px; 
+      right: 20px;
+      color: white; 
+      font-size: 30px; 
       cursor: pointer;
-      font-size: 16px;
+      transition: color 0.2s; /* NEW: Smooth close button */
     }
-    /* LOADING */
-    .loading-dots {
-      display: inline-block;
-    }
-    .loading-dots::after {
-      content: '';
-      animation: dots 1.5s steps(5, end) infinite;
-    }
-    @keyframes dots {
-      0%, 20% { content: ''; }
-      40% { content: '.'; }
-      60% { content: '..'; }
-      80%, 100% { content: '...'; }
-    }
-    /* MOBILE OPTIMIZATIONS */
-    @media (max-width: 480px) {
-      .container {
-        padding: 10px;
-      }
-      .photo-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 5px;
-      }
-      .action-row {
-        flex-direction: column;
-        gap: 10px;
-      }
-      .actions {
-        width: 100%;
-        justify-content: center;
-      }
-    }
+    .close-viewer:hover { color: var(--accent); }
+
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- STEP 1: SELFIE UPLOAD -->
-    <header>
-      <h1>EventLens</h1>
-      <p class="match-text">AI Powered Photo Finder</p>
-    </header>
-    <div id="step1" class="card">
-      <h3 class="step-title">1. Upload Your Selfie</h3>
-      <div class="camera-btn">
-        <div class="camera-icon">📸</div>
-        <div class="camera-text">Tap to take a photo or choose from gallery</div>
-      </div>
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
-      <input type="file" id="galleryInput" accept="image/*" style="display:none">
-      <div id="previewContainer">
-        <img id="previewImg" alt="Preview">
-        <div class="action-buttons">
-          <button class="btn btn-secondary" onclick="retakePhoto()">Retake</button>
-          <button class="btn btn-primary" onclick="searchPhotos()" id="searchBtn">Search Photos</button>
-        </div>
-      </div>
-      <p id="loadingText" class="loading-text" style="display:none">Scanning faces with AI<span class="loading-dots"></span></p>
+
+<div class="container">
+  <header>
+    <h1>EventLens</h1>
+    <p style="color:var(--muted); font-size:14px;">AI Powered Photo Finder</p>
+  </header>
+
+  <!-- STEP 1: UPLOAD (ENHANCED DESIGN) -->
+  <div id="step1" class="card" style="text-align:center;">
+    <div class="step-title" style="text-align:left;">1. Upload Your Selfie</div>
+    
+    <!-- Inputs (Hidden) -->
+    <input type="file" id="cameraInput" accept="image/*" capture="user" style="display:none">
+    <input type="file" id="galleryInput" accept="image/*" style="display:none">
+
+    <!-- Big Camera Button -->
+    <label for="cameraInput" class="camera-btn">
+      <div class="camera-icon">📸</div>
+      Take Selfie
+    </label>
+
+    <!-- Small Gallery Link -->
+    <div style="margin-top:5px;">
+      <span style="color:#555; font-size:13px;">or</span><br>
+      <label for="galleryInput" class="gallery-link">Upload from Gallery</label>
     </div>
-    <!-- STEP 2: ENTER DETAILS -->
-    <div id="step2" class="card">
-      <h3 class="step-title">2. Enter Your Details</h3>
-      <div class="match-info">
-        <h2 class="match-number" id="matchNumber">0</h2>
-        <p class="match-text">photos found! 🎉</p>
-      </div>
-      <div class="form-group">
-        <label for="guestName">Your Name</label>
-        <input type="text" id="guestName" placeholder="Enter your name" required>
-      </div>
-      <div class="form-group">
-        <label for="guestMobile">Mobile Number</label>
-        <input type="tel" id="guestMobile" placeholder="10-digit mobile" required>
-      </div>
-      <button class="btn btn-primary" onclick="showGallery()" id="showGalleryBtn">Show Gallery</button>
+
+    <!-- Preview Area (ENHANCED) -->
+    <div id="previewContainer" style="display:none;">
+      <img id="previewImg">
+      <button id="retakeBtn" class="btn btn-retake">Retake Photo</button> <!-- NEW: Retake button -->
+      <button id="searchBtn" class="btn">Find My Photos 🔍</button>
     </div>
-    <!-- STEP 3: GALLERY -->
-    <div id="step3">
-      <div class="search-wrapper">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Search in your photos..." oninput="filterPhotos()">
-      </div>
-      <div class="filter-row">
-        <div class="filter-chip active" onclick="filterByType('ALL')">All</div>
-        <div class="filter-chip" onclick="filterByType('BEST')">⭐ Best</div>
-        <div class="filter-chip" onclick="filterByType('HAPPY')">😊 Happy</div>
-        <div class="filter-chip" onclick="filterByType('GROUP')">👥 Groups</div>
-        <div class="filter-chip" onclick="filterByType('TEXT')">📝 Text</div>
-      </div>
-      <div class="action-row">
-        <div class="selected-count" id="selectedCount">0 selected</div>
-        <div class="actions">
-          <button class="btn btn-secondary" onclick="selectAll()">Select All</button>
-          <button class="btn btn-primary" onclick="downloadZip()">Download ZIP</button>
-        </div>
-      </div>
-      <div class="photo-grid" id="photoGrid"></div>
-      <button class="whatsapp-btn" onclick="shareOnWhatsApp()">Share on WhatsApp</button>
-    </div>
-    <!-- VIEWER -->
-    <div class="viewer" id="viewer">
-      <button class="viewer-close" onclick="closeViewer()">×</button>
-      <img id="viewerImage" alt="Full view">
-      <div class="viewer-controls">
-        <button class="viewer-btn" onclick="prevImage()">←</button>
-        <button class="viewer-btn" onclick="toggleViewerSelect()">✓</button>
-        <button class="viewer-btn" onclick="nextImage()">→</button>
-      </div>
-    </div>
+
+    <p id="loadingText" class="loading-text"></p> <!-- NEW: Enhanced loading -->
   </div>
-  <script>
-    // API Configuration
-    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
-    const SEARCH_API = `${API_BASE}/search`;
-    const SAVE_API = `${API_BASE}/save-details`;
 
-    // State
-    let allPhotos = [];
-    let filteredPhotos = [];
-    let selectedUrls = new Set();
-    let selfieBase64 = null;
-    let currentViewerIndex = 0;
-    let matchCount = 0;
-    let linkId = new URLSearchParams(window.location.search).get('linkId');
+  <!-- STEP 2: LEAD GEN -->
+  <div id="step2" class="card" style="display:none;">
+    <div class="step-title">2. Enter Details</div>
+    <p style="margin-bottom:15px;">
+      We found <b style="color:var(--accent);" id="matchCount">0</b> photos of you!
+    </p>
+    <input type="text" id="guestName" placeholder="Your Name (e.g. Rahul)">
+    <input type="tel" id="guestMobile" placeholder="Mobile Number" maxlength="10">
+    <button id="showGalleryBtn" class="btn">View Gallery 👉</button>
+  </div>
 
-    // 1. SELFIE UPLOAD
-    document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
-    document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
+  <!-- STEP 3: SMART GALLERY -->
+  <div id="step3" class="card" style="background:transparent; border:none; padding:0; display:none;">
+    
+    <!-- SEARCH & FILTER -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search (e.g. 'Red Shirt', 'Stage', 'Smile')...">
+    </div>
 
-    async function handleFileSelect(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    <div class="filter-row">
+      <div class="chip active" onclick="filterPhotos('ALL', this)">All Photos</div>
+      <div class="chip" onclick="filterPhotos('BEST', this)">⭐ Best</div>
+      <div class="chip" onclick="filterPhotos('HAPPY', this)">😊 Happy</div>
+      <div class="chip" onclick="filterPhotos('GROUP', this)">👥 Group</div>
+      <div class="chip" onclick="filterPhotos('TEXT', this)">🅰️ Text</div>
+    </div>
 
-      // Compress image
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = Math.min(img.width, 800);
-        canvas.height = (img.height / img.width) * canvas.width;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            selfieBase64 = reader.result.split(',')[1]; // Base64 payload
-            document.getElementById('previewImg').src = reader.result;
-            document.getElementById('previewContainer').style.display = 'block';
-            document.getElementById('step1').style.display = 'none';
-          };
-          reader.readAsDataURL(blob);
-        }, 'image/jpeg', 0.7);
-      };
-      img.src = URL.createObjectURL(file);
-    }
+    <!-- ACTIONS -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 5px;">
+      <span style="font-size:13px; color:var(--muted);">Selected: <b id="selCount" style="color:#fff;">0</b></span>
+      <div>
+        <button class="btn btn-outline" onclick="selectAll()">Select All</button>
+        <button class="btn btn-outline" style="background:var(--accent); color:#000; border:none;" onclick="downloadZip()">Download ZIP</button>
+      </div>
+    </div>
 
-    function retakePhoto() {
-      document.getElementById('previewContainer').style.display = 'none';
-      document.getElementById('step1').style.display = 'block';
-      selfieBase64 = null;
-      document.getElementById('cameraInput').value = '';
-      document.getElementById('galleryInput').value = '';
-    }
+    <!-- GRID -->
+    <div id="photoGrid" class="grid"></div>
 
-    // 2. SEARCH PHOTOS
-    async function searchPhotos() {
-      if (!selfieBase64 || !linkId) {
-        alert('Please upload a selfie and use a valid link.');
-        return;
-      }
+    <!-- NEW: WhatsApp Share Button -->
+    <button id="whatsappBtn" class="btn btn-whatsapp" onclick="shareOnWhatsApp()" style="display:none;">
+      Share on WhatsApp 🎉
+    </button>
+  </div>
 
-      const loadingText = document.getElementById('loadingText');
-      loadingText.style.display = 'block';
-      document.getElementById('searchBtn').disabled = true;
+</div>
 
-      try {
-        const res = await fetch(SEARCH_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ linkId, selfie_image: `data:image/jpeg;base64,${selfieBase64}` })
-        });
+<!-- FULLSCREEN VIEWER -->
+<div id="viewer" class="viewer">
+  <div class="close-viewer" onclick="closeViewer()">✕</div>
+  <img id="viewerImage">
+  <div class="viewer-controls">
+    <button class="btn btn-outline" onclick="prevImage()">❮</button>
+    <button class="btn btn-outline" onclick="toggleViewerSelect()">Select / Unselect</button>
+    <button class="btn btn-outline" onclick="nextImage()">❯</button>
+  </div>
+</div>
 
-        if (!res.ok) throw new Error('Search failed');
+<script>
+  // CONFIG (UNCHANGED) - Yeh part input APIs define karta hai.
+  const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
+  const SAVE_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
-        const data = await res.json();
-        allPhotos = data.matches || [];
-        matchCount = allPhotos.length;
-        document.getElementById('matchNumber').textContent = matchCount;
-        document.getElementById('step1').style.display = 'none';
-        document.getElementById('step2').style.display = 'block';
+  // STATE (UNCHANGED) - Yeh variables app ke state store karte hain.
+  let allPhotos = [];
+  let filteredPhotos = [];
+  let selectedUrls = new Set();
+  let selfieBase64 = null;
+  let currentViewerIndex = 0;
+  let currentMatchCount = 0; 
 
-        if (matchCount > 0) {
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        }
-      } catch (e) {
-        alert('Search failed: ' + e.message);
-      } finally {
-        loadingText.style.display = 'none';
-        document.getElementById('searchBtn').disabled = false;
-      }
-    }
-
-    // 3. SHOW GALLERY
-    async function showGallery() {
-      const name = document.getElementById('guestName').value.trim();
-      const mobile = document.getElementById('guestMobile').value.trim();
-
-      if (!name || !mobile || mobile.length < 10) {
-        alert('Please enter valid name and 10-digit mobile.');
-        return;
-      }
-
-      // Save details in background
-      try {
-        await fetch(SAVE_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            guest_name: name,
-            mobile: mobile,
-            linkId: linkId,
-            selfie_image: `data:image/jpeg;base64,${selfieBase64}`,
-            photo_count: matchCount
-          })
-        });
-      } catch (e) {
-        console.error('Save details failed:', e);
-      }
-
-      document.getElementById('step2').style.display = 'none';
-      document.getElementById('step3').style.display = 'block';
-      filteredPhotos = [...allPhotos];
-      renderGrid();
-      setTimeout(() => {
-        document.querySelector('.whatsapp-btn').style.display = 'block';
-      }, 1000);
-    }
-
-    // 4. FILTER & SEARCH
-    function filterPhotos() {
-      const query = document.getElementById('searchInput').value.toLowerCase();
-      filteredPhotos = allPhotos.filter(photo => {
-        return photo.ai_tags.some(tag => tag.toLowerCase().includes(query)) ||
-               photo.detected_text.some(text => text.toLowerCase().includes(query));
-      });
-      renderGrid();
-    }
-
-    function filterByType(type) {
-      document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
-      event.target.classList.add('active');
-
-      switch (type) {
-        case 'ALL':
-          filteredPhotos = [...allPhotos];
-          break;
-        case 'BEST':
-          filteredPhotos = allPhotos.filter(p => (p.quality_score || 0) > 85);
-          break;
-        case 'HAPPY':
-          filteredPhotos = allPhotos.filter(p => p.emotions && p.emotions.some(e => e.Type === 'HAPPY' && e.Confidence > 60));
-          break;
-        case 'GROUP':
-          filteredPhotos = allPhotos.filter(p => (p.face_count || 0) >= 3);
-          break;
-        case 'TEXT':
-          filteredPhotos = allPhotos.filter(p => p.detected_text && p.detected_text.length > 0);
-          break;
-      }
-      renderGrid();
-    }
-
-    // 5. RENDER GRID
-    function renderGrid() {
-      const grid = document.getElementById('photoGrid');
-      grid.innerHTML = '';
-      const selectedCount = selectedUrls.size;
-      document.getElementById('selectedCount').textContent = selectedCount + ' selected';
-
-      filteredPhotos.forEach((photo, index) => {
-        const item = document.createElement('div');
-        item.className = 'photo-item' + (selectedUrls.has(photo.url) ? ' selected' : '');
-        item.onclick = (e) => {
-          if (e.target.classList.contains('select-overlay')) {
-            toggleSelect(photo.url);
+  // --- 1. HANDLE SELFIE (ENHANCED WITH COMPRESSION) - Yeh part file select handle karta hai, compress karta hai, preview show karta hai.
+  function handleFileSelect(e) {
+    console.log("DEBUG: Handling file select from input"); // Debugging: Input se file aaya check.
+    const file = e.target.files[0];
+    if(file){
+      // NEW: Compress image before upload
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = (height * MAX_WIDTH) / width;
+              width = MAX_WIDTH;
+            }
           } else {
-            openViewer(index);
+            if (height > MAX_WIDTH) {
+              width = (width * MAX_WIDTH) / height;
+              height = MAX_WIDTH;
+            }
           }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          selfieBase64 = canvas.toDataURL('image/jpeg', 0.7); // 70% quality
+          console.log("DEBUG: Selfie compressed and base64 generated"); // Debugging: Compression done.
+          
+          document.getElementById('previewImg').src = selfieBase64;
+          document.getElementById('previewContainer').style.display = 'block';
+          
+          // NEW: Smooth scroll to preview
+          document.getElementById('previewContainer').scrollIntoView({behavior: 'smooth'});
         };
-        item.innerHTML = `
-          <img src="${photo.url}" loading="lazy" alt="Photo">
-          <div class="select-overlay">✓</div>
-        `;
-        grid.appendChild(item);
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      console.error("ERROR: No file selected"); // Debugging: No file.
+    }
+  }
+
+  // Bind both inputs to the same handler - Yeh inputs bind karta hai.
+  document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
+  document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
+
+  // NEW: Retake functionality - Yeh retake button handle karta hai.
+  document.getElementById('retakeBtn').addEventListener('click', function() {
+    console.log("DEBUG: Retake button clicked"); // Debugging: Retake start.
+    selfieBase64 = null;
+    document.getElementById('previewContainer').style.display = 'none';
+    document.getElementById('cameraInput').value = '';
+    document.getElementById('galleryInput').value = '';
+  });
+
+  // --- 2. API CALL (ENHANCED WITH LOADING & CONFETTI) - Yeh search API call karta hai, loading show, confetti if matches.
+  document.getElementById('searchBtn').addEventListener('click', async () => {
+    console.log("DEBUG: Search button clicked"); // Debugging: Search start.
+    // 1. Validation for Selfie
+    if(!selfieBase64) return alert("Please upload a selfie first.");
+    
+    // 2. Validation for LinkID
+    const params = new URLSearchParams(window.location.search);
+    const linkId = params.get('linkId');
+    if (!linkId) {
+      alert("Error: Link ID missing! Please open the correct link (e.g. ?linkId=123)");
+      return;
+    }
+
+    // NEW: Enhanced UI Loading State
+    const loadingText = document.getElementById('loadingText');
+    const originalText = loadingText.innerHTML;
+    loadingText.innerHTML = "Scanning faces with AI<span class='dots'></span>";
+    
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true;
+
+    try {
+      console.log("DEBUG: Calling SEARCH_API with linkId:", linkId); // Debugging: API call start.
+      const res = await fetch(SEARCH_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkId: linkId, selfie_image: selfieBase64 })
       });
-    }
-
-    // 6. SELECTION & DOWNLOAD
-    function toggleSelect(url) {
-      if(selectedUrls.has(url)) selectedUrls.delete(url);
-      else selectedUrls.add(url);
-      renderGrid();
-    }
-
-    window.selectAll = function() {
-      if(selectedUrls.size === filteredPhotos.length) selectedUrls.clear();
-      else filteredPhotos.forEach(p => selectedUrls.add(p.url));
-      renderGrid();
-    }
-
-    window.downloadZip = async function() {
-      if(selectedUrls.size === 0) return alert("Select photos first!");
       
-      const zip = new JSZip();
-      const folder = zip.folder("EventLens_Photos");
-      const urls = Array.from(selectedUrls);
-
-      const btn = document.querySelector("button[onclick='downloadZip()']");
-      const oldText = btn.innerText;
-      btn.innerText = "⏳ Zipping...";
-      btn.disabled = true;
-
-      try {
-        for(let i=0; i<urls.length; i++) {
-          const blob = await fetch(urls[i]).then(r => r.blob());
-          folder.file(`photo_${i+1}.jpg`, blob);
-        }
-        const content = await zip.generateAsync({type:"blob"});
-        saveAs(content, "My_Photos.zip");
-      } catch(e) {
-        alert("Download failed. Try again.");
-      } finally {
-        btn.innerText = oldText;
-        btn.disabled = false;
+      // 3. Handle API Errors Explicitly
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Server Error");
       }
-    };
 
-    // 7. VIEWER LOGIC (ENHANCED)
-    function openViewer(index) {
-      currentViewerIndex = index;
-      updateViewer();
-      document.getElementById('viewer').classList.add('open');
-    }
-  
-    window.closeViewer = function() {
-      document.getElementById('viewer').classList.remove('open');
-    }
+      const data = await res.json();
+      
+      // Check for logical error in response body
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      allPhotos = data.matches || [];
+      filteredPhotos = [...allPhotos];
+      
+      // ✅ NEW: Capture match count for saving
+      currentMatchCount = allPhotos.length;
+      console.log("DEBUG: API response with matches count:", currentMatchCount); // Debugging: Matches mile.
 
-    function updateViewer() {
-      const photo = filteredPhotos[currentViewerIndex];
-      document.getElementById('viewerImage').src = photo.url;
-    }
+      document.getElementById('matchCount').innerText = currentMatchCount;
+      
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
 
-    window.nextImage = function() {
-      currentViewerIndex = (currentViewerIndex + 1) % filteredPhotos.length;
-      updateViewer();
-    }
-  
-    window.prevImage = function() {
-      currentViewerIndex = (currentViewerIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
-      updateViewer();
-    }
+      // NEW: Confetti celebration!
+      if (currentMatchCount > 0) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        console.log("DEBUG: Confetti triggered for matches"); // Debugging: Confetti done.
+      }
 
-    window.toggleViewerSelect = function() {
-      const url = filteredPhotos[currentViewerIndex].url;
-      toggleSelect(url);
+    } catch(err) {
+      console.error("ERROR: API call failed:", err); // Debugging: API error.
+      alert("Failed to find photos: " + err.message);
+    } finally {
+      // Always re-enable button and clear text
+      btn.disabled = false;
+      loadingText.innerHTML = originalText;
+      console.log("DEBUG: Search process ended"); // Debugging: Search end.
     }
+  });
 
-    // Initialize
-    document.querySelector('.camera-btn').addEventListener('click', () => {
-      document.getElementById('cameraInput').click();
+  // --- 3. SHOW GALLERY (UNCHANGED) - Yeh gallery show karta hai aur lead save karta hai.
+  document.getElementById('showGalleryBtn').addEventListener('click', () => {
+    console.log("DEBUG: Show gallery button clicked"); // Debugging: Gallery start.
+    const name = document.getElementById('guestName').value;
+    const mobile = document.getElementById('guestMobile').value;
+    
+    if(!name || mobile.length < 10) return alert("Please enter valid details.");
+
+    // Save Data in background
+    const params = new URLSearchParams(window.location.search);
+    fetch(SAVE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        linkId: params.get('linkId'),
+        name: name, 
+        mobile: mobile, 
+        selfie_image: selfieBase64, // Base64 data to save
+        photo_count: currentMatchCount // NEW: Match count to save
+      })
+    }).then(res => {
+        if (!res.ok) console.error("Background lead save failed.");
+        console.log("DEBUG: Lead saved successfully"); // Debugging: Save done.
+    }).catch(err => {
+        console.error("Background lead save failed:", err);
     });
 
-    document.querySelector('.camera-text').innerHTML += '<br><small>or <a href="#" onclick="document.getElementById(\'galleryInput\').click(); return false;">choose from gallery</a></small>';
-  </script>
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'block';
+    renderGrid();
+    
+    // NEW: Show WhatsApp button after gallery loads
+    setTimeout(() => {
+      document.getElementById('whatsappBtn').style.display = 'block';
+    }, 500);
+  });
+
+  // NEW: WhatsApp Share Function - Yeh WhatsApp share handle karta hai.
+  function shareOnWhatsApp() {
+    console.log("DEBUG: WhatsApp share clicked"); // Debugging: Share start.
+    const text = `🎉 I just found ${currentMatchCount} amazing photos of me from the event using EventLens! You should try it too! 📸\n\n${window.location.origin}${window.location.pathname}?linkId=${new URLSearchParams(window.location.search).get('linkId')}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+  }
+
+  // --- 4. SMART FILTERS (UNCHANGED) - Yeh search input aur filters handle karta hai.
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    console.log("DEBUG: Search input changed to:", e.target.value); // Debugging: Search change.
+    const q = e.target.value.toLowerCase();
+    
+    filteredPhotos = allPhotos.filter(photo => {
+      const tags = (photo.ai_tags || []).join(' ').toLowerCase();
+      const ocr = (photo.detected_text || []).join(' ').toLowerCase();
+      const evt = (photo.eventName || "").toLowerCase();
+      return tags.includes(q) || ocr.includes(q) || evt.includes(q);
+    });
+    
+    renderGrid();
+    resetChips();
+  });
+
+  window.filterPhotos = function(type, el) {
+    console.log("DEBUG: Filter applied:", type); // Debugging: Filter change.
+    document.getElementById('searchInput').value = ""; // clear search
+    resetChips();
+    el.classList.add('active');
+
+    if (type === 'ALL') {
+      filteredPhotos = [...allPhotos];
+    } 
+    else if (type === 'BEST') {
+      filteredPhotos = allPhotos.filter(p => {
+        const isHappy = (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 80);
+        return (p.quality_score > 0.85) || isHappy;
+      });
+    }
+    else if (type === 'HAPPY') {
+      filteredPhotos = allPhotos.filter(p => {
+        return (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60);
+      });
+    }
+    else if (type === 'GROUP') {
+      filteredPhotos = allPhotos.filter(p => p.face_count >= 3);
+    }
+    else if (type === 'TEXT') {
+      filteredPhotos = allPhotos.filter(p => (p.detected_text || []).length > 0);
+    }
+
+    renderGrid();
+  };
+
+  function resetChips() {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  }
+
+  // --- 5. RENDER GRID (ENHANCED) - Yeh photo grid render karta hai.
+  function renderGrid() {
+    console.log("DEBUG: Rendering grid with filtered photos count:", filteredPhotos.length); // Debugging: Grid render.
+    const grid = document.getElementById('photoGrid');
+    grid.innerHTML = "";
+
+    filteredPhotos.forEach((photo, index) => {
+      const isSelected = selectedUrls.has(photo.url);
+      
+      const div = document.createElement('div');
+      div.className = `photo-item ${isSelected ? 'selected' : ''}`;
+      
+      div.onclick = (e) => {
+        if(e.target.closest('.check-mark')) {
+          toggleSelect(photo.url);
+        } else {
+          openViewer(index);
+        }
+      };
+
+      div.innerHTML = `
+        <img src="${photo.url}" loading="lazy">
+        <div class="check-mark">✓</div>
+      `;
+      grid.appendChild(div);
+    });
+
+    document.getElementById('selCount').innerText = selectedUrls.size;
+  }
+
+  // --- 6. SELECTION & DOWNLOAD (UNCHANGED) - Yeh selection aur download handle karta hai.
+  function toggleSelect(url) {
+    console.log("DEBUG: Toggling select for URL:", url); // Debugging: Select toggle.
+    if(selectedUrls.has(url)) selectedUrls.delete(url);
+    else selectedUrls.add(url);
+    renderGrid();
+  }
+
+  window.selectAll = function() {
+    console.log("DEBUG: Select all clicked"); // Debugging: Select all.
+    if(selectedUrls.size === filteredPhotos.length) selectedUrls.clear();
+    else filteredPhotos.forEach(p => selectedUrls.add(p.url));
+    renderGrid();
+  }
+
+  window.downloadZip = async function() {
+    console.log("DEBUG: Download ZIP started with selected count:", selectedUrls.size); // Debugging: ZIP start.
+    if(selectedUrls.size === 0) return alert("Select photos first!");
+    
+    const zip = new JSZip();
+    const folder = zip.folder("EventLens_Photos");
+    const urls = Array.from(selectedUrls);
+
+    const btn = document.querySelector("button[onclick='downloadZip()']");
+    const oldText = btn.innerText;
+    btn.innerText = "⏳ Zipping...";
+    btn.disabled = true;
+
+    try {
+      for(let i=0; i<urls.length; i++) {
+        const blob = await fetch(urls[i]).then(r => r.blob());
+        folder.file(`photo_${i+1}.jpg`, blob);
+      }
+      const content = await zip.generateAsync({type:"blob"});
+      saveAs(content, "My_Photos.zip");
+      console.log("DEBUG: ZIP download complete"); // Debugging: ZIP done.
+    } catch(e) {
+      alert("Download failed. Try again.");
+      console.error("ERROR: ZIP download failed:", e); // Debugging: ZIP error.
+    } finally {
+      btn.innerText = oldText;
+      btn.disabled = false;
+    }
+  };
+
+  // --- 7. VIEWER LOGIC (ENHANCED) - Yeh fullscreen viewer handle karta hai.
+  function openViewer(index) {
+    console.log("DEBUG: Opening viewer for index:", index); // Debugging: Viewer open.
+    currentViewerIndex = index;
+    updateViewer();
+    document.getElementById('viewer').classList.add('open');
+  }
+  
+  window.closeViewer = function() {
+    console.log("DEBUG: Closing viewer"); // Debugging: Viewer close.
+    document.getElementById('viewer').classList.remove('open');
+  }
+
+  function updateViewer() {
+    const photo = filteredPhotos[currentViewerIndex];
+    document.getElementById('viewerImage').src = photo.url;
+  }
+
+  window.nextImage = function() {
+    console.log("DEBUG: Next image in viewer"); // Debugging: Next.
+    currentViewerIndex = (currentViewerIndex + 1) % filteredPhotos.length;
+    updateViewer();
+  }
+  
+  window.prevImage = function() {
+    console.log("DEBUG: Previous image in viewer"); // Debugging: Prev.
+    currentViewerIndex = (currentViewerIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+    updateViewer();
+  }
+
+  window.toggleViewerSelect = function() {
+    console.log("DEBUG: Toggle select in viewer"); // Debugging: Toggle in viewer.
+    const url = filteredPhotos[currentViewerIndex].url;
+    toggleSelect(url);
+  }
+
+</script>
 </body>
 </html>
