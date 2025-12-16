@@ -357,17 +357,42 @@ compToggle.addEventListener('change', () => {
     compLabel.style.color = compToggle.checked ? "#fff" : "#ffd700";
 });
 
-/* ================= API HANDLER ================= */
+/* ================= API HANDLER (FIXED) ================= */
 async function apiCall(endpoint, body = {}, method = 'POST') {
-    try {
-        const options = { method, headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }};
+    let url = `${API_BASE}/${endpoint}`;
+    let options = { method, headers: {} };
+
+    // FIX 1: get-photos MUST be GET with query string
+    if (endpoint === 'get-photos') {
+        const params = new URLSearchParams(body);
+        url += `?${params.toString()}`;
+        options.method = 'GET';
+        options.headers['Authorization'] = `Bearer ${idToken}`;
+    }
+    // FIX 2: list_people MUST be POST WITHOUT Auth
+    else if (endpoint === 'list_people') {
+        options.method = 'POST';
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+    }
+    // All other APIs (default behavior)
+    else {
+        options.method = method;
+        options.headers = {
+            'Authorization': `Bearer ${idToken}`,
+            'Content-Type': 'application/json'
+        };
         if (method !== 'GET') options.body = JSON.stringify(body);
-        const res = await fetch(`${API_BASE}/${endpoint}`, options);
-        if (!res.ok) throw new Error(`API ${res.status}`);
+    }
+
+    try {
+        const res = await fetch(url, options);
+        if (!res.ok) throw new Error(`${endpoint} failed: ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.error(err);
-        return null; // Silent fail to not block UI
+        console.error(`API Error (${endpoint}):`, err);
+        showToast(`API Error: ${err.message}`, 'error');
+        return null;
     }
 }
 
@@ -392,7 +417,7 @@ async function init() {
     loadGalleryAndFaces();
 }
 
-/* ================= PHOTOS & FACES LOGIC ================= */
+/* ================= PHOTOS & FACES LOGIC (FIXED) ================= */
 let allPhotos = [], filteredPhotos = [];
 let faceGroups = {}, selectedFaces = new Set();
 
@@ -400,9 +425,9 @@ async function loadGalleryAndFaces() {
     const container = document.getElementById('galleryContainer');
     container.innerHTML = Array(12).fill('<div class="photo-card"><div class="skeleton" style="width:100%;height:100%"></div></div>').join('');
     
-    // Fetch Photos AND People List together to fix the missing icon issue
+    // FIX 2: Ensure correct params for get-photos
     const [photosData, peopleData] = await Promise.all([
-        apiCall('get-photos', { collection_id: collectionId }),
+        apiCall('get-photos', { collection_id: collectionId, limit: 500 }),
         apiCall('list_people', { collection_id: collectionId })
     ]);
 
@@ -440,22 +465,22 @@ function buildFaceMap(directory) {
 
     // 2. Scan Photos to attach to faces
     allPhotos.forEach(p => {
-        // Robust check: API might send `face_ids`, `faces`, or nothing.
-        const ids = p.face_ids || (p.faces ? p.faces.map(f => f.FaceId) : []);
+        // FIX 3: Hardened logic to handle both `face_ids` and `faces`
+        const ids = Array.isArray(p.face_ids) 
+            ? p.face_ids 
+            : (Array.isArray(p.faces) ? p.faces.map(f => f.FaceId) : []);
         
-        if (Array.isArray(ids)) {
-            ids.forEach(fid => {
-                if (!faceGroups[fid]) {
-                    // Create entry for unknown face found in photo
-                    faceGroups[fid] = { id: fid, name: 'Unknown', count: 0, photos: [], thumb: null };
-                }
-                faceGroups[fid].photos.push(p);
-                faceGroups[fid].count++;
-                
-                // Set thumbnail if not set (First photo found becomes thumbnail)
-                if (!faceGroups[fid].thumb) faceGroups[fid].thumb = p.thumbnail_url || p.url;
-            });
-        }
+        ids.forEach(fid => {
+            if (!faceGroups[fid]) {
+                // Create entry for unknown face found in photo
+                faceGroups[fid] = { id: fid, name: 'Unknown', count: 0, photos: [], thumb: null };
+            }
+            faceGroups[fid].photos.push(p);
+            faceGroups[fid].count++;
+            
+            // Set thumbnail if not set (First photo found becomes thumbnail)
+            if (!faceGroups[fid].thumb) faceGroups[fid].thumb = p.thumbnail_url || p.url;
+        });
     });
 }
 
