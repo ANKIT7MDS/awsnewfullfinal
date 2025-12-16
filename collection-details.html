@@ -559,18 +559,18 @@
 
     <!-- LINKS TAB -->
     <div id="linksTab" class="tab-content">
-        <form class="card" style="max-width:600px; margin:0 auto;">
+        <div class="card" style="max-width:600px; margin:0 auto;">
             <h3>Generate Search Link</h3>
             <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include in the guest search link.</p>
             <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px; background:#111;"></div>
             <input type="number" id="expiryHours" placeholder="Expiry in hours (0 for no expiry)" style="margin-bottom:10px;">
-            <input type="password" id="linkPassword" placeholder="Optional password" style="margin-bottom:15px;">
-            <button class="btn" id="genLinkBtn" type="button">Generate Link</button>
+            <input type="text" id="linkPassword" placeholder="Optional password" style="margin-bottom:15px;">
+            <button class="btn" id="genLinkBtn">Generate Link</button>
             <div id="linkResult">
                 <a id="generatedLink" href="#" target="_blank">Click to open link</a>
                 <button class="btn secondary" style="margin-top:8px; padding:5px 12px; font-size:12px;" onclick="copyLink()">Copy Link</button>
             </div>
-        </form>
+        </div>
     </div>
 
     <!-- GUESTS TAB -->
@@ -1378,42 +1378,48 @@ dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
 dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
 fileInput.onchange = () => handleFiles(fileInput.files);
 
-async function convertToJpeg(file) {
+async function convertImage(file) {
     const optimize = document.getElementById('optimizeUpload').checked;
     const quality = optimize ? 0.8 : 1.0;
-    return new Promise((resolve, reject) => {
-        const lowerName = file.name.toLowerCase();
-        if (file.type === 'image/jpeg' || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
-            if (!optimize) return resolve(file);
-            // Compress JPEG if optimize
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                canvas.toBlob((blob) => {
-                    const jpegFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
-                    resolve(jpegFile);
-                }, 'image/jpeg', quality);
-            };
-            img.onerror = reject;
-            img.src = URL.createObjectURL(file);
-            return;
-        }
+    const lowerName = file.name.toLowerCase();
+    const type = file.type.toLowerCase();
 
-        if (lowerName.endsWith('.heic') || file.type === 'image/heic') {
-            heic2any({ blob: file, toType: 'image/jpeg', quality: quality })
-                .then((jpegBlob) => {
-                    const jpegFile = new File([jpegBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
-                    resolve(jpegFile);
-                })
-                .catch((err) => {
-                    dbgAdd({ok:false, type:'UPLOAD', label:'heic-convert', ts:Date.now(), details: `Failed to convert HEIC: ${err.message}`});
-                    reject(err);
-                });
-        } else {
+    // Supported by Rekognition: JPEG and PNG
+    if (type === 'image/jpeg' || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || type === 'image/png' || lowerName.endsWith('.png')) {
+        if (!optimize) return file;
+        // Compress
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const mime = type === 'image/png' ? 'image/png' : 'image/jpeg';
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const ext = mime === 'image/png' ? '.png' : '.jpg';
+                        const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, ext), { type: mime });
+                        resolve(newFile);
+                    } else {
+                        reject(new Error('Blob creation failed'));
+                    }
+                }, mime, quality);
+            };
+            img.onerror = () => reject(new Error('Image load failed'));
+            img.src = URL.createObjectURL(file);
+        });
+    } else if (lowerName.endsWith('.heic') || type === 'image/heic') {
+        return heic2any({ blob: file, toType: 'image/jpeg', quality: quality })
+            .then((jpegBlob) => new File([jpegBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' }))
+            .catch((err) => {
+                dbgAdd({ok:false, type:'UPLOAD', label:'heic-convert', ts:Date.now(), details: `Failed to convert HEIC: ${err.message}`});
+                throw err;
+            });
+    } else {
+        // For other formats like WEBP, TIFF, etc., attempt canvas conversion to JPEG
+        return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
@@ -1422,17 +1428,18 @@ async function convertToJpeg(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 canvas.toBlob((blob) => {
-                    const jpegFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
-                    resolve(jpegFile);
+                    if (blob) {
+                        const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+                        resolve(newFile);
+                    } else {
+                        reject(new Error('Blob creation failed'));
+                    }
                 }, 'image/jpeg', quality);
             };
-            img.onerror = (err) => {
-                dbgAdd({ok:false, type:'UPLOAD', label:'canvas-convert', ts:Date.now(), details: `Failed to load image for conversion: ${err.message}`});
-                reject(err);
-            };
+            img.onerror = () => reject(new Error('Image load failed'));
             img.src = URL.createObjectURL(file);
-        }
-    });
+        });
+    }
 }
 
 async function handleFiles(files) {
@@ -1454,22 +1461,30 @@ async function handleFiles(files) {
 
     const BATCH_SIZE = 10;
     let convertedFiles = [];
+    let skipped = 0;
     status.className = '';
     status.innerHTML = 'Converting images...';
 
     for (let i = 0; i < validFiles.length; i++) {
         try {
-            convertedFiles.push(await convertToJpeg(validFiles[i]));
+            convertedFiles.push(await convertImage(validFiles[i]));
             progressBar.style.width = `${((i + 1) / validFiles.length) * 50}%`; // 50% for conversion
         } catch (err) {
-            status.className = 'error';
-            status.innerHTML = `Conversion error: ${err.message}`;
-            return;
+            skipped++;
+            dbgAdd({ok:false, type:'UPLOAD', label:'conversion-skip', ts:Date.now(), details: `Skipped file ${validFiles[i].name}: ${err.message}`});
         }
+    }
+    if (skipped > 0) {
+        alert(`Skipped ${skipped} files due to conversion errors.`);
     }
 
     const fileArr = convertedFiles;
     const totalValid = fileArr.length;
+    if (totalValid === 0) {
+        status.className = 'error';
+        status.innerHTML = 'No valid files to upload after conversion.';
+        return;
+    }
     let uploaded = 0;
     status.innerHTML = 'Starting upload...';
 
