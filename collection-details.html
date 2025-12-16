@@ -6,6 +6,7 @@
     <title>Collection Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -827,7 +828,7 @@ async function fetchPeopleDirectory() {
     try {
         const {json} = await apiFetch('list_people', LIST_PEOPLE_API, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId })
         });
         directoryPeople = (json && json.people) ? json.people : [];
@@ -1338,11 +1339,13 @@ window.hideHistoryViewer = function() {
 document.getElementById('genLinkBtn').onclick = async () => {
     const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
     if (selected.length === 0) return alert('Select at least one event');
+    const expiry = parseInt(document.getElementById('expiryHours').value) || 0;
+    const password = document.getElementById('linkPassword').value || '';
 
     const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
+        body: JSON.stringify({ collection_id: collectionId, event_ids: selected, expiry_hours: expiry, password: password })
     });
     const data = json || {};
     const box = document.getElementById('linkResult');
@@ -1369,6 +1372,45 @@ dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
 dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
 fileInput.onchange = () => handleFiles(fileInput.files);
 
+async function convertToJpeg(file) {
+    return new Promise((resolve, reject) => {
+        const lowerName = file.name.toLowerCase();
+        if (file.type === 'image/jpeg' || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+            return resolve(file);
+        }
+
+        if (lowerName.endsWith('.heic') || file.type === 'image/heic') {
+            heic2any({ blob: file, toType: 'image/jpeg' })
+                .then((jpegBlob) => {
+                    const jpegFile = new File([jpegBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+                    resolve(jpegFile);
+                })
+                .catch((err) => {
+                    dbgAdd({ok:false, type:'UPLOAD', label:'heic-convert', ts:Date.now(), details: `Failed to convert HEIC: ${err.message}`});
+                    reject(err);
+                });
+        } else {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob((blob) => {
+                    const jpegFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+                    resolve(jpegFile);
+                }, 'image/jpeg', 0.9);
+            };
+            img.onerror = (err) => {
+                dbgAdd({ok:false, type:'UPLOAD', label:'canvas-convert', ts:Date.now(), details: `Failed to load image for conversion: ${err.message}`});
+                reject(err);
+            };
+            img.src = URL.createObjectURL(file);
+        }
+    });
+}
+
 async function handleFiles(files) {
     const eventId = document.getElementById('uploadEventSelect').value;
     if(!eventId) return alert("Select an event first!");
@@ -1376,9 +1418,9 @@ async function handleFiles(files) {
     const total = files.length;
     if(total === 0) return;
 
-    const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
+    const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (validFiles.length < total) {
-        alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
+        alert(`Skipped ${total - validFiles.length} invalid files. Only images are supported.`);
     }
     if (validFiles.length === 0) return;
 
@@ -1387,10 +1429,24 @@ async function handleFiles(files) {
     const status = document.getElementById('uploadStatus');
 
     const BATCH_SIZE = 10;
-    const fileArr = validFiles;
+    let convertedFiles = [];
+    status.className = '';
+    status.innerHTML = 'Converting images...';
+
+    for (let i = 0; i < validFiles.length; i++) {
+        try {
+            convertedFiles.push(await convertToJpeg(validFiles[i]));
+            progressBar.style.width = `${((i + 1) / validFiles.length) * 50}%`; // 50% for conversion
+        } catch (err) {
+            status.className = 'error';
+            status.innerHTML = `Conversion error: ${err.message}`;
+            return;
+        }
+    }
+
+    const fileArr = convertedFiles;
     const totalValid = fileArr.length;
     let uploaded = 0;
-    status.className = '';
     status.innerHTML = 'Starting upload...';
 
     for(let i=0; i<totalValid; i+=BATCH_SIZE) {
@@ -1408,7 +1464,7 @@ async function handleFiles(files) {
                 const file = batch[idx];
                 await apiFetch('s3-put', u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
                 uploaded++;
-                progressBar.style.width = `${(uploaded/totalValid)*100}%`;
+                progressBar.style.width = `${50 + (uploaded/totalValid)*50}%`;
                 status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
             }));
         } catch(err) {
