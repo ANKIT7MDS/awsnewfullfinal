@@ -668,8 +668,7 @@
     async function fetchLeads() {
         try {
             const res = await fetch(`${API_BASE}/selfie-search-save-details?link_id=${collectionId}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }  // Removed Authorization
+                method: 'GET'
             });
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
@@ -700,6 +699,7 @@
     async function fetchSearchLinks() {
         try {
             const res = await fetch(`${API_BASE}/search-links?collection_id=${collectionId}`, {
+                method: 'GET',
                 headers: { 'Authorization': `Bearer ${idToken}` }
             });
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
