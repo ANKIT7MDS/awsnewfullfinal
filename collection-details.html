@@ -1,1402 +1,1366 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Collection Manager</title>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon"> <!-- Added to prevent 404 on favicon -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <style>
-        :root {
-            --bg: #0f0f0f;
-            --card: #1e1e1e;
-            --border: #333;
-            --text: #e0e0e0;
-            --muted: #888;
-            --brand: #4285f4;
-            --brand-hover: #3367d6;
-            --danger: #ea4335;
-            --ok: #34a853;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Google Sans', Roboto, Arial, sans-serif;
-            padding-bottom: 60px;
-        }
-        .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collection Manager</title>
 
-        /* HEADER */
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border);
-        }
-        .back-link {
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 14px;
-            display:flex;
-            align-items:center;
-            gap:5px;
-        }
-        h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-        /* STATS LINE */
-        .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
-        .stats-line b { color:white; font-weight:600; }
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --card: #1e1e1e;
+      --border: #333;
+      --text: #e0e0e0;
+      --muted: #888;
+      --brand: #4285f4;
+      --brand-hover: #3367d6;
+      --danger: #ea4335;
+      --ok: #34a853;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Google Sans', Roboto, Arial, sans-serif;
+      padding-bottom: 60px;
+    }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
-        /* TABS */
-        .tabs {
-            display: flex;
-            gap: 30px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        .tab {
-            padding: 12px 0;
-            cursor: pointer;
-            color: var(--muted);
-            font-size: 14px;
-            font-weight: 500;
-            border-bottom: 3px solid transparent;
-            white-space: nowrap;
-        }
-        .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
-        .tab:hover { color: var(--brand-hover); }
+    /* HEADER */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border);
+    }
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      display:flex;
+      align-items:center;
+      gap:5px;
+    }
+    h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+    /* STATS LINE */
+    .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
+    .stats-line b { color:white; font-weight:600; }
 
-        /* CARDS */
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            transition: box-shadow 0.2s;
-        }
-        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 30px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .tab {
+      padding: 12px 0;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .tab:hover { color: var(--brand-hover); }
 
-        /* ANALYTICS NEW VIEW - SELFIE + CLICK */
-        .lead-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .lead-card {
-            background: #151515;
-            border-radius: 10px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border: 1px solid var(--border);
-            transition: border-color 0.2s;
-            cursor: pointer;
-        }
-        .lead-card:hover { border-color: var(--brand); }
-        .selfie-img {
-            width: 70px;
-            height: 70px;
-            min-width: 70px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--brand);
-            background: #222;
-        }
-        .lead-info { flex-grow: 1; }
-        .lead-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
-        .lead-mobile { color: var(--brand); font-size: 14px; margin-bottom: 4px; }
-        .lead-meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--muted);
-            margin-top: 8px;
-            border-top: 1px dashed #333;
-            padding-top: 8px;
-        }
-        .match-count { font-weight: 600; color: var(--ok); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-        /* Dropdown and Search Layout */
-        .filter-row-top {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .filter-row-top > * {
-            flex: 1 1 150px;
-            min-width: 150px;
-        }
-        .filter-row-top select, .filter-row-top input {
-            background: #111;
-            border: 1px solid var(--border);
-            padding: 12px;
-            border-radius: 8px;
-            color: #fff;
-            outline: none;
-            height: 44px;
-        }
+    /* CARDS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 
-        /* Button style consistency */
-        .btn {
-            background: var(--brand);
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 20px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            height: 44px;
-            flex: 0 0 auto;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-        }
-        .btn.secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+    /* ANALYTICS - LEADS */
+    .lead-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .lead-card {
+      background: #151515;
+      border-radius: 10px;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .lead-card:hover { border-color: var(--brand); }
+    .selfie-img {
+      width: 70px;
+      height: 70px;
+      min-width: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--brand);
+      background: #222;
+    }
+    .lead-info { flex-grow: 1; }
+    .lead-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .lead-mobile { color: var(--brand); font-size: 14px; margin-bottom: 4px; }
+    .lead-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      border-top: 1px dashed #333;
+      padding-top: 8px;
+    }
+    .match-count { font-weight: 600; color: var(--ok); }
 
-        /* TABLES */
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
-        td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
-        tr:hover { background: rgba(66, 133, 244, 0.1); }
+    /* Dropdown and Search Layout */
+    .filter-row-top {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-row-top > * {
+      flex: 1 1 150px;
+      min-width: 150px;
+    }
+    .filter-row-top select, .filter-row-top input {
+      background: #111;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      color: #fff;
+      outline: none;
+      height: 44px;
+    }
 
-        /* FORMS */
-        input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
-        input:focus { border-color: var(--brand); }
-        input::placeholder { color: var(--muted); }
+    /* Button style consistency */
+    .btn {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      height: 44px;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .btn.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
-        /* UPLOAD */
-        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
-        #dropZone:hover { border-color: var(--brand); }
-        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; border-radius: 2px; transition: width 0.3s ease; }
-        #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
-        #uploadStatus.error { color: var(--danger); }
-        #uploadStatus.success { color: var(--ok); }
+    /* TABLES */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+    td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
+    tr:hover { background: rgba(66, 133, 244, 0.1); }
 
-        /* Load More */
-        .load-more-container { text-align: center; margin-top: 30px; }
+    /* FORMS */
+    input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
+    input:focus { border-color: var(--brand); }
+    input::placeholder { color: var(--muted); }
 
-        /* GALLERY FIXES */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 5px;
-        }
-        .photo-card {
-            aspect-ratio: 1;
-            overflow: hidden;
-            background: #000;
-            border-radius: 4px;
-            cursor: pointer;
-            position: relative;
-        }
-        .photo-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .photo-card img.loaded { opacity: 1; }
+    /* UPLOAD */
+    #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
+    #dropZone:hover { border-color: var(--brand); }
+    #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; border-radius: 2px; transition: width 0.3s ease; }
+    #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
+    #uploadStatus.error { color: var(--danger); }
+    #uploadStatus.success { color: var(--ok); }
 
-        /* DATE HEADERS IN GALLERY */
-        .date-header {
-            grid-column: 1 / -1;
-            color: var(--muted);
-            font-size: 14px;
-            font-weight: 500;
-            margin: 20px 0 10px 0;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #222;
-        }
+    /* Load More */
+    .load-more-container { text-align: center; margin-top: 30px; }
 
-        /* VIEWER */
-        .viewer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 1000;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.2s;
-        }
-        .viewer.open { opacity: 1; pointer-events: auto; }
-        .viewer img { max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .viewer-close {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #fff;
-            font-size: 30px;
-            cursor: pointer;
-            background: rgba(0,0,0,0.5);
-            padding: 5px 12px;
-            border-radius: 50%;
-            line-height: 1;
-        }
-        .viewer-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #fff;
-            font-size: 40px;
-            cursor: pointer;
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 50%;
-        }
-        .viewer-prev { left: 20px; }
-        .viewer-next { right: 20px; }
+    /* GALLERY */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 5px;
+    }
+    .photo-card {
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: #000;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+    }
+    .photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .photo-card img.loaded { opacity: 1; }
 
-        /* Face Icons Bar */
-        #faceIconsBar {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-        }
-        .face-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--brand);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
-        .face-icon:hover { transform: scale(1.1); }
+    /* DATE HEADERS */
+    .date-header {
+      grid-column: 1 / -1;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      margin: 20px 0 10px 0;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #222;
+    }
 
-        /* History Viewer */
-        #historyViewer {
-            display: none;
-            margin-top: 30px;
-            background: #151515;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-        #historyViewer table { font-size: 13px; }
+    /* VIEWER */
+    .viewer {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .viewer.open { opacity: 1; pointer-events: auto; }
+    .viewer img { max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    .viewer-close {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #fff;
+      font-size: 30px;
+      cursor: pointer;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 12px;
+      border-radius: 50%;
+      line-height: 1;
+    }
 
-        /* Empty States */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            color: var(--muted);
-            font-size: 16px;
-        }
-        .empty-state button { margin-top: 20px; }
+    /* Face Icons Bar */
+    #faceIconsBar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+    }
+    .face-icon-wrap{
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      min-width:64px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .face-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--brand);
+      transition: transform 0.2s, border-color 0.2s;
+      background:#222;
+    }
+    .face-icon.selected { border-color: var(--ok); transform: scale(1.08); }
+    .face-label{
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+      max-width:70px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .face-count{
+      font-size:11px;
+      color:#cfcfcf;
+      background:#151515;
+      border:1px solid #2a2a2a;
+      padding:1px 6px;
+      border-radius:999px;
+    }
 
-        /* Link Result */
-        #linkResult {
-            background: #111;
-            border: 1px dashed var(--brand);
-            padding: 15px;
-            border-radius: 8px;
-            display: none;
-            margin-top: 15px;
-        }
-        #generatedLink {
-            color: var(--brand);
-            text-decoration: none;
-            font-size: 14px;
-            word-break: break-all;
-            display: block;
-            margin-bottom: 8px;
-        }
-        #generatedLink:hover { text-decoration: underline; }
+    /* History Viewer */
+    #historyViewer {
+      display: none;
+      margin-top: 30px;
+      background: #151515;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    #historyViewer table { font-size: 13px; }
 
-        /* Edit Event Button */
-        .edit-btn {
-            background: var(--brand);
-            color: #fff;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            cursor: pointer;
-            margin-right: 5px;
-        }
-        .delete-btn {
-            background: var(--danger);
-            color: #fff;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            cursor: pointer;
-        }
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .empty-state button { margin-top: 20px; }
 
-        /* Face Name Header */
-        .face-header {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid var(--brand);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .face-header img {
-            width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
-            border: 2px solid var(--brand);
-        }
-        .face-header-content { flex-grow: 1; }
-        .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
-        .face-input-group { display: flex; gap: 10px; max-width: 380px; }
-        .face-input-group input{ flex:1; }
+    /* Link Result */
+    #linkResult {
+      background: #111;
+      border: 1px dashed var(--brand);
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+      margin-top: 15px;
+    }
+    #generatedLink {
+      color: var(--brand);
+      text-decoration: none;
+      font-size: 14px;
+      word-break: break-all;
+      display: block;
+      margin-bottom: 8px;
+    }
+    #generatedLink:hover { text-decoration: underline; }
 
-        /* Mobile */
-        @media (max-width: 768px) {
-            .filter-row-top { flex-direction: column; gap: 10px; }
-            .filter-row-top > * { width: 100%; }
-            .lead-grid { grid-template-columns: 1fr; }
-            .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
-            .tabs { gap: 20px; }
-        }
+    /* Edit Event Button */
+    .edit-btn {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .delete-btn {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
 
-        /* Loading */
-        .loading { text-align: center; padding: 40px; color: var(--muted); }
-        .spinner { border: 4px solid var(--border); border-top: 4px solid var(--brand); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* Face Name Header */
+    .face-header {
+      background: var(--card);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid var(--brand);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .face-header img {
+      width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--brand);
+      background:#222;
+    }
+    .face-header-content { flex-grow: 1; }
+    .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
+    .face-input-group { display: flex; gap: 10px; max-width: 420px; }
+    .face-input-group input{ flex:1; }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        #uploadEventSelect:invalid { color: var(--muted); }
+    /* Mobile */
+    @media (max-width: 768px) {
+      .filter-row-top { flex-direction: column; gap: 10px; }
+      .filter-row-top > * { width: 100%; }
+      .lead-grid { grid-template-columns: 1fr; }
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+      .tabs { gap: 20px; }
+    }
 
-        /* DEBUG PANEL */
-        #debugFab{
-            position:fixed; right:14px; bottom:14px; z-index:9999;
-            background:#151515; border:1px solid var(--border); color:#fff;
-            border-radius:999px; padding:10px 14px; cursor:pointer;
-            font-size:12px; display:flex; align-items:center; gap:8px;
-            box-shadow:0 6px 20px rgba(0,0,0,0.35);
-        }
-        #debugFab .dot{width:10px;height:10px;border-radius:50%;background:var(--ok);}
-        #debugPanel{
-            position:fixed; right:14px; bottom:64px; z-index:9999;
-            width:min(520px, calc(100vw - 28px));
-            max-height:55vh;
-            background:#0c0c0c; border:1px solid #2b2b2b; border-radius:14px;
-            display:none; overflow:hidden;
-            box-shadow:0 10px 30px rgba(0,0,0,0.55);
-        }
-        #debugPanelHeader{
-            display:flex; justify-content:space-between; align-items:center;
-            padding:10px 12px; border-bottom:1px solid #222;
-            background:#121212;
-        }
-        #debugPanelHeader b{font-size:13px}
-        #debugPanelHeader .actions{display:flex; gap:8px}
-        #debugPanelHeader button{
-            background:#1a1a1a; color:#fff; border:1px solid #333;
-            border-radius:10px; padding:6px 10px; cursor:pointer; font-size:12px;
-        }
-        #debugBody{
-            padding:10px 12px; overflow:auto; max-height:calc(55vh - 48px);
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size:12px; line-height:1.35;
-        }
-        .dbg-item{border:1px solid #222; border-radius:12px; padding:10px; margin-bottom:10px; background:#101010}
-        .dbg-item .row{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
-        .dbg-tag{padding:2px 8px; border-radius:999px; border:1px solid #333; color:#ddd; font-size:11px}
-        .dbg-tag.ok{border-color:rgba(52,168,83,0.6); color:#c8f5d6}
-        .dbg-tag.err{border-color:rgba(234,67,53,0.6); color:#ffd0cc}
-        .dbg-pre{white-space:pre-wrap; color:#cfcfcf; margin-top:8px}
-        .dbg-muted{color:#9a9a9a}
-        .dbg-warn{color:#ffcc80}
-    </style>
+    /* Loading */
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+  </style>
 </head>
+
 <body>
 <div class="wrap">
-    <div class="top-bar">
-        <div>
-            <a href="dashboard.html" class="back-link" aria-label="Back to Dashboard">⬅ Dashboard</a>
-            <h1 id="collectionName">Loading...</h1>
-            <div class="stats-line">
-                <span id="totalPhotos">0</span> Photos •
-                <span id="totalLeads">0</span> Guests •
-                <span id="storageUsed">0 MB</span>
-            </div>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <button class="btn secondary" style="font-size:12px; padding:6px 12px;" onclick="App.refreshData()" aria-label="Refresh Data">Refresh Data 🔄</button>
-            <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;" aria-label="Staff Upload Link">⚡ Staff Upload Link</a>
-        </div>
+  <div class="top-bar">
+    <div>
+      <a href="dashboard.html" class="back-link">⬅ Dashboard</a>
+      <h1 id="collectionName">Loading...</h1>
+      <div class="stats-line">
+        <span id="totalPhotos">0</span> Photos •
+        <span id="totalLeads">0</span> Guests •
+        <span id="storageUsed">0 MB</span>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="btn secondary" style="font-size:12px; padding:6px 12px;" onclick="window.location.reload()">Refresh Data 🔄</button>
+      <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ Staff Upload Link</a>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('galleryTab')">Photos</div>
+    <div class="tab" onclick="switchTab('eventsTab')">Events</div>
+    <div class="tab" onclick="switchTab('uploadTab')">Upload</div>
+    <div class="tab" onclick="switchTab('linksTab')">Links</div>
+    <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
+  </div>
+
+  <!-- GALLERY TAB -->
+  <div id="galleryTab" class="tab-content active">
+    <div class="filter-row-top" id="topFiltersRow">
+      <select id="filterType" onchange="applyFilters()">
+        <option value="ALL">All Photos</option>
+        <option value="BEST">⭐ Best Shots</option>
+        <option value="HAPPY">😊 Happy</option>
+        <option value="GROUP">👥 Groups</option>
+      </select>
+      <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
+      <button class="btn secondary" id="downloadZipBtn">⬇ Download Zip</button>
     </div>
 
-    <div class="tabs" role="tablist">
-        <div class="tab active" role="tab" tabindex="0" onclick="App.switchTab('galleryTab')">Photos</div>
-        <div class="tab" role="tab" tabindex="0" onclick="App.switchTab('eventsTab')">Events</div>
-        <div class="tab" role="tab" tabindex="0" onclick="App.switchTab('uploadTab')">Upload</div>
-        <div class="tab" role="tab" tabindex="0" onclick="App.switchTab('linksTab')">Links</div>
-        <div class="tab" role="tab" tabindex="0" onclick="App.switchTab('analyticsTab')">Guests / Leads</div>
+    <!-- Face Icons Bar -->
+    <div id="faceIconsBar"></div>
+
+    <!-- Face Naming Header -->
+    <div id="faceNamingHeader" class="face-header" style="display:none;">
+      <img id="faceHeaderImg" src="" alt="Face">
+      <div class="face-header-content">
+        <h3 id="faceHeaderTitle">Who is this?</h3>
+        <div class="face-input-group">
+          <input type="text" id="faceNameInput" placeholder="Enter Name">
+          <button class="btn" id="saveFaceBtn">Save</button>
+          <button class="btn secondary" id="cancelFaceBtn">Cancel</button>
+        </div>
+        <div style="margin-top:6px; color:var(--muted); font-size:12px" id="faceHint">
+          Tip: Click a face to filter. Shift+click for multi-select.
+        </div>
+      </div>
     </div>
 
-    <!-- GALLERY TAB -->
-    <div id="galleryTab" class="tab-content active" role="tabpanel">
-        <div class="filter-row-top">
-            <select id="filterType" onchange="PhotoManager.applyFilters()" aria-label="Filter Type">
-                <option value="ALL">All Photos</option>
-                <option value="BEST">⭐ Best Shots</option>
-                <option value="HAPPY">😊 Happy</option>
-                <option value="GROUP">👥 Groups</option>
-            </select>
-            <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="PhotoManager.applyFilters()" aria-label="Search Tags">
-            <button class="btn secondary" id="downloadZipBtn" onclick="PhotoManager.downloadZip()">⬇ Download Zip</button>
-        </div>
+    <div id="galleryContainer">
+      <p class="loading">Loading photos...</p>
+    </div>
 
-        <!-- Face Icons Bar -->
-        <div id="faceIconsBar" class="face-group-grid"></div>
+    <div class="load-more-container">
+      <button id="loadMoreBtn" class="btn secondary" style="display:none;">Load More</button>
+    </div>
+  </div>
 
-        <!-- Face Naming Header -->
-        <div id="faceNamingHeader" class="face-header" style="display:none;">
-            <img id="faceHeaderImg" src="" alt="Face Thumbnail">
-            <div class="face-header-content">
-                <h3 id="faceHeaderTitle">Who is this?</h3>
-                <div class="face-input-group">
-                    <input type="text" id="faceNameInput" placeholder="Enter Name" aria-label="Face Name">
-                    <button class="btn" id="saveFaceBtn" onclick="FaceManager.saveFaceName()">Save</button>
-                    <button class="btn secondary" id="cancelFaceBtn" onclick="FaceManager.cancelFaceNaming()">Cancel</button>
-                </div>
-                <div class="dbg-muted" style="margin-top:6px" id="faceHint"></div>
-            </div>
-        </div>
+  <!-- EVENTS TAB -->
+  <div id="eventsTab" class="tab-content">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+        <h3>Events</h3>
+        <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
+      </div>
 
-        <div id="galleryContainer">
-            <p class="loading">Loading photos... <div class="spinner"></div></p>
+      <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+          <input type="text" id="eventName" placeholder="Event Name">
+          <input type="date" id="eventDate">
         </div>
+        <div style="text-align:right;">
+          <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
+          <button class="btn" id="saveEventBtn">Save</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+        <tbody id="eventsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- UPLOAD TAB -->
+  <div id="uploadTab" class="tab-content">
+    <div class="card" style="max-width:800px; margin:0 auto;">
+      <div style="margin-bottom:20px;">
+        <label style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
+        <select id="uploadEventSelect"><option value="">Loading...</option></select>
+      </div>
+      <div id="dropZone">
+        <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
+        <p>Drag photos here to upload</p>
+        <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
+      </div>
+      <div id="progress-container" style="display:none;">
+        <div id="progress-bar"></div>
+        <p id="uploadStatus"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINKS TAB -->
+  <div id="linksTab" class="tab-content">
+    <div class="card" style="max-width:600px; margin:0 auto;">
+      <h3>Generate Search Link</h3>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include in the guest search link.</p>
+      <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px; background:#111;"></div>
+      <input type="number" id="expiryHours" placeholder="Expiry in hours (0 for no expiry)" style="margin-bottom:10px;">
+      <input type="password" id="linkPassword" placeholder="Optional password" style="margin-bottom:15px;">
+      <button class="btn" id="genLinkBtn">Generate Link</button>
+      <div id="linkResult">
+        <a id="generatedLink" href="#" target="_blank">Click to open link</a>
+        <button class="btn secondary" style="margin-top:8px; padding:5px 12px; font-size:12px;" onclick="copyLink()">Copy Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUESTS TAB -->
+  <div id="analyticsTab" class="tab-content">
+    <div class="card">
+      <h3>Guest Leads</h3>
+      <div class="filter-row-top">
+        <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics(true)">
+        <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="fetchAnalytics(false)">
+      </div>
+      <div id="analyticsBodyContainer">
+        <div id="leadsGrid" class="lead-grid"></div>
+        <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">Loading leads...</p>
 
         <div class="load-more-container">
-            <button id="loadMoreBtn" class="btn secondary" style="display:none;" onclick="PhotoManager.renderNextBatch()">Load More</button>
+          <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">Load More Leads</button>
         </div>
-    </div>
+      </div>
 
-    <!-- EVENTS TAB -->
-    <div id="eventsTab" class="tab-content" role="tabpanel">
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
-                <h3>Events</h3>
-                <button class="btn" onclick="EventManager.showEventForm()">+ New Event</button>
-            </div>
-
-            <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-                    <input type="text" id="eventName" placeholder="Event Name" aria-label="Event Name">
-                    <input type="date" id="eventDate" aria-label="Event Date">
-                </div>
-                <div style="text-align:right;">
-                    <button class="btn secondary" onclick="EventManager.hideEventForm()">Cancel</button>
-                    <button class="btn" id="saveEventBtn" onclick="EventManager.saveEvent()">Save</button>
-                </div>
-            </div>
-            <table aria-label="Events Table">
-                <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
-                <tbody id="eventsTbody"></tbody>
-            </table>
-            <div id="eventsEmpty" class="empty-state" style="display:none;">No events yet. Create one!</div>
+      <!-- History Viewer -->
+      <div id="historyViewer">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <h3 id="historyHeader" style="margin:0;">Search History</h3>
+          <button class="btn secondary" style="padding:6px 15px;" onclick="hideHistoryViewer()">← Back</button>
         </div>
+        <table>
+          <thead><tr><th>Search Time</th><th>Link ID</th><th>Name (Captured)</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
     </div>
-
-    <!-- UPLOAD TAB -->
-    <div id="uploadTab" class="tab-content" role="tabpanel">
-        <div class="card" style="max-width:800px; margin:0 auto;">
-            <div style="margin-bottom:20px;">
-                <label style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
-                <select id="uploadEventSelect" aria-label="Select Event"><option value="">Loading...</option></select>
-            </div>
-            <div id="dropZone" aria-label="Drop Zone for Uploads">
-                <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
-                <p>Drag photos here to upload (max 10MB each)</p>
-                <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
-            </div>
-            <div id="progress-container" style="display:none;">
-                <div id="progress-bar"></div>
-                <p id="uploadStatus"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- LINKS TAB -->
-    <div id="linksTab" class="tab-content" role="tabpanel">
-        <div class="card" style="max-width:600px; margin:0 auto;">
-            <h3>Generate Search Link</h3>
-            <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">Select events to include in the guest search link.</p>
-            <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px; background:#111;"></div>
-            <input type="number" id="expiryHours" placeholder="Expiry in hours (0 for no expiry)" aria-label="Expiry Hours">
-            <input type="password" id="linkPassword" placeholder="Optional password" aria-label="Link Password">
-            <button class="btn" id="genLinkBtn" onclick="LinkManager.generateLink()">Generate Link</button>
-            <div id="linkResult">
-                <a id="generatedLink" href="#" target="_blank" aria-label="Generated Link">Click to open link</a>
-                <button class="btn secondary" style="margin-top:8px; padding:5px 12px; font-size:12px;" onclick="LinkManager.copyLink()">Copy Link</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- GUESTS TAB -->
-    <div id="analyticsTab" class="tab-content" role="tabpanel">
-        <div class="card">
-            <h3>Guest Leads</h3>
-            <div class="filter-row-top">
-                <input type="date" id="dateFilter" onchange="AnalyticsManager.fetchAnalytics()" aria-label="Filter by Date">
-                <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="AnalyticsManager.fetchAnalytics()" aria-label="Filter by Mobile">
-            </div>
-            <div id="analyticsBodyContainer">
-                <div id="leadsGrid" class="lead-grid"></div>
-                <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">Loading leads... <div class="spinner"></div></p>
-
-                <div class="load-more-container">
-                    <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="AnalyticsManager.loadMoreLeads()">Load More Leads</button>
-                </div>
-            </div>
-
-            <!-- History Viewer -->
-            <div id="historyViewer">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 id="historyHeader" style="margin:0;">Search History</h3>
-                    <button class="btn secondary" style="padding:6px 15px;" onclick="AnalyticsManager.hideHistoryViewer()">← Back</button>
-                </div>
-                <table aria-label="Search History Table">
-                    <thead><tr><th>Search Time</th><th>Link ID</th><th>Name (Captured)</th></tr></thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
 <!-- PHOTO VIEWER -->
-<div class="viewer" id="viewer" onclick="PhotoManager.closeViewer()" aria-modal="true" role="dialog">
-    <div class="viewer-close" onclick="PhotoManager.closeViewer()" aria-label="Close Viewer">×</div>
-    <img id="viewerImg" onclick="event.stopPropagation()" alt="Viewed Photo">
-    <div class="viewer-nav viewer-prev" onclick="PhotoManager.viewerNav(-1)" aria-label="Previous Photo">◀</div>
-    <div class="viewer-nav viewer-next" onclick="PhotoManager.viewerNav(1)" aria-label="Next Photo">▶</div>
-</div>
-
-<!-- DEBUG UI -->
-<div id="debugFab" title="Open Debug Panel" onclick="DebugManager.togglePanel()">
-    <span class="dot" id="dbgDot"></span>
-    Debug
-</div>
-<div id="debugPanel">
-    <div id="debugPanelHeader">
-        <b>Debug Panel</b>
-        <div class="actions">
-            <button id="dbgClearBtn" onclick="DebugManager.clear()">Clear</button>
-            <button id="dbgCloseBtn" onclick="DebugManager.close()">Close</button>
-        </div>
-    </div>
-    <div id="debugBody"></div>
+<div class="viewer" id="viewer" onclick="closeViewer()">
+  <div class="viewer-close" onclick="closeViewer()">×</div>
+  <img id="viewerImg" onclick="event.stopPropagation()">
 </div>
 
 <script>
-try {
-    /* ======================= API CONFIG ======================= */
-    var API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
-    var GET_EVENTS_API = API_BASE + "/get-events";
-    var GET_PHOTOS_API = API_BASE + "/get-photos";
-    var UPSERT_EVENT_API = API_BASE + "/upsert-event";
-    var DELETE_EVENT_API = API_BASE + "/delete-event";
-    var UPLOAD_URLS_API = API_BASE + "/generate-upload-urls";
-    var GENERATE_LINK_API = API_BASE + "/generate-search-link";
-    var GUEST_API = API_BASE + "/save-details";
-    var LIST_PEOPLE_API = API_BASE + "/list_people";
-    var SAVE_FACE_NAME_API = API_BASE + "/save-face-name";
+/* ======================= API CONFIG ======================= */
+const API_BASE = "https://YOUR_API_ID.execute-api.ap-south-1.amazonaws.com/prod";
+const GET_EVENTS_API = `${API_BASE}/get-events`;
+const GET_PHOTOS_API = `${API_BASE}/get-photos`;
+const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
+const DELETE_EVENT_API = `${API_BASE}/delete-event`;
+const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
+const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
+const GUEST_API = `${API_BASE}/save-details`;
+const LIST_PEOPLE_API = `${API_BASE}/list_people`;
+const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
 
-    /* ======================= PARAMS / AUTH ======================= */
-    var urlParams = new URLSearchParams(window.location.search);
-    var collectionId = urlParams.get("id");
-    var collectionNameParam = urlParams.get("name");
-    var idToken = localStorage.getItem("idToken");
+/* ======================= PARAMS / AUTH ======================= */
+const urlParams = new URLSearchParams(window.location.search);
+const collectionId = urlParams.get("id");
+const collectionNameParam = urlParams.get("name");
+const idToken = localStorage.getItem("idToken") || "";
 
-    if (!idToken) {
-        console.warn("No idToken found. Some API calls may fail.");
-    }
-    if (document.getElementById('assistantLink')) {
-        document.getElementById('assistantLink').href = "quick-upload.html?id=" + collectionId + "&name=" + encodeURIComponent(collectionNameParam || 'Event');
-    }
-
-    /* ======================= UTILS ======================= */
-    var Utils = {
-        escapeAttr: function(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;'); },
-        formatLeadTime: function(isoString) {
-            if (!isoString) return '-';
-            var dateObj = new Date(isoString);
-            if (isNaN(dateObj.getTime())) return isoString.substring(0, 10);
-            return dateObj.toLocaleString(navigator.language, { 'day':'numeric', 'month':'short', 'hour':'2-digit', 'minute':'2-digit' });
-        },
-        formatBytes: function(bytes) {
-            if (!+bytes) return '0 B';
-            var k = 1024; var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            var i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        },
-        showLoading: function(el, text) {
-            if (text === undefined) text = 'Loading...';
-            el.innerHTML = '<p class="loading">' + text + ' <div class="spinner"></div></p>';
-        },
-        showError: function(el, text) {
-            if (text === undefined) text = 'Failed to load.';
-            el.innerHTML = '<p style="color:var(--danger); text-align:center;">' + text + '</p>';
-        },
-        showEmpty: function(el, text) {
-            if (text === undefined) text = 'No data found.';
-            el.innerHTML = '<p class="empty-state">' + text + '</p>';
-        }
-    };
-
-    /* ======================= DEBUG MANAGER ======================= */
-    var DebugManager = {
-        items: [],
-        maxItems: 60,
-        togglePanel: function() {
-            var p = document.getElementById('debugPanel');
-            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-        },
-        close: function() { document.getElementById('debugPanel').style.display = 'none'; },
-        clear: function() {
-            DebugManager.items = [];
-            document.getElementById('debugBody').innerHTML = '';
-            document.getElementById('dbgDot').style.background = 'var(--ok)';
-        },
-        add: function(entry) {
-            DebugManager.items.unshift(entry);
-            if (DebugManager.items.length > DebugManager.maxItems) DebugManager.items.pop();
-            var body = document.getElementById('debugBody');
-            var div = document.createElement('div');
-            div.className = 'dbg-item';
-            var tagClass = entry.ok ? 'ok' : 'err';
-            div.innerHTML = ' <div class="row"> <div><span class="dbg-tag ' + tagClass + '">' + (entry.ok ? 'OK' : 'ERR') + '</span> <span class="dbg-tag">' + entry.type + '</span> <span class="dbg-muted">' + new Date(entry.ts).toLocaleString() + '</span> </div> <div class="dbg-muted">' + (entry.label || '') + '</div> </div> <div class="dbg-pre">' + (entry.details || '') + '</div> ';
-            body.prepend(div);
-            if (!entry.ok) document.getElementById('dbgDot').style.background = 'var(--danger)';
-        }
-    };
-
-    window.addEventListener('error', function(e) { DebugManager.add({ ok: false, type: 'JS', label: 'window.error', ts: Date.now(), details: e.message + '\n' + e.filename + ':' + e.lineno + ':' + e.colno + '\n' + (e.error ? e.error.stack : '') }); });
-    window.addEventListener('unhandledrejection', function(e) { DebugManager.add({ ok: false, type: 'JS', label: 'unhandledrejection', ts: Date.now(), details: e.reason ? e.reason.stack : String(e.reason) }); });
-
-    /* ======================= API MANAGER ======================= */
-    var ApiManager = {
-        fetch: function(label, url, options) {
-            if (options === undefined) options = {};
-            var ts = Date.now();
-            var safeOptions = JSON.parse(JSON.stringify(options));
-            if (safeOptions.headers && safeOptions.headers.Authorization) safeOptions.headers.Authorization = 'Bearer ***';
-            return fetch(url, options).then(function(res) {
-                return res.text().then(function(text) {
-                    var json = null;
-                    try { json = JSON.parse(text); } catch (e) {}
-                    DebugManager.add({
-                        ok: res.ok,
-                        type: 'API',
-                        label: label,
-                        ts: ts,
-                        details: 'URL: ' + url + '\nStatus: ' + res.status + '\nRequest: ' + (safeOptions.body || '-') + '\nResponse: ' + (json ? JSON.stringify(json, null, 2) : text)
-                    });
-                    if (!res.ok) throw new Error('API failed: ' + res.status);
-                    return { res: res, json: json, text: text };
-                });
-            }).catch(function(err) {
-                DebugManager.add({ ok: false, type: 'API', label: label, ts: ts, details: 'URL: ' + url + '\nError: ' + err.message + '\n' + (err.stack || '') });
-                throw err;
-            });
-        }
-    };
-
-    /* ======================= APP MANAGER ======================= */
-    var App = {
-        switchTab: function(tabId) {
-            var tabs = document.querySelectorAll('.tab');
-            for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-            var contents = document.querySelectorAll('.tab-content');
-            for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
-
-            var tabEl = document.querySelector('.tab[onclick="App.switchTab(\'' + tabId + '\')"]');
-            if (tabEl) tabEl.classList.add('active');
-            var contentEl = document.getElementById(tabId);
-            if (contentEl) contentEl.classList.add('active');
-
-            if (tabId === 'galleryTab') PhotoManager.init();
-            else if (tabId === 'analyticsTab') AnalyticsManager.init(true);
-            else if (tabId === 'eventsTab') EventManager.init();
-            else if (tabId === 'uploadTab') UploadManager.init();
-            else if (tabId === 'linksTab') LinkManager.init();
-        },
-        refreshData: function() {
-            PhotoManager.fetchPhotos();
-            EventManager.init();
-            AnalyticsManager.fetchAnalytics(true);
-        },
-        init: function() {
-            ApiManager.fetch('get-events', GET_EVENTS_API, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId })
-            }).then(function(result) {
-                var json = result.json;
-                var data = json || {};
-                var summary = data.collection_summary || {};
-                document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-                document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
-                document.getElementById('totalLeads').textContent = summary.leads_count || 0;
-                document.getElementById('storageUsed').textContent = Utils.formatBytes(summary.storage_bytes || 0);
-                document.title = (summary.name || 'Collection') + ' • Manager';
-                EventManager.renderEvents(data.events || []);
-            }).catch(function(e) {
-                document.getElementById('collectionName').textContent = "Error Loading";
-                DebugManager.add({ ok: false, type: 'INIT', label: 'app-init', ts: Date.now(), details: e.message });
-            });
-        }
-    };
-
-    /* ======================= PHOTO MANAGER ======================= */
-    var PhotoManager = {
-        allPhotos: [],
-        filteredPhotos: [],
-        displayedPhotosCount: 0,
-        PHOTOS_BATCH_SIZE: 40,
-        viewerIndex: 0,
-        init: function() {
-            if (PhotoManager.allPhotos.length === 0) {
-                PhotoManager.fetchPhotos();
-            } else {
-                PhotoManager.displayedPhotosCount = 0;
-                var container = document.getElementById('galleryContainer');
-                container.innerHTML = '';
-                PhotoManager.renderNextBatch();
-                FaceManager.renderIcons();
-            }
-            var container = document.getElementById('galleryContainer');
-            container.addEventListener('scroll', function() {
-                if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100 && PhotoManager.displayedPhotosCount < PhotoManager.filteredPhotos.length) {
-                    PhotoManager.renderNextBatch();
-                }
-            });
-        },
-        fetchPhotos: function() {
-            var container = document.getElementById('galleryContainer');
-            Utils.showLoading(container, 'Loading photos...');
-            ApiManager.fetch('get-photos', GET_PHOTOS_API, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId })
-            }).then(function(result) {
-                var json = result.json;
-                var data = json || {};
-                PhotoManager.allPhotos = data.photos || [];
-                PhotoManager.filteredPhotos = PhotoManager.allPhotos.slice(); // Copy array
-                FaceManager.buildMap();
-                FaceManager.enhanceFromDirectory();
-                PhotoManager.displayedPhotosCount = 0;
-                container.innerHTML = '';
-                PhotoManager.renderNextBatch();
-                FaceManager.renderIcons();
-            }).catch(function(err) {
-                Utils.showError(container, 'Failed to load photos. Check debug panel.');
-            });
-        },
-        renderNextBatch: function() {
-            var container = document.getElementById('galleryContainer');
-            var nextBatch = PhotoManager.filteredPhotos.slice(PhotoManager.displayedPhotosCount, PhotoManager.displayedPhotosCount + PhotoManager.PHOTOS_BATCH_SIZE);
-            if (nextBatch.length === 0 && PhotoManager.displayedPhotosCount === 0) {
-                Utils.showEmpty(container, 'No photos found.');
-                document.getElementById('loadMoreBtn').style.display = 'none';
-                return;
-            }
-            var lastDate = '';
-            nextBatch.forEach(function(photo, localIdx) {
-                var globalIdx = PhotoManager.displayedPhotosCount + localIdx;
-                var photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString(navigator.language, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
-                if (photoDate !== lastDate) {
-                    var dateHeader = document.createElement('div');
-                    dateHeader.className = 'date-header';
-                    dateHeader.textContent = photoDate;
-                    container.appendChild(dateHeader);
-                    lastDate = photoDate;
-                }
-                var card = document.createElement('div');
-                card.className = 'photo-card';
-                card.onclick = function() { PhotoManager.openViewer(globalIdx); };
-                var thumbnailUrl = photo.thumbnail_url || photo.url || '';
-                var img = document.createElement('img');
-                img.src = thumbnailUrl;
-                img.alt = 'Photo Thumbnail';
-                img.loading = 'lazy';
-                img.onload = function() { img.classList.add('loaded'); };
-                img.onerror = function() { card.style.display = 'none'; };
-                card.appendChild(img);
-                container.appendChild(card);
-            });
-            PhotoManager.displayedPhotosCount += nextBatch.length;
-            var btn = document.getElementById('loadMoreBtn');
-            btn.style.display = PhotoManager.displayedPhotosCount < PhotoManager.filteredPhotos.length ? 'inline-block' : 'none';
-        },
-        applyFilters: function() {
-            var type = document.getElementById('filterType').value;
-            var query = document.getElementById('tagSearch').value.toLowerCase();
-            FaceManager.selectedFaces.clear(); // Reset faces on top filter change
-            PhotoManager.filteredPhotos = PhotoManager.allPhotos.filter(function(p) {
-                var matchesType = (type === 'ALL') ||
-                    (type === 'BEST' && (p.quality_score || 0) > 85) ||
-                    (type === 'HAPPY' && (p.emotions || []).some(function(e) { return e.Type === 'HAPPY' && e.Confidence > 60; })) ||
-                    (type === 'GROUP' && (p.face_count || 0) >= 3);
-                var matchesQuery = !query || (p.ai_tags || []).some(function(t) { return String(t).toLowerCase().includes(query); });
-                return matchesType && matchesQuery;
-            });
-            PhotoManager.displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
-            PhotoManager.renderNextBatch();
-        },
-        openViewer: function(idx) {
-            if (!PhotoManager.filteredPhotos[idx]) return;
-            PhotoManager.viewerIndex = idx;
-            document.getElementById('viewerImg').src = PhotoManager.filteredPhotos[idx].url || '';
-            document.getElementById('viewer').classList.add('open');
-        },
-        closeViewer: function() { document.getElementById('viewer').classList.remove('open'); },
-        viewerNav: function(dir) {
-            PhotoManager.viewerIndex = (PhotoManager.viewerIndex + dir + PhotoManager.filteredPhotos.length) % PhotoManager.filteredPhotos.length;
-            document.getElementById('viewerImg').src = PhotoManager.filteredPhotos[PhotoManager.viewerIndex].url || '';
-        },
-        downloadZip: function() {
-            if (PhotoManager.filteredPhotos.length === 0) return alert("No photos to download");
-            var btn = document.getElementById('downloadZipBtn');
-            var originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Preparing...';
-            var zip = new JSZip();
-            var folder = zip.folder("photos");
-            var limit = PhotoManager.filteredPhotos.slice(0, 500); // Increased limit, but warn if large
-            if (limit.length > 100) alert('Downloading first 500 photos to avoid timeout.');
-            var count = 0;
-            var promises = limit.map(function(photo, i) {
-                return fetch(photo.url).then(function(response) {
-                    return response.blob();
-                }).then(function(blob) {
-                    folder.file("photo_" + (i + 1) + ".jpg", blob);
-                    count++;
-                    btn.textContent = "Zipping " + count + "/" + limit.length;
-                }).catch(function(e) {
-                    DebugManager.add({ ok: false, type: 'ZIP', label: 'download', ts: Date.now(), details: e.message });
-                });
-            });
-            Promise.all(promises).then(function() {
-                return zip.generateAsync({ type: "blob" });
-            }).then(function(content) {
-                saveAs(content, "photos.zip");
-            }).catch(function(e) {
-                alert('Download failed.');
-                DebugManager.add({ ok: false, type: 'ZIP', label: 'download', ts: Date.now(), details: e.message });
-            }).finally(function() {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            });
-        }
-    };
-
-    /* ======================= FACE MANAGER ======================= */
-    var FaceManager = {
-        groups: new Map(),
-        directoryPeople: [],
-        currentNamingFaceId: null,
-        selectedFaces: new Set(),
-        buildMap: function() {
-            FaceManager.groups.clear();
-            PhotoManager.allPhotos.forEach(function(photo) {
-                var facesArr = photo.faces || [];
-                facesArr.forEach(function(face) {
-                    var faceId = face.FaceId || face.faceId;
-                    if (!faceId) return;
-                    if (!FaceManager.groups.has(faceId)) {
-                        FaceManager.groups.set(faceId, {
-                            id: faceId,
-                            name: face.FaceName || 'Unknown Person',
-                            thumbnail: photo.thumbnail_url || photo.url,
-                            count: 0,
-                            photos: []
-                        });
-                    }
-                    var group = FaceManager.groups.get(faceId);
-                    group.count++;
-                    group.photos.push(photo);
-                });
-                var ids = photo.face_ids || photo.faceIds || [];
-                ids.forEach(function(fid) {
-                    if (!FaceManager.groups.has(fid)) {
-                        FaceManager.groups.set(fid, { id: fid, name: 'Unknown Person', thumbnail: photo.thumbnail_url || photo.url, count: 0, photos: [] });
-                    }
-                    var group = FaceManager.groups.get(fid);
-                    group.count++;
-                    group.photos.push(photo);
-                });
-            });
-            if (FaceManager.groups.size === 0) {
-                DebugManager.add({
-                    ok: false, type: 'WARN', label: 'faces-missing',
-                    ts: Date.now(),
-                    details: "No face data found. Face icons hidden. Check API response for face_ids or faces."
-                });
-            }
-        },
-        enhanceFromDirectory: function() {
-            return ApiManager.fetch('list_people', LIST_PEOPLE_API, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId })
-            }).then(function(result) {
-                var json = result.json;
-                FaceManager.directoryPeople = json.people || [];
-                FaceManager.directoryPeople.forEach(function(p) {
-                    var fid = p.FaceId || p.face_id || p.faceId;
-                    if (!fid) return;
-                    if (!FaceManager.groups.has(fid)) {
-                        FaceManager.groups.set(fid, { id: fid, name: p.FaceName || 'Unknown Person', thumbnail: null, count: 0, photos: [] });
-                    } else {
-                        var group = FaceManager.groups.get(fid);
-                        if (p.FaceName) group.name = p.FaceName;
-                    }
-                });
-                var hasFaceIds = PhotoManager.allPhotos.some(function(p) { return (p.face_ids || []).length > 0; });
-                if (hasFaceIds) {
-                    FaceManager.groups.forEach(function(g) { g.photos = []; g.count = 0; });
-                    PhotoManager.allPhotos.forEach(function(p) {
-                        (p.face_ids || []).forEach(function(fid) {
-                            var g = FaceManager.groups.get(fid);
-                            if (!g) return;
-                            g.photos.push(p);
-                            g.count++;
-                            if (!g.thumbnail) g.thumbnail = p.thumbnail_url || p.url;
-                        });
-                    });
-                } else {
-                    var firstPhotoUrl = PhotoManager.allPhotos[0] ? (PhotoManager.allPhotos[0].thumbnail_url || PhotoManager.allPhotos[0].url || null) : null;
-                    FaceManager.groups.forEach(function(g) { if (!g.thumbnail) g.thumbnail = firstPhotoUrl; });
-                }
-            }).catch(function(e) {
-                DebugManager.add({ ok: false, type: 'FACE', label: 'enhance-directory', ts: Date.now(), details: e.message });
-            });
-        },
-        renderIcons: function() {
-            var bar = document.getElementById('faceIconsBar');
-            bar.innerHTML = '';
-            bar.style.display = 'flex';
-            var entries = Array.from(FaceManager.groups.values())
-                .filter(function(g) { return g.count > 0 || g.photos.length > 0; })
-                .sort(function(a, b) { return b.count - a.count; });
-            if (entries.length === 0) {
-                bar.style.display = 'none';
-                return;
-            }
-            entries.forEach(function(group, idx) {
-                var img = document.createElement('img');
-                img.className = 'face-icon';
-                img.src = group.thumbnail || "https://placehold.co/50x50/333/fff?text=" + encodeURIComponent((group.name ? group.name[0] : '?'));
-                img.alt = "Face of " + group.name;
-                img.title = group.name + " (" + group.count + " photos)";
-                img.onclick = function(e) {
-                    if (e.shiftKey) {
-                        if (FaceManager.selectedFaces.has(group.id)) FaceManager.selectedFaces.delete(group.id);
-                        else FaceManager.selectedFaces.add(group.id);
-                    } else {
-                        FaceManager.selectedFaces.clear();
-                        FaceManager.selectedFaces.add(group.id);
-                    }
-                    var icons = bar.querySelectorAll('.face-icon');
-                    for (var i = 0; i < icons.length; i++) icons[i].classList.remove('selected');
-                    entries.forEach(function(g, i) {
-                        if (FaceManager.selectedFaces.has(g.id)) bar.children[i].classList.add('selected');
-                    });
-                    if (!e.shiftKey) FaceManager.showPhotos(group.id);
-                    else FaceManager.applyFilter();
-                };
-                bar.appendChild(img);
-            });
-        },
-        applyFilter: function() {
-            if (FaceManager.selectedFaces.size === 0) {
-                PhotoManager.filteredPhotos = PhotoManager.allPhotos.slice();
-            } else {
-                PhotoManager.filteredPhotos = PhotoManager.allPhotos.filter(function(photo) {
-                    var photoFaces = photo.face_ids || [];
-                    var allSelected = true;
-                    FaceManager.selectedFaces.forEach(function(fid) {
-                        if (!photoFaces.includes(fid) && !FaceManager.groups.get(fid).photos.includes(photo)) allSelected = false;
-                    });
-                    return allSelected;
-                });
-            }
-            PhotoManager.displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
-            PhotoManager.renderNextBatch();
-        },
-        showPhotos: function(faceId) {
-            if (!FaceManager.groups.has(faceId)) return;
-            FaceManager.currentNamingFaceId = faceId;
-            var group = FaceManager.groups.get(faceId);
-            var header = document.getElementById('faceNamingHeader');
-            document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
-            document.getElementById('faceNameInput').value = (group.name !== 'Unknown Person') ? group.name : '';
-            document.getElementById('faceHeaderTitle').textContent = (group.name !== 'Unknown Person') ? "Photos of " + group.name : "Who is this?";
-            document.getElementById('faceHint').textContent = "Tip: Enter name and Save. Shift+click for multi-select.";
-            header.style.display = 'flex';
-            PhotoManager.filteredPhotos = group.photos.length > 0 ? group.photos : PhotoManager.allPhotos.slice();
-            PhotoManager.displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
-            PhotoManager.renderNextBatch();
-            document.querySelector('.filter-row-top').style.display = 'none';
-        },
-        cancelFaceNaming: function() {
-            FaceManager.currentNamingFaceId = null;
-            document.getElementById('faceNamingHeader').style.display = 'none';
-            document.querySelector('.filter-row-top').style.display = 'flex';
-            FaceManager.selectedFaces.clear();
-            PhotoManager.filteredPhotos = PhotoManager.allPhotos.slice();
-            PhotoManager.displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
-            PhotoManager.renderNextBatch();
-            FaceManager.renderIcons();
-        },
-        saveFaceName: function() {
-            var newName = document.getElementById('faceNameInput').value.trim();
-            if (!newName || !FaceManager.currentNamingFaceId) return alert('Name and face ID required');
-            var btn = document.getElementById('saveFaceBtn');
-            btn.textContent = "Saving...";
-            btn.disabled = true;
-            ApiManager.fetch('save-face-name', SAVE_FACE_NAME_API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    FaceId: FaceManager.currentNamingFaceId,
-                    FaceName: newName,
-                    CollectionId: collectionId
-                })
-            }).then(function() {
-                FaceManager.groups.get(FaceManager.currentNamingFaceId).name = newName;
-                alert("Name saved!");
-                FaceManager.cancelFaceNaming();
-                FaceManager.renderIcons();
-            }).catch(function(e) {
-                alert("Failed to save name.");
-            }).finally(function() {
-                btn.textContent = "Save";
-                btn.disabled = false;
-            });
-        }
-    };
-
-    /* ======================= EVENT MANAGER ======================= */
-    var EventManager = {
-        currentEditingId: null,
-        init: function() { EventManager.renderEvents([]); }, // Will be called in App.init, but placeholder
-        renderEvents: function(events) {
-            var tbody = document.getElementById('eventsTbody');
-            var uploadSelect = document.getElementById('uploadEventSelect');
-            var linkList = document.getElementById('linkEventList');
-            tbody.innerHTML = '';
-            uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-            linkList.innerHTML = '';
-            if (events.length === 0) {
-                document.getElementById('eventsEmpty').style.display = 'block';
-            } else {
-                document.getElementById('eventsEmpty').style.display = 'none';
-                events.forEach(function(ev) {
-                    var tr = document.createElement('tr');
-                    tr.innerHTML = '<td>' + Utils.escapeAttr(ev.name) + '</td><td>' + (ev.event_date || '-') + '</td><td>' + (ev.photo_count || 0) + '</td><td><button class="edit-btn" onclick="EventManager.editEvent(\'' + ev.event_id + '\', \'' + Utils.escapeAttr(ev.name) + '\', \'' + (ev.event_date || '') + '\')">Edit</button><button class="delete-btn" onclick="EventManager.deleteEvent(\'' + ev.event_id + '\', \'' + Utils.escapeAttr(ev.name) + '\')">Delete</button></td>';
-                    tbody.appendChild(tr);
-                    var opt = document.createElement('option');
-                    opt.value = ev.event_id;
-                    opt.textContent = ev.name;
-                    uploadSelect.appendChild(opt);
-                    var label = document.createElement('label');
-                    label.style = "display:block; margin-bottom:5px; font-size:13px; cursor:pointer;";
-                    label.innerHTML = '<input type="checkbox" value="' + ev.event_id + '" class="link-check"> ' + Utils.escapeAttr(ev.name);
-                    linkList.appendChild(label);
-                });
-            }
-        },
-        showEventForm: function() { document.getElementById('eventForm').style.display = 'block'; },
-        hideEventForm: function() {
-            document.getElementById('eventForm').style.display = 'none';
-            EventManager.currentEditingId = null;
-            document.getElementById('saveEventBtn').textContent = "Save";
-        },
-        editEvent: function(eventId, name, date) {
-            document.getElementById('eventName').value = name;
-            document.getElementById('eventDate').value = date;
-            EventManager.currentEditingId = eventId;
-            document.getElementById('saveEventBtn').textContent = "Update";
-            EventManager.showEventForm();
-        },
-        saveEvent: function() {
-            var name = document.getElementById('eventName').value.trim();
-            var date = document.getElementById('eventDate').value;
-            if (!name) return alert('Name required');
-            ApiManager.fetch('upsert-event(' + (EventManager.currentEditingId ? 'update' : 'create') + ')', UPSERT_EVENT_API, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId, event_id: EventManager.currentEditingId, name: name, event_date: date })
-            }).then(function() {
-                EventManager.hideEventForm();
-                App.init(); // Refresh summary and events
-            }).catch(function(e) {
-                alert('Save failed.');
-            });
-        },
-        deleteEvent: function(eventId, name) {
-            if (!confirm("Delete " + name + "? This is permanent.")) return;
-            ApiManager.fetch('delete-event', DELETE_EVENT_API, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
-            }).then(function() {
-                App.init();
-            }).catch(function(e) {
-                alert('Delete failed.');
-            });
-        }
-    };
-
-    /* ======================= UPLOAD MANAGER ======================= */
-    var UploadManager = {
-        init: function() {
-            var dropZone = document.getElementById('dropZone');
-            var fileInput = document.getElementById('fileInput');
-            dropZone.onclick = function() { fileInput.click(); };
-            dropZone.ondragover = function(e) { e.preventDefault(); dropZone.style.background = '#222'; };
-            dropZone.ondragleave = function() { dropZone.style.background = '#151515'; };
-            dropZone.ondrop = function(e) { e.preventDefault(); UploadManager.handleFiles(e.dataTransfer.files); };
-            fileInput.onchange = function() { UploadManager.handleFiles(fileInput.files); };
-        },
-        handleFiles: function(files) {
-            var eventId = document.getElementById('uploadEventSelect').value;
-            if (!eventId) return alert("Select an event first!");
-            var total = files.length;
-            if (total === 0) return;
-            var validFiles = Array.from(files).filter(function(f) { return ['image/jpeg', 'image/png'].includes(f.type) && f.size < 10 * 1024 * 1024; }); // 10MB limit
-            if (validFiles.length < total) alert("Skipped " + (total - validFiles.length) + " invalid files (only JPG/PNG under 10MB).");
-            if (validFiles.length === 0) return;
-            document.getElementById('progress-container').style.display = 'block';
-            var progressBar = document.getElementById('progress-bar');
-            var status = document.getElementById('uploadStatus');
-            var BATCH_SIZE = 10;
-            var fileArr = validFiles;
-            var totalValid = fileArr.length;
-            var uploaded = 0;
-            status.className = '';
-            status.innerHTML = 'Starting upload...';
-            var processBatches = function(i) {
-                if (i >= totalValid) {
-                    status.className = 'success';
-                    status.innerHTML = '✅ Upload Complete! Refreshing gallery...';
-                    setTimeout(function() {
-                        App.refreshData(); // Auto-refresh after upload
-                        status.innerHTML = 'Photos ready!';
-                    }, 2000);
-                    return;
-                }
-                var batch = fileArr.slice(i, i + BATCH_SIZE);
-                var fileData = batch.map(function(f) { return { name: f.name, type: f.type }; });
-                ApiManager.fetch('generate-upload-urls', UPLOAD_URLS_API, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
-                }).then(function(result) {
-                    var json = result.json;
-                    var data = json || {};
-                    var promises = (data.urls || []).map(function(u, idx) {
-                        var file = batch[idx];
-                        return ApiManager.fetch('s3-put', u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } }).then(function() {
-                            uploaded++;
-                            progressBar.style.width = (uploaded / totalValid * 100) + '%';
-                            status.innerHTML = 'Uploading... ' + uploaded + '/' + totalValid;
-                        });
-                    });
-                    return Promise.all(promises);
-                }).then(function() {
-                    processBatches(i + BATCH_SIZE);
-                }).catch(function(err) {
-                    status.className = 'error';
-                    status.innerHTML = 'Error: ' + err.message;
-                    processBatches(i + BATCH_SIZE); // Continue with next batch on error
-                });
-            };
-            processBatches(0);
-        }
-    };
-
-    /* ======================= LINK MANAGER ======================= */
-    var LinkManager = {
-        init: function() {}, // Placeholder
-        generateLink: function() {
-            var selected = Array.from(document.querySelectorAll('.link-check:checked')).map(function(c) { return c.value; });
-            if (selected.length === 0) return alert('Select at least one event');
-            ApiManager.fetch('generate-search-link', GENERATE_LINK_API, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
-            }).then(function(result) {
-                var json = result.json;
-                var data = json || {};
-                var box = document.getElementById('linkResult');
-                var linkEl = document.getElementById('generatedLink');
-                linkEl.href = data.searchUrl;
-                linkEl.textContent = data.searchUrl;
-                box.style.display = 'block';
-            }).catch(function(e) {
-                alert('Link generation failed.');
-            });
-        },
-        copyLink: function() {
-            var linkText = document.getElementById('generatedLink').textContent;
-            navigator.clipboard.writeText(linkText).then(function() { alert('Link copied!'); }).catch(function() { alert('Copy failed'); });
-        }
-    };
-
-    /* ======================= ANALYTICS MANAGER ======================= */
-    var AnalyticsManager = {
-        allLeads: [],
-        filteredLeads: [],
-        leadsDisplayCount: 0,
-        LEADS_BATCH_SIZE: 20,
-        init: function(forceRefetch) {
-            if (forceRefetch === undefined) forceRefetch = false;
-            AnalyticsManager.fetchAnalytics(forceRefetch);
-        },
-        fetchAnalytics: function(forceRefetch) {
-            if (forceRefetch === undefined) forceRefetch = false;
-            var dateFilter = document.getElementById('dateFilter').value;
-            var mobileFilter = document.getElementById('mobileFilter').value.trim();
-            var noLeadsMessage = document.getElementById('noLeadsMessage');
-            noLeadsMessage.textContent = 'Loading leads...';
-            noLeadsMessage.style.display = 'block';
-            if (AnalyticsManager.allLeads.length === 0 || forceRefetch) {
-                ApiManager.fetch('save-details(list)', GUEST_API, {
-                    method: 'GET',
-                    headers: { 'Authorization': 'Bearer ' + idToken }
-                }).then(function(result) {
-                    var json = result.json;
-                    AnalyticsManager.allLeads = json.leads || [];
-                    filterAndDisplay();
-                }).catch(function(e) {
-                    Utils.showError(document.getElementById('leadsGrid'), 'Failed to fetch leads.');
-                    noLeadsMessage.style.display = 'none';
-                    return;
-                });
-            } else {
-                filterAndDisplay();
-            }
-            function filterAndDisplay() {
-                AnalyticsManager.filteredLeads = AnalyticsManager.allLeads.filter(function(l) {
-                    var matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
-                    var matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
-                    return matchesMobile && matchesDate;
-                });
-                AnalyticsManager.leadsDisplayCount = 0;
-                document.getElementById('leadsGrid').innerHTML = '';
-                noLeadsMessage.style.display = 'none';
-                if (AnalyticsManager.filteredLeads.length === 0) {
-                    noLeadsMessage.textContent = 'No leads found.';
-                    noLeadsMessage.style.display = 'block';
-                } else {
-                    AnalyticsManager.loadMoreLeads();
-                }
-                var grid = document.getElementById('leadsGrid');
-                grid.addEventListener('scroll', function() {
-                    if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100 && AnalyticsManager.leadsDisplayCount < AnalyticsManager.filteredLeads.length) {
-                        AnalyticsManager.loadMoreLeads();
-                    }
-                });
-            }
-        },
-        loadMoreLeads: function() {
-            var leadsGrid = document.getElementById('leadsGrid');
-            var nextBatch = AnalyticsManager.filteredLeads.slice(AnalyticsManager.leadsDisplayCount, AnalyticsManager.leadsDisplayCount + AnalyticsManager.LEADS_BATCH_SIZE);
-            if (nextBatch.length === 0) {
-                document.getElementById('loadMoreLeadsBtn').style.display = 'none';
-                return;
-            }
-            nextBatch.forEach(function(l) {
-                var card = document.createElement('div');
-                card.className = 'lead-card';
-                card.onclick = function() { AnalyticsManager.showGuestHistory(l.mobile || '', l.name || 'Unknown'); };
-                var timeStr = Utils.formatLeadTime(l.created_at);
-                var selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
-                if (l.selfie_b64) selfieSrc = 'data:image/jpeg;base64,' + (l.selfie_b64.split(';base64,')[1] || l.selfie_b64);
-                var matchCount = l.match_count || 0;
-                card.innerHTML = '<img src="' + Utils.escapeAttr(selfieSrc) + '" class="selfie-img" alt="Guest Selfie" onerror="this.src=\'https://placehold.co/70x70/333/fff?text=No+Selfie\'"> <div class="lead-info"> <div class="lead-name">' + Utils.escapeAttr(l.name || 'Unknown Guest') + '</div> <div class="lead-mobile">' + Utils.escapeAttr(l.mobile || '-') + '</div> <div class="lead-meta"> <span>Link ID: ' + Utils.escapeAttr(l.link_id || '-') + '</span> <span class="match-count">📸 Found: ' + matchCount + '</span> </div> <div class="lead-meta"> <span>Last: ' + timeStr + '</span> <span>Total Searches: ' + (l.total_searches || 1) + '</span> </div> </div>';
-                leadsGrid.appendChild(card);
-            });
-            AnalyticsManager.leadsDisplayCount += nextBatch.length;
-            var btn = document.getElementById('loadMoreLeadsBtn');
-            btn.style.display = AnalyticsManager.leadsDisplayCount < AnalyticsManager.filteredLeads.length ? 'inline-block' : 'none';
-        },
-        showGuestHistory: function(mobile, name) {
-            var container = document.getElementById('analyticsBodyContainer');
-            var historyViewer = document.getElementById('historyViewer');
-            var historyBody = document.getElementById('historyBody');
-            container.style.display = 'none';
-            historyViewer.style.display = 'block';
-            document.getElementById('historyHeader').textContent = Utils.escapeAttr(name) + "'s History";
-            Utils.showLoading(historyBody, 'Loading history...');
-            ApiManager.fetch('save-details(history)', GUEST_API + '?mobile=' + encodeURIComponent(mobile), {
-                method: 'GET',
-                headers: { 'Authorization': 'Bearer ' + idToken }
-            }).then(function(result) {
-                var json = result.json;
-                var history = json.history || [];
-                if (history.length === 0) {
-                    Utils.showEmpty(historyBody, 'No search events found.');
-                    return;
-                }
-                historyBody.innerHTML = '';
-                history.forEach(function(h) {
-                    var tr = document.createElement('tr');
-                    tr.innerHTML = '<td>' + Utils.formatLeadTime(h.created_at) + '</td><td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">' + Utils.escapeAttr(h.link_id || '-') + '</span></td><td style="color:var(--muted);">' + Utils.escapeAttr(h.name || '-') + ' (Found: ' + (h.match_count || 0) + ')</td>';
-                    historyBody.appendChild(tr);
-                });
-            }).catch(function(e) {
-                Utils.showError(historyBody, 'Failed to fetch history.');
-            });
-        },
-        hideHistoryViewer: function() {
-            document.getElementById('analyticsBodyContainer').style.display = 'block';
-            document.getElementById('historyViewer').style.display = 'none';
-        }
-    };
-
-    App.init();
-    PhotoManager.init();
-    UploadManager.init();
-} catch (e) {
-    console.error('Script execution failed: ' + e.message + '\n' + e.stack);
-    alert('An error occurred loading the app. Check console for details.');
+if (document.getElementById('assistantLink')) {
+  document.getElementById('assistantLink').href =
+    `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
 }
+
+/* ======================= UTILS ======================= */
+function formatBytes(bytes) {
+  if (!+bytes) return '0 B';
+  const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+function formatLeadTime(isoString) {
+  if (!isoString) return '-';
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  } catch {
+    return isoString.substring(0,10);
+  }
+}
+function escapeAttr(s){
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/'/g,'&#39;');
+}
+
+/* ======================= API Helper ======================= */
+async function apiFetch(label, url, options){
+  const res = await fetch(url, options);
+  const text = await res.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch {}
+  if (!res.ok) {
+    console.error(label, res.status, json || text);
+  }
+  return { res, json, text };
+}
+function authHeaders(){
+  return {
+    'Authorization': `Bearer ${idToken}`,
+    'Content-Type': 'application/json'
+  };
+}
+
+/* ======================= STATE ======================= */
+let allPhotos = [];
+let filteredPhotos = [];
+let displayedPhotosCount = 0;
+const PHOTOS_BATCH_SIZE = 30;
+
+let allLeads = [];
+let filteredLeads = [];
+let leadsDisplayCount = 0;
+const LEADS_BATCH_SIZE = 10;
+
+let faceGroups = {};              // FaceId -> {id,name,thumbnail,count}
+let selectedFaces = new Set();
+let currentNamingFaceId = null;
+
+/* ======================= TABS ======================= */
+window.switchTab = function(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+  const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
+  if(tabEl) tabEl.classList.add('active');
+  const contentEl = document.getElementById(tabId);
+  if(contentEl) contentEl.classList.add('active');
+
+  if(tabId === 'galleryTab') {
+    if(allPhotos.length === 0) fetchPhotos(true);
+  } else if (tabId === 'analyticsTab') {
+    fetchAnalytics(true);
+  } else if (tabId === 'eventsTab') {
+    init();
+  }
+}
+
+/* ======================= INIT ======================= */
+async function init() {
+  try {
+    const {json} = await apiFetch('get-events', GET_EVENTS_API, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+    const data = json || {};
+    const summary = data.collection_summary || {};
+    document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+    document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
+    document.getElementById('totalLeads').textContent = summary.leads_count || 0;
+    document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
+    document.title = `${summary.name || 'Collection'} • Manager`;
+    renderEvents(data.events || []);
+  } catch (e) {
+    document.getElementById('collectionName').textContent = "Error Loading";
+  }
+}
+
+/* ======================= PHOTOS ======================= */
+let nextToken = null;
+async function fetchPhotos(reset=false){
+  const container = document.getElementById('galleryContainer');
+  if(reset){
+    allPhotos = [];
+    filteredPhotos = [];
+    displayedPhotosCount = 0;
+    nextToken = null;
+    container.innerHTML = '<p class="loading">Loading photos...</p>';
+  }
+  try {
+    const payload = { collection_id: collectionId, page_size: 60 };
+    if(nextToken) payload.next_token = nextToken;
+
+    const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const data = json || {};
+    const batch = (data.photos || []).map(p=>{
+      // normalize face_ids
+      if(!Array.isArray(p.face_ids) || p.face_ids.length === 0){
+        if(Array.isArray(p.faces) && p.faces.length){
+          p.face_ids = p.faces.map(f=>f.FaceId).filter(Boolean);
+        } else {
+          p.face_ids = [];
+        }
+      }
+      p.faces = Array.isArray(p.faces) ? p.faces : [];
+      p.ai_tags = Array.isArray(p.ai_tags) ? p.ai_tags : [];
+      p.emotions = Array.isArray(p.emotions) ? p.emotions : [];
+      return p;
+    });
+
+    allPhotos = allPhotos.concat(batch);
+    filteredPhotos = [...allPhotos];
+
+    nextToken = data.next_token || null;
+
+    // rebuild faces + enrich
+    buildFaceGroupsFromPhotos();
+    await enhanceFacesFromDirectory();
+    renderFaceIcons();
+
+    displayedPhotosCount = 0;
+    container.innerHTML = '';
+    renderNextBatch();
+  } catch (err) {
+    container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos.</p>';
+  }
+}
+
+function buildFaceGroupsFromPhotos(){
+  faceGroups = {};
+  allPhotos.forEach(photo=>{
+    (photo.face_ids||[]).forEach(fid=>{
+      if(!faceGroups[fid]){
+        faceGroups[fid] = {
+          id: fid,
+          name: 'Unnamed',
+          thumbnail: photo.thumbnail_url || photo.url,
+          count: 0
+        };
+      }
+      faceGroups[fid].count++;
+      if(!faceGroups[fid].thumbnail) faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
+    });
+  });
+}
+
+async function enhanceFacesFromDirectory(){
+  try{
+    const {json} = await apiFetch('list_people', LIST_PEOPLE_API, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+    const people = (json && json.people) ? json.people : [];
+    people.forEach(p=>{
+      const fid = p.FaceId;
+      if(!fid) return;
+      if(!faceGroups[fid]){
+        faceGroups[fid] = { id: fid, name: p.FaceName || 'Unnamed', thumbnail: p.thumbnail_url || null, count: p.count || 0 };
+      } else {
+        if(p.FaceName) faceGroups[fid].name = p.FaceName;
+        if(p.thumbnail_url) faceGroups[fid].thumbnail = p.thumbnail_url;
+        if(p.count && p.count > faceGroups[fid].count) faceGroups[fid].count = p.count;
+      }
+    });
+  }catch(e){}
+}
+
+function renderFaceIcons(){
+  const bar = document.getElementById('faceIconsBar');
+  bar.innerHTML = '';
+
+  const entries = Object.values(faceGroups).sort((a,b)=>(b.count||0)-(a.count||0));
+
+  if(entries.length === 0){
+    bar.innerHTML = `<div class="empty-state" style="padding:20px 0;">No faces detected</div>`;
+    return;
+  }
+
+  entries.forEach(group=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'face-icon-wrap';
+
+    const img = document.createElement('img');
+    img.className = 'face-icon';
+    img.src = group.thumbnail || 'https://placehold.co/52x52/333/fff?text=?';
+    img.title = `${group.name} (${group.count} photos)`;
+
+    if(selectedFaces.has(group.id)) img.classList.add('selected');
+
+    img.onclick = (e)=>{
+      if(e.shiftKey){
+        if(selectedFaces.has(group.id)) selectedFaces.delete(group.id);
+        else selectedFaces.add(group.id);
+        applyFaceFilter();
+        renderFaceIcons();
+        return;
+      }
+      selectedFaces.clear();
+      selectedFaces.add(group.id);
+      showFaceHeader(group.id);
+      applyFaceFilter();
+      renderFaceIcons();
+    };
+
+    img.ondblclick = ()=>{
+      // quick rename
+      showFaceHeader(group.id, true);
+    };
+
+    const label = document.createElement('div');
+    label.className = 'face-label';
+    label.textContent = group.name || 'Unnamed';
+
+    const count = document.createElement('div');
+    count.className = 'face-count';
+    count.textContent = group.count || 0;
+
+    wrap.appendChild(img);
+    wrap.appendChild(label);
+    wrap.appendChild(count);
+    bar.appendChild(wrap);
+  });
+
+  // add "Clear" chip
+  const clear = document.createElement('div');
+  clear.className = 'face-icon-wrap';
+  clear.innerHTML = `
+    <img class="face-icon" style="border-color:#555" src="https://placehold.co/52x52/111/fff?text=All">
+    <div class="face-label">All</div>
+    <div class="face-count">${allPhotos.length}</div>
+  `;
+  clear.onclick = ()=>{
+    selectedFaces.clear();
+    currentNamingFaceId = null;
+    document.getElementById('faceNamingHeader').style.display='none';
+    document.getElementById('topFiltersRow').style.display='flex';
+    filteredPhotos = [...allPhotos];
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML='';
+    renderNextBatch();
+    renderFaceIcons();
+  };
+  bar.prepend(clear);
+}
+
+function showFaceHeader(faceId, focusInput=false){
+  const g = faceGroups[faceId];
+  if(!g) return;
+  currentNamingFaceId = faceId;
+
+  document.getElementById('faceHeaderImg').src = g.thumbnail || "https://placehold.co/60x60";
+  document.getElementById('faceNameInput').value = (g.name && g.name !== 'Unnamed') ? g.name : '';
+  document.getElementById('faceHeaderTitle').textContent = g.name && g.name !== 'Unnamed' ? `Photos of ${g.name}` : "Who is this?";
+  document.getElementById('faceNamingHeader').style.display='flex';
+  document.getElementById('topFiltersRow').style.display='none';
+
+  if(focusInput) setTimeout(()=>document.getElementById('faceNameInput').focus(),50);
+}
+
+function applyFaceFilter(){
+  if(selectedFaces.size === 0){
+    filteredPhotos = [...allPhotos];
+  } else {
+    const need = Array.from(selectedFaces);
+    filteredPhotos = allPhotos.filter(p=>{
+      const ids = p.face_ids || [];
+      return need.every(fid=>ids.includes(fid));
+    });
+  }
+  displayedPhotosCount = 0;
+  document.getElementById('galleryContainer').innerHTML='';
+  renderNextBatch();
+}
+
+function renderNextBatch(){
+  const container = document.getElementById('galleryContainer');
+  const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
+
+  if(nextBatch.length === 0 && displayedPhotosCount === 0){
+    container.innerHTML = '<p class="empty-state">No photos found.</p>';
+    document.getElementById('loadMoreBtn').style.display = nextToken ? 'inline-block' : 'none';
+    return;
+  }
+
+  let lastDate = '';
+  nextBatch.forEach((photo, localIdx)=>{
+    const photoDate = photo.created_at
+      ? new Date(photo.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+      : 'Unknown Date';
+
+    if(photoDate !== lastDate){
+      const dateHeader = document.createElement('div');
+      dateHeader.className = 'date-header';
+      dateHeader.textContent = photoDate;
+      container.appendChild(dateHeader);
+
+      const grid = document.createElement('div');
+      grid.className = 'gallery-grid';
+      container.appendChild(grid);
+
+      lastDate = photoDate;
+    }
+
+    const grids = container.querySelectorAll('.gallery-grid');
+    const targetGrid = grids[grids.length - 1];
+
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    card.onclick = () => openViewer(displayedPhotosCount + localIdx);
+
+    const thumb = photo.thumbnail_url || photo.url;
+    card.innerHTML = `<img src="${escapeAttr(thumb)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">`;
+    targetGrid.appendChild(card);
+  });
+
+  displayedPhotosCount += nextBatch.length;
+
+  const btn = document.getElementById('loadMoreBtn');
+  // show if more local OR nextToken exists (server pagination)
+  const hasMoreLocal = displayedPhotosCount < filteredPhotos.length;
+  btn.style.display = (hasMoreLocal || !!nextToken) ? 'inline-block' : 'none';
+}
+
+document.getElementById('loadMoreBtn').addEventListener('click', async ()=>{
+  const hasMoreLocal = displayedPhotosCount < filteredPhotos.length;
+  if(hasMoreLocal){
+    renderNextBatch();
+    return;
+  }
+  // fetch next page from server
+  if(nextToken){
+    const oldLen = allPhotos.length;
+    await fetchPhotos(false);
+    // keep selected face filters after server page append
+    if(selectedFaces.size>0){
+      applyFaceFilter();
+      renderFaceIcons();
+    }
+    // avoid auto scroll jump
+    if(allPhotos.length > oldLen) window.scrollBy(0, 200);
+  }
+});
+
+/* ======================= FACE NAME SAVE ======================= */
+document.getElementById('cancelFaceBtn').addEventListener('click', ()=>{
+  currentNamingFaceId = null;
+  document.getElementById('faceNamingHeader').style.display='none';
+  document.getElementById('topFiltersRow').style.display='flex';
+  selectedFaces.clear();
+  filteredPhotos = [...allPhotos];
+  displayedPhotosCount = 0;
+  document.getElementById('galleryContainer').innerHTML='';
+  renderNextBatch();
+  renderFaceIcons();
+});
+
+document.getElementById('saveFaceBtn').addEventListener('click', async ()=>{
+  const newName = document.getElementById('faceNameInput').value.trim();
+  if(!newName || !currentNamingFaceId) return;
+
+  const btn = document.getElementById('saveFaceBtn');
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+  try{
+    const {res} = await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
+      method:'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, face_name: newName })
+    });
+    if(res.ok){
+      faceGroups[currentNamingFaceId].name = newName;
+      alert("Name saved!");
+    }else{
+      alert("Failed to save name.");
+    }
+  }catch(e){
+    alert("Error saving name.");
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Save";
+    renderFaceIcons();
+  }
+});
+
+/* ======================= VIEWER ======================= */
+let viewerIndex = 0;
+window.openViewer = (idx)=>{
+  if(!filteredPhotos[idx]) return;
+  viewerIndex = idx;
+  document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+  document.getElementById('viewer').classList.add('open');
+};
+window.closeViewer = ()=>{
+  document.getElementById('viewer').classList.remove('open');
+};
+
+/* ======================= EVENTS ======================= */
+function renderEvents(events) {
+  const tbody = document.getElementById('eventsTbody');
+  const uploadSelect = document.getElementById('uploadEventSelect');
+  const linkList = document.getElementById('linkEventList');
+
+  tbody.innerHTML = '';
+  uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+  linkList.innerHTML = '';
+
+  events.forEach(ev => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${escapeAttr(ev.name)}</td>
+        <td>${escapeAttr(ev.event_date || '-')}</td>
+        <td>${ev.photo_count || 0}</td>
+        <td>
+          <button class="edit-btn" onclick="editEvent('${escapeAttr(ev.event_id)}','${escapeAttr(ev.name)}','${escapeAttr(ev.event_date || '')}')">Edit</button>
+          <button class="delete-btn" onclick="deleteEvent('${escapeAttr(ev.event_id)}','${escapeAttr(ev.name)}')">Delete</button>
+        </td>
+      </tr>`;
+    uploadSelect.innerHTML += `<option value="${escapeAttr(ev.event_id)}">${escapeAttr(ev.name)}</option>`;
+    linkList.innerHTML += `
+      <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+        <input type="checkbox" value="${escapeAttr(ev.event_id)}" class="link-check"> ${escapeAttr(ev.name)}
+      </label>`;
+  });
+}
+
+window.editEvent = function(eventId, name, date) {
+  document.getElementById('eventName').value = name;
+  document.getElementById('eventDate').value = date;
+
+  const btn = document.getElementById('saveEventBtn');
+  btn.onclick = () => updateEvent(eventId);
+  btn.textContent = "Update";
+
+  document.getElementById('eventForm').style.display = 'block';
+};
+
+async function updateEvent(eventId) {
+  const name = document.getElementById('eventName').value;
+  const date = document.getElementById('eventDate').value;
+  if(!name) return alert('Name required');
+
+  await apiFetch('upsert-event(update)', UPSERT_EVENT_API, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
+  });
+
+  document.getElementById('eventForm').style.display = 'none';
+  const btn = document.getElementById('saveEventBtn');
+  btn.textContent = "Save";
+  btn.onclick = createEvent;
+
+  init();
+}
+
+async function createEvent() {
+  const name = document.getElementById('eventName').value;
+  const date = document.getElementById('eventDate').value;
+  if(!name) return alert('Name required');
+
+  await apiFetch('upsert-event(create)', UPSERT_EVENT_API, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+  });
+
+  document.getElementById('eventForm').style.display = 'none';
+  init();
+}
+document.getElementById('saveEventBtn').onclick = createEvent;
+
+window.deleteEvent = async function(eventId, name) {
+  if (!confirm(`Delete ${name}?`)) return;
+  try {
+    await apiFetch('delete-event', DELETE_EVENT_API, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
+    });
+    init();
+  } catch (e) {
+    alert('Delete failed.');
+  }
+};
+
+/* ======================= ANALYTICS (Leads) ======================= */
+async function fetchAnalytics(forceRefetch = false) {
+  const dateFilter = document.getElementById('dateFilter').value;
+  const mobileFilter = document.getElementById('mobileFilter').value.trim();
+  const noLeadsMessage = document.getElementById('noLeadsMessage');
+
+  if (allLeads.length === 0 || forceRefetch) {
+    noLeadsMessage.textContent = 'Loading leads...';
+    noLeadsMessage.style.display = 'block';
+    try {
+      const {res, json} = await apiFetch('save-details(list)', GUEST_API, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${idToken}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch');
+      allLeads = (json && json.leads) ? json.leads : [];
+    } catch(e) {
+      noLeadsMessage.textContent = 'Failed to fetch leads.';
+      return;
+    }
+  }
+
+  filteredLeads = allLeads.filter(l => {
+    const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
+    const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
+    return matchesMobile && matchesDate;
+  });
+  leadsDisplayCount = 0;
+  document.getElementById('leadsGrid').innerHTML = '';
+  noLeadsMessage.style.display = 'none';
+
+  if(filteredLeads.length === 0) {
+    noLeadsMessage.textContent = 'No leads found matching criteria.';
+    noLeadsMessage.style.display = 'block';
+  } else {
+    loadMoreLeads();
+  }
+}
+
+window.loadMoreLeads = function() {
+  const leadsGrid = document.getElementById('leadsGrid');
+  const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
+
+  if (nextBatch.length === 0) {
+    document.getElementById('loadMoreLeadsBtn').style.display = 'none';
+    return;
+  }
+
+  const html = nextBatch.map(l => {
+    const timeStr = formatLeadTime(l.created_at);
+    let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+    if (l.selfie_b64) {
+      const raw = (String(l.selfie_b64).split(';base64,')[1] || l.selfie_b64);
+      selfieSrc = `data:image/jpeg;base64,${raw}`;
+    }
+    const matchCount = l.match_count || 0;
+
+    return `
+      <div class="lead-card" onclick="showGuestHistory('${escapeAttr(l.mobile)}','${escapeAttr(l.name || 'Unknown')}')">
+        <img src="${escapeAttr(selfieSrc)}" class="selfie-img" alt="Selfie"
+          onerror="this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
+        <div class="lead-info">
+          <div class="lead-name">${escapeAttr(l.name || 'Unknown Guest')}</div>
+          <div class="lead-mobile">${escapeAttr(l.mobile || '-')}</div>
+          <div class="lead-meta">
+            <span>Link ID: ${escapeAttr(l.link_id || '-')}</span>
+            <span class="match-count">📸 Found: ${matchCount}</span>
+          </div>
+          <div class="lead-meta">
+            <span>Last: ${escapeAttr(timeStr)}</span>
+            <span>Total Searches: ${l.total_searches || 1}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  leadsGrid.innerHTML += html;
+  leadsDisplayCount += nextBatch.length;
+  const btn = document.getElementById('loadMoreLeadsBtn');
+  btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
+};
+
+window.showGuestHistory = async function(mobile, name) {
+  const container = document.getElementById('analyticsBodyContainer');
+  const historyViewer = document.getElementById('historyViewer');
+  const historyBody = document.getElementById('historyBody');
+
+  container.style.display = 'none';
+  historyViewer.style.display = 'block';
+  document.getElementById('historyHeader').textContent = `${name}`;
+  historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+
+  try {
+    const {res, json} = await apiFetch('save-details(history)', `${GUEST_API}?mobile=${encodeURIComponent(mobile)}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    if (!res.ok) throw new Error('API Error');
+    const history = (json && json.history) ? json.history : [];
+
+    if(history.length === 0) {
+      historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+      return;
+    }
+    historyBody.innerHTML = history.map(h => `
+      <tr>
+        <td>${escapeAttr(formatLeadTime(h.created_at))}</td>
+        <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${escapeAttr(h.link_id || '-')}</span></td>
+        <td style="color:var(--muted);">${escapeAttr(h.name || '-') } (Found: ${h.match_count || 0})</td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+  }
+};
+
+window.hideHistoryViewer = function() {
+  document.getElementById('analyticsBodyContainer').style.display = 'block';
+  document.getElementById('historyViewer').style.display = 'none';
+};
+
+/* ======================= LINK GENERATION ======================= */
+document.getElementById('genLinkBtn').onclick = async () => {
+  const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
+  if (selected.length === 0) return alert('Select at least one event');
+
+  const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
+  });
+  const data = json || {};
+  const box = document.getElementById('linkResult');
+  const linkEl = document.getElementById('generatedLink');
+  linkEl.href = data.searchUrl;
+  linkEl.textContent = data.searchUrl;
+  box.style.display = 'block';
+};
+
+window.copyLink = function() {
+  const linkText = document.getElementById('generatedLink').textContent;
+  navigator.clipboard.writeText(linkText).then(() => alert('Link copied')).catch(() => alert('Copy failed'));
+};
+
+/* ======================= UPLOAD ======================= */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.onclick = () => fileInput.click();
+dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
+dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
+dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+fileInput.onchange = () => handleFiles(fileInput.files);
+
+async function handleFiles(files) {
+  const eventId = document.getElementById('uploadEventSelect').value;
+  if(!eventId) return alert("Select an event first!");
+
+  const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
+  if (validFiles.length === 0) return alert("Only JPG/PNG supported.");
+
+  document.getElementById('progress-container').style.display = 'block';
+  const progressBar = document.getElementById('progress-bar');
+  const status = document.getElementById('uploadStatus');
+
+  const BATCH_SIZE = 10;
+  const totalValid = validFiles.length;
+  let uploaded = 0;
+
+  status.className = '';
+  status.innerHTML = 'Starting upload...';
+
+  for(let i=0; i<totalValid; i+=BATCH_SIZE) {
+    const batch = validFiles.slice(i, i+BATCH_SIZE);
+    const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+
+    try {
+      const {json} = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+      });
+      const data = json || {};
+      await Promise.all((data.urls || []).map(async (u, idx) => {
+        const file = batch[idx];
+        await fetch(u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+        uploaded++;
+        progressBar.style.width = `${(uploaded/totalValid)*100}%`;
+        status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
+      }));
+    } catch(err) {
+      status.className = 'error';
+      status.innerHTML = `Error: ${err.message}`;
+      return;
+    }
+  }
+
+  status.className = 'success';
+  status.innerHTML = '✅ Upload Complete! Refreshing...';
+
+  // refresh photos
+  setTimeout(async ()=>{
+    await init();
+    await fetchPhotos(true);
+    status.innerHTML = '✅ Done!';
+  }, 1200);
+}
+
+/* ======================= FILTERS ======================= */
+window.applyFilters = function() {
+  const type = document.getElementById('filterType').value;
+  const query = document.getElementById('tagSearch').value.toLowerCase();
+
+  selectedFaces.clear(); // reset face selection on top filters
+  currentNamingFaceId = null;
+  document.getElementById('faceNamingHeader').style.display='none';
+  document.getElementById('topFiltersRow').style.display='flex';
+
+  filteredPhotos = allPhotos.filter(p => {
+    const matchesType = (type === 'ALL') ||
+      (type === 'BEST' && (p.quality_score || 0) > 85) ||
+      (type === 'HAPPY' && (p.emotions || []).some(e => String(e).includes('HAPPY'))) ||
+      (type === 'GROUP' && (p.face_count || 0) >= 3);
+
+    const matchesQuery = !query || (p.ai_tags || []).some(t => String(t).toLowerCase().includes(query));
+    return matchesType && matchesQuery;
+  });
+
+  displayedPhotosCount = 0;
+  document.getElementById('galleryContainer').innerHTML='';
+  renderNextBatch();
+  renderFaceIcons();
+};
+
+/* ======================= DOWNLOAD ZIP ======================= */
+document.getElementById('downloadZipBtn').addEventListener('click', async (e)=>{
+  await downloadAllZip(e.currentTarget);
+});
+async function downloadAllZip(btnEl) {
+  if(filteredPhotos.length === 0) return alert("No photos to download");
+
+  const zip = new JSZip();
+  const folder = zip.folder("photos");
+  const limit = filteredPhotos.slice(0, 100);
+
+  const btn = btnEl || document.getElementById('downloadZipBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Zipping...';
+
+  let count = 0;
+  for(let i=0; i<limit.length; i++) {
+    try {
+      const response = await fetch(limit[i].url);
+      const blob = await response.blob();
+      folder.file(`photo_${i+1}.jpg`, blob);
+      count++;
+      btn.textContent = `Zipping ${count}/${limit.length}`;
+    } catch(e) {}
+  }
+
+  zip.generateAsync({type:"blob"}).then(c => saveAs(c, "photos.zip"))
+    .finally(() => { btn.disabled = false; btn.textContent = originalText; });
+}
+
+/* ======================= START ======================= */
+init();
+fetchPhotos(true);
 </script>
 </body>
 </html>
