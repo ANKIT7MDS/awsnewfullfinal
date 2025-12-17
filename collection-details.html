@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -287,7 +288,7 @@
             <div class="card">
                 <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
                     <h3>Photos in Collection</h3>
-                    <button class="btn" id="downloadZipBtn">Download ZIP</button>
+                    <button class="btn" id="downloadZipBtn" onclick="downloadAllZip(this)">Download ZIP</button>
                 </div>
                 <div class="photos-grid" id="photosGrid"></div>
                 <button class="load-more" id="loadMoreBtn" onclick="fetchPhotos(true)">Load More</button>
@@ -412,7 +413,6 @@
         });
 
         document.getElementById('saveEventBtn').addEventListener('click', handleSaveEvent);
-        document.getElementById('downloadZipBtn').addEventListener('click', downloadAllZip);
 
         fetchCollectionInfo();
         fetchPhotos();
@@ -588,17 +588,27 @@
         const eventId = document.getElementById('eventSelect').value;
         if (!files.length || !eventId) return alert("Select event and files");
 
-        const fileData = Array.from(files).map(f => ({ name: f.name, type: f.type }));
+        const fileData = Array.from(files).map(async f => {
+            let blob = f;
+            if (f.type === 'image/heic' || f.name.toLowerCase().endsWith('.heic')) {
+                blob = await heic2any({ blob: f, toType: 'image/jpeg' });
+            }
+            return { name: f.name, type: blob.type, blob };
+        });
+
+        const resolvedData = await Promise.all(fileData);
+        const metadata = resolvedData.map(d => ({ name: d.name, type: d.type }));
+
         try {
             const res = await fetch(`${API_BASE}/generate-upload-urls`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: metadata })
             });
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             await Promise.all(data.urls.map(async (u, i) => {
-                await fetch(u.uploadURL, { method: 'PUT', body: files[i] });
+                await fetch(u.uploadURL, { method: 'PUT', body: resolvedData[i].blob });
             }));
             fetchPhotos();
         } catch (e) {
@@ -694,6 +704,9 @@
             `;
             tbody.appendChild(tr);
         });
+        if (leads.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No leads found.</td></tr>';
+        }
     }
 
     async function fetchSearchLinks() {
@@ -723,6 +736,9 @@
             `;
             linksDiv.appendChild(item);
         });
+        if (searchLinks.length === 0) {
+            linksDiv.innerHTML = '<p>No search links found.</p>';
+        }
     }
 
     function openLinkModal() {
@@ -785,34 +801,36 @@
         // Placeholder for select logic
     }
 
-    async function downloadAllZip() {
+    async function downloadAllZip(btnEl) {
         if (filteredPhotos.length === 0) return alert("No photos");
 
         const zip = new JSZip();
         const folder = zip.folder("photos");
         const limit = filteredPhotos.slice(0, 100);
 
-        const btn = document.getElementById('downloadZipBtn');
+        const btn = btnEl || document.getElementById('downloadZipBtn');
+        const originalText = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Zipping...';
 
         let count = 0;
-        for (let i = 0; i < limit.length; i++) {
+        for(let i=0; i<limit.length; i++) {
             try {
                 const response = await fetch(limit[i].url);
                 const blob = await response.blob();
                 folder.file(`photo_${i+1}.jpg`, blob);
                 count++;
                 btn.textContent = `Zipping ${count}/${limit.length}`;
-            } catch (e) {
+            } catch(e) {
                 console.error("Failed to download photo:", e);
             }
         }
 
-        zip.generateAsync({type: "blob"}).then(content => {
-            saveAs(content, "photos.zip");
+        zip.generateAsync({type:"blob"}).then(c => {
+            saveAs(c, "photos.zip");
+        }).finally(() => {
             btn.disabled = false;
-            btn.textContent = 'Download ZIP';
+            btn.textContent = originalText;
         });
     }
 
@@ -822,7 +840,7 @@
             document.getElementById('eventName').value = ev.name;
             document.getElementById('eventDate').value = ev.event_date;
             document.getElementById('eventForm').style.display = 'block';
-            // Note: For edit, you might need to adjust handleSaveEvent to use event_id
+            // For edit, adjust handleSaveEvent to include event_id if needed
         }
     }
 
