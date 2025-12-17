@@ -830,9 +830,19 @@ async function init() {
  * To show thumbnails, we attach thumbnail from any photo that contains that FaceId (if photo.face_ids exists),
  * or fallback to the first photo URL if nothing is available.
  */
-async function fetchPeopleDirectory(){
-    // OPTION A: Disabled. We intentionally do not call /list_people to avoid auth issues.
-    return [];
+async function fetchPeopleDirectory() {
+    try {
+        const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
+        if (!res || !res.ok) return [];
+        directoryPeople = (json && json.people) ? json.people : [];
+        return directoryPeople;
+    } catch (e) {
+        return [];
+    }
 }
 
 /* ======================= PHOTO GALLERY ======================= */
@@ -859,8 +869,8 @@ async function fetchPhotos() {
 
         // Build groups using whatever is available in photo items
         buildLocalFaceMap(); // from photo.faces if present
-        // OPTION A: list_people disabled (avoid auth/403). Face icons are built ONLY from get-photos face_ids/faces.
-        // // await enhanceFacesFromDirectory();
+        // Enhance from list_people (names + best thumbnails)
+        await enhanceFacesFromDirectory();
 
         displayedPhotosCount = 0;
         container.innerHTML = '';
@@ -973,7 +983,7 @@ function buildLocalFaceMap() {
         dbgAdd({
             ok: false, type: 'WARN', label: 'faces-missing',
             ts: Date.now(),
-            details: "No face_ids/faces found in current photos response (icons hidden). If DynamoDB has face_ids but API response doesn't, confirm get-photos lambda deployment/projection. Check:\n1) get-photos ProjectionExpression includes faces + face_ids.\n2) Dynamo items contain faces/face_ids.\n3) UI should build faceGroups from face_ids."
+            details: "No face data found in photos response. Check:\n1) get-photos ProjectionExpression includes faces + face_ids.\n2) Dynamo items contain faces/face_ids.\n3) UI should build faceGroups from face_ids."
         });
     }
 }
@@ -982,8 +992,38 @@ function buildLocalFaceMap() {
  * Pull names from list_people, and try to attach thumbnail by scanning photos for that FaceId if face_ids exist.
  */
 async function enhanceFacesFromDirectory(){
-    // OPTION A: Disabled.
-    return;
+    const people = await fetchPeopleDirectory();
+    if(!people || people.length === 0) return;
+
+    // Create missing groups from directory too (even if photos didn't include faces)
+    people.forEach(p=>{
+        const fid = p.FaceId || p.face_id || p.faceId;
+        if(!fid) return;
+        if(!faceGroups[fid]){
+            faceGroups[fid] = { id: fid, name: p.FaceName || 'Unknown Person', thumbnail: null, count: 0, photos: [] };
+        } else {
+            if(p.FaceName) faceGroups[fid].name = p.FaceName;
+        }
+    });
+
+    // If we have face_ids in photos, map thumbnails + photos
+    const hasFaceIds = allPhotos.some(p=>Array.isArray(p.face_ids) && p.face_ids.length);
+    if(hasFaceIds){
+        Object.values(faceGroups).forEach(g=>{ g.photos = []; g.count = 0; });
+        allPhotos.forEach(p=>{
+            (p.face_ids||[]).forEach(fid=>{
+                const g = faceGroups[fid];
+                if(!g) return;
+                g.photos.push(p);
+                g.count++;
+                if(!g.thumbnail) g.thumbnail = p.thumbnail_url || p.url;
+            });
+        });
+    }else{
+        // thumbnails fallback (first photo) to avoid blank icons if user wants naming only
+        const firstPhotoUrl = allPhotos[0] ? (allPhotos[0].thumbnail_url || allPhotos[0].url) : null;
+        Object.values(faceGroups).forEach(g=>{ if(!g.thumbnail) g.thumbnail = firstPhotoUrl; });
+    }
 }
 
 /* ======================= FACE ICON RENDER ======================= */
