@@ -251,6 +251,12 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
+        /* Error Message */
+        .error-message {
+            color: var(--danger);
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -327,6 +333,7 @@
         <div id="peopleTab" class="tab-content">
             <div class="card">
                 <h3>Detected People</h3>
+                <div id="peopleError" class="error-message" style="display:none;">Failed to load people. Please check console for details.</div>
                 <div class="people-grid" id="peopleGrid"></div>
             </div>
         </div>
@@ -335,6 +342,7 @@
         <div id="leadsTab" class="tab-content">
             <div class="card">
                 <h3>Guest Leads</h3>
+                <div id="leadsError" class="error-message" style="display:none;">Failed to load guest leads. Please check console for details.</div>
                 <table>
                     <thead><tr><th>Name</th><th>Mobile</th><th>Matches</th><th>Timestamp</th></tr></thead>
                     <tbody id="leadsTbody"></tbody>
@@ -404,7 +412,6 @@
         });
 
         document.getElementById('saveEventBtn').addEventListener('click', handleSaveEvent);
-        document.getElementById('uploadFiles').addEventListener('change', uploadToEvent);
         document.getElementById('downloadZipBtn').addEventListener('click', downloadAllZip);
 
         fetchCollectionInfo();
@@ -446,6 +453,7 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify(body)
             });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             const newPhotos = data.photos || [];
 
@@ -461,6 +469,8 @@
             loadBtn.disabled = !nextToken;
         } catch (e) {
             console.error("Failed to fetch photos:", e);
+        } finally {
+            loadBtn.disabled = false;
         }
     }
 
@@ -494,6 +504,7 @@
                         ctx.drawImage(tempImg, box.Left * tempImg.width, box.Top * tempImg.height, box.Width * tempImg.width, box.Height * tempImg.height, 0, 0, 64, 64);
                         faceImg.src = canvas.toDataURL();
                     };
+                    tempImg.onerror = () => console.error('Failed to load image for face crop');
                     tempImg.src = photo.url;
                     overlay.appendChild(faceImg);
                 });
@@ -511,12 +522,13 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify({ collection_id: collectionId })
             });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             events = data.events || [];
             renderEvents();
             renderEventSelect();
         } catch (e) {
-            console.error(e);
+            console.error("Failed to fetch events:", e);
         }
     }
 
@@ -552,9 +564,11 @@
             if (res.ok) {
                 fetchEvents();
                 document.getElementById('eventForm').style.display = 'none';
+            } else {
+                throw new Error(`HTTP error! status: ${res.status}`);
             }
         } catch (e) {
-            console.error(e);
+            console.error("Failed to save event:", e);
         }
     }
 
@@ -581,13 +595,14 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
             });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             await Promise.all(data.urls.map(async (u, i) => {
                 await fetch(u.uploadURL, { method: 'PUT', body: files[i] });
             }));
             fetchPhotos();
         } catch (e) {
-            console.error(e);
+            console.error("Failed to upload:", e);
         }
     }
 
@@ -598,11 +613,14 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify({ collection_id: collectionId })
             });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             people = data.people || [];
             renderPeople();
+            document.getElementById('peopleError').style.display = 'none';
         } catch (e) {
-            console.error(e);
+            console.error("Failed to fetch people:", e);
+            document.getElementById('peopleError').style.display = 'block';
         }
     }
 
@@ -633,7 +651,7 @@
                         body: JSON.stringify({ FaceId: p.FaceId, FaceName: e.target.value, CollectionId: collectionId })
                     });
                     p.FaceName = e.target.value;
-                } catch (err) { console.error(err); }
+                } catch (err) { console.error("Failed to save name:", err); }
             };
 
             const count = document.createElement('div');
@@ -650,13 +668,17 @@
     async function fetchLeads() {
         try {
             const res = await fetch(`${API_BASE}/selfie-search-save-details?link_id=${collectionId}`, {
-                headers: { 'Authorization': `Bearer ${idToken}` }
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }  // Removed Authorization
             });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
-            leads = data;
+            leads = data || [];
             renderLeads();
+            document.getElementById('leadsError').style.display = 'none';
         } catch (e) {
-            console.error(e);
+            console.error("Failed to fetch guest leads:", e);
+            document.getElementById('leadsError').style.display = 'block';
         }
     }
 
@@ -666,19 +688,27 @@
         leads.forEach(lead => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${lead.name}</td>
-                <td>${lead.mobile}</td>
-                <td>${lead.match_count}</td>
-                <td>${lead.timestamp}</td>
+                <td>${lead.name || 'N/A'}</td>
+                <td>${lead.mobile || 'N/A'}</td>
+                <td>${lead.match_count || 0}</td>
+                <td>${lead.timestamp || 'N/A'}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
     async function fetchSearchLinks() {
-        // Placeholder, add actual fetch if needed
-        searchLinks = [];
-        renderSearchLinks();
+        try {
+            const res = await fetch(`${API_BASE}/search-links?collection_id=${collectionId}`, {
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+            searchLinks = data.links || [];
+            renderSearchLinks();
+        } catch (e) {
+            console.error("Failed to fetch search links:", e);
+        }
     }
 
     function renderSearchLinks() {
@@ -712,17 +742,18 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify({ collection_id: collectionId, expiry_hours: expiry, password })
             });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             searchLinks.push(data);
             renderSearchLinks();
             closeLinkModal();
         } catch (e) {
-            console.error(e);
+            console.error("Failed to create link:", e);
         }
     }
 
     function copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
+        navigator.clipboard.writeText(text).then(() => alert('Copied!'));
     }
 
     function openViewer(index) {
@@ -754,13 +785,14 @@
         // Placeholder for select logic
     }
 
-    async function downloadAllZip(btn) {
+    async function downloadAllZip() {
         if (filteredPhotos.length === 0) return alert("No photos");
 
         const zip = new JSZip();
         const folder = zip.folder("photos");
         const limit = filteredPhotos.slice(0, 100);
 
+        const btn = document.getElementById('downloadZipBtn');
         btn.disabled = true;
         btn.textContent = 'Zipping...';
 
@@ -773,7 +805,7 @@
                 count++;
                 btn.textContent = `Zipping ${count}/${limit.length}`;
             } catch (e) {
-                console.error(e);
+                console.error("Failed to download photo:", e);
             }
         }
 
@@ -785,20 +817,30 @@
     }
 
     async function editEvent(eventId) {
-        // Placeholder for edit
+        const ev = events.find(e => e.event_id === eventId);
+        if (ev) {
+            document.getElementById('eventName').value = ev.name;
+            document.getElementById('eventDate').value = ev.event_date;
+            document.getElementById('eventForm').style.display = 'block';
+            // Note: For edit, you might need to adjust handleSaveEvent to use event_id
+        }
     }
 
     async function deleteEvent(eventId) {
         if (!confirm("Delete event?")) return;
         try {
-            await fetch(`${API_BASE}/delete-event`, {
+            const res = await fetch(`${API_BASE}/delete-event`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify({ collection_id: collectionId, event_id: eventId })
             });
-            fetchEvents();
+            if (res.ok) {
+                fetchEvents();
+            } else {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
         } catch (e) {
-            console.error(e);
+            console.error("Failed to delete event:", e);
         }
     }
 
