@@ -588,16 +588,21 @@
         const eventId = document.getElementById('eventSelect').value;
         if (!files.length || !eventId) return alert("Select event and files");
 
-        const fileData = Array.from(files).map(async f => {
+        const fileData = [];
+        for (let f of files) {
             let blob = f;
             if (f.type === 'image/heic' || f.name.toLowerCase().endsWith('.heic')) {
-                blob = await heic2any({ blob: f, toType: 'image/jpeg' });
+                try {
+                    blob = await heic2any({ blob: f, toType: 'image/jpeg' });
+                } catch (e) {
+                    console.error("HEIC conversion failed:", e);
+                    continue;
+                }
             }
-            return { name: f.name, type: blob.type, blob };
-        });
+            fileData.push({ name: f.name.replace('.heic', '.jpg'), type: blob.type, blob });
+        }
 
-        const resolvedData = await Promise.all(fileData);
-        const metadata = resolvedData.map(d => ({ name: d.name, type: d.type }));
+        const metadata = fileData.map(d => ({ name: d.name, type: d.type }));
 
         try {
             const res = await fetch(`${API_BASE}/generate-upload-urls`, {
@@ -608,7 +613,7 @@
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             await Promise.all(data.urls.map(async (u, i) => {
-                await fetch(u.uploadURL, { method: 'PUT', body: resolvedData[i].blob });
+                await fetch(u.uploadURL, { method: 'PUT', body: fileData[i].blob });
             }));
             fetchPhotos();
         } catch (e) {
