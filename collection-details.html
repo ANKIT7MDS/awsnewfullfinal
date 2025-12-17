@@ -678,6 +678,9 @@
             person.appendChild(count);
             grid.appendChild(person);
         });
+        if (people.length === 0) {
+            grid.innerHTML = '<p>No people detected.</p>';
+        }
     }
 
     async function fetchLeads() {
