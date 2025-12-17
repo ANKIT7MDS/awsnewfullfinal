@@ -1,90 +1,285 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventLens Admin Login</title>
-    <style>
-        :root {
-            --bg: #050505;
-            --card: #101010;
-            --accent: #00e676;
-            --accent-hover: #00c853;
-            --text: #ffffff;
-            --muted: #a0a0a0;
-            --border: #262626;
-        }
-        body { 
-            font-family: system-ui, -apple-system, sans-serif; 
-            background: radial-gradient(circle at center, #1a1a1a 0%, var(--bg) 70%);
-            color: var(--text); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            margin: 0; 
-        }
-        .card { 
-            background: rgba(16, 16, 16, 0.8); 
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border); 
-            border-radius: 24px; 
-            padding: 50px 40px; 
-            text-align: center; 
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6); 
-            width: 100%;
-            max-width: 400px;
-        }
-        h1 { 
-            background: linear-gradient(to right, #fff, #bbb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px; 
-            margin: 0 0 10px; 
-            font-weight: 700;
-        }
-        p { color: var(--muted); margin-bottom: 30px; font-size: 14px; }
-        
-        .btn { 
-            background: var(--accent); 
-            color: #000; 
-            border: none; 
-            border-radius: 50px; 
-            padding: 14px 32px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: 700; 
-            transition: all 0.2s; 
-            width: 100%;
-            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
-        }
-        .btn:hover { 
-            background-color: var(--accent-hover); 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collection Details</title>
+
+<style>
+:root{
+  --bg:#0f0f0f;
+  --card:#161616;
+  --border:#2a2a2a;
+  --text:#eaeaea;
+  --muted:#9a9a9a;
+  --brand:#00e676;
+  --danger:#ff5252;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+.wrap{max-width:1400px;margin:auto;padding:20px}
+
+/* header */
+.top{
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px
+}
+h1{margin:0;font-size:22px}
+.stats{color:var(--muted);font-size:13px}
+
+/* face bar */
+#faceBar{
+  display:flex;gap:10px;overflow-x:auto;
+  padding:10px 0;margin-bottom:16px
+}
+.face-chip{
+  display:flex;align-items:center;gap:8px;
+  background:#141414;border:1px solid var(--border);
+  padding:6px 10px;border-radius:999px;
+  cursor:pointer;white-space:nowrap
+}
+.face-chip.active{border-color:var(--brand)}
+.face-chip img{
+  width:36px;height:36px;border-radius:50%;object-fit:cover;background:#222
+}
+.face-chip b{font-size:13px}
+.face-chip span{font-size:11px;color:var(--muted)}
+
+/* gallery */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:6px
+}
+.card{
+  aspect-ratio:1;background:#000;overflow:hidden;
+  border-radius:6px;cursor:pointer
+}
+.card img{
+  width:100%;height:100%;object-fit:cover
+}
+.empty{
+  text-align:center;color:var(--muted);
+  padding:60px 20px
+}
+
+/* rename modal */
+#renameBox{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.7);
+  display:none;align-items:center;justify-content:center
+}
+#renameBox .inner{
+  background:#161616;border:1px solid var(--border);
+  padding:20px;border-radius:10px;width:300px
+}
+#renameBox input{
+  width:100%;padding:10px;margin:10px 0;
+  background:#0f0f0f;border:1px solid var(--border);
+  color:#fff;border-radius:6px
+}
+button{
+  background:var(--brand);border:none;
+  color:#000;padding:8px 14px;
+  border-radius:6px;cursor:pointer;font-weight:700
+}
+button.secondary{
+  background:#222;border:1px solid var(--border);color:#fff
+}
+</style>
 </head>
+
 <body>
-    <div class="card">
-        <h1>EventLens Admin</h1>
-        <p>Secure Dashboard Access</p>
-        <button id="loginButton" class="btn">Login with AWS Cognito</button>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <h1 id="title">Collection</h1>
+      <div class="stats"><span id="photoCount">0</span> photos</div>
     </div>
+    <button class="secondary" onclick="clearFace()">Clear Filter</button>
+  </div>
+
+  <!-- FACE BAR -->
+  <div id="faceBar"></div>
+
+  <!-- GALLERY -->
+  <div id="gallery" class="grid"></div>
+  <div id="empty" class="empty" style="display:none">No photos found</div>
+
+</div>
+
+<!-- RENAME -->
+<div id="renameBox">
+  <div class="inner">
+    <b>Rename person</b>
+    <input id="renameInput" placeholder="Enter name"/>
+    <div style="text-align:right">
+      <button class="secondary" onclick="closeRename()">Cancel</button>
+      <button onclick="saveRename()">Save</button>
+    </div>
+  </div>
+</div>
 
 <script>
-    const loginButton = document.getElementById('loginButton');
+/* ================= CONFIG ================= */
+const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+const GET_PHOTOS = API_BASE + "/get-photos";
+const LIST_PEOPLE = API_BASE + "/list_people";
+const SAVE_FACE = API_BASE + "/save-face-name";
 
-    loginButton.addEventListener('click', () => {
-        const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
-        const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-        const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html"; // Ensure this matches Cognito settings
+const idToken = localStorage.getItem("idToken"); // login जैसा है वैसा ही
+const qs = new URLSearchParams(location.search);
+const collectionId = qs.get("id");
 
-        const SCOPES = "openid profile email aws.cognito.signin.user.admin";
-        const loginUrl = `${COGNITO_DOMAIN}/login?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
-        
-        window.location.href = loginUrl;
+/* ================= STATE ================= */
+let allPhotos=[];
+let filteredPhotos=[];
+let faceGroups={};
+let activeFace=null;
+let renameFaceId=null;
+
+/* ================= API ================= */
+async function api(url,body){
+  const r = await fetch(url,{
+    method:"POST",
+    headers:{
+      "Authorization":"Bearer "+idToken,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify(body)
+  });
+  return r.json();
+}
+
+/* ================= LOAD ================= */
+async function load(){
+  const data = await api(GET_PHOTOS,{collection_id:collectionId,page_size:200});
+  allPhotos = (data.photos||[]).map(p=>{
+    if(!p.face_ids && p.faces){
+      p.face_ids = p.faces.map(f=>f.FaceId).filter(Boolean);
+    }
+    p.face_ids = p.face_ids || [];
+    return p;
+  });
+  document.getElementById("photoCount").textContent = allPhotos.length;
+  buildFaceMap();
+  await enhancePeople();
+  renderFaces();
+  renderGallery(allPhotos);
+}
+
+/* ================= FACE MAP ================= */
+function buildFaceMap(){
+  faceGroups={};
+  allPhotos.forEach(p=>{
+    p.face_ids.forEach(fid=>{
+      if(!faceGroups[fid]){
+        faceGroups[fid]={faceId:fid,count:0,thumb:p.url,name:null};
+      }
+      faceGroups[fid].count++;
     });
+  });
+}
+
+/* ================= LIST PEOPLE ================= */
+async function enhancePeople(){
+  try{
+    const res = await api(LIST_PEOPLE,{collection_id:collectionId});
+    (res.people||[]).forEach(p=>{
+      if(faceGroups[p.FaceId]){
+        faceGroups[p.FaceId].name = p.FaceName || faceGroups[p.FaceId].name;
+        faceGroups[p.FaceId].thumb = p.thumbnail_url || faceGroups[p.FaceId].thumb;
+      }
+    });
+  }catch(e){}
+}
+
+/* ================= RENDER ================= */
+function renderFaces(){
+  const bar=document.getElementById("faceBar");
+  bar.innerHTML="";
+  const arr=Object.values(faceGroups).sort((a,b)=>b.count-a.count);
+  if(arr.length===0){
+    bar.innerHTML="<div class='empty'>No faces detected</div>";
+    return;
+  }
+  arr.forEach(f=>{
+    const d=document.createElement("div");
+    d.className="face-chip"+(activeFace===f.faceId?" active":"");
+    d.innerHTML=`
+      <img src="${f.thumb}">
+      <div>
+        <b>${f.name||"Unnamed"}</b><br>
+        <span>${f.count} photos</span>
+      </div>`;
+    d.onclick=()=>filterFace(f.faceId);
+    d.oncontextmenu=(e)=>{
+      e.preventDefault();
+      openRename(f.faceId,f.name);
+    };
+    bar.appendChild(d);
+  });
+}
+
+function renderGallery(list){
+  const g=document.getElementById("gallery");
+  const e=document.getElementById("empty");
+  g.innerHTML="";
+  if(list.length===0){
+    e.style.display="block";return;
+  }
+  e.style.display="none";
+  list.forEach(p=>{
+    const c=document.createElement("div");
+    c.className="card";
+    c.innerHTML=`<img loading="lazy" src="${p.url}">`;
+    g.appendChild(c);
+  });
+}
+
+/* ================= ACTIONS ================= */
+function filterFace(fid){
+  activeFace=fid;
+  filteredPhotos = allPhotos.filter(p=>p.face_ids.includes(fid));
+  renderFaces();
+  renderGallery(filteredPhotos);
+}
+function clearFace(){
+  activeFace=null;
+  renderFaces();
+  renderGallery(allPhotos);
+}
+
+/* ================= RENAME ================= */
+function openRename(fid,name){
+  renameFaceId=fid;
+  document.getElementById("renameInput").value=name||"";
+  document.getElementById("renameBox").style.display="flex";
+}
+function closeRename(){
+  document.getElementById("renameBox").style.display="none";
+}
+async function saveRename(){
+  const name=document.getElementById("renameInput").value.trim();
+  if(!name)return;
+  await api(SAVE_FACE,{
+    collection_id:collectionId,
+    face_id:renameFaceId,
+    face_name:name
+  });
+  faceGroups[renameFaceId].name=name;
+  closeRename();
+  renderFaces();
+}
+
+/* ================= START ================= */
+load();
 </script>
 </body>
 </html>
