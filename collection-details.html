@@ -4,10 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
-    <link rel="icon" href="data:," />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -21,6 +20,7 @@
             --ok: #34a853;
         }
         * { box-sizing: border-box; }
+       
         body {
             margin: 0;
             background-color: var(--bg);
@@ -29,7 +29,7 @@
             padding-bottom: 60px;
         }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
-
+       
         /* HEADER */
         .top-bar {
             display: flex;
@@ -54,7 +54,7 @@
             color: var(--muted);
         }
         .stat span { color: var(--text); }
-
+       
         /* TABS */
         .tabs {
             display: flex;
@@ -85,7 +85,7 @@
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
+       
         /* CARD */
         .card {
             background: var(--card);
@@ -93,7 +93,7 @@
             border-radius: 12px;
             padding: 20px;
         }
-
+       
         /* PHOTOS GRID */
         .photos-grid {
             display: grid;
@@ -139,7 +139,7 @@
             cursor: pointer;
         }
         .load-more:disabled { background: var(--muted); }
-
+       
         /* PEOPLE TAB */
         .people-grid {
             display: grid;
@@ -164,7 +164,7 @@
             font-size: 12px;
             color: var(--muted);
         }
-
+       
         /* SEARCH LINKS */
         .search-links {
             display: flex;
@@ -182,7 +182,7 @@
         }
         .link-url { color: var(--brand); word-break: break-all; }
         .link-copy { cursor: pointer; color: var(--muted); }
-
+       
         /* BUTTONS */
         .btn {
             background: var(--brand);
@@ -196,7 +196,7 @@
         .btn:hover { background: var(--brand-hover); }
         .btn.secondary { background: var(--muted); }
         .btn.danger { background: var(--danger); }
-
+       
         /* MODAL */
         .modal {
             display: none;
@@ -221,7 +221,7 @@
         .modal-content input { width: 100%; padding: 10px; margin-bottom: 10px; background: #111; border: 1px solid var(--border); color: var(--text); border-radius: 4px; }
         .modal-content button { width: 100%; }
         .modal.open { display: flex; }
-
+       
         /* VIEWER */
         #viewer {
             display: none;
@@ -257,7 +257,7 @@
     <div class="wrap">
         <!-- HEADER -->
         <div class="top-bar">
-            <a href="gallery.html" class="back-link">← Back to Collections</a>
+            <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
             <h1 class="collection-title" id="collectionTitle"></h1>
             <div class="stats">
                 <div>Photos: <span id="photoCount">0</span></div>
@@ -269,7 +269,10 @@
         <!-- TABS -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="photos">Photos</button>
+            <button class="tab-btn" data-tab="events">Events</button>
+            <button class="tab-btn" data-tab="upload">Upload</button>
             <button class="tab-btn" data-tab="people">People</button>
+            <button class="tab-btn" data-tab="leads">Guest Leads</button>
             <button class="tab-btn" data-tab="links">Search Links</button>
         </div>
 
@@ -278,11 +281,45 @@
             <div class="card">
                 <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
                     <h3>Photos in Collection</h3>
-                    <button class="btn" onclick="document.getElementById('uploadInput').click()">Upload Photos</button>
-                    <input type="file" id="uploadInput" multiple accept="image/*" style="display:none;">
+                    <button class="btn" id="downloadZipBtn">Download ZIP</button>
                 </div>
                 <div class="photos-grid" id="photosGrid"></div>
                 <button class="load-more" id="loadMoreBtn" onclick="fetchPhotos(true)">Load More</button>
+            </div>
+        </div>
+
+        <!-- EVENTS TAB -->
+        <div id="eventsTab" class="tab-content">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                    <h3>Events</h3>
+                    <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
+                </div>
+               
+                <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                        <input type="text" id="eventName" placeholder="Event Name">
+                        <input type="date" id="eventDate">
+                    </div>
+                    <div style="text-align:right;">
+                        <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
+                        <button class="btn" id="saveEventBtn">Save</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+                    <tbody id="eventsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- UPLOAD TAB -->
+        <div id="uploadTab" class="tab-content">
+            <div class="card">
+                <h3>Upload to Event</h3>
+                <select id="eventSelect"></select>
+                <input type="file" multiple accept="image/*" id="uploadFiles">
+                <button class="btn" onclick="uploadToEvent()">Upload</button>
             </div>
         </div>
 
@@ -291,6 +328,17 @@
             <div class="card">
                 <h3>Detected People</h3>
                 <div class="people-grid" id="peopleGrid"></div>
+            </div>
+        </div>
+
+        <!-- LEADS TAB -->
+        <div id="leadsTab" class="tab-content">
+            <div class="card">
+                <h3>Guest Leads</h3>
+                <table>
+                    <thead><tr><th>Name</th><th>Mobile</th><th>Matches</th><th>Timestamp</th></tr></thead>
+                    <tbody id="leadsTbody"></tbody>
+                </table>
             </div>
         </div>
 
@@ -304,28 +352,28 @@
                 <div class="search-links" id="searchLinks"></div>
             </div>
         </div>
-    </div>
 
-    <!-- MODAL for LINK -->
-    <div class="modal" id="linkModal">
-        <div class="modal-content">
-            <h3>Create Search Link</h3>
-            <input type="number" id="expiryHours" placeholder="Expiry Hours (default 24)" min="1">
-            <input type="text" id="linkPassword" placeholder="Optional Password">
-            <button class="btn" onclick="createSearchLink()">Generate</button>
-            <button class="btn secondary" onclick="closeLinkModal()">Cancel</button>
+        <!-- MODAL for LINK -->
+        <div class="modal" id="linkModal">
+            <div class="modal-content">
+                <h3>Create Search Link</h3>
+                <input type="number" id="expiryHours" placeholder="Expiry Hours (default 24)" min="1">
+                <input type="text" id="linkPassword" placeholder="Optional Password">
+                <button class="btn" onclick="createSearchLink()">Generate</button>
+                <button class="btn secondary" onclick="closeLinkModal()">Cancel</button>
+            </div>
         </div>
-    </div>
 
-    <!-- VIEWER -->
-    <div id="viewer">
-        <img id="viewerImage" src="">
-        <div id="viewerControls">
-            <button onclick="prevImage()">Previous</button>
-            <button onclick="toggleViewerSelect()">Select</button>
-            <button onclick="nextImage()">Next</button>
+        <!-- VIEWER -->
+        <div id="viewer">
+            <img id="viewerImage" src="">
+            <div id="viewerControls">
+                <button onclick="prevImage()">Previous</button>
+                <button onclick="toggleViewerSelect()">Select</button>
+                <button onclick="nextImage()">Next</button>
+            </div>
+            <button style="position:absolute; top:10px; right:10px; background:none; border:none; color:white; font-size:24px; cursor:pointer;" onclick="closeViewer()">×</button>
         </div>
-        <button style="position:absolute; top:10px; right:10px; background:none; border:none; color:white; font-size:24px; cursor:pointer;" onclick="closeViewer()">×</button>
     </div>
 
 <script>
@@ -337,6 +385,9 @@
     let currentViewerIndex = 0;
     let nextToken = null;
     let people = [];
+    let events = [];
+    let leads = [];
+    let searchLinks = [];
 
     if (!idToken) {
         window.location.href = 'login.html';
@@ -352,12 +403,16 @@
             });
         });
 
-        document.getElementById('uploadInput').addEventListener('change', handleUpload);
+        document.getElementById('saveEventBtn').addEventListener('click', handleSaveEvent);
+        document.getElementById('uploadFiles').addEventListener('change', uploadToEvent);
+        document.getElementById('downloadZipBtn').addEventListener('click', downloadAllZip);
 
         fetchCollectionInfo();
         fetchPhotos();
+        fetchEvents();
         fetchPeople();
-        fetchLinks();
+        fetchLeads();
+        fetchSearchLinks();
     }
 
     async function fetchCollectionInfo() {
@@ -378,17 +433,21 @@
         }
     }
 
-    async function fetchPhotos(append = false) { console.log("Fetching photos...");
+    async function fetchPhotos(append = false) {
         const loadBtn = document.getElementById('loadMoreBtn');
         loadBtn.disabled = true;
 
         try {
             const body = { collection_id: collectionId };
-            if (nextToken) body.next_token = nextToken;
+            if (append && nextToken) body.next_token = nextToken;
 
-            const res = await fetch(`${API_BASE}/get-photos`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, body: JSON.stringify(body) });
+            const res = await fetch(`${API_BASE}/get-photos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify(body)
+            });
             const data = await res.json();
-            const newPhotos = data.photos;
+            const newPhotos = data.photos || [];
 
             if (append) {
                 allPhotos = [...allPhotos, ...newPhotos];
@@ -401,7 +460,7 @@
             nextToken = data.next_token;
             loadBtn.disabled = !nextToken;
         } catch (e) {
-            console.error(e);
+            console.error("Failed to fetch photos:", e);
         }
     }
 
@@ -421,12 +480,13 @@
             overlay.className = 'photo-overlay';
 
             if (photo.faces && photo.faces.length > 0) {
-                photo.faces.forEach(face => {
+                photo.faces.forEach((face, i) => {
                     const faceImg = document.createElement('img');
                     faceImg.className = 'face-icon';
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     const tempImg = new Image();
+                    tempImg.crossOrigin = 'anonymous';
                     tempImg.onload = () => {
                         const box = face.BoundingBox;
                         canvas.width = 64;
@@ -444,9 +504,100 @@
         });
     }
 
-    async function fetchPeople() { console.log("Fetching people...");
+    async function fetchEvents() {
         try {
-            const res = await fetch(`${API_BASE}/list-people`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, body: JSON.stringify({ collection_id: collectionId }) });
+            const res = await fetch(`${API_BASE}/get-events`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify({ collection_id: collectionId })
+            });
+            const data = await res.json();
+            events = data.events || [];
+            renderEvents();
+            renderEventSelect();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderEvents() {
+        const tbody = document.getElementById('eventsTbody');
+        tbody.innerHTML = '';
+        events.forEach(ev => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${ev.name}</td>
+                <td>${ev.event_date}</td>
+                <td>${ev.photo_count}</td>
+                <td>
+                    <button class="btn secondary" onclick="editEvent('${ev.event_id}')">Edit</button>
+                    <button class="btn danger" onclick="deleteEvent('${ev.event_id}')">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function handleSaveEvent() {
+        const name = document.getElementById('eventName').value;
+        const date = document.getElementById('eventDate').value;
+        if (!name || !date) return alert("Fields required");
+
+        try {
+            const res = await fetch(`${API_BASE}/upsert-event`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+            });
+            if (res.ok) {
+                fetchEvents();
+                document.getElementById('eventForm').style.display = 'none';
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderEventSelect() {
+        const select = document.getElementById('eventSelect');
+        select.innerHTML = '';
+        events.forEach(ev => {
+            const opt = document.createElement('option');
+            opt.value = ev.event_id;
+            opt.textContent = ev.name;
+            select.appendChild(opt);
+        });
+    }
+
+    async function uploadToEvent() {
+        const files = document.getElementById('uploadFiles').files;
+        const eventId = document.getElementById('eventSelect').value;
+        if (!files.length || !eventId) return alert("Select event and files");
+
+        const fileData = Array.from(files).map(f => ({ name: f.name, type: f.type }));
+        try {
+            const res = await fetch(`${API_BASE}/generate-upload-urls`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+            });
+            const data = await res.json();
+            await Promise.all(data.urls.map(async (u, i) => {
+                await fetch(u.uploadURL, { method: 'PUT', body: files[i] });
+            }));
+            fetchPhotos();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function fetchPeople() {
+        try {
+            const res = await fetch(`${API_BASE}/list-people`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify({ collection_id: collectionId })
+            });
             const data = await res.json();
             people = data.people || [];
             renderPeople();
@@ -455,51 +606,93 @@
         }
     }
 
-    
-function renderPeople() {
-    const grid = document.getElementById('peopleGrid');
-    grid.innerHTML = '';
-    people.forEach(p => {
-        const person = document.createElement('div');
-        person.className = 'person';
-        person.onclick = () => {
-            filteredPhotos = allPhotos.filter(photo => (photo.face_ids || []).includes(p.FaceId));
-            renderPhotos();
-            // Switch to photos tab
-            document.querySelector('[data-tab="photos"]').click();
-        };
+    function renderPeople() {
+        const grid = document.getElementById('peopleGrid');
+        grid.innerHTML = '';
+        people.forEach(p => {
+            const person = document.createElement('div');
+            person.className = 'person';
+            person.onclick = () => {
+                filteredPhotos = allPhotos.filter(photo => (photo.face_ids || []).includes(p.FaceId));
+                renderPhotos();
+                document.querySelector('[data-tab="photos"]').click();
+            };
 
-        const thumb = document.createElement('img');
-        thumb.className = 'person-thumbnail';
-        thumb.src = p.thumbnail_url || 'data:,';
-        
-        const nameInput = document.createElement('input');
-        nameInput.value = p.FaceName || 'Unknown';
-        nameInput.className = 'person-name';
-        nameInput.onchange = async (e) => {
-            try {
-                await fetch(`${API_BASE}/save_face_name`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-                    body: JSON.stringify({ FaceId: p.FaceId, FaceName: e.target.value, CollectionId: collectionId })
-                });
-                p.FaceName = e.target.value;
-            } catch (err) { console.error(err); }
-        };
+            const thumb = document.createElement('img');
+            thumb.className = 'person-thumbnail';
+            thumb.src = p.thumbnail_url || 'data:,';
+            
+            const nameInput = document.createElement('input');
+            nameInput.value = p.FaceName || 'Unknown';
+            nameInput.className = 'person-name';
+            nameInput.onchange = async (e) => {
+                try {
+                    await fetch(`${API_BASE}/save_face_name`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                        body: JSON.stringify({ FaceId: p.FaceId, FaceName: e.target.value, CollectionId: collectionId })
+                    });
+                    p.FaceName = e.target.value;
+                } catch (err) { console.error(err); }
+            };
 
-        const count = document.createElement('div');
-        count.className = 'person-count';
-        count.textContent = `${p.count} photos`;
+            const count = document.createElement('div');
+            count.className = 'person-count';
+            count.textContent = `${p.count} photos`;
 
-        person.appendChild(thumb);
-        person.appendChild(nameInput);
-        person.appendChild(count);
-        grid.appendChild(person);
-    });
-}
+            person.appendChild(thumb);
+            person.appendChild(nameInput);
+            person.appendChild(count);
+            grid.appendChild(person);
+        });
+    }
 
-    async function fetchLinks() {
-        // Placeholder for fetching search links
+    async function fetchLeads() {
+        try {
+            const res = await fetch(`${API_BASE}/selfie-search-save-details?link_id=${collectionId}`, {
+                headers: { 'Authorization': `Bearer ${idToken}` }
+            });
+            const data = await res.json();
+            leads = data;
+            renderLeads();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderLeads() {
+        const tbody = document.getElementById('leadsTbody');
+        tbody.innerHTML = '';
+        leads.forEach(lead => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${lead.name}</td>
+                <td>${lead.mobile}</td>
+                <td>${lead.match_count}</td>
+                <td>${lead.timestamp}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function fetchSearchLinks() {
+        // Placeholder, add actual fetch if needed
+        searchLinks = [];
+        renderSearchLinks();
+    }
+
+    function renderSearchLinks() {
+        const linksDiv = document.getElementById('searchLinks');
+        linksDiv.innerHTML = '';
+        searchLinks.forEach(link => {
+            const item = document.createElement('div');
+            item.className = 'link-item';
+            item.innerHTML = `
+                <span class="link-url">${link.searchUrl}</span>
+                <span class="link-copy" onclick="copyToClipboard('${link.searchUrl}')">Copy</span>
+            `;
+            linksDiv.appendChild(item);
+        });
     }
 
     function openLinkModal() {
@@ -511,7 +704,25 @@ function renderPeople() {
     }
 
     async function createSearchLink() {
-        // Placeholder for creating link
+        const expiry = document.getElementById('expiryHours').value || 24;
+        const password = document.getElementById('linkPassword').value;
+        try {
+            const res = await fetch(`${API_BASE}/generate-search-link`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify({ collection_id: collectionId, expiry_hours: expiry, password })
+            });
+            const data = await res.json();
+            searchLinks.push(data);
+            renderSearchLinks();
+            closeLinkModal();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
     }
 
     function openViewer(index) {
@@ -539,9 +750,56 @@ function renderPeople() {
         updateViewer();
     }
 
-    async function handleUpload(e) {
-        const files = e.target.files;
-        // Placeholder for upload logic
+    function toggleViewerSelect() {
+        // Placeholder for select logic
+    }
+
+    async function downloadAllZip(btn) {
+        if (filteredPhotos.length === 0) return alert("No photos");
+
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const limit = filteredPhotos.slice(0, 100);
+
+        btn.disabled = true;
+        btn.textContent = 'Zipping...';
+
+        let count = 0;
+        for (let i = 0; i < limit.length; i++) {
+            try {
+                const response = await fetch(limit[i].url);
+                const blob = await response.blob();
+                folder.file(`photo_${i+1}.jpg`, blob);
+                count++;
+                btn.textContent = `Zipping ${count}/${limit.length}`;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        zip.generateAsync({type: "blob"}).then(content => {
+            saveAs(content, "photos.zip");
+            btn.disabled = false;
+            btn.textContent = 'Download ZIP';
+        });
+    }
+
+    async function editEvent(eventId) {
+        // Placeholder for edit
+    }
+
+    async function deleteEvent(eventId) {
+        if (!confirm("Delete event?")) return;
+        try {
+            await fetch(`${API_BASE}/delete-event`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify({ collection_id: collectionId, event_id: eventId })
+            });
+            fetchEvents();
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     init();
