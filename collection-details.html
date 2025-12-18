@@ -1004,7 +1004,7 @@ function renderFaceIcons() {
     entries.forEach(group => {
         const img = document.createElement('img');
         img.className = 'face-icon';
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name||'?')[0]||'?')}`;
+        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name || '?')[0] || '?')}`;
         img.title = `${group.name} (${group.count || group.photos.length} photos)`;
 
         img.onclick = (e) => {
