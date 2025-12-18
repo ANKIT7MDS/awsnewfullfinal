@@ -1004,8 +1004,13 @@ function renderFaceIcons() {
     entries.forEach(group => {
         const img = document.createElement('img');
         img.className = 'face-icon';
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name || '?')[0] || '?')}`;
-        img.title = `${group.name} (${group.count || group.photos.length} photos)`;
+if (group.object_key) {
+  const urls = await getPresignedUrls([group.object_key]);
+  img.src = urls[0] || placeholder;
+} else {
+  img.src = placeholder;
+}
+
 
         img.onclick = (e) => {
             // UX polish: Shift for multi-select; click for single select
@@ -1623,3 +1628,4 @@ fetchPhotos();
 </script>
 </body>
 </html>
+
