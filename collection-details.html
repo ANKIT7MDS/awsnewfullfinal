@@ -621,10 +621,12 @@
                 <button class="btn" id="startUploadBtn">Start Upload <span class="spinner" style="display:none;"></span></button>
             </div>
             <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center;">
-                <label class="toggle-btn" id="optimizeToggleLabel">
+                <label class="toggle-btn" for="optimizeToggle">
+                    <input type="checkbox" id="optimizeToggle" style="display:none">
                     Optimize (reduce size)
                 </label>
-                <label class="toggle-btn active" id="convertToggleLabel">
+                <label class="toggle-btn active" for="convertToggle">
+                    <input type="checkbox" id="convertToggle" style="display:none" checked>
                     Convert to JPG
                 </label>
                 <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
@@ -1447,15 +1449,16 @@ async function handleFiles(files) {
   if(!files?.length) return;
   const eventId = $('uploadEventSelect').value;
   if(!eventId) return alert('Select event');
-  const optimize = $('optimizeToggleLabel').classList.contains('active');
+  const optimize = $('optimizeToggle').checked;
   const maxW = parseInt($('maxWidthSelect').value, 10);
   const quality = parseFloat($('jpegQuality').value);
-  const convert = $('convertToggleLabel').classList.contains('active');
+  const convert = $('convertToggle').checked;
+  const fileNames = Array.from(files).map(f => f.name);
   try{
     const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
       method:'POST',
       headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, count: files.length })
+      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileNames })
     });
     const urls = json?.urls || [];
     if(urls.length < files.length) return alert('Not enough upload URLs generated');
@@ -1700,37 +1703,20 @@ document.addEventListener('DOMContentLoaded', ()=>{
     dropZone.addEventListener('click', ()=> fileInput.click());
     dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); dropZone.style.background = '#222'; });
     dropZone.addEventListener('dragleave', ()=>{ dropZone.style.background = '#151515'; });
-    dropZone.addEventListener('drop', (e)=>{
-      e.preventDefault();
-      dropZone.style.background = '#151515';
-      selectedFiles = Array.from(e.dataTransfer.files);
-      renderFileList();
-      $('uploadControls').style.display = 'flex';
-    });
-    fileInput.addEventListener('change', ()=>{
-      selectedFiles = Array.from(fileInput.files);
-      renderFileList();
-      $('uploadControls').style.display = 'flex';
-    });
+    dropZone.addEventListener('drop', (e)=>{ e.preventDefault(); dropZone.style.background = '#151515'; selectedFiles = Array.from(e.dataTransfer.files); renderFileList(); $('uploadControls').style.display = 'flex'; });
+    fileInput.addEventListener('change', ()=>{ selectedFiles = Array.from(fileInput.files); renderFileList(); $('uploadControls').style.display = 'flex'; });
   }
-  $('clearFilesBtn')?.addEventListener('click', ()=>{
-    selectedFiles = [];
-    renderFileList();
-    $('uploadControls').style.display = 'none';
-  });
-  $('startUploadBtn')?.addEventListener('click', ()=>{
-    if (!selectedFiles.length) return;
-    $('startUploadBtn').querySelector('.spinner').style.display = 'inline-block';
-    handleFiles(selectedFiles);
-  });
+  $('clearFilesBtn')?.addEventListener('click', ()=>{ selectedFiles = []; renderFileList(); $('uploadControls').style.display = 'none'; });
+  $('startUploadBtn')?.addEventListener('click', ()=>{ if (!selectedFiles.length) return; $('startUploadBtn').querySelector('.spinner').style.display = 'inline-block'; handleFiles(selectedFiles); });
   // toggle buttons
-  ['optimizeToggleLabel', 'convertToggleLabel'].forEach(id => {
-    const lbl = $(id);
-    if (lbl) {
-      lbl.addEventListener('click', () => {
-        lbl.classList.toggle('active');
-      });
-    }
+  const toggles = document.querySelectorAll('.toggle-btn input[type="checkbox"]');
+  toggles.forEach(input => {
+    const label = input.parentElement;
+    if (input.checked) label.classList.add('active');
+    input.addEventListener('change', () => {
+      if (input.checked) label.classList.add('active');
+      else label.classList.remove('active');
+    });
   });
   // generate link
   $('genLinkBtn')?.addEventListener('click', async ()=>{
@@ -1755,6 +1741,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     linkEl.textContent = data.searchUrl;
     box.style.display = 'block';
   });
+  // merge stubs
+  window.mergeSelectedFaces = () => alert('Merge not implemented');
+  window.suggestMerge = () => alert('Suggest not implemented');
 });
 </script>
 </body>
