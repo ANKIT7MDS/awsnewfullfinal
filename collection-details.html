@@ -265,17 +265,7 @@
             margin-bottom: 20px;
             padding-bottom: 10px;
         }
-        .face-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--brand);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
-        .face-icon:hover { transform: scale(1.1); }
+        /* Face Icon Wrapper styles are injected via JS for dynamic Zoom */
 
         /* History Viewer */
         #historyViewer {
@@ -444,7 +434,6 @@
         <div class="tab" onclick="switchTab('analyticsTab')">Guests / Leads</div>
     </div>
 
-    <!-- GALLERY TAB -->
     <div id="galleryTab" class="tab-content active">
         <div class="filter-row-top">
             <select id="filterType" onchange="applyFilters()">
@@ -457,10 +446,8 @@
             <button class="btn secondary" id="downloadZipBtn">⬇ Download Zip</button>
         </div>
 
-        <!-- Face Icons Bar -->
         <div id="faceIconsBar" class="face-group-grid"></div>
 
-        <!-- Face Naming Header -->
         <div id="faceNamingHeader" class="face-header" style="display:none;">
             <img id="faceHeaderImg" src="">
             <div class="face-header-content">
@@ -483,7 +470,6 @@
         </div>
     </div>
 
-    <!-- EVENTS TAB -->
     <div id="eventsTab" class="tab-content">
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
@@ -508,7 +494,6 @@
         </div>
     </div>
 
-    <!-- UPLOAD TAB -->
     <div id="uploadTab" class="tab-content">
         <div class="card" style="max-width:800px; margin:0 auto;">
             <div style="margin-bottom:20px;">
@@ -557,7 +542,6 @@
         </div>
     </div>
 
-    <!-- LINKS TAB -->
     <div id="linksTab" class="tab-content">
         <div class="card" style="max-width:600px; margin:0 auto;">
             <h3>Generate Search Link</h3>
@@ -573,7 +557,6 @@
         </div>
     </div>
 
-    <!-- GUESTS TAB -->
     <div id="analyticsTab" class="tab-content">
         <div class="card">
             <h3>Guest Leads</h3>
@@ -590,7 +573,6 @@
                 </div>
             </div>
 
-            <!-- History Viewer -->
             <div id="historyViewer">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h3 id="historyHeader" style="margin:0;">Search History</h3>
@@ -605,13 +587,11 @@
     </div>
 </div>
 
-<!-- PHOTO VIEWER -->
 <div class="viewer" id="viewer" onclick="closeViewer()">
     <div class="viewer-close" onclick="closeViewer()">×</div>
     <img id="viewerImg" onclick="event.stopPropagation()">
 </div>
 
-<!-- DEBUG UI -->
 <div id="debugFab" title="Open Debug Panel">
     <span class="dot" id="dbgDot"></span>
     Debug
@@ -752,7 +732,7 @@ const LEADS_BATCH_SIZE = 10;
 let faceGroups = {};              // FaceId -> {id,name,thumbnail,count,photos[]}
 let directoryPeople = [];         // list_people response
 let currentNamingFaceId = null;
-let selectedFaces = new Set();    // FIX: was missing in your code
+let selectedFaces = new Set();    
 
 /* ======================= TABS ======================= */
 window.switchTab = function(tabId) {
@@ -824,12 +804,6 @@ async function init() {
 }
 
 /* ======================= PEOPLE (list_people) ======================= */
-/**
- * Loads people directory (FaceId + FaceName).
- * NOTE: Your current list_people lambda returns only FaceId/FaceName/CollectionId.
- * To show thumbnails, we attach thumbnail from any photo that contains that FaceId (if photo.face_ids exists),
- * or fallback to the first photo URL if nothing is available.
- */
 async function fetchPeopleDirectory() {
     try {
         const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
@@ -868,7 +842,7 @@ async function fetchPhotos() {
         filteredPhotos = [...allPhotos];
 
         // Build groups using whatever is available in photo items
-        buildLocalFaceMap(); // from photo.faces if present
+        buildLocalFaceMap(); 
         // Enhance from list_people (names + best thumbnails)
         await enhanceFacesFromDirectory();
 
@@ -927,10 +901,6 @@ function renderNextBatch() {
 document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
 
 /* ======================= FACE GROUPS ======================= */
-/**
- * Build from photo.faces if present (some pipelines store full face objects).
- * If your photos items don't include faces/face_ids, icons will hide, and debug will warn.
- */
 function buildLocalFaceMap() {
     faceGroups = {};
 
@@ -978,24 +948,19 @@ function buildLocalFaceMap() {
         });
     }
 
-    // Debug warning if still no faces found
     if (Object.keys(faceGroups).length === 0) {
         dbgAdd({
             ok: false, type: 'WARN', label: 'faces-missing',
             ts: Date.now(),
-            details: "No face data found in photos response. Check:\n1) get-photos ProjectionExpression includes faces + face_ids.\n2) Dynamo items contain faces/face_ids.\n3) UI should build faceGroups from face_ids."
+            details: "No face data found in photos response. Check projection & indexing."
         });
     }
 }
 
-/**
- * Pull names from list_people, and try to attach thumbnail by scanning photos for that FaceId if face_ids exist.
- */
 async function enhanceFacesFromDirectory(){
     const people = await fetchPeopleDirectory();
     if(!people || people.length === 0) return;
 
-    // Create missing groups from directory too (even if photos didn't include faces)
     people.forEach(p=>{
         const fid = p.FaceId || p.face_id || p.faceId;
         if(!fid) return;
@@ -1006,7 +971,6 @@ async function enhanceFacesFromDirectory(){
         }
     });
 
-    // If we have face_ids in photos, map thumbnails + photos
     const hasFaceIds = allPhotos.some(p=>Array.isArray(p.face_ids) && p.face_ids.length);
     if(hasFaceIds){
         Object.values(faceGroups).forEach(g=>{ g.photos = []; g.count = 0; });
@@ -1020,18 +984,18 @@ async function enhanceFacesFromDirectory(){
             });
         });
     }else{
-        // thumbnails fallback (first photo) to avoid blank icons if user wants naming only
         const firstPhotoUrl = allPhotos[0] ? (allPhotos[0].thumbnail_url || allPhotos[0].url) : null;
         Object.values(faceGroups).forEach(g=>{ if(!g.thumbnail) g.thumbnail = firstPhotoUrl; });
     }
 }
 
-/* ======================= FACE ICON RENDER ======================= */
+/* ======================= FACE ICON RENDER (WITH ZOOM) ======================= */
 function renderFaceIcons() {
     const bar = document.getElementById('faceIconsBar');
     bar.innerHTML = '';
     bar.style.display = 'flex';
 
+    // Sort by count
     const entries = Object.values(faceGroups)
         .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
         .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
@@ -1042,13 +1006,60 @@ function renderFaceIcons() {
     }
 
     entries.forEach(group => {
-        const img = document.createElement('img');
-        img.className = 'face-icon';
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name||'?')[0]||'?')}`;
-        img.title = `${group.name} (${group.count || group.photos.length} photos)`;
+        // Container for clipping
+        const wrapper = document.createElement('div');
+        wrapper.className = 'face-icon-wrapper';
+        wrapper.style.cssText = `
+            width: 50px; height: 50px; 
+            border-radius: 50%; 
+            border: 2px solid var(--brand); 
+            overflow: hidden; 
+            cursor: pointer; 
+            position: relative;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        `;
 
-        img.onclick = (e) => {
-            // UX polish: Shift for multi-select; click for single select
+        const img = document.createElement('img');
+        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name||'?')[0]||'?')}`;
+        
+        // --- ZOOM LOGIC ---
+        let box = null;
+        if(group.photos && group.photos.length > 0) {
+            const photo = group.photos[0]; 
+            if(photo.faces && Array.isArray(photo.faces)) {
+                // Find face data for this FaceId
+                const faceData = photo.faces.find(f => f.FaceId === group.id || (photo.face_ids && photo.face_ids.includes(group.id)));
+                if(faceData && faceData.BoundingBox) {
+                    box = faceData.BoundingBox;
+                }
+            }
+        }
+
+        if(box) {
+            // CSS Math to Zoom into the Face
+            const zoomLevel = 2.5;
+            const shiftX = (box.Left + (box.Width / 2)) * 100;
+            const shiftY = (box.Top + (box.Height / 2)) * 100;
+            
+            img.style.width = "100%";
+            img.style.height = "100%";
+            img.style.objectFit = "cover";
+            img.style.objectPosition = `${shiftX}% ${shiftY}%`;
+            img.style.transform = `scale(${zoomLevel})`;
+            img.style.transformOrigin = `${shiftX}% ${shiftY}%`; 
+        } else {
+            // Fallback
+            img.style.width = "100%";
+            img.style.height = "100%";
+            img.style.objectFit = "cover";
+        }
+
+        img.title = `${group.name} (${group.count || group.photos.length} photos)`;
+        wrapper.appendChild(img);
+
+        // Click Handler
+        wrapper.onclick = (e) => {
             if (e.shiftKey) {
                 if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
                 else selectedFaces.add(group.id);
@@ -1056,19 +1067,23 @@ function renderFaceIcons() {
                 selectedFaces.clear();
                 selectedFaces.add(group.id);
             }
-            // highlight selected
-            bar.querySelectorAll('.face-icon').forEach(icon => icon.classList.remove('selected'));
+            
+            // Highlight logic
+            bar.querySelectorAll('.face-icon-wrapper').forEach(el => el.style.borderColor = 'var(--brand)');
             entries.forEach((g, idx) => {
-                const el = bar.children[idx];
-                if (selectedFaces.has(g.id)) el.classList.add('selected');
+                if (selectedFaces.has(g.id)) {
+                     bar.children[idx].style.borderColor = 'var(--ok)';
+                     bar.children[idx].style.transform = 'scale(1.1)';
+                } else {
+                     bar.children[idx].style.transform = 'scale(1)';
+                }
             });
 
-            // If single click without shift -> open naming header + show photos
             if (!e.shiftKey) showFacePhotos(group.id);
             else applyFaceFilter();
         };
 
-        bar.appendChild(img);
+        bar.appendChild(wrapper);
     });
 }
 
@@ -1080,7 +1095,6 @@ function applyFaceFilter() {
         filteredPhotos = allPhotos.filter(photo => {
             const photoFaces = photo.face_ids || [];
             if(!Array.isArray(photoFaces) || photoFaces.length === 0){
-                // fallback: if we have prebuilt group photos, use that intersection
                 return Array.from(selectedFaces).every(fid => (faceGroups[fid]?.photos || []).includes(photo));
             }
             return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
@@ -1106,13 +1120,11 @@ window.showFacePhotos = (faceId) => {
     document.getElementById('faceHint').textContent = "Tip: Enter name and Save. Shift+click faces to filter multiple faces.";
     header.style.display = 'flex';
 
-    // Filter photos
     if(group.photos && group.photos.length > 0){
         filteredPhotos = group.photos;
     } else {
-        // if we don't have mapping, keep current filtered
         filteredPhotos = [...allPhotos];
-        dbgAdd({ ok:false, type:'WARN', label:'no-face-mapping', ts:Date.now(), details:`FaceId ${faceId} has no mapped photos. If your photos API doesn't return face_ids/faces, mapping isn't possible.` });
+        dbgAdd({ ok:false, type:'WARN', label:'no-face-mapping', ts:Date.now(), details:`FaceId ${faceId} has no mapped photos.` });
     }
 
     displayedPhotosCount = 0;
@@ -1442,7 +1454,6 @@ async function handleFiles(files) {
     const maxW = parseInt(document.getElementById('maxWidthSelect')?.value || "0", 10) || 0;
     const quality = parseFloat(document.getElementById('jpegQuality')?.value || "0.82");
 
-    // Accept any image/* file, convert unsupported formats to JPEG if option enabled
     const incoming = Array.from(files).filter(f => (f && (f.type || '').startsWith('image/')));
     const skipped = total - incoming.length;
     if (skipped > 0) alert(`Skipped ${skipped} non-image files.`);
@@ -1464,21 +1475,17 @@ async function handleFiles(files) {
     };
 
     async function toJpegBlob(file, { optimize, maxW, quality }) {
-        // 1) HEIC/HEIF → JPEG using heic2any
         if (isHeic(file)) {
             if (!window.heic2any) throw new Error("HEIC converter not loaded (heic2any).");
             const converted = await window.heic2any({ blob: file, toType: "image/jpeg", quality: quality });
-            // heic2any can return Blob or Array of Blobs
             const blob = Array.isArray(converted) ? converted[0] : converted;
             return blob;
         }
 
-        // 2) If it's already JPEG/PNG and user doesn't want optimize, keep original
         const t = (file.type || '').toLowerCase();
         const alreadyOk = (t === 'image/jpeg' || t === 'image/png');
         if (alreadyOk && !optimize) return file;
 
-        // 3) Convert/optimize via canvas (works for PNG/JPEG/WEBP/GIF first frame etc.)
         const imgUrl = URL.createObjectURL(file);
         try {
             const img = await new Promise((resolve, reject) => {
@@ -1497,9 +1504,7 @@ async function handleFiles(files) {
                 h = Math.round(h * ratio);
             }
 
-            // If not converting unsupported and the file isn't JPEG/PNG, we still need Rekognition-friendly format
             if (!alreadyOk && !convertUnsupported) {
-                // keep as-is (but Rekognition may fail). We warn silently here:
                 dbgAdd({ ok:false, type:'WARN', label:'upload-format', ts:Date.now(), details:`Uploading unsupported format as-is: ${file.name} (${file.type})`});
                 return file;
             }
@@ -1521,30 +1526,25 @@ async function handleFiles(files) {
         }
     }
 
-    // Prepare files (convert + optimize)
     const prepared = [];
     for (let i = 0; i < incoming.length; i++) {
         const f = incoming[i];
         status.innerHTML = `Preparing... ${i + 1}/${incoming.length}`;
-        progressBar.style.width = `${Math.round(((i + 1) / incoming.length) * 20)}%`; // prep phase (0-20%)
+        progressBar.style.width = `${Math.round(((i + 1) / incoming.length) * 20)}%`; 
 
         const blob = await toJpegBlob(f, { optimize, maxW, quality });
 
-        // Ensure we upload with correct name/type
         let outType = blob.type || f.type || 'image/jpeg';
         let outName = f.name || `photo_${Date.now()}_${i}.jpg`;
 
-        // If converted to jpeg but name not .jpg, fix
         if (outType === 'image/jpeg' && !outName.toLowerCase().endsWith('.jpg') && !outName.toLowerCase().endsWith('.jpeg')) {
             outName = outName.replace(/\.[^/.]+$/, '') + '.jpg';
         }
 
-        // Wrap Blob as File so we keep name/type
         const outFile = (blob instanceof File) ? blob : new File([blob], outName, { type: outType });
         prepared.push(outFile);
     }
 
-    // Upload in batches
     const BATCH_SIZE = 10;
     const totalValid = prepared.length;
     let uploaded = 0;
@@ -1574,7 +1574,6 @@ async function handleFiles(files) {
                     headers: { 'Content-Type': file.type }
                 });
                 uploaded++;
-                // upload phase (20-100%)
                 const pct = 20 + Math.round((uploaded / totalValid) * 80);
                 progressBar.style.width = `${pct}%`;
                 status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
@@ -1602,7 +1601,6 @@ window.applyFilters = function() {
     const type = document.getElementById('filterType').value;
     const query = document.getElementById('tagSearch').value.toLowerCase();
 
-    // Reset face selection when using top filters
     selectedFaces.clear();
 
     filteredPhotos = allPhotos.filter(p => {
