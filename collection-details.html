@@ -742,7 +742,7 @@ const LEADS_BATCH_SIZE = 10;
 let faceGroups = {};              // FaceId -> {id,name,thumbnail,count,photos[]}
 let directoryPeople = [];         // list_people response
 let currentNamingFaceId = null;
-let selectedFaces = new Set();    // FIX: was missing in your code
+let selectedFaces = new Set();    
 
 /* ======================= TABS ======================= */
 window.switchTab = function(tabId) {
@@ -841,6 +841,7 @@ async function fetchPhotos() {
         });
         const data = json || {};
         allPhotos = (data.photos || []).map(p => {
+            // Normalize face_ids (primary) + faces (optional)
             if (!p.face_ids || !Array.isArray(p.face_ids)) p.face_ids = [];
             if ((!p.face_ids || p.face_ids.length === 0) && Array.isArray(p.faces) && p.faces.length > 0) {
                 p.face_ids = p.faces.map(f => f.FaceId).filter(Boolean);
@@ -850,52 +851,10 @@ async function fetchPhotos() {
         });
         filteredPhotos = [...allPhotos];
 
-        // 1. Calculate Face Frequencies (Smart Merging)
-        const faceCounts = {};
-        allPhotos.forEach(p => {
-            (p.face_ids || []).forEach(fid => {
-                faceCounts[fid] = (faceCounts[fid] || 0) + 1;
-            });
-        });
-
-        // 2. Build Groups (Assign photo to its MOST FREQUENT face ID)
-        faceGroups = {};
+        // REVERTED to Standard Grouping: Assign photo to ALL its face IDs
+        buildLocalFaceMap(); 
         
-        allPhotos.forEach(photo => {
-            const fids = photo.face_ids || [];
-            if (fids.length === 0) return;
-
-            // Find the "best" face ID for this photo (the one that appears most in the collection)
-            // This merges 'NewID' into 'OldID' if OldID is more common
-            let bestFid = fids[0];
-            let maxCount = -1;
-            
-            fids.forEach(fid => {
-                if ((faceCounts[fid] || 0) > maxCount) {
-                    maxCount = faceCounts[fid];
-                    bestFid = fid;
-                }
-            });
-
-            if (!faceGroups[bestFid]) {
-                faceGroups[bestFid] = {
-                    id: bestFid,
-                    name: 'Unknown Person',
-                    thumbnail: photo.thumbnail_url || photo.url,
-                    count: 0,
-                    photos: []
-                };
-            }
-            faceGroups[bestFid].photos.push(photo);
-            faceGroups[bestFid].count++;
-            
-            // Prefer a thumbnail that actually has the face data for zooming
-            if (!faceGroups[bestFid].hasZoomData && photo.faces && photo.faces.length > 0) {
-                 faceGroups[bestFid].thumbnail = photo.thumbnail_url || photo.url;
-                 faceGroups[bestFid].hasZoomData = true;
-            }
-        });
-
+        // Enhance from list_people (names + best thumbnails)
         await enhanceFacesFromDirectory();
 
         displayedPhotosCount = 0;
@@ -952,6 +911,64 @@ function renderNextBatch() {
 }
 document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
 
+/* ======================= FACE GROUPS ======================= */
+function buildLocalFaceMap() {
+    faceGroups = {};
+
+    allPhotos.forEach(photo => {
+        // Collect all valid Face IDs for this photo
+        let fids = [];
+        if (Array.isArray(photo.face_ids) && photo.face_ids.length > 0) {
+            fids = photo.face_ids;
+        } else if (Array.isArray(photo.faces)) {
+            fids = photo.faces.map(f => f.FaceId || f.faceId).filter(Boolean);
+        }
+
+        // For each face in this photo, add photo to that group
+        fids.forEach(fid => {
+            if (!faceGroups[fid]) {
+                faceGroups[fid] = {
+                    id: fid,
+                    name: 'Unknown Person',
+                    thumbnail: null, 
+                    count: 0,
+                    photos: [],
+                    hasZoomData: false
+                };
+            }
+
+            // Add photo to group
+            faceGroups[fid].photos.push(photo);
+            faceGroups[fid].count++;
+
+            // CHECK ZOOM DATA for Thumbnail
+            // Does this photo have specific details (BoundingBox) for this face?
+            let faceData = null;
+            if (photo.faces && Array.isArray(photo.faces)) {
+                faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
+            }
+
+            const hasZoom = (faceData && faceData.BoundingBox);
+
+            // Update thumbnail if:
+            // 1. No thumbnail yet.
+            // 2. Current thumbnail has NO zoom, but this new photo DOES.
+            if (!faceGroups[fid].thumbnail || (!faceGroups[fid].hasZoomData && hasZoom)) {
+                faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
+                if (hasZoom) faceGroups[fid].hasZoomData = true;
+            }
+        });
+    });
+
+    if (Object.keys(faceGroups).length === 0) {
+        dbgAdd({
+            ok: false, type: 'WARN', label: 'faces-missing',
+            ts: Date.now(),
+            details: "No face data found in photos response. Check projection & indexing."
+        });
+    }
+}
+
 async function enhanceFacesFromDirectory(){
     const people = await fetchPeopleDirectory();
     if(!people || people.length === 0) return;
@@ -959,18 +976,24 @@ async function enhanceFacesFromDirectory(){
     people.forEach(p=>{
         const fid = p.FaceId || p.face_id || p.faceId;
         if(!fid) return;
+        
+        // If group exists from photos, update name
         if(faceGroups[fid]){
             if(p.FaceName) faceGroups[fid].name = p.FaceName;
+        } else {
+            // Optional: Show people even if no photos found (usually we skip this to avoid empty icons)
+            // faceGroups[fid] = { id: fid, name: p.FaceName || 'Unknown', ... }
         }
     });
 }
 
-/* ======================= FACE ICON RENDER (SMART ZOOM) ======================= */
+/* ======================= FACE ICON RENDER (SMART ZOOM & BG IMAGE) ======================= */
 function renderFaceIcons() {
     const bar = document.getElementById('faceIconsBar');
     bar.innerHTML = '';
     bar.style.display = 'flex';
 
+    // Sort by count
     const entries = Object.values(faceGroups)
         .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
         .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
@@ -994,51 +1017,51 @@ function renderFaceIcons() {
             flex-shrink: 0;
             background: #000;
             margin-right: 8px;
+            transition: transform 0.2s;
         `;
 
-        // Image with Absolute Positioning for Zoom
-        const img = document.createElement('img');
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
+        // Inner Div for Background Image (Best for centering)
+        const faceImg = document.createElement('div');
+        faceImg.style.width = '100%';
+        faceImg.style.height = '100%';
+        faceImg.style.backgroundRepeat = 'no-repeat';
         
+        const thumbUrl = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
+        faceImg.style.backgroundImage = `url('${thumbUrl}')`;
+
+        // --- ZOOM LOGIC ---
         let box = null;
-        if(group.photos && group.photos.length > 0) {
-            const photo = group.photos.find(p => p.faces && p.faces.length > 0);
-            if(photo) {
-                let faceData = photo.faces.find(f => f.FaceId === group.id);
-                if(!faceData) faceData = photo.faces[0];
-                if(faceData && faceData.BoundingBox) box = faceData.BoundingBox;
-            }
+        // Try to find the specific face BoundingBox in the thumbnail photo
+        // Since we stored the best thumbnail photo reference, we can look it up?
+        // Actually we only stored the URL in group.thumbnail.
+        // Let's re-find the photo object that matches the thumbnail URL to get BoundingBox.
+        const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
+        
+        if(thumbPhoto && thumbPhoto.faces) {
+            let faceData = thumbPhoto.faces.find(f => f.FaceId === group.id);
+            if(!faceData && thumbPhoto.faces.length > 0) faceData = thumbPhoto.faces[0]; // fallback
+            if(faceData && faceData.BoundingBox) box = faceData.BoundingBox;
         }
 
         if(box) {
-            // New Robust Zoom Logic
-            // Scale: Make face width approx 60% of the container
-            const zoomScale = 0.6 / (box.Width || 0.2);
+            // Center calculation
+            const faceCX = (box.Left + box.Width / 2) * 100;
+            const faceCY = (box.Top + box.Height / 2) * 100;
             
-            // Calculate center of face in % of image
-            const cx = (box.Left + box.Width / 2) * 100; 
-            const cy = (box.Top + box.Height / 2) * 100;
+            // Zoom calculation
+            let zoomPct = 65 / (box.Width || 0.2);
+            if(zoomPct < 100) zoomPct = 100; 
+            if(zoomPct > 600) zoomPct = 600; 
 
-            img.style.width = `${zoomScale * 100}%`; 
-            img.style.height = 'auto'; // Maintain aspect ratio
-            img.style.position = 'absolute';
-            img.style.left = '50%';
-            img.style.top = '50%';
-            
-            // Move the image so the Face Center aligns with Container Center (50%, 50%)
-            // We translate the image by negative of face center percentage
-            // Since we set left/top to 50%, we just need to shift back by the face center relative to image size
-            // Note: 'translate' percentage is relative to the element (image) itself.
-            // So translate(-cx%, -cy%) moves the point (cx, cy) of image to the (left, top) which is (50%, 50%) of container.
-            img.style.transform = `translate(-${cx}%, -${cy}%)`;
+            faceImg.style.backgroundPosition = `${faceCX}% ${faceCY}%`;
+            faceImg.style.backgroundSize = `${zoomPct}% auto`; 
         } else {
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
+            faceImg.style.backgroundSize = 'cover';
+            faceImg.style.backgroundPosition = 'center';
         }
 
-        img.title = `${group.name} (${group.count} photos)`;
-        wrapper.appendChild(img);
+        wrapper.appendChild(faceImg);
+        wrapper.title = `${group.name} (${group.count} photos)`;
 
         // Click Event
         wrapper.onclick = (e) => {
@@ -1050,6 +1073,7 @@ function renderFaceIcons() {
                 selectedFaces.add(group.id);
             }
             
+            // Visual Highlight
             bar.querySelectorAll('.face-icon-wrapper').forEach(el => {
                 el.style.borderColor = 'var(--brand)';
                 el.style.transform = 'scale(1)';
