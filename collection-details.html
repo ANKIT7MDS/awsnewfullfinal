@@ -4,33 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js">
-function mergeSelectedFaces(){
-  alert('Merge handled by backend. UI stub.');
-}
-function suggestMerge(){
-  alert('Suggestion handled by backend.');
-}
-
-</script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js">
-function mergeSelectedFaces(){
-  alert('Merge handled by backend. UI stub.');
-}
-function suggestMerge(){
-  alert('Suggestion handled by backend.');
-}
-
-</script>
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js">
-function mergeSelectedFaces(){
-  alert('Merge handled by backend. UI stub.');
-}
-function suggestMerge(){
-  alert('Suggestion handled by backend.');
-}
-
-</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -1196,8 +1172,7 @@ function renderNextBatch() {
     const idx = displayedPhotosCount; // approx; fix exact by computing after push
     // We'll open by calculating from container render count:
     const openIdx = displayedPhotosCount + (container.querySelectorAll('.photo-card').length % PHOTOS_BATCH_SIZE); // ok-ish
-    card.dataset.index = filteredPhotos.indexOf(photo);
-    card.addEventListener('click', ()=> openViewer(parseInt(card.dataset.index)));
+    card.addEventListener('click', ()=> openViewer(openIdx));
     const img = document.createElement('img');
     img.loading = 'lazy';
     img.src = photo.thumbnail_url || photo.url;
@@ -1520,8 +1495,7 @@ async function handleFiles(files) {
       }
       const resp = await fetch(urls[i], {
         method:'PUT',
-        body: blob,
-        headers:{ 'Content-Type': blob.type || 'image/jpeg' }
+        body: blob
       });
       if(!resp.ok) throw new Error(`Upload failed for ${file.name}`);
       uploaded++;
@@ -1555,7 +1529,7 @@ function copyLink(){
     const orig = btn.textContent;
     btn.textContent = 'Copied!';
     setTimeout(()=> btn.textContent = orig, 2000);
-  }).catch(()=> alert('Copy failed'));
+  }).catch(()=> alert('Copy failed')).catch(()=> alert('Copy failed'));
 }
 window.copyLink = copyLink;
 /* ======================= ANALYTICS (XSS safe) ======================= */
@@ -1696,18 +1670,6 @@ function switchTab(tabId){
   }
 }
 window.switchTab = switchTab;
-
-['optimizeToggle','convertUnsupported'].forEach(id=>{
-  const cb = document.getElementById(id);
-  const label = document.getElementById(id+'Label');
-  if(cb && label){
-    label.addEventListener('click', ()=>{
-      cb.checked = !cb.checked;
-      label.classList.toggle('active', cb.checked);
-    });
-  }
-});
-
 /* ======================= DOM READY ======================= */
 document.addEventListener('DOMContentLoaded', ()=>{
   if(!idToken) console.warn("No idToken found. Some API calls may fail.");
@@ -1778,18 +1740,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
     linkEl.textContent = data.searchUrl;
     box.style.display = 'block';
   });
-  // merge stubs
-  window.mergeSelectedFaces = () => alert('Merge not implemented');
-  window.suggestMerge = () => alert('Suggest not implemented');
+  // merge
+  window.mergeSelectedFaces = async () => {
+    if (selectedFaces.size < 2) return alert('Kam se kam 2 faces select karo merge ke liye');
+    const targetName = prompt('Merge ke liye name enter karo:');
+    if (!targetName) return;
+    try {
+        const facesArray = Array.from(selectedFaces);
+        for (const fid of facesArray) {
+            const res = await fetch(SAVE_FACE_NAME_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId, face_id: fid, name: targetName })
+            });
+            if (!res.ok) throw new Error('Save failed for ' + fid);
+        }
+        alert('Faces merged under ' + targetName);
+        fetchPhotos();
+    } catch (e) {
+        alert('Error merging faces: ' + e.message);
+    }
+  };
+  window.suggestMerge = () => alert('Suggest merge abhi implement nahi hua hai');
 });
-
-function mergeSelectedFaces(){
-  alert('Merge handled by backend. UI stub.');
-}
-function suggestMerge(){
-  alert('Suggestion handled by backend.');
-}
-
 </script>
 </body>
 </html>
