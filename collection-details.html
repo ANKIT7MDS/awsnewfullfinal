@@ -1449,18 +1449,34 @@ async function handleFiles(files) {
   if(!files?.length) return;
   const eventId = $('uploadEventSelect').value;
   if(!eventId) return alert('Select event');
-  const optimize = $('optimizeToggle').checked;
+  const optimize = $('optimizeToggle')?.checked || false;
   const maxW = parseInt($('maxWidthSelect').value, 10);
   const quality = parseFloat($('jpegQuality').value);
-  const convert = $('convertToggle').checked;
-  const fileNames = Array.from(files).map(f => f.name);
-  try{
-    const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileNames })
+  const convert = $('convertToggle')?.checked || false;
+    const filesMeta = Array.from(files).map(f => {
+      const originalName = f?.name || `upload_${Date.now()}.jpg`;
+      const originalType = (f?.type || '').toLowerCase();
+      const isHeic = originalType.includes('heic') || originalType.includes('heif') || /\.(heic|heif)$/i.test(originalName);
+
+      // We convert HEIC/HEIF to JPEG in the upload loop (even if Convert toggle is off)
+      const willConvertToJpg = isHeic || (convert && !['image/jpeg','image/jpg','image/png'].includes(originalType));
+
+      let name = originalName;
+      if (willConvertToJpg && !/\.(jpe?g)$/i.test(name)) {
+        name = name.replace(/\.[^.]+$/, '') + '.jpg';
+      }
+
+      const type = willConvertToJpg ? 'image/jpeg' : (originalType || 'image/jpeg');
+      return { name, type };
     });
-    const urls = json?.urls || [];
+
+    try{
+        const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
+            method:'POST',
+            headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: filesMeta })
+        });
+        const urls = Array.isArray(json?.urls) ? json.urls : [];
     if(urls.length < files.length) return alert('Not enough upload URLs generated');
     const progressBar = $('progress-bar');
     const status = $('uploadStatus');
@@ -1493,9 +1509,12 @@ async function handleFiles(files) {
       if(optimize && maxW > 0){
         blob = await resizeImage(blob, maxW, quality);
       }
-      const resp = await fetch(urls[i], {
+      const uploadUrl = urls[i]?.uploadURL || urls[i]?.uploadUrl || urls[i]?.url;
+      if(!uploadUrl) throw new Error('Missing upload URL from backend');
+      const resp = await fetch(uploadUrl, {
         method:'PUT',
-        body: blob
+        body: blob,
+        headers:{ 'Content-Type': (filesMeta[i]?.type || blob.type || 'image/jpeg') }
       });
       if(!resp.ok) throw new Error(`Upload failed for ${file.name}`);
       uploaded++;
@@ -1529,7 +1548,7 @@ function copyLink(){
     const orig = btn.textContent;
     btn.textContent = 'Copied!';
     setTimeout(()=> btn.textContent = orig, 2000);
-  }).catch(()=> alert('Copy failed')).catch(()=> alert('Copy failed'));
+  }).catch(()=> alert('Copy failed'));
 }
 window.copyLink = copyLink;
 /* ======================= ANALYTICS (XSS safe) ======================= */
@@ -1740,28 +1759,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     linkEl.textContent = data.searchUrl;
     box.style.display = 'block';
   });
-  // merge
-  window.mergeSelectedFaces = async () => {
-    if (selectedFaces.size < 2) return alert('Kam se kam 2 faces select karo merge ke liye');
-    const targetName = prompt('Merge ke liye name enter karo:');
-    if (!targetName) return;
-    try {
-        const facesArray = Array.from(selectedFaces);
-        for (const fid of facesArray) {
-            const res = await fetch(SAVE_FACE_NAME_API, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: collectionId, face_id: fid, name: targetName })
-            });
-            if (!res.ok) throw new Error('Save failed for ' + fid);
-        }
-        alert('Faces merged under ' + targetName);
-        fetchPhotos();
-    } catch (e) {
-        alert('Error merging faces: ' + e.message);
-    }
-  };
-  window.suggestMerge = () => alert('Suggest merge abhi implement nahi hua hai');
+  // merge stubs
+  window.mergeSelectedFaces = () => alert('Merge not implemented');
+  window.suggestMerge = () => alert('Suggest not implemented');
 });
 </script>
 </body>
