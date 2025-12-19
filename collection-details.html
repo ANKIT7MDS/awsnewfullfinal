@@ -727,7 +727,7 @@
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const GET_EVENTS_API = `${API_BASE}/get-events`;
 const GET_PHOTOS_API = `${API_BASE}/get-photos`;
-const GET_LEADS_API = `${API_BASE}/get-leads`; // Ensure backend has this endpoint
+const GET_LEADS_API = `${API_BASE}/get-leads`;
 const GET_HISTORY_API = `${API_BASE}/get-search-history`;
 const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
 const DELETE_EVENT_API = `${API_BASE}/delete-event`;
@@ -735,1048 +735,1117 @@ const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
 const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
 const LIST_PEOPLE_API = `${API_BASE}/list_people`;
 const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
-const MERGE_FACES_API = `${API_BASE}/merge-faces`;
+
 /* ======================= PARAMS / AUTH ======================= */
 const urlParams = new URLSearchParams(window.location.search);
 const collectionId = urlParams.get("id");
 const collectionNameParam = urlParams.get("name");
-let idToken = localStorage.getItem("idToken");
-if (!idToken) {
-    idToken = prompt('Enter idToken for auth (from localStorage or backend):') || '';
-    if (idToken) localStorage.setItem("idToken", idToken);
-    console.warn("Using manual idToken. Check auth.");
+const idToken = localStorage.getItem("idToken");
+
+/* ======================= SAFE UTILS ======================= */
+const $ = (id) => document.getElementById(id);
+const safeText = (v) => (v === null || v === undefined) ? "" : String(v);
+
+function escapeHtml(str){
+  return safeText(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
 }
-if (document.getElementById('assistantLink')) {
-    document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
+function formatBytes(bytes) {
+  if (!+bytes) return '0 B';
+  const k = 1024, sizes = ['B','KB','MB','GB','TB'];
+  const i = Math.floor(Math.log(bytes)/Math.log(k));
+  return `${parseFloat((bytes/Math.pow(k,i)).toFixed(2))} ${sizes[i]}`;
 }
+function formatLeadTime(isoString) {
+  if (!isoString) return '-';
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  } catch {
+    return safeText(isoString).substring(0,10);
+  }
+}
+
 /* ======================= DEBUG PANEL LOGIC ======================= */
 const dbg = { items: [], maxItems: 60 };
-function dbgOpen(){ document.getElementById('debugPanel').style.display='block'; }
-function dbgClose(){ document.getElementById('debugPanel').style.display='none'; }
-function dbgClear(){
-    dbg.items = [];
-    document.getElementById('debugBody').innerHTML = '';
-    document.getElementById('dbgDot').style.background = 'var(--ok)';
-}
+
 function dbgAdd(entry){
-    dbg.items.unshift(entry);
-    if(dbg.items.length > dbg.maxItems) dbg.items.pop();
-    const body = document.getElementById('debugBody');
-    const div = document.createElement('div');
-    div.className = 'dbg-item';
-    const tagClass = entry.ok ? 'ok' : 'err';
-    div.innerHTML = `
-        <div class="row">
-            <div><span class="dbg-tag ${tagClass}">${entry.ok ? 'OK' : 'ERR'}</span>
-                 <span class="dbg-tag">${entry.type}</span>
-                 <span class="dbg-muted">${new Date(entry.ts).toLocaleString()}</span>
-            </div>
-            <div class="dbg-muted">${entry.label || ''}</div>
-        </div>
-        <div class="dbg-pre">${entry.details || ''}</div>
-    `;
-    body.prepend(div);
-    body.scrollTop = 0;
-    if(!entry.ok) document.getElementById('dbgDot').style.background = 'var(--danger)';
+  dbg.items.unshift(entry);
+  if(dbg.items.length > dbg.maxItems) dbg.items.pop();
+  const body = $('debugBody');
+  if(!body) return;
+  const div = document.createElement('div');
+  div.className = 'dbg-item';
+  const tagClass = entry.ok ? 'ok' : 'err';
+  const when = new Date(entry.ts).toLocaleString();
+
+  // mask simple PII patterns
+  let details = safeText(entry.details);
+  details = details.replace(/"mobile"\s*:\s*"[^"]+"/gi, `"mobile":"***"`);
+  details = details.replace(/"password"\s*:\s*"[^"]+"/gi, `"password":"***"`);
+
+  div.innerHTML = `
+    <div class="row">
+      <div>
+        <span class="dbg-tag ${tagClass}">${entry.ok ? 'OK' : 'ERR'}</span>
+        <span class="dbg-tag">${escapeHtml(entry.type)}</span>
+        <span class="dbg-muted">${escapeHtml(when)}</span>
+      </div>
+      <div class="dbg-muted">${escapeHtml(entry.label || '')}</div>
+    </div>
+    <div class="dbg-pre">${escapeHtml(details)}</div>
+  `;
+  body.prepend(div);
+  if(!entry.ok && $('dbgDot')) $('dbgDot').style.background = 'var(--danger)';
 }
-document.getElementById('debugFab').addEventListener('click', ()=>{
-    const p = document.getElementById('debugPanel');
-    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-});
-document.getElementById('dbgCloseBtn').addEventListener('click', dbgClose);
-document.getElementById('dbgClearBtn').addEventListener('click', dbgClear);
+
+function dbgClear(){
+  dbg.items = [];
+  if($('debugBody')) $('debugBody').innerHTML = '';
+  if($('dbgDot')) $('dbgDot').style.background = 'var(--ok)';
+}
+function dbgClose(){ if($('debugPanel')) $('debugPanel').style.display='none'; }
+
 window.addEventListener('error', (e)=>{
-    dbgAdd({
-        ok:false, type:'JS', label:'window.error',
-        ts:Date.now(),
-        details: `${e.message}\n${e.filename}:${e.lineno}:${e.colno}\n${e.error && e.error.stack ? e.error.stack : ''}`
-    });
+  dbgAdd({ ok:false, type:'JS', label:'window.error', ts:Date.now(),
+    details: `${e.message}\n${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack || ''}` });
 });
 window.addEventListener('unhandledrejection', (e)=>{
-    dbgAdd({
-        ok:false, type:'JS', label:'unhandledrejection',
-        ts:Date.now(),
-        details: (e.reason && e.reason.stack) ? e.reason.stack : String(e.reason)
-    });
+  dbgAdd({ ok:false, type:'JS', label:'unhandledrejection', ts:Date.now(),
+    details: (e.reason?.stack) ? e.reason.stack : String(e.reason) });
 });
+
 async function apiFetch(label, url, options){
-    const ts = Date.now();
-    const safeOptions = options ? JSON.parse(JSON.stringify(options)) : {};
-    if(safeOptions.headers && safeOptions.headers.Authorization) safeOptions.headers.Authorization = 'Bearer ***';
-    try{
-        const res = await fetch(url, options);
-        const text = await res.text();
-        let json = null;
-        try{ json = JSON.parse(text); }catch{}
-        dbgAdd({
-            ok: res.ok, type:'API', label,
-            ts,
-            details: `URL: ${url}\nStatus: ${res.status}\nRequest: ${safeOptions.body ? safeOptions.body.substring(0,100) + '...' : '-'}\nResponse: ${json ? JSON.stringify(json,null,2).substring(0,200) + '...' : text.substring(0,200)}`
-        });
-        if (!res.ok) {
-            let errorMsg = `API ${label} failed: ${res.status}`;
-            if (res.status === 400) errorMsg += ` - Bad Request. Check JSON body (e.g., missing fields like event_id). Backend logs in CloudWatch.`;
-            if (json && json.message) errorMsg += ` Details: ${json.message}`;
-            throw new Error(errorMsg);
-        }
-        return {res, json, text};
-    }catch(err){
-        // CORS specific handling
-        if (err.message.includes('Failed to fetch') || err.message.includes('CORS') || err.message.includes('Access-Control-Allow-Origin')) {
-            err.message += '\n\n🚨 CORS Fix: AWS API Gateway > Enable CORS > Add Origin: https://selfphotos.netlify.app or *. Allow Methods: GET,POST,OPTIONS. Headers: Content-Type,Authorization. Deploy & retry.';
-            alert(err.message);
-        }
-        dbgAdd({
-            ok:false, type:'API', label,
-            ts,
-            details: `URL: ${url}\nError: ${err.message}\n${err.stack || ''}`
-        });
-        throw err;
-    }
+  const ts = Date.now();
+  let safeOptions = {};
+  try{
+    safeOptions = options ? JSON.parse(JSON.stringify(options)) : {};
+    if(safeOptions.headers?.Authorization) safeOptions.headers.Authorization = 'Bearer ***';
+  }catch{ safeOptions = { note: "unclonable options" }; }
+
+  try{
+    const res = await fetch(url, options);
+    const text = await res.text();
+    let json = null; try{ json = JSON.parse(text); }catch{}
+    dbgAdd({
+      ok: res.ok, type:'API', label, ts,
+      details: `URL: ${url}\nStatus: ${res.status}\nRequest: ${safeOptions.body || '-'}\nResponse: ${json ? JSON.stringify(json,null,2) : text}`
+    });
+    return {res, json, text};
+  }catch(err){
+    dbgAdd({ ok:false, type:'API', label, ts, details: `URL: ${url}\nError: ${err.message}\n${err.stack || ''}` });
+    throw err;
+  }
 }
+
 /* ======================= STATE ======================= */
 let allPhotos = [];
 let filteredPhotos = [];
 let displayedPhotosCount = 0;
 const PHOTOS_BATCH_SIZE = 20;
-let viewerIndex = 0;
+
 let allLeads = [];
 let filteredLeads = [];
 let leadsDisplayCount = 0;
 const LEADS_BATCH_SIZE = 10;
-let faceGroups = {};
+
+let faceGroups = {};              // {key -> group}
 let directoryPeople = [];
 let currentNamingFaceId = null;
 let selectedFaces = new Set();
-let selectedFiles = [];
-let mergeMenuTarget = null;
-/* ======================= UTILS ======================= */
-function formatLeadTime(isoString) {
-    if (!isoString) return '-';
-    try {
-        const dateObj = new Date(isoString);
-        return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    } catch {
-        return isoString.substring(0, 10);
-    }
-}
-function formatBytes(bytes) {
-    if (!+bytes) return '0 B';
-    const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-function escapeAttr(s){
-    return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
-}
+let lastRenderedDate = null;
+let currentGridEl = null;
+
+const eventState = { mode: 'create', eventId: null };
+
+/* ======================= IMAGE UTILS ======================= */
 async function resizeImage(blob, maxWidth, quality) {
-    return new Promise((resolve) => {
-        const img = new Image();
+  return new Promise((resolve) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const url = URL.createObjectURL(blob);
+
+    img.onload = () => {
+      try{
+        if (!maxWidth || img.width <= maxWidth) { resolve(blob); return; }
+        const ratio = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = Math.round(img.height * ratio);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((resizedBlob) => resolve(resizedBlob || blob), 'image/jpeg', quality);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(blob); };
+    img.src = url;
+  });
+}
+
+async function imageToJpeg(fileOrBlob, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(fileOrBlob);
+    img.onload = () => {
+      try{
         const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
         const ctx = canvas.getContext('2d');
-        img.onload = () => {
-            if (img.width <= maxWidth || maxWidth === 0) {
-                resolve(blob);
-                return;
-            }
-            const ratio = maxWidth / img.width;
-            canvas.width = maxWidth;
-            canvas.height = img.height * ratio;
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((resizedBlob) => resolve(resizedBlob), 'image/jpeg', quality);
-        };
-        img.onerror = () => resolve(blob);
-        img.src = URL.createObjectURL(blob);
-    });
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', quality);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
 }
-async function imageToJpeg(file, quality) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            canvas.toBlob(resolve, 'image/jpeg', quality);
-        };
-        img.onerror = reject;
-        img.src = URL.createObjectURL(file);
-    });
-}
-function calculateSimilarity(face1, face2) {
-    if (!face1.BoundingBox || !face2.BoundingBox) return 0;
-    const dx = Math.abs((face1.BoundingBox.Left + face1.BoundingBox.Width / 2) - (face2.BoundingBox.Left + face2.BoundingBox.Width / 2));
-    const dy = Math.abs((face1.BoundingBox.Top + face1.BoundingBox.Height / 2) - (face2.BoundingBox.Top + face2.BoundingBox.Height / 2));
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    return Math.max(0, 1 - dist); // Simple similarity score (0-1)
-}
-function showSuggestions(value) {
-    if (!value) {
-        document.getElementById('faceSuggestions').style.display = 'none';
-        return;
-    }
-    const suggestions = directoryPeople.filter(p => p.FaceName && p.FaceName.toLowerCase().includes(value.toLowerCase()) && p.FaceName !== 'Unknown');
-    const suggDiv = document.getElementById('faceSuggestions');
-    suggDiv.innerHTML = suggestions.slice(0,5).map(p => `<div class="suggestion-item" onclick="selectSuggestion('${p.FaceName}')">${p.FaceName}</div>`).join('');
-    suggDiv.style.display = suggestions.length > 0 ? 'block' : 'none';
-}
-function selectSuggestion(name) {
-    document.getElementById('faceNameInput').value = name;
-    document.getElementById('faceSuggestions').style.display = 'none';
-    showSuggestions(''); // Hide after select
-}
-/* ======================= CORE FUNCTIONS ======================= */
+
+/* ======================= EVENTS RENDER (XSS safe) ======================= */
 function renderEvents(events) {
-    const tbody = document.getElementById('eventsTbody');
-    const uploadSelect = document.getElementById('uploadEventSelect');
-    const linkList = document.getElementById('linkEventList');
-    const eventsError = document.getElementById('eventsError');
-    if(tbody) tbody.innerHTML = '';
-    if(uploadSelect) uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-    if(linkList) linkList.innerHTML = '';
-    eventsError.style.display = 'none';
-    if(!events || !Array.isArray(events)) {
-        eventsError.innerHTML = 'No events found. <button class="btn secondary retry-btn" onclick="init()">Retry</button>';
-        eventsError.style.display = 'block';
-        return;
+  const tbody = $('eventsTbody');
+  const uploadSelect = $('uploadEventSelect');
+  const linkList = $('linkEventList');
+
+  if(tbody) tbody.innerHTML = '';
+  if(uploadSelect) uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+  if(linkList) linkList.innerHTML = '';
+  if(!Array.isArray(events)) return;
+
+  for(const ev of events){
+    const evId = safeText(ev.event_id);
+    const evName = safeText(ev.name);
+    const evDate = safeText(ev.event_date || '-');
+    const pCount = safeText(ev.photo_count || 0);
+
+    if(tbody){
+      const tr = document.createElement('tr');
+
+      const tdName = document.createElement('td'); tdName.textContent = evName;
+      const tdDate = document.createElement('td'); tdDate.textContent = evDate;
+      const tdPhotos = document.createElement('td'); tdPhotos.textContent = pCount;
+
+      const tdAct = document.createElement('td');
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-btn';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', () => openEditEvent(evId, evName, ev.event_date || ''));
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = 'Delete';
+      delBtn.addEventListener('click', () => deleteEvent(evId, evName));
+
+      tdAct.appendChild(editBtn);
+      tdAct.appendChild(delBtn);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdDate);
+      tr.appendChild(tdPhotos);
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
     }
-    events.forEach(ev => {
-        if(tbody) {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${escapeAttr(ev.name)}</td>
-                    <td>${ev.event_date || '-'}</td>
-                    <td>${ev.photo_count || 0}</td>
-                    <td>
-                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
-                    </td>
-                </tr>`;
-        }
-        if(uploadSelect) uploadSelect.innerHTML += `<option value="${ev.event_id}">${escapeAttr(ev.name)}</option>`;
-        if(linkList) {
-            linkList.innerHTML += `
-                <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
-                    <input type="checkbox" value="${ev.event_id}" class="link-check"> ${escapeAttr(ev.name)}
-                </label>`;
-        }
-    });
+
+    if(uploadSelect){
+      const opt = document.createElement('option');
+      opt.value = evId;
+      opt.textContent = evName;
+      uploadSelect.appendChild(opt);
+    }
+
+    if(linkList){
+      const label = document.createElement('label');
+      label.style.cssText = "display:block; margin-bottom:5px; font-size:13px; cursor:pointer;";
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = evId;
+      cb.className = 'link-check';
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(' ' + evName));
+      linkList.appendChild(label);
+    }
+  }
 }
+
+/* ======================= INIT ======================= */
 async function init() {
-    const eventsError = document.getElementById('eventsError');
-    eventsError.style.display = 'none';
-    try {
-        const {json} = await apiFetch('get-events', GET_EVENTS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        const data = json || {};
-        const summary = data.collection_summary || {};
-        document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-        document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
-        document.getElementById('totalLeads').textContent = summary.leads_count || 0;
-        document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
-        document.title = `${summary.name || 'Collection'} • Manager`;
-        renderEvents(data.events || []);
-    } catch (e) {
-        console.error("Init failed:", e);
-        document.getElementById('collectionName').textContent = "Error Loading";
-        eventsError.innerHTML = `Failed to load events: ${e.message} <button class="btn secondary retry-btn" onclick="init()">Retry</button>`;
-        eventsError.style.display = 'block';
-        dbgAdd({ok: false, type: 'INIT', label: 'get-events', ts: Date.now(), details: e.message});
-    }
+  try {
+    const {json} = await apiFetch('get-events', GET_EVENTS_API, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+
+    const data = json || {};
+    const summary = data.collection_summary || {};
+    $('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+    $('totalPhotos').textContent = summary.photo_count || 0;
+    $('totalLeads').textContent = summary.leads_count || 0;
+    $('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
+    document.title = `${summary.name || 'Collection'} • Manager`;
+
+    renderEvents(data.events || []);
+    populateAssistantLink();
+    populateUploadEventInvalidStyle();
+  } catch (e) {
+    console.error("Init failed:", e);
+    $('collectionName').textContent = "Error Loading";
+  }
 }
+
+function populateAssistantLink(){
+  const a = $('assistantLink');
+  if(!a) return;
+  a.href = `quick-upload.html?id=${encodeURIComponent(collectionId || '')}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
+}
+function populateUploadEventInvalidStyle(){
+  const sel = $('uploadEventSelect');
+  if(!sel) return;
+  // make placeholder grey by using required + invalid style
+  sel.required = true;
+}
+
+/* ======================= PEOPLE DIRECTORY ======================= */
 async function fetchPeopleDirectory() {
-    try {
-        const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        if (!res.ok) return [];
-        directoryPeople = (json && json.people) ? json.people : [];
-        return directoryPeople;
-    } catch (e) {
-        console.error('Directory fetch failed:', e);
-        return [];
-    }
+  try {
+    const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+    if (!res?.ok) return [];
+    directoryPeople = Array.isArray(json?.people) ? json.people : [];
+    return directoryPeople;
+  } catch {
+    return [];
+  }
 }
+
+/* ======================= FACES MAP (merge-safe) ======================= */
 function buildLocalFaceMap() {
-    faceGroups = {};
-    allPhotos.forEach(photo => {
-        const fids = photo.face_ids || (photo.faces ? photo.faces.map(f => f.FaceId || f.faceId).filter(Boolean) : []);
-        fids.forEach(fid => {
-            if (!fid) return;
-            if (!faceGroups[fid]) {
-                faceGroups[fid] = {
-                    id: fid,
-                    name: 'Unknown',
-                    thumbnail: null,
-                    count: 0,
-                    photos: [],
-                    hasZoomData: false,
-                    boundingBox: null,
-                    emotions: []
-                };
-            }
-            faceGroups[fid].photos.push(photo);
-            faceGroups[fid].count++;
-            let faceData = photo.faces ? photo.faces.find(f => (f.FaceId === fid || f.faceId === fid)) : null;
-            if (faceData) {
-                const hasZoom = faceData.BoundingBox;
-                if (!faceGroups[fid].thumbnail || (!faceGroups[fid].hasZoomData && hasZoom)) {
-                    faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
-                    faceGroups[fid].hasZoomData = !!hasZoom;
-                    faceGroups[fid].boundingBox = faceData.BoundingBox;
-                    faceGroups[fid].emotions = faceData.Emotions || [];
-                }
-            }
-        });
-    });
-}
-async function enhanceFacesFromDirectory() {
-    const people = await fetchPeopleDirectory();
-    if(!people || people.length === 0) return;
-    people.forEach(p => {
-        const fid = p.FaceId || p.face_id || p.faceId;
-        if(!fid || !faceGroups[fid]) return;
-        if(p.FaceName && p.FaceName !== "Unknown") faceGroups[fid].name = p.FaceName;
-    });
-    // Advanced Merge: Similarity-based (skip if no box to avoid errors)
-    const mergedGroups = {};
-    const groupList = Object.values(faceGroups).filter(g => g.boundingBox); // Only with box
-    for (let i = 0; i < groupList.length; i++) {
-        let group = groupList[i];
-        let merged = false;
-        for (let j = i + 1; j < groupList.length; j++) {
-            let other = groupList[j];
-            if (group.name !== 'Unknown' && other.name !== 'Unknown' && group.name !== other.name) continue;
-            const sim = calculateSimilarity(group, other);
-            if (sim > 0.7) { // Threshold
-                if (group.count > other.count) {
-                    other.photos.forEach(p => group.photos.push(p));
-                    group.count += other.count;
-                    if (other.hasZoomData && !group.hasZoomData) {
-                        group.thumbnail = other.thumbnail;
-                        group.hasZoomData = true;
-                    }
-                } else {
-                    group.photos.forEach(p => other.photos.push(p));
-                    other.count += group.count;
-                    if (group.hasZoomData && !other.hasZoomData) {
-                        other.thumbnail = group.thumbnail;
-                        other.hasZoomData = true;
-                    }
-                }
-                merged = true;
-                delete faceGroups[other.id];
-                break;
-            }
-        }
-        if (!merged) {
-            const key = group.name === 'Unknown' ? group.id : group.name.toLowerCase();
-            if (!mergedGroups[key]) mergedGroups[key] = group;
-            else {
-                mergedGroups[key].photos.push(...group.photos);
-                mergedGroups[key].count += group.count;
-            }
-        }
+  faceGroups = {};
+  for(const photo of allPhotos){
+    const fids = Array.isArray(photo.face_ids) ? photo.face_ids : [];
+    for(const fid of fids){
+      if(!fid) continue;
+      if(!faceGroups[fid]){
+        faceGroups[fid] = { ids:[fid], id: fid, name:'Unknown', thumbnail:null, count:0, photos:[], hasZoomData:false };
+      }
+      const g = faceGroups[fid];
+      g.photos.push(photo);
+      g.count++;
+
+      let faceData = null;
+      if(Array.isArray(photo.faces)) faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
+      const hasZoom = !!(faceData && faceData.BoundingBox);
+
+      if(!g.thumbnail || (!g.hasZoomData && hasZoom)){
+        g.thumbnail = photo.thumbnail_url || photo.url;
+        if(hasZoom) g.hasZoomData = true;
+      }
     }
-    // Add non-merged groups
-    Object.keys(faceGroups).forEach(fid => {
-        if (!mergedGroups[fid] && faceGroups[fid].boundingBox === null) {
-            mergedGroups[fid] = faceGroups[fid];
-        }
-    });
-    Object.values(mergedGroups).forEach(g => {
-        g.photos = [...new Set(g.photos)];
-        g.count = g.photos.length;
-    });
-    faceGroups = mergedGroups;
+  }
 }
+
+async function enhanceFacesFromDirectory(){
+  const people = await fetchPeopleDirectory();
+  if(!people?.length) return;
+
+  for(const p of people){
+    const fid = p.FaceId || p.face_id || p.faceId;
+    if(!fid) continue;
+    if(faceGroups[fid] && p.FaceName && p.FaceName !== "Unknown"){
+      faceGroups[fid].name = p.FaceName;
+    }
+  }
+
+  // Merge by name but keep all ids
+  const merged = {};
+  for(const g of Object.values(faceGroups)){
+    const key = (g.name && g.name !== 'Unknown') ? g.name : g.id;
+    if(!merged[key]){
+      merged[key] = {...g, ids:[...new Set(g.ids)]};
+    }else{
+      merged[key].photos.push(...g.photos);
+      merged[key].ids.push(...g.ids);
+      merged[key].ids = [...new Set(merged[key].ids)];
+      // pick better thumb
+      if(!merged[key].hasZoomData && g.hasZoomData){
+        merged[key].thumbnail = g.thumbnail;
+        merged[key].hasZoomData = true;
+        merged[key].id = g.id;
+      }
+    }
+  }
+  for(const m of Object.values(merged)){
+    m.photos = [...new Set(m.photos)];
+    m.count = m.photos.length;
+  }
+  faceGroups = merged;
+}
+
+/* ======================= FACE ICONS ======================= */
 function renderFaceIcons() {
-    const bar = document.getElementById('faceIconsBar');
-    bar.innerHTML = '';
-    bar.style.display = 'flex';
-    const entries = Object.values(faceGroups)
-        .filter(g => (g.count || 0) > 0)
-        .sort((a,b) => (b.count) - (a.count));
-    if (entries.length === 0) {
-        bar.style.display = 'none';
-        return;
+  const bar = $('faceIconsBar');
+  if(!bar) return;
+  bar.innerHTML = '';
+  const entries = Object.values(faceGroups)
+    .filter(g => (g.count || 0) > 0)
+    .sort((a,b) => (b.count||0) - (a.count||0));
+
+  if(entries.length === 0){ bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+
+  for(const group of entries){
+    const item = document.createElement('div');
+    item.className = 'face-item';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'face-icon-wrapper';
+    wrapper.dataset.faceId = group.id;
+    wrapper.style.cssText = `
+      width:55px;height:55px;border-radius:50%;
+      border:2px solid var(--brand); overflow:hidden; cursor:pointer;
+      position:relative; flex-shrink:0; background:#000;
+      transition:transform .2s, border-color .2s;
+    `;
+
+    const faceImg = document.createElement('div');
+    faceImg.style.width = '100%';
+    faceImg.style.height = '100%';
+    faceImg.style.backgroundRepeat = 'no-repeat';
+
+    const thumbUrl = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
+    faceImg.style.backgroundImage = `url('${thumbUrl}')`;
+
+    // zoom if bbox exists
+    let box = null;
+    const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
+    if(thumbPhoto?.faces){
+      let faceData = thumbPhoto.faces.find(f => f.FaceId === group.id);
+      if(!faceData && thumbPhoto.faces.length) faceData = thumbPhoto.faces[0];
+      if(faceData?.BoundingBox) box = faceData.BoundingBox;
     }
-    entries.forEach(group => {
-        const itemContainer = document.createElement('div');
-        itemContainer.className = 'face-item';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'face-icon-wrapper';
-        wrapper.dataset.faceId = group.id;
-        const faceImg = document.createElement('div');
-        faceImg.style.width = '100%';
-        faceImg.style.height = '100%';
-        faceImg.style.backgroundRepeat = 'no-repeat';
-        const thumbUrl = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
-        faceImg.style.backgroundImage = `url('${thumbUrl}')`;
-        let box = group.boundingBox;
-        if (box) {
-            const faceCX = (box.Left + box.Width / 2) * 100;
-            const faceCY = (box.Top + box.Height / 2) * 100;
-            let zoomPct = 65 / (box.Width || 0.2);
-            zoomPct = Math.max(100, Math.min(600, zoomPct));
-            faceImg.style.backgroundPosition = `${faceCX}% ${faceCY}%`;
-            faceImg.style.backgroundSize = `${zoomPct}% auto`;
-        } else {
-            faceImg.style.backgroundSize = 'cover';
-            faceImg.style.backgroundPosition = 'center';
-        }
-        wrapper.appendChild(faceImg);
-        const label = document.createElement('div');
-        label.className = 'face-name-label';
-        label.textContent = group.name || 'Unknown';
-        wrapper.oncontextmenu = (e) => {
-            e.preventDefault();
-            mergeMenuTarget = wrapper;
-            const menu = document.getElementById('mergeMenu');
-            menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
-        };
-        wrapper.onclick = (e) => {
-            e.stopPropagation();
-            const isMulti = e.shiftKey;
-            const faceId = group.id;
-            if (!isMulti) {
-                selectedFaces.clear();
-                selectedFaces.add(faceId);
-                document.querySelectorAll('.face-icon-wrapper').forEach(el => {
-                    el.classList.remove('selected', 'multi-selected');
-                });
-                wrapper.classList.add('selected');
-                showFacePhotos(faceId, group);
-            } else {
-                if (selectedFaces.has(faceId)) {
-                    selectedFaces.delete(faceId);
-                    wrapper.classList.remove('multi-selected');
-                } else {
-                    selectedFaces.add(faceId);
-                    wrapper.classList.add('multi-selected');
-                }
-                applyFilters();
-            }
-            document.getElementById('mergeMenu').style.display = 'none';
-        };
-        itemContainer.appendChild(wrapper);
-        itemContainer.appendChild(label);
-        bar.appendChild(itemContainer);
-    });
-    // Update selections
-    document.querySelectorAll('.face-icon-wrapper').forEach(el => {
-        if (selectedFaces.has(el.dataset.faceId)) {
-            el.classList.add(selectedFaces.size === 1 ? 'selected' : 'multi-selected');
-        }
-    });
-}
-function renderNextBatch() {
-    const container = document.getElementById('galleryContainer');
-    if (displayedPhotosCount >= filteredPhotos.length) {
-        document.getElementById('loadMoreBtn').style.display = 'none';
-        if (displayedPhotosCount === 0) container.innerHTML = '<p class="empty-state">No photos found. <button class="btn secondary" onclick="clearFilters()">Clear Filters</button></p>';
-        return;
+    if(box){
+      const faceCX = (box.Left + box.Width/2) * 100;
+      const faceCY = (box.Top + box.Height/2) * 100;
+      let zoomPct = 65 / (box.Width || 0.2);
+      zoomPct = Math.min(600, Math.max(100, zoomPct));
+      faceImg.style.backgroundPosition = `${faceCX}% ${faceCY}%`;
+      faceImg.style.backgroundSize = `${zoomPct}% auto`;
+    }else{
+      faceImg.style.backgroundSize = 'cover';
+      faceImg.style.backgroundPosition = 'center';
     }
-    const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
-    let lastDate = '';
-    nextBatch.forEach((photo, localIdx) => {
-        const globalIdx = displayedPhotosCount + localIdx;
-        const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
-        if (photoDate !== lastDate) {
-            const dateHeader = document.createElement('div');
-            dateHeader.className = 'date-header';
-            dateHeader.textContent = photoDate;
-            container.appendChild(dateHeader);
-            lastDate = photoDate;
-        }
-        const grids = container.querySelectorAll('.gallery-grid');
-        let targetGrid = grids[grids.length - 1];
-        if (!targetGrid) {
-            targetGrid = document.createElement('div');
-            targetGrid.className = 'gallery-grid';
-            container.appendChild(targetGrid);
-        }
-        const card = document.createElement('div');
-        card.className = 'photo-card';
-        card.onclick = () => openViewer(globalIdx);
-        const thumbnailUrl = photo.thumbnail_url || photo.url;
-        card.innerHTML = `<img src="${escapeAttr(thumbnailUrl)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.src='https://placehold.co/100x100/333/fff?text=?'">`;
-        targetGrid.appendChild(card);
-    });
-    displayedPhotosCount += nextBatch.length;
-    document.getElementById('loadMoreBtn').style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-flex' : 'none';
-}
-async function fetchPhotos() {
-    const container = document.getElementById('galleryContainer');
-    container.innerHTML = '<p class="loading">Loading photos...</p>';
-    try {
-        const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        const data = json || {};
-        allPhotos = (data.photos || []).map(p => ({
-            ...p,
-            face_ids: p.face_ids || (p.faces ? p.faces.map(f => f.FaceId || f.faceId).filter(Boolean) : []),
-            faces: Array.isArray(p.faces) ? p.faces : []
-        }));
-        filteredPhotos = [...allPhotos];
-        buildLocalFaceMap();
-        await enhanceFacesFromDirectory();
-        displayedPhotosCount = 0;
-        container.innerHTML = '';
-        applyFilters();
-        renderFaceIcons();
-    } catch (err) {
-        container.innerHTML = `<div class="error-state">Failed to load photos: ${err.message} <button class="btn secondary retry-btn" onclick="fetchPhotos()">Retry</button></div>`;
-        console.error('Photo fetch error:', err);
-    }
-}
-window.applyFilters = function() {
-    const type = document.getElementById('filterType').value;
-    const tagSearch = document.getElementById('tagSearch').value.toLowerCase().trim();
-    const searchTerms = tagSearch ? tagSearch.split(/[\s,]+/).filter(Boolean) : [];
-    filteredPhotos = allPhotos.filter(photo => {
-        // Tag filter
-        if (searchTerms.length > 0) {
-            const tags = (photo.tags || []).map(t => t.toLowerCase());
-            if (!searchTerms.some(term => tags.some(tag => tag.includes(term)))) return false;
-        }
-        // Type filter
-        if (type !== 'ALL') {
-            const faceCount = (photo.face_ids || []).length;
-            switch (type) {
-                case 'BEST': return faceCount >= 3;
-                case 'HAPPY': 
-                    return photo.faces?.some(f => f.Emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 50)) || faceCount > 0;
-                case 'GROUP': return faceCount >= 2;
-                default: return true;
-            }
-        }
-        // Face filter
-        if (selectedFaces.size > 0) {
-            const photoFaces = photo.face_ids || [];
-            return Array.from(selectedFaces).some(fid => photoFaces.includes(fid));
-        }
-        return true;
-    });
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-    renderFaceIcons();
-};
-window.clearFilters = function() {
-    document.getElementById('filterType').value = 'ALL';
-    document.getElementById('tagSearch').value = '';
-    selectedFaces.clear();
-    document.getElementById('faceNamingHeader').style.display = 'none';
-    document.querySelector('.filter-row-top').style.display = 'flex';
-    document.querySelectorAll('.face-icon-wrapper').forEach(el => el.classList.remove('selected', 'multi-selected'));
-    applyFilters();
-};
-/* ======================= TABS ======================= */
-window.switchTab = function(tabId) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-    document.getElementById(tabId).classList.add('active');
-    if(tabId === 'galleryTab') {
-        if(allPhotos.length === 0) fetchPhotos();
-        else {
-            displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
-            applyFilters();
-        }
-    } else if (tabId === 'analyticsTab') {
-        fetchAnalytics();
-    } else if (tabId === 'eventsTab') {
-        init();
-    } else if (tabId === 'uploadTab') {
-        init(); // Refresh events
-    }
-};
-/* ======================= GALLERY / FACES ADVANCE ======================= */
-window.showFacePhotos = function(faceId, groupObj) {
-    const group = groupObj || faceGroups[faceId];
-    if (!group) return;
-    currentNamingFaceId = group.id;
-    const header = document.getElementById('faceNamingHeader');
-    document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60/333/fff?text=?";
-    document.getElementById('faceNameInput').value = group.name !== 'Unknown' ? group.name : '';
-    document.getElementById('faceHeaderTitle').textContent = group.name !== 'Unknown' ? `Photos of ${group.name} (${group.count})` : "Who is this?";
-    document.getElementById('faceHint').textContent = `Found in ${group.count} photos. Enter name to save & merge.`;
-    header.style.display = 'flex';
-    document.querySelector('.filter-row-top').style.display = 'none';
-    filteredPhotos = [...group.photos];
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-};
-window.cancelFaceNaming = function() {
-    document.getElementById('faceNamingHeader').style.display = 'none';
-    document.querySelector('.filter-row-top').style.display = 'flex';
-    currentNamingFaceId = null;
-    document.getElementById('faceNameInput').value = '';
-    document.getElementById('faceSuggestions').style.display = 'none';
-    clearFilters();
-};
-window.saveFaceName = async function() {
-    const name = document.getElementById('faceNameInput').value.trim();
-    if (!name || name === 'Unknown') return alert('Enter a valid name');
-    try {
-        await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name })
-        });
-        if (faceGroups[currentNamingFaceId]) {
-            faceGroups[currentNamingFaceId].name = name;
-            await enhanceFacesFromDirectory();
-            renderFaceIcons();
-        }
-        cancelFaceNaming();
-        alert('Name saved & merged!');
-    } catch (e) {
-        alert('Save failed: ' + e.message);
-    }
-};
-window.mergeSelectedFaces = async function() {
-    if (selectedFaces.size < 2) return alert('Select at least 2 faces to merge');
-    const faceIds = Array.from(selectedFaces);
-    const targetId = faceIds[0];
-    const name = faceGroups[targetId].name !== 'Unknown' ? faceGroups[targetId].name : prompt('Enter name for merged group:');
-    if (!name) return;
-    try {
-        await apiFetch('merge-faces', MERGE_FACES_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, face_ids: faceIds, target_name: name })
-        });
+
+    wrapper.appendChild(faceImg);
+
+    const label = document.createElement('div');
+    label.className = 'face-name-label';
+    label.textContent = group.name || 'Unknown';
+
+    wrapper.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const isMulti = e.shiftKey;
+      const faceId = group.id;
+
+      if(!isMulti){
         selectedFaces.clear();
-        await fetchPhotos(); // Refresh
-        document.getElementById('mergeMenu').style.display = 'none';
-    } catch (e) {
-        alert('Merge failed: ' + e.message);
-    }
-};
-window.suggestMerge = function() {
-    const suggestions = [];
-    Array.from(selectedFaces).forEach(fid1 => {
-        Object.keys(faceGroups).forEach(fid2 => {
-            if (fid1 !== fid2 && !selectedFaces.has(fid2) && faceGroups[fid2].boundingBox) {
-                const sim = calculateSimilarity(faceGroups[fid1], faceGroups[fid2]);
-                if (sim > 0.6) suggestions.push({id: fid2, sim});
-            }
+        selectedFaces.add(faceId);
+        document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
+          el.style.borderColor='var(--brand)'; el.style.transform='scale(1)';
         });
-    });
-    if (suggestions.length > 0) {
-        const suggIds = suggestions.slice(0,3).map(s => s.id);
-        suggIds.forEach(id => selectedFaces.add(id));
-        renderFaceIcons();
-        alert(`Added ${suggestions.length} similar faces to selection.`);
-    } else {
-        alert('No similar faces found.');
-    }
-    document.getElementById('mergeMenu').style.display = 'none';
-};
-document.addEventListener('click', () => document.getElementById('mergeMenu').style.display = 'none');
-window.openViewer = function(idx) {
-    if(!filteredPhotos[idx]) return;
-    viewerIndex = idx;
-    document.getElementById('viewerImg').src = filteredPhotos[idx].url;
-    document.getElementById('viewer').classList.add('open');
-};
-window.closeViewer = function() {
-    document.getElementById('viewer').classList.remove('open');
-};
-/* ======================= DOWNLOAD ======================= */
-window.downloadAllZip = async function(btn) {
-    if (filteredPhotos.length === 0) return alert('No photos to download');
-    btn.disabled = true;
-    btn.innerHTML = 'Zipping... ⏳';
-    try {
-        const zip = new JSZip();
-        const collectionName = document.getElementById('collectionName').textContent.replace(/[^a-z0-9]/gi, '_');
-        for (const photo of filteredPhotos) {
-            const resp = await fetch(photo.url);
-            const blob = await resp.blob();
-            zip.file(photo.filename || `photo_${Date.now()}.jpg`, blob);
+        wrapper.style.borderColor='var(--ok)';
+        wrapper.style.transform='scale(1.15)';
+        showFacePhotos(faceId, group);
+        return;
+      }
+
+      // multi select
+      if(selectedFaces.has(faceId)) selectedFaces.delete(faceId);
+      else selectedFaces.add(faceId);
+
+      document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
+        if(selectedFaces.has(el.dataset.faceId)){
+          el.style.borderColor='var(--ok)';
+          el.style.transform='scale(1.05)';
+        }else{
+          el.style.borderColor='var(--brand)';
+          el.style.transform='scale(1)';
         }
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `${collectionName}.zip`);
-    } catch (e) {
-        alert('Download failed: ' + e.message);
-        dbgAdd({ok: false, type: 'DOWNLOAD', label: 'zip', ts: Date.now(), details: e.message});
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '⬇ Download Zip';
-    }
-};
-/* ======================= EVENTS ======================= */
-async function createEvent() {
-    const name = document.getElementById('eventName').value.trim();
-    const date = document.getElementById('eventDate').value;
-    if(!name) return alert('Name required');
-    try {
-        await apiFetch('upsert-event(create)', UPSERT_EVENT_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, name, event_date: date || null })
-        });
-        document.getElementById('eventForm').style.display = 'none';
-        document.getElementById('eventName').value = '';
-        document.getElementById('eventDate').value = '';
-        init();
-    } catch (e) {
-        alert('Create failed: ' + e.message);
-    }
+      });
+      applyFilters();
+    });
+
+    item.appendChild(wrapper);
+    item.appendChild(label);
+    bar.appendChild(item);
+  }
 }
-async function updateEvent(eventId) {
-    const name = document.getElementById('eventName').value.trim();
-    const date = document.getElementById('eventDate').value;
-    if(!name) return alert('Name required');
-    try {
-        await apiFetch('upsert-event(update)', UPSERT_EVENT_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date || null })
-        });
-        document.getElementById('eventForm').style.display = 'none';
-        document.getElementById('saveEventBtn').textContent = "Save";
-        document.getElementById('saveEventBtn').onclick = createEvent;
-        document.getElementById('eventName').value = '';
-        document.getElementById('eventDate').value = '';
-        init();
-    } catch (e) {
-        alert('Update failed: ' + e.message);
-    }
+
+/* ======================= GALLERY RENDER (date header fixed) ======================= */
+function resetGalleryRender(){
+  displayedPhotosCount = 0;
+  lastRenderedDate = null;
+  currentGridEl = null;
+  const container = $('galleryContainer');
+  if(container) container.innerHTML = '';
 }
-window.editEvent = function(eventId, name, date) {
-    document.getElementById('eventName').value = name;
-    document.getElementById('eventDate').value = date;
-    const btn = document.getElementById('saveEventBtn');
-    btn.textContent = "Update";
-    btn.onclick = () => updateEvent(eventId);
-    document.getElementById('eventForm').style.display = 'block';
-};
-window.deleteEvent = async function(eventId, name) {
-    if (!confirm(`Delete "${name}"? This can't be undone.`)) return;
-    try {
-        await apiFetch('delete-event', DELETE_EVENT_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
-        });
-        init();
-    } catch (e) {
-        alert('Delete failed: ' + e.message);
-    }
-};
-/* ======================= UPLOAD PREMIUM ======================= */
-function updateFileList() {
-    const list = document.getElementById('fileList');
-    const uploadError = document.getElementById('uploadError');
-    list.innerHTML = selectedFiles.map(f => `<div>${escapeAttr(f.name)} (${formatBytes(f.size)})</div>`).join('');
-    list.style.display = selectedFiles.length > 0 ? 'block' : 'none';
-    document.getElementById('uploadControls').style.display = selectedFiles.length > 0 ? 'flex' : 'none';
-    document.getElementById('startUploadBtn').disabled = selectedFiles.length === 0;
-    uploadError.style.display = 'none';
+
+function ensureDateSection(container, photoDate){
+  if(photoDate !== lastRenderedDate){
+    const header = document.createElement('div');
+    header.className = 'date-header';
+    header.textContent = photoDate;
+    container.appendChild(header);
+
+    currentGridEl = document.createElement('div');
+    currentGridEl.className = 'gallery-grid';
+    container.appendChild(currentGridEl);
+
+    lastRenderedDate = photoDate;
+  }
 }
-document.getElementById('dropZone').ondragover = (e) => { e.preventDefault(); e.currentTarget.style.background = 'rgba(66,133,244,0.1)'; };
-document.getElementById('dropZone').ondragleave = (e) => { e.currentTarget.style.background = 'linear-gradient(145deg, #151515, #1a1a1a)'; };
-document.getElementById('dropZone').ondrop = (e) => {
-    e.preventDefault();
-    selectedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.name.toLowerCase().match(/\.(heic|webp|gif)$/));
-    updateFileList();
-    e.currentTarget.style.background = 'linear-gradient(145deg, #151515, #1a1a1a)';
-};
-document.getElementById('fileInput').onchange = (e) => {
-    selectedFiles = Array.from(e.target.files).filter(f => f.type.startsWith('image/') || f.name.toLowerCase().match(/\.(heic|webp|gif)$/));
-    updateFileList();
-};
-document.getElementById('clearFilesBtn').onclick = () => {
-    selectedFiles = [];
-    document.getElementById('fileInput').value = '';
-    updateFileList();
-};
-document.getElementById('startUploadBtn').onclick = async function() {
-    const spinner = this.querySelector('.spinner');
-    spinner.style.display = 'inline-block';
-    this.disabled = true;
-    await handleFiles();
-    spinner.style.display = 'none';
-    this.disabled = false;
-};
-async function handleFiles() {
-    if (!selectedFiles.length) return alert('No files selected');
-    const eventId = document.getElementById('uploadEventSelect').value;
-    if (!eventId) return alert('Select an event first');
-    const optimize = document.getElementById('optimizeToggle').checked;
-    const maxW = parseInt(document.getElementById('maxWidthSelect').value);
-    const quality = parseFloat(document.getElementById('jpegQuality').value);
-    const convert = document.getElementById('convertUnsupported').checked;
-    const progressBar = document.getElementById('progress-bar');
-    const status = document.getElementById('uploadStatus');
-    const container = document.getElementById('progress-container');
-    const uploadError = document.getElementById('uploadError');
-    uploadError.style.display = 'none';
+
+function renderNextBatch() {
+  const container = $('galleryContainer');
+  if(!container) return;
+
+  const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
+  for(const photo of nextBatch){
+    const photoDate = photo.created_at
+      ? new Date(photo.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+      : 'Unknown Date';
+
+    ensureDateSection(container, photoDate);
+
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    const idx = displayedPhotosCount; // approx; fix exact by computing after push
+    // We'll open by calculating from container render count:
+    const openIdx = displayedPhotosCount + (container.querySelectorAll('.photo-card').length % PHOTOS_BATCH_SIZE); // ok-ish
+    card.addEventListener('click', ()=> openViewer(openIdx));
+
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.src = photo.thumbnail_url || photo.url;
+    img.addEventListener('load', ()=> img.classList.add('loaded'));
+    img.addEventListener('error', ()=> { card.style.display='none'; });
+
+    card.appendChild(img);
+    currentGridEl.appendChild(card);
+    displayedPhotosCount++;
+  }
+
+  const btn = $('loadMoreBtn');
+  if(btn) btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
+}
+
+async function fetchPhotos() {
+  const container = $('galleryContainer');
+  if(container) container.innerHTML = '<p class="loading">Loading photos...</p>';
+
+  try{
+    const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+
+    const data = json || {};
+    allPhotos = (data.photos || []).map(p=>{
+      p.face_ids = Array.isArray(p.face_ids) ? p.face_ids : [];
+      p.faces = Array.isArray(p.faces) ? p.faces : [];
+      if(p.face_ids.length === 0 && p.faces.length){
+        p.face_ids = p.faces.map(f=>f.FaceId).filter(Boolean);
+      }
+      return p;
+    });
+
+    filteredPhotos = [...allPhotos];
+    buildLocalFaceMap();
+    await enhanceFacesFromDirectory();
+    renderFaceIcons();
+    applyFilters();
+  }catch(err){
+    if(container) container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Open Debug panel.</p>';
+    console.error(err);
+  }
+}
+
+/* ======================= FILTERS ======================= */
+function applyFilters(){
+  const type = $('filterType')?.value || 'ALL';
+  const tagSearch = ($('tagSearch')?.value || '').toLowerCase().trim();
+  const searchTerms = tagSearch ? tagSearch.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean) : [];
+  const container = $('galleryContainer');
+
+  filteredPhotos = allPhotos.filter(photo=>{
+    // Tags
+    if(searchTerms.length){
+      const tags = Array.isArray(photo.tags) ? photo.tags : [];
+      const has = tags.some(t=>{
+        const lt = String(t || '').toLowerCase();
+        return searchTerms.some(term => lt.includes(term));
+      });
+      if(!has) return false;
+    }
+
+    // Type
+    if(type !== 'ALL'){
+      const faceCount = Array.isArray(photo.face_ids) ? photo.face_ids.length : 0;
+      if(type === 'BEST' && faceCount < 3) return false;
+      if(type === 'GROUP' && faceCount < 2) return false;
+      if(type === 'HAPPY'){
+        const hasHappy = photo.faces?.some(f => f?.Emotions?.some(e => e.Type === 'HAPPY' && (e.Confidence || 0) > 50)) || faceCount > 0;
+        if(!hasHappy) return false;
+      }
+    }
+
+    // Face multi-filter (support merged ids)
+    if(selectedFaces.size){
+      const photoFaces = Array.isArray(photo.face_ids) ? photo.face_ids : [];
+      return Array.from(selectedFaces).some(fid => photoFaces.includes(fid));
+    }
+    return true;
+  });
+
+  if(!container) return;
+
+  if(filteredPhotos.length === 0){
+    container.innerHTML = `<p class="empty-state">No photos match your search. <button class="btn secondary" onclick="clearFilters()">Clear Filters</button></p>`;
+    if($('loadMoreBtn')) $('loadMoreBtn').style.display='none';
+    return;
+  }
+
+  resetGalleryRender();
+  renderNextBatch();
+}
+
+window.applyFilters = applyFilters;
+
+function clearFilters(){
+  if($('filterType')) $('filterType').value = 'ALL';
+  if($('tagSearch')) $('tagSearch').value = '';
+  selectedFaces.clear();
+
+  document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
+    el.style.borderColor = 'var(--brand)';
+    el.style.transform = 'scale(1)';
+  });
+
+  if($('faceNamingHeader')) $('faceNamingHeader').style.display = 'none';
+  const fr = document.querySelector('.filter-row-top');
+  if(fr) fr.style.display = 'flex';
+  currentNamingFaceId = null;
+
+  applyFilters();
+}
+window.clearFilters = clearFilters;
+
+/* ======================= FACE VIEW + NAMING ======================= */
+function showFacePhotos(faceId, groupObj){
+  const group = groupObj || faceGroups[faceId];
+  if(!group) return;
+
+  currentNamingFaceId = group.id;
+  $('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
+  $('faceNameInput').value = (group.name && group.name !== 'Unknown') ? group.name : '';
+  $('faceHeaderTitle').textContent = (group.name && group.name !== 'Unknown') ? `Photos of ${group.name}` : "Who is this?";
+  $('faceHint').textContent = "Enter name to merge similar faces.";
+  $('faceNamingHeader').style.display = 'flex';
+
+  const fr = document.querySelector('.filter-row-top');
+  if(fr) fr.style.display = 'none';
+
+  filteredPhotos = group.photos;
+  resetGalleryRender();
+  renderNextBatch();
+}
+window.showFacePhotos = showFacePhotos;
+
+function cancelFaceNaming(){
+  if($('faceNamingHeader')) $('faceNamingHeader').style.display = 'none';
+  const fr = document.querySelector('.filter-row-top');
+  if(fr) fr.style.display = 'flex';
+
+  currentNamingFaceId = null;
+  selectedFaces.clear();
+  document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
+    el.style.borderColor='var(--brand)';
+    el.style.transform='scale(1)';
+  });
+  applyFilters();
+}
+window.cancelFaceNaming = cancelFaceNaming;
+
+async function saveFaceName(){
+  const name = ($('faceNameInput')?.value || '').trim();
+  if(!name || name === 'Unknown') return alert('Enter a valid name');
+
+  try{
+    await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name })
+    });
+
+    // update local group name
+    for(const g of Object.values(faceGroups)){
+      if(g.id === currentNamingFaceId) g.name = name;
+    }
+    renderFaceIcons();
+    cancelFaceNaming();
+  }catch{
+    alert('Save failed');
+  }
+}
+window.saveFaceName = saveFaceName;
+
+/* ======================= VIEWER ======================= */
+let viewerIndex = 0;
+function openViewer(idx){
+  if(!filteredPhotos[idx]) return;
+  viewerIndex = idx;
+  $('viewerImg').src = filteredPhotos[idx].url;
+  $('viewer').classList.add('open');
+}
+function closeViewer(e){
+  if(e) e.stopPropagation();
+  $('viewer').classList.remove('open');
+}
+window.openViewer = openViewer;
+window.closeViewer = closeViewer;
+
+/* ======================= DOWNLOAD ZIP (basic safer names) ======================= */
+async function downloadAllZip(btn){
+  if(!filteredPhotos.length) return alert('No photos to download');
+  btn.disabled = true;
+  const old = btn.textContent;
+  btn.textContent = 'Zipping...';
+
+  try{
+    const zip = new JSZip();
+    const collectionName = $('collectionName').textContent || 'collection';
+    let i = 0;
+
+    for(const photo of filteredPhotos){
+      i++;
+      const resp = await fetch(photo.url);
+      const blob = await resp.blob();
+      const base = photo.filename ? safeText(photo.filename) : `photo_${i}.jpg`;
+      const safeName = base.replace(/[^a-z0-9._-]/gi,'_');
+      zip.file(`${String(i).padStart(4,'0')}_${safeName}`, blob);
+    }
+
+    const content = await zip.generateAsync({ type:"blob" });
+    saveAs(content, `${collectionName.replace(/[^a-z0-9]/gi,'_')}.zip`);
+  }catch(e){
+    alert('Download failed');
+    console.error(e);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+}
+window.downloadAllZip = downloadAllZip;
+
+/* ======================= EVENTS (single handler, no double call) ======================= */
+function openCreateEvent(){
+  eventState.mode = 'create';
+  eventState.eventId = null;
+  $('eventName').value = '';
+  $('eventDate').value = '';
+  $('eventForm').style.display = 'block';
+  $('saveEventBtn').textContent = 'Save';
+}
+function openEditEvent(eventId, name, date){
+  eventState.mode = 'update';
+  eventState.eventId = eventId;
+  $('eventName').value = name || '';
+  $('eventDate').value = date || '';
+  $('eventForm').style.display = 'block';
+  $('saveEventBtn').textContent = 'Update';
+}
+
+async function saveEvent(){
+  const name = ($('eventName').value || '').trim();
+  const date = $('eventDate').value || '';
+  if(!name) return alert('Name required');
+
+  const payload = { collection_id: collectionId, name, event_date: date };
+  if(eventState.mode === 'update' && eventState.eventId){
+    payload.event_id = eventState.eventId;
+  }
+
+  await apiFetch(`upsert-event(${eventState.mode})`, UPSERT_EVENT_API, {
+    method:'POST',
+    headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  $('eventForm').style.display = 'none';
+  eventState.mode = 'create';
+  eventState.eventId = null;
+  await init();
+}
+async function deleteEvent(eventId, name){
+  if(!confirm(`Delete ${name}?`)) return;
+  try{
+    await apiFetch('delete-event', DELETE_EVENT_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
+    });
+    await init();
+  }catch(e){
+    alert('Delete failed.');
+    console.error(e);
+  }
+}
+
+/* ======================= UPLOAD (same logic, minor hardening) ======================= */
+async function handleFiles(files){
+  if(!files?.length) return;
+  const eventId = $('uploadEventSelect').value;
+  if(!eventId) return alert('Select event');
+
+  const optimize = $('optimizeToggle').checked;
+  const maxW = parseInt($('maxWidthSelect').value, 10);
+  const quality = parseFloat($('jpegQuality').value);
+  const convert = $('convertUnsupported').checked;
+
+  try{
+    const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, count: files.length })
+    });
+
+    const urls = json?.urls || [];
+    if(urls.length < files.length) return alert('Not enough upload URLs generated');
+
+    const progressBar = $('progress-bar');
+    const status = $('uploadStatus');
+    const container = $('progress-container');
     container.style.display = 'block';
     progressBar.style.width = '0%';
-    status.textContent = 'Generating URLs...';
+    status.textContent = '';
     status.className = '';
-    try {
-        const {json} = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, count: selectedFiles.length }) // Ensure event_id present
-        });
-        const urls = json?.urls || [];
-        if (urls.length < selectedFiles.length) throw new Error(`Only ${urls.length} URLs generated, need ${selectedFiles.length}. Backend issue?`);
-        let uploaded = 0;
-        for (let i = 0; i < selectedFiles.length; i++) {
-            let file = selectedFiles[i];
-            let blob = file;
-            // HEIC convert
-            if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
-                blob = await heic2any({blob: file, toType: "image/jpeg", quality: 0.8});
-            }
-            // Convert unsupported
-            if (convert && !['image/jpeg', 'image/jpg'].includes(blob.type)) {
-                blob = await imageToJpeg(blob, quality);
-            }
-            // Resize
-            if (optimize && maxW > 0) {
-                blob = await resizeImage(blob, maxW, quality);
-            }
-            // Upload
-            const resp = await fetch(urls[i], {
-                method: 'PUT',
-                body: blob,
-                headers: { 'Content-Type': 'image/jpeg' }
-            });
-            if (!resp.ok) throw new Error(`Upload failed for ${file.name}: ${resp.status} - Check file format/size`);
-            uploaded++;
-            const pct = ((i + 1) / selectedFiles.length) * 100;
-            progressBar.style.width = `${pct}%`;
-            status.textContent = `Uploading... ${i + 1}/${selectedFiles.length}`;
+
+    let uploaded = 0;
+
+    for(let i=0;i<files.length;i++){
+      const file = files[i];
+      let blob = file;
+
+      // basic format detection
+      const mime = (file.type || blob.type || '').toLowerCase();
+
+      // HEIC/HEIF (some phones)
+      if(mime.includes('heic') || mime.includes('heif')){
+        try{
+          blob = await heic2any({ blob: file, toType: "image/jpeg", quality });
+        }catch(e){
+          console.warn('HEIC conversion failed:', e);
         }
-        status.className = 'success';
-        status.textContent = `Success! ${uploaded}/${selectedFiles.length} uploaded.`;
-        setTimeout(() => {
-            selectedFiles = [];
-            updateFileList();
-            fetchPhotos();
-            init();
-        }, 2000);
-    } catch (e) {
-        status.className = 'error';
-        status.textContent = `Error: ${e.message}`;
-        uploadError.innerHTML = `${e.message} <button class="btn secondary retry-btn" onclick="handleFiles()">Retry Upload</button>`;
-        uploadError.style.display = 'block';
+      }
+
+      if(convert){
+        const bt = (blob.type || '').toLowerCase();
+        if(!['image/jpeg','image/jpg','image/png'].includes(bt)){
+          try{ blob = await imageToJpeg(blob, quality); }
+          catch(e){ console.warn('Conversion failed:', e); }
+        }
+      }
+
+      if(optimize && maxW > 0){
+        blob = await resizeImage(blob, maxW, quality);
+      }
+
+      const resp = await fetch(urls[i], {
+        method:'PUT',
+        body: blob,
+        headers:{ 'Content-Type': blob.type || 'image/jpeg' }
+      });
+      if(!resp.ok) throw new Error(`Upload failed for ${file.name}`);
+
+      uploaded++;
+      const pct = ((i+1)/files.length)*100;
+      progressBar.style.width = `${pct}%`;
+      status.textContent = `Uploaded ${i+1}/${files.length}`;
     }
+
+    status.className = uploaded === files.length ? 'success' : 'error';
+    status.textContent = uploaded === files.length ? 'All uploaded successfully!' : `Completed with ${uploaded}/${files.length} successes`;
+
+    setTimeout(async ()=>{
+      await fetchPhotos();
+      await init();
+    }, 1200);
+
+  }catch(e){
+    $('uploadStatus').textContent = `Error: ${e.message}`;
+    $('uploadStatus').className = 'error';
+  }
 }
-['optimizeToggle', 'convertUnsupported'].forEach(id => {
-    const cb = document.getElementById(id);
-    const label = document.getElementById(id + 'Label');
-    cb.onchange = () => label.classList.toggle('active', cb.checked);
-    if (label) label.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
-});
-document.getElementById('jpegQuality').oninput = (e) => {
-    document.getElementById('jpegQualityVal').textContent = e.target.value;
-};
+
 /* ======================= LINKS ======================= */
-window.copyLink = function() {
-    const link = document.getElementById('generatedLink').href;
-    navigator.clipboard.writeText(link).then(() => {
-        const btn = event.target;
-        const orig = btn.textContent;
-        btn.textContent = 'Copied! ✅';
-        btn.style.background = 'var(--ok)';
-        setTimeout(() => { 
-            btn.textContent = orig; 
-            btn.style.background = ''; 
-        }, 2000);
-    }).catch(() => alert('Copy failed - manual copy the link'));
-};
-document.getElementById('genLinkBtn').onclick = async function() {
-    const spinner = this.querySelector('.spinner');
-    spinner.style.display = 'inline-block';
-    this.disabled = true;
-    const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
-    if (selected.length === 0) return alert('Select at least one event');
-    const expiry = parseInt(document.getElementById('expiryHours').value) || 0;
-    const password = document.getElementById('linkPassword').value || null;
-    const linkError = document.getElementById('linkError');
-    linkError.style.display = 'none';
-    try {
-        const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                collection_id: collectionId, 
-                event_ids: selected,
-                expiry_hours: expiry,
-                password 
-            })
-        });
-        const data = json || {};
-        const box = document.getElementById('linkResult');
-        const linkEl = document.getElementById('generatedLink');
-        linkEl.href = data.searchUrl || '#';
-        linkEl.textContent = data.searchUrl || 'No URL generated - check backend';
-        box.style.display = 'block';
-    } catch (e) {
-        linkError.innerHTML = `${e.message} <button class="btn secondary retry-btn" onclick="this.parentElement.parentElement.querySelector('.btn').onclick()">Retry</button>`;
-        linkError.style.display = 'block';
-    } finally {
-        spinner.style.display = 'none';
-        this.disabled = false;
-    }
-};
-/* ======================= ANALYTICS ======================= */
-async function fetchLeadsData() {
-    const leadsError = document.getElementById('leadsError');
-    const noMsg = document.getElementById('noLeadsMessage');
-    const retryBtn = document.getElementById('retryLeadsBtn');
-    leadsError.style.display = 'none';
-    noMsg.style.display = 'none';
-    retryBtn.style.display = 'none';
-    noMsg.innerHTML = 'Loading leads... <span class="spinner"></span>';
-    noMsg.style.display = 'block';
-    try {
-        const {json} = await apiFetch('get-leads', GET_LEADS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        allLeads = json?.leads || [];
-    } catch (e) {
-        console.error('Fetch leads failed:', e);
-        allLeads = [];
-        leadsError.innerHTML = `Failed to fetch leads: ${e.message} (Likely CORS or endpoint missing). <button class="btn secondary retry-btn" onclick="fetchAnalytics()">Retry</button>`;
-        leadsError.style.display = 'block';
-        retryBtn.style.display = 'inline-flex';
-    }
+function copyLink(){
+  const link = $('generatedLink').href;
+  navigator.clipboard.writeText(link).then(()=>{
+    const btn = document.querySelector('#linkResult button.btn.secondary');
+    if(!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(()=> btn.textContent = orig, 2000);
+  }).catch(()=> alert('Copy failed'));
 }
-function applyLeadsFilter() {
-    const dateF = document.getElementById('dateFilter').value;
-    const mobileF = document.getElementById('mobileFilter').value.toLowerCase();
-    filteredLeads = allLeads.filter(lead => {
-        if (dateF) {
-            const leadDate = new Date(lead.search_time).toISOString().split('T')[0];
-            if (leadDate !== dateF) return false;
-        }
-        if (mobileF && lead.mobile && !lead.mobile.toLowerCase().includes(mobileF)) return false;
-        return true;
+window.copyLink = copyLink;
+
+/* ======================= ANALYTICS (XSS safe) ======================= */
+async function fetchLeadsData(){
+  try{
+    const { json } = await apiFetch('get-leads', GET_LEADS_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ collection_id: collectionId })
     });
-    leadsDisplayCount = 0;
-    const grid = document.getElementById('leadsGrid');
-    grid.innerHTML = '';
-    loadMoreLeads();
-    const noMsg = document.getElementById('noLeadsMessage');
-    if (filteredLeads.length === 0) {
-        noMsg.style.display = 'block';
-        noMsg.innerHTML = allLeads.length === 0 ? 'No leads yet. Upload photos and generate links!' : 'No leads match filter. <button class="btn secondary" onclick="clearLeadsFilters()">Clear Filters</button>';
-    } else {
-        noMsg.style.display = 'none';
-    }
+    allLeads = Array.isArray(json?.leads) ? json.leads : [];
+  }catch{
+    allLeads = [];
+  }
 }
-window.fetchAnalytics = async function() {
-    await fetchLeadsData();
-    applyLeadsFilter();
-};
-window.clearLeadsFilters = function() {
-    document.getElementById('dateFilter').value = '';
-    document.getElementById('mobileFilter').value = '';
+
+function renderLeadCard(lead){
+  const card = document.createElement('div');
+  card.className = 'lead-card';
+  card.addEventListener('click', ()=> showLeadHistory(lead.link_id));
+
+  const img = document.createElement('img');
+  img.className = 'selfie-img';
+  img.src = lead.selfie_url || 'https://placehold.co/70x70/333/fff?text=?';
+  img.onerror = () => img.src = 'https://placehold.co/70x70/333/fff?text=?';
+
+  const info = document.createElement('div');
+  info.className = 'lead-info';
+
+  const nm = document.createElement('div');
+  nm.className = 'lead-name';
+  nm.textContent = lead.name || 'Unknown';
+
+  const mob = document.createElement('div');
+  mob.className = 'lead-mobile';
+  mob.textContent = lead.mobile || '-';
+
+  const meta = document.createElement('div');
+  meta.className = 'lead-meta';
+
+  const t = document.createElement('span');
+  t.textContent = formatLeadTime(lead.search_time);
+
+  const mc = document.createElement('span');
+  mc.className = 'match-count';
+  mc.textContent = `${lead.match_count || 0} matches`;
+
+  meta.appendChild(t);
+  meta.appendChild(mc);
+
+  info.appendChild(nm);
+  info.appendChild(mob);
+  info.appendChild(meta);
+
+  card.appendChild(img);
+  card.appendChild(info);
+
+  return card;
+}
+
+function applyLeadsFilter(){
+  const dateF = $('dateFilter').value;
+  const mobileF = ($('mobileFilter').value || '').toLowerCase();
+
+  filteredLeads = allLeads.filter(lead=>{
+    if(dateF){
+      const leadDate = new Date(lead.search_time).toISOString().split('T')[0];
+      if(leadDate !== dateF) return false;
+    }
+    if(mobileF && !safeText(lead.mobile).toLowerCase().includes(mobileF)) return false;
+    return true;
+  });
+
+  leadsDisplayCount = 0;
+  $('leadsGrid').innerHTML = '';
+  loadMoreLeads();
+
+  const noMsg = $('noLeadsMessage');
+  if(filteredLeads.length === 0){
+    noMsg.style.display = 'block';
+    noMsg.innerHTML = allLeads.length === 0
+      ? 'No leads yet.'
+      : 'No leads match your filter. <button class="btn secondary" style="margin-top:10px;" onclick="clearLeadsFilters()">Clear Filters</button>';
+  }else{
+    noMsg.style.display = 'none';
+  }
+}
+
+async function fetchAnalytics(){
+  if(allLeads.length === 0) await fetchLeadsData();
+  applyLeadsFilter();
+}
+window.fetchAnalytics = fetchAnalytics;
+
+function clearLeadsFilters(){
+  $('dateFilter').value = '';
+  $('mobileFilter').value = '';
+  fetchAnalytics();
+}
+window.clearLeadsFilters = clearLeadsFilters;
+
+function loadMoreLeads(){
+  const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
+  if(!nextBatch.length) return;
+  const grid = $('leadsGrid');
+  nextBatch.forEach(lead => grid.appendChild(renderLeadCard(lead)));
+  leadsDisplayCount += nextBatch.length;
+  $('loadMoreLeadsBtn').style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
+}
+window.loadMoreLeads = loadMoreLeads;
+
+async function showLeadHistory(linkId){
+  try{
+    const { json } = await apiFetch(`get-history-${linkId}`, GET_HISTORY_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ collection_id: collectionId, link_id: linkId })
+    });
+    const history = Array.isArray(json?.history) ? json.history : [];
+    const tbody = $('historyBody');
+    tbody.innerHTML = '';
+
+    for(const h of history){
+      const tr = document.createElement('tr');
+
+      const td1 = document.createElement('td'); td1.textContent = formatLeadTime(h.search_time || h.time);
+      const td2 = document.createElement('td'); td2.textContent = h.link_id || linkId;
+      const td3 = document.createElement('td'); td3.textContent = h.name || h.captured_name || 'Unknown';
+
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+      tbody.appendChild(tr);
+    }
+
+    $('historyHeader').textContent = `Search History for Link ${linkId}`;
+    $('leadsContainer').style.display = 'none';
+    $('historyViewer').style.display = 'block';
+  }catch(e){
+    alert('Failed to load history');
+    console.error(e);
+  }
+}
+window.showLeadHistory = showLeadHistory;
+
+function hideHistoryViewer(){
+  $('historyViewer').style.display = 'none';
+  $('leadsContainer').style.display = 'block';
+}
+window.hideHistoryViewer = hideHistoryViewer;
+
+/* ======================= TABS ======================= */
+function switchTab(tabId){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
+  tabEl?.classList.add('active');
+  $(tabId)?.classList.add('active');
+
+  if(tabId === 'galleryTab'){
+    if(!allPhotos.length) fetchPhotos();
+    else applyFilters();
+  }else if(tabId === 'analyticsTab'){
     fetchAnalytics();
-};
-function renderLeadCard(lead) {
-    const card = document.createElement('div');
-    card.className = 'lead-card';
-    card.onclick = () => showLeadHistory(lead.link_id);
-    card.innerHTML = `
-        <img src="${lead.selfie_url || 'https://placehold.co/70x70/333/fff?text=?'} " class="selfie-img" onerror="this.src='https://placehold.co/70x70/333/fff?text=?'">
-        <div class="lead-info">
-            <div class="lead-name">${escapeAttr(lead.name || 'Unknown')}</div>
-            <div class="lead-mobile">${lead.mobile || '-'}</div>
-            <div class="lead-meta">
-                <span>${formatLeadTime(lead.search_time)}</span>
-                <span class="match-count">${lead.match_count || 0} matches</span>
-            </div>
-        </div>
-    `;
-    return card;
-}
-window.loadMoreLeads = function() {
-    const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
-    const grid = document.getElementById('leadsGrid');
-    nextBatch.forEach(lead => grid.appendChild(renderLeadCard(lead)));
-    leadsDisplayCount += nextBatch.length;
-    document.getElementById('loadMoreLeadsBtn').style.display = leadsDisplayCount < filteredLeads.length ? 'inline-flex' : 'none';
-};
-window.showLeadHistory = async function(linkId) {
-    try {
-        const {json} = await apiFetch(`get-history-${linkId}`, GET_HISTORY_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, link_id: linkId })
-        });
-        const history = json?.history || [];
-        const tbody = document.getElementById('historyBody');
-        tbody.innerHTML = history.map(h => `
-            <tr>
-                <td>${formatLeadTime(h.search_time || h.time)}</td>
-                <td>${h.link_id || linkId}</td>
-                <td>${escapeAttr(h.name || h.captured_name || 'Unknown')}</td>
-            </tr>
-        `).join('');
-        document.getElementById('historyHeader').textContent = `Search History for Link ${linkId} (${history.length} searches)`;
-        document.getElementById('leadsContainer').style.display = 'none';
-        document.getElementById('historyViewer').style.display = 'block';
-    } catch (e) {
-        alert('Failed to load history: ' + e.message);
-    }
-};
-window.hideHistoryViewer = function() {
-    document.getElementById('historyViewer').style.display = 'none';
-    document.getElementById('leadsContainer').style.display = 'block';
-};
-/* ======================= EVENT LISTENERS ======================= */
-document.addEventListener('DOMContentLoaded', () => {
+  }else if(tabId === 'eventsTab'){
     init();
-    fetchPhotos();
-    // Event buttons
-    document.getElementById('newEvtBtn').onclick = () => {
-        document.getElementById('eventForm').style.display = 'block';
-        document.getElementById('eventName').value = '';
-        document.getElementById('eventDate').value = '';
-        document.getElementById('saveEventBtn').textContent = 'Save';
-        document.getElementById('saveEventBtn').onclick = createEvent;
-    };
-    document.getElementById('saveEventBtn').onclick = createEvent;
-    document.getElementById('cancelEventBtn').onclick = () => {
-        document.getElementById('eventForm').style.display = 'none';
-        document.getElementById('eventName').value = '';
-        document.getElementById('eventDate').value = '';
-        document.getElementById('saveEventBtn').textContent = 'Save';
-        document.getElementById('saveEventBtn').onclick = createEvent;
-    };
-    document.getElementById('loadMoreBtn').onclick = renderNextBatch;
-    document.getElementById('cancelFaceBtn').onclick = cancelFaceNaming;
-    document.getElementById('saveFaceBtn').onclick = saveFaceName;
-    document.getElementById('downloadZipBtn').onclick = (e) => downloadAllZip(e.target);
-    document.getElementById('clearFiltersBtn').onclick = clearFilters;
-    document.getElementById('dropZone').onclick = () => document.getElementById('fileInput').click();
+  }
+}
+window.switchTab = switchTab;
+
+/* ======================= DOM READY ======================= */
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(!idToken) console.warn("No idToken found. Some API calls may fail.");
+
+  // debug controls
+  $('debugFab')?.addEventListener('click', ()=>{
+    const p = $('debugPanel');
+    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+  });
+  $('dbgCloseBtn')?.addEventListener('click', dbgClose);
+  $('dbgClearBtn')?.addEventListener('click', dbgClear);
+
+  // init
+  init();
+  fetchPhotos();
+
+  // gallery
+  $('loadMoreBtn')?.addEventListener('click', renderNextBatch);
+  $('downloadZipBtn')?.addEventListener('click', (e)=> downloadAllZip(e.currentTarget));
+
+  // face naming
+  $('cancelFaceBtn')?.addEventListener('click', cancelFaceNaming);
+  $('saveFaceBtn')?.addEventListener('click', saveFaceName);
+
+  // events
+  $('newEvtBtn')?.addEventListener('click', openCreateEvent);
+  $('cancelEventBtn')?.addEventListener('click', ()=>{ $('eventForm').style.display='none'; eventState.mode='create'; eventState.eventId=null; });
+  $('saveEventBtn')?.addEventListener('click', saveEvent);
+
+  // quality slider
+  $('jpegQuality')?.addEventListener('input', (e)=>{ $('jpegQualityVal').textContent = e.target.value; });
+
+  // upload
+  const dropZone = $('dropZone');
+  const fileInput = $('fileInput');
+  if(dropZone && fileInput){
+    dropZone.addEventListener('click', ()=> fileInput.click());
+    dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); dropZone.style.background = '#222'; });
+    dropZone.addEventListener('dragleave', ()=>{ dropZone.style.background = '#151515'; });
+    dropZone.addEventListener('drop', (e)=>{ e.preventDefault(); dropZone.style.background = '#151515'; handleFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', ()=> handleFiles(fileInput.files));
+  }
+
+  // generate link
+  $('genLinkBtn')?.addEventListener('click', async ()=>{
+    const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c=>c.value);
+    if(!selected.length) return alert('Select at least one event');
+    const expiry = $('expiryHours').value;
+    const password = $('linkPassword').value;
+
+    const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        collection_id: collectionId,
+        event_ids: selected,
+        expiry_hours: parseInt(expiry,10) || 0,
+        password: password || null
+      })
+    });
+
+    const data = json || {};
+    const box = $('linkResult');
+    const linkEl = $('generatedLink');
+    linkEl.href = data.searchUrl;
+    linkEl.textContent = data.searchUrl;
+    box.style.display = 'block';
+  });
 });
 </script>
+
 </body>
 </html>
