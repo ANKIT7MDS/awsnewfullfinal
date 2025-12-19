@@ -4,9 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collection Manager</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js">
+function mergeSelectedFaces(){
+  alert('Merge handled by backend. UI stub.');
+}
+function suggestMerge(){
+  alert('Suggestion handled by backend.');
+}
+
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js">
+function mergeSelectedFaces(){
+  alert('Merge handled by backend. UI stub.');
+}
+function suggestMerge(){
+  alert('Suggestion handled by backend.');
+}
+
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js">
+function mergeSelectedFaces(){
+  alert('Merge handled by backend. UI stub.');
+}
+function suggestMerge(){
+  alert('Suggestion handled by backend.');
+}
+
+</script>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -1172,7 +1196,8 @@ function renderNextBatch() {
     const idx = displayedPhotosCount; // approx; fix exact by computing after push
     // We'll open by calculating from container render count:
     const openIdx = displayedPhotosCount + (container.querySelectorAll('.photo-card').length % PHOTOS_BATCH_SIZE); // ok-ish
-    card.addEventListener('click', ()=> openViewer(openIdx));
+    card.dataset.index = filteredPhotos.indexOf(photo);
+    card.addEventListener('click', ()=> openViewer(parseInt(card.dataset.index)));
     const img = document.createElement('img');
     img.loading = 'lazy';
     img.src = photo.thumbnail_url || photo.url;
@@ -1671,6 +1696,18 @@ function switchTab(tabId){
   }
 }
 window.switchTab = switchTab;
+
+['optimizeToggle','convertUnsupported'].forEach(id=>{
+  const cb = document.getElementById(id);
+  const label = document.getElementById(id+'Label');
+  if(cb && label){
+    label.addEventListener('click', ()=>{
+      cb.checked = !cb.checked;
+      label.classList.toggle('active', cb.checked);
+    });
+  }
+});
+
 /* ======================= DOM READY ======================= */
 document.addEventListener('DOMContentLoaded', ()=>{
   if(!idToken) console.warn("No idToken found. Some API calls may fail.");
@@ -1745,6 +1782,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   window.mergeSelectedFaces = () => alert('Merge not implemented');
   window.suggestMerge = () => alert('Suggest not implemented');
 });
+
+function mergeSelectedFaces(){
+  alert('Merge handled by backend. UI stub.');
+}
+function suggestMerge(){
+  alert('Suggestion handled by backend.');
+}
+
 </script>
 </body>
 </html>
