@@ -809,28 +809,6 @@ function escapeAttr(s){
     return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
 }
 
-/* ======================= INIT (events + summary) ======================= */
-async function init() {
-    try {
-        const {json} = await apiFetch('get-events', GET_EVENTS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        const data = json || {};
-        const summary = data.collection_summary || {};
-        document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-        document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
-        document.getElementById('totalLeads').textContent = summary.leads_count || 0;
-        document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
-        document.title = `${summary.name || 'Collection'} • Manager`;
-        renderEvents(data.events || []);
-    } catch (e) {
-        console.error("Init failed:", e);
-        document.getElementById('collectionName').textContent = "Error Loading";
-    }
-}
-
 /* ======================= PEOPLE (list_people) ======================= */
 async function fetchPeopleDirectory() {
     try {
@@ -847,6 +825,97 @@ async function fetchPeopleDirectory() {
     }
 }
 
+/* ======================= EVENTS LOGIC (Moved up to fix ReferenceError) ======================= */
+function renderEvents(events) {
+    const tbody = document.getElementById('eventsTbody');
+    const uploadSelect = document.getElementById('uploadEventSelect');
+    const linkList = document.getElementById('linkEventList');
+
+    tbody.innerHTML = '';
+    uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+    linkList.innerHTML = '';
+
+    events.forEach(ev => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${ev.name}</td>
+                <td>${ev.event_date || '-'}</td>
+                <td>${ev.photo_count || 0}</td>
+                <td>
+                    <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
+                </td>
+            </tr>`;
+        uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+        linkList.innerHTML += `
+            <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+                <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
+            </label>`;
+    });
+}
+
+window.editEvent = function(eventId, name, date) {
+    document.getElementById('eventName').value = name;
+    document.getElementById('eventDate').value = date;
+
+    const btn = document.getElementById('saveEventBtn');
+    btn.onclick = () => updateEvent(eventId);
+    btn.textContent = "Update";
+
+    document.getElementById('eventForm').style.display = 'block';
+};
+
+async function updateEvent(eventId) {
+    const name = document.getElementById('eventName').value;
+    const date = document.getElementById('eventDate').value;
+    if(!name) return alert('Name required');
+
+    await apiFetch('upsert-event(update)', UPSERT_EVENT_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
+    });
+
+    document.getElementById('eventForm').style.display = 'none';
+    const btn = document.getElementById('saveEventBtn');
+    btn.textContent = "Save";
+    btn.onclick = createEvent;
+
+    init();
+}
+
+// Default create handler
+async function createEvent() {
+    const name = document.getElementById('eventName').value;
+    const date = document.getElementById('eventDate').value;
+    if(!name) return alert('Name required');
+
+    await apiFetch('upsert-event(create)', UPSERT_EVENT_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+    });
+
+    document.getElementById('eventForm').style.display = 'none';
+    init();
+}
+document.getElementById('saveEventBtn').onclick = createEvent;
+
+window.deleteEvent = async function(eventId, name) {
+    if (!confirm(`Delete ${name}?`)) return;
+    try {
+        await apiFetch('delete-event', DELETE_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
+        });
+        init();
+    } catch (e) {
+        alert('Delete failed.');
+        console.error(e);
+    }
+}
+
 /* ======================= PHOTO GALLERY ======================= */
 async function fetchPhotos() {
     const container = document.getElementById('galleryContainer');
@@ -859,7 +928,6 @@ async function fetchPhotos() {
         });
         const data = json || {};
         allPhotos = (data.photos || []).map(p => {
-            // Normalize face_ids
             if (!p.face_ids || !Array.isArray(p.face_ids)) p.face_ids = [];
             if ((!p.face_ids || p.face_ids.length === 0) && Array.isArray(p.faces) && p.faces.length > 0) {
                 p.face_ids = p.faces.map(f => f.FaceId).filter(Boolean);
@@ -869,7 +937,7 @@ async function fetchPhotos() {
         });
         filteredPhotos = [...allPhotos];
 
-        // --- NEW FACE GROUPING LOGIC (Subset Filtering) ---
+        // Grouping
         buildLocalFaceMap(); 
         await enhanceFacesFromDirectory();
 
@@ -927,17 +995,16 @@ function renderNextBatch() {
 }
 document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
 
-/* ======================= FACE GROUPS (LOGIC FIX) ======================= */
+/* ======================= FACE GROUPS ======================= */
 function buildLocalFaceMap() {
     faceGroups = {};
     const faceCounts = {};
-    const facePhotosMap = {}; // FaceID -> Set of Photo URLs
+    const facePhotosMap = {}; 
 
-    // 1. Calculate stats
+    // Stats
     allPhotos.forEach(photo => {
         const fids = photo.face_ids || [];
         const pUrl = photo.url;
-        
         fids.forEach(fid => {
             if (!fid) return;
             faceCounts[fid] = (faceCounts[fid] || 0) + 1;
@@ -946,22 +1013,17 @@ function buildLocalFaceMap() {
         });
     });
 
-    // 2. Identify "Subset/Redundant" IDs
+    // Subset Logic
     const hiddenIDs = new Set();
     const allIDs = Object.keys(faceCounts);
 
     allIDs.forEach(idA => {
         const photosA = facePhotosMap[idA];
-        // Check against all other IDs
         for (const idB of allIDs) {
             if (idA === idB) continue;
-            
-            // Optimization: If A has more photos than B, A cannot be a subset of B
             if (faceCounts[idA] > faceCounts[idB]) continue;
 
             const photosB = facePhotosMap[idB];
-            
-            // Check if A is subset of B
             let isSubset = true;
             for (const p of photosA) {
                 if (!photosB.has(p)) {
@@ -981,10 +1043,9 @@ function buildLocalFaceMap() {
         }
     });
 
-    // 3. Build Groups (Only for non-hidden IDs)
+    // Build Groups
     allPhotos.forEach(photo => {
         const fids = photo.face_ids || [];
-        
         fids.forEach(fid => {
             if (!fid || hiddenIDs.has(fid)) return;
 
@@ -1002,7 +1063,6 @@ function buildLocalFaceMap() {
             faceGroups[fid].photos.push(photo);
             faceGroups[fid].count++;
 
-            // Update thumbnail with zoom preference
             let faceData = null;
             if (photo.faces && Array.isArray(photo.faces)) {
                 faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
@@ -1030,7 +1090,7 @@ async function enhanceFacesFromDirectory(){
     });
 }
 
-/* ======================= FACE ICON RENDER (ZOOM + NAME) ======================= */
+/* ======================= FACE ICON RENDER ======================= */
 function renderFaceIcons() {
     const bar = document.getElementById('faceIconsBar');
     bar.innerHTML = '';
@@ -1046,11 +1106,11 @@ function renderFaceIcons() {
     }
 
     entries.forEach(group => {
-        // Container for Icon + Name
+        // Container
         const itemContainer = document.createElement('div');
         itemContainer.className = 'face-item';
 
-        // 1. Wrapper (Circle)
+        // Wrapper
         const wrapper = document.createElement('div');
         wrapper.className = 'face-icon-wrapper';
         wrapper.style.cssText = `
@@ -1065,7 +1125,7 @@ function renderFaceIcons() {
             transition: transform 0.2s;
         `;
 
-        // Inner Div for Background Image
+        // Image
         const faceImg = document.createElement('div');
         faceImg.style.width = '100%';
         faceImg.style.height = '100%';
@@ -1074,7 +1134,7 @@ function renderFaceIcons() {
         const thumbUrl = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
         faceImg.style.backgroundImage = `url('${thumbUrl}')`;
 
-        // --- ZOOM LOGIC ---
+        // Zoom Logic
         let box = null;
         const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
         
@@ -1100,7 +1160,7 @@ function renderFaceIcons() {
 
         wrapper.appendChild(faceImg);
         
-        // Name Label
+        // Label
         const label = document.createElement('div');
         label.className = 'face-name-label';
         label.textContent = group.name || 'Unknown';
@@ -1115,7 +1175,6 @@ function renderFaceIcons() {
                 selectedFaces.add(group.id);
             }
             
-            // Highlight update logic
             const allWrappers = bar.querySelectorAll('.face-icon-wrapper');
             allWrappers.forEach(el => {
                 el.style.borderColor = 'var(--brand)';
@@ -1158,6 +1217,91 @@ function applyFaceFilter() {
     displayedPhotosCount = 0;
     document.getElementById('galleryContainer').innerHTML = '';
     renderNextBatch();
+}
+
+/* ======================= FACE NAMING UX ======================= */
+window.showFacePhotos = (faceId) => {
+    if (!faceGroups[faceId]) return;
+
+    currentNamingFaceId = faceId;
+    const group = faceGroups[faceId];
+
+    const header = document.getElementById('faceNamingHeader');
+    document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
+    document.getElementById('faceNameInput').value = (group.name && group.name !== 'Unknown Person') ? group.name : '';
+    document.getElementById('faceHeaderTitle').textContent = (group.name && group.name !== 'Unknown Person') ? `Photos of ${group.name}` : "Who is this?";
+    document.getElementById('faceHint').textContent = "Tip: Enter name and Save. Shift+click faces to filter multiple faces.";
+    header.style.display = 'flex';
+
+    if(group.photos && group.photos.length > 0){
+        filteredPhotos = group.photos;
+    } else {
+        filteredPhotos = [...allPhotos];
+        dbgAdd({ ok:false, type:'WARN', label:'no-face-mapping', ts:Date.now(), details:`FaceId ${faceId} has no mapped photos.` });
+    }
+
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML = '';
+    renderNextBatch();
+
+    document.querySelector('.filter-row-top').style.display = 'none';
+};
+
+function cancelFaceNaming() {
+    currentNamingFaceId = null;
+    document.getElementById('faceNamingHeader').style.display = 'none';
+    document.querySelector('.filter-row-top').style.display = 'flex';
+    selectedFaces.clear();
+    filteredPhotos = [...allPhotos];
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML = '';
+    renderNextBatch();
+    renderFaceIcons();
+}
+document.getElementById('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
+
+async function saveFaceName() {
+    const newName = document.getElementById('faceNameInput').value.trim();
+    if(!newName || !currentNamingFaceId) return;
+
+    const btn = document.getElementById('saveFaceBtn');
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+    try {
+        const {res} = await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                FaceId: currentNamingFaceId,
+                FaceName: newName,
+                CollectionId: collectionId
+            })
+        });
+        if(res && res.ok) {
+            faceGroups[currentNamingFaceId].name = newName;
+            alert("Name saved!");
+            cancelFaceNaming();
+        } else {
+            alert("Failed to save name.");
+        }
+    } catch(e) {
+        alert("Error saving name.");
+    } finally {
+        btn.textContent = "Save";
+        btn.disabled = false;
+    }
+}
+document.getElementById('saveFaceBtn').addEventListener('click', saveFaceName);
+
+/* ======================= VIEWER ======================= */
+window.openViewer = (idx) => {
+    if(!filteredPhotos[idx]) return;
+    viewerIndex = idx;
+    document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+    document.getElementById('viewer').classList.add('open');
+}
+window.closeViewer = () => {
+    document.getElementById('viewer').classList.remove('open');
 }
 
 /* ======================= DOWNLOAD ZIP ======================= */
