@@ -825,32 +825,38 @@ async function fetchPeopleDirectory() {
     }
 }
 
-/* ======================= EVENTS LOGIC (Moved up to fix ReferenceError) ======================= */
+/* ======================= EVENTS LOGIC (Moved here to fix ReferenceError) ======================= */
 function renderEvents(events) {
     const tbody = document.getElementById('eventsTbody');
     const uploadSelect = document.getElementById('uploadEventSelect');
     const linkList = document.getElementById('linkEventList');
 
-    tbody.innerHTML = '';
-    uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-    linkList.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
+    if (uploadSelect) uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+    if (linkList) linkList.innerHTML = '';
+
+    if (!events || !Array.isArray(events)) return;
 
     events.forEach(ev => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${ev.name}</td>
-                <td>${ev.event_date || '-'}</td>
-                <td>${ev.photo_count || 0}</td>
-                <td>
-                    <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
-                    <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
-                </td>
-            </tr>`;
-        uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-        linkList.innerHTML += `
-            <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
-                <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
-            </label>`;
+        if (tbody) {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${ev.name}</td>
+                    <td>${ev.event_date || '-'}</td>
+                    <td>${ev.photo_count || 0}</td>
+                    <td>
+                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
+                    </td>
+                </tr>`;
+        }
+        if (uploadSelect) uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+        if (linkList) {
+            linkList.innerHTML += `
+                <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+                    <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
+                </label>`;
+        }
     });
 }
 
@@ -937,7 +943,7 @@ async function fetchPhotos() {
         });
         filteredPhotos = [...allPhotos];
 
-        // Grouping
+        // Grouping Logic
         buildLocalFaceMap(); 
         await enhanceFacesFromDirectory();
 
@@ -998,56 +1004,16 @@ document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch
 /* ======================= FACE GROUPS ======================= */
 function buildLocalFaceMap() {
     faceGroups = {};
-    const faceCounts = {};
-    const facePhotosMap = {}; 
-
-    // Stats
+    
+    // Grouping by FaceID - Simple and Robust
+    // 1 Person = 1 FaceID = 1 Icon
+    // Merging happens if you NAME them the same later
+    
     allPhotos.forEach(photo => {
         const fids = photo.face_ids || [];
-        const pUrl = photo.url;
+        
         fids.forEach(fid => {
             if (!fid) return;
-            faceCounts[fid] = (faceCounts[fid] || 0) + 1;
-            if (!facePhotosMap[fid]) facePhotosMap[fid] = new Set();
-            facePhotosMap[fid].add(pUrl);
-        });
-    });
-
-    // Subset Logic
-    const hiddenIDs = new Set();
-    const allIDs = Object.keys(faceCounts);
-
-    allIDs.forEach(idA => {
-        const photosA = facePhotosMap[idA];
-        for (const idB of allIDs) {
-            if (idA === idB) continue;
-            if (faceCounts[idA] > faceCounts[idB]) continue;
-
-            const photosB = facePhotosMap[idB];
-            let isSubset = true;
-            for (const p of photosA) {
-                if (!photosB.has(p)) {
-                    isSubset = false;
-                    break;
-                }
-            }
-
-            if (isSubset) {
-                if (faceCounts[idA] === faceCounts[idB]) {
-                    if (idA > idB) hiddenIDs.add(idA);
-                } else {
-                    hiddenIDs.add(idA); 
-                }
-                break; 
-            }
-        }
-    });
-
-    // Build Groups
-    allPhotos.forEach(photo => {
-        const fids = photo.face_ids || [];
-        fids.forEach(fid => {
-            if (!fid || hiddenIDs.has(fid)) return;
 
             if (!faceGroups[fid]) {
                 faceGroups[fid] = {
@@ -1063,6 +1029,7 @@ function buildLocalFaceMap() {
             faceGroups[fid].photos.push(photo);
             faceGroups[fid].count++;
 
+            // Prefer a photo that has face coordinates for the icon
             let faceData = null;
             if (photo.faces && Array.isArray(photo.faces)) {
                 faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
@@ -1088,6 +1055,35 @@ async function enhanceFacesFromDirectory(){
             if(p.FaceName && p.FaceName !== "Unknown") faceGroups[fid].name = p.FaceName;
         }
     });
+    
+    // MERGE LOGIC: Merge groups with the same name
+    const mergedGroups = {};
+    Object.values(faceGroups).forEach(group => {
+        const key = group.name === 'Unknown' ? group.id : group.name; // If unknown, keep separate by ID
+        
+        if (!mergedGroups[key]) {
+            mergedGroups[key] = group;
+        } else {
+            // Merge into existing group
+            mergedGroups[key].photos.push(...group.photos);
+            mergedGroups[key].count += group.count;
+            // Keep the better thumbnail
+            if (!mergedGroups[key].hasZoomData && group.hasZoomData) {
+                mergedGroups[key].thumbnail = group.thumbnail;
+                mergedGroups[key].hasZoomData = true;
+                // Also update ID to the one with better data for zoom reference
+                mergedGroups[key].id = group.id; 
+            }
+        }
+    });
+    
+    // Deduplicate photos in merged groups
+    Object.values(mergedGroups).forEach(g => {
+        g.photos = [...new Set(g.photos)];
+        g.count = g.photos.length;
+    });
+    
+    faceGroups = mergedGroups;
 }
 
 /* ======================= FACE ICON RENDER ======================= */
@@ -1106,11 +1102,9 @@ function renderFaceIcons() {
     }
 
     entries.forEach(group => {
-        // Container
         const itemContainer = document.createElement('div');
         itemContainer.className = 'face-item';
 
-        // Wrapper
         const wrapper = document.createElement('div');
         wrapper.className = 'face-icon-wrapper';
         wrapper.style.cssText = `
@@ -1125,7 +1119,6 @@ function renderFaceIcons() {
             transition: transform 0.2s;
         `;
 
-        // Image
         const faceImg = document.createElement('div');
         faceImg.style.width = '100%';
         faceImg.style.height = '100%';
@@ -1136,9 +1129,11 @@ function renderFaceIcons() {
 
         // Zoom Logic
         let box = null;
+        // Find a photo that matches the thumbnail to get coordinates
         const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
         
         if(thumbPhoto && thumbPhoto.faces) {
+            // Try to find the exact face ID if possible, else take the first valid face
             let faceData = thumbPhoto.faces.find(f => f.FaceId === group.id);
             if(!faceData && thumbPhoto.faces.length > 0) faceData = thumbPhoto.faces[0];
             if(faceData && faceData.BoundingBox) box = faceData.BoundingBox;
@@ -1160,38 +1155,34 @@ function renderFaceIcons() {
 
         wrapper.appendChild(faceImg);
         
-        // Label
         const label = document.createElement('div');
         label.className = 'face-name-label';
         label.textContent = group.name || 'Unknown';
 
-        // Click Logic
         wrapper.onclick = (e) => {
             if (e.shiftKey) {
-                if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
-                else selectedFaces.add(group.id);
+                // Multi-select logic can be added here if needed
+                selectedFaces.clear(); // Simpler for now
+                selectedFaces.add(group.id); // Use ID or Name key
             } else {
                 selectedFaces.clear();
-                selectedFaces.add(group.id);
+                // If merged group, we might need a way to track it better, 
+                // but for filtering, filtering by photos list is safer
+                selectedFaces.add(group); 
             }
             
+            // Highlight
             const allWrappers = bar.querySelectorAll('.face-icon-wrapper');
             allWrappers.forEach(el => {
                 el.style.borderColor = 'var(--brand)';
                 el.style.transform = 'scale(1)';
             });
-            
-            entries.forEach((g, idx) => {
-                if (selectedFaces.has(g.id)) {
-                     const el = allWrappers[idx];
-                     if(el) {
-                        el.style.borderColor = 'var(--ok)';
-                        el.style.transform = 'scale(1.15)';
-                     }
-                }
-            });
+            wrapper.style.borderColor = 'var(--ok)';
+            wrapper.style.transform = 'scale(1.15)';
 
-            if (!e.shiftKey) showFacePhotos(group.id);
+            // Open Naming or Filter
+            // We pass the GROUP ID (which might be FaceID) to the naming function
+            if (!e.shiftKey) showFacePhotos(group.id, group);
             else applyFaceFilter();
         };
 
@@ -1201,61 +1192,42 @@ function renderFaceIcons() {
     });
 }
 
-/* ======================= APPLY FACE FILTER ======================= */
-function applyFaceFilter() {
-    if (selectedFaces.size === 0) {
-        filteredPhotos = [...allPhotos];
-    } else {
-        filteredPhotos = allPhotos.filter(photo => {
-            const photoFaces = photo.face_ids || [];
-            if(!Array.isArray(photoFaces) || photoFaces.length === 0){
-                return Array.from(selectedFaces).every(fid => (faceGroups[fid]?.photos || []).includes(photo));
-            }
-            return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
-        });
-    }
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-}
-
 /* ======================= FACE NAMING UX ======================= */
-window.showFacePhotos = (faceId) => {
-    if (!faceGroups[faceId]) return;
+window.showFacePhotos = (faceId, groupObj) => {
+    // If we have a merged group object, use it directly
+    const group = groupObj || faceGroups[faceId];
+    if (!group) return;
 
-    currentNamingFaceId = faceId;
-    const group = faceGroups[faceId];
-
+    currentNamingFaceId = group.id; // Store the ID for saving name
+    
+    // UI Updates
     const header = document.getElementById('faceNamingHeader');
     document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
-    document.getElementById('faceNameInput').value = (group.name && group.name !== 'Unknown Person') ? group.name : '';
-    document.getElementById('faceHeaderTitle').textContent = (group.name && group.name !== 'Unknown Person') ? `Photos of ${group.name}` : "Who is this?";
-    document.getElementById('faceHint').textContent = "Tip: Enter name and Save. Shift+click faces to filter multiple faces.";
+    document.getElementById('faceNameInput').value = (group.name && group.name !== 'Unknown') ? group.name : '';
+    document.getElementById('faceHeaderTitle').textContent = (group.name && group.name !== 'Unknown') ? `Photos of ${group.name}` : "Who is this?";
+    document.getElementById('faceHint').textContent = "Enter name to merge similar faces.";
     header.style.display = 'flex';
+    document.querySelector('.filter-row-top').style.display = 'none';
 
-    if(group.photos && group.photos.length > 0){
-        filteredPhotos = group.photos;
-    } else {
-        filteredPhotos = [...allPhotos];
-        dbgAdd({ ok:false, type:'WARN', label:'no-face-mapping', ts:Date.now(), details:`FaceId ${faceId} has no mapped photos.` });
-    }
-
+    // Show photos ONLY for this group
+    filteredPhotos = group.photos;
     displayedPhotosCount = 0;
     document.getElementById('galleryContainer').innerHTML = '';
     renderNextBatch();
-
-    document.querySelector('.filter-row-top').style.display = 'none';
 };
 
 function cancelFaceNaming() {
     currentNamingFaceId = null;
     document.getElementById('faceNamingHeader').style.display = 'none';
     document.querySelector('.filter-row-top').style.display = 'flex';
-    selectedFaces.clear();
+    
+    // Reset to show all photos
     filteredPhotos = [...allPhotos];
     displayedPhotosCount = 0;
     document.getElementById('galleryContainer').innerHTML = '';
     renderNextBatch();
+    
+    // Re-render icons to reflect any name changes
     renderFaceIcons();
 }
 document.getElementById('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
@@ -1278,8 +1250,17 @@ async function saveFaceName() {
             })
         });
         if(res && res.ok) {
-            faceGroups[currentNamingFaceId].name = newName;
+            // Update local state immediately
+            if(faceGroups[currentNamingFaceId]) {
+                faceGroups[currentNamingFaceId].name = newName;
+            }
             alert("Name saved!");
+            
+            // Reload faces to trigger merge logic
+            buildLocalFaceMap();
+            await enhanceFacesFromDirectory();
+            renderFaceIcons();
+            
             cancelFaceNaming();
         } else {
             alert("Failed to save name.");
@@ -1343,6 +1324,7 @@ async function downloadAllZip(btnEl) {
 }
 
 /* ======================= START APP ======================= */
+// Init called at the end to ensure all functions are defined
 init();
 fetchPhotos();
 </script>
