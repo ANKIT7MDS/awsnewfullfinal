@@ -1118,6 +1118,41 @@ window.switchTab = function(tabId) {
 }
 
 /* ======================= UI HANDLERS ======================= */
+
+async function createEvent() {
+    const name = document.getElementById('eventName').value;
+    const date = document.getElementById('eventDate').value;
+    if(!name) return alert('Name required');
+
+    await apiFetch('upsert-event(create)', UPSERT_EVENT_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+    });
+
+    document.getElementById('eventForm').style.display = 'none';
+    init();
+}
+
+async function updateEvent(eventId) {
+    const name = document.getElementById('eventName').value;
+    const date = document.getElementById('eventDate').value;
+    if(!name) return alert('Name required');
+
+    await apiFetch('upsert-event(update)', UPSERT_EVENT_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
+    });
+
+    document.getElementById('eventForm').style.display = 'none';
+    const btn = document.getElementById('saveEventBtn');
+    btn.textContent = "Save";
+    btn.onclick = createEvent;
+
+    init();
+}
+
 window.editEvent = function(eventId, name, date) {
     document.getElementById('eventName').value = name;
     document.getElementById('eventDate').value = date;
