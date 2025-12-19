@@ -990,12 +990,13 @@ async function enhanceFacesFromDirectory(){
 }
 
 /* ======================= FACE ICON RENDER (WITH ZOOM) ======================= */
+/* ======================= FACE ICON RENDER (WITH ZOOM LOGIC) ======================= */
 function renderFaceIcons() {
     const bar = document.getElementById('faceIconsBar');
     bar.innerHTML = '';
     bar.style.display = 'flex';
 
-    // Sort by count
+    // Groups को सॉर्ट करें (जिसमें फोटो हैं वो पहले)
     const entries = Object.values(faceGroups)
         .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
         .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
@@ -1006,7 +1007,7 @@ function renderFaceIcons() {
     }
 
     entries.forEach(group => {
-        // Container for clipping
+        // 1. Wrapper (Frame) बनाएं - यह गोल रहेगा
         const wrapper = document.createElement('div');
         wrapper.className = 'face-icon-wrapper';
         wrapper.style.cssText = `
@@ -1017,19 +1018,24 @@ function renderFaceIcons() {
             cursor: pointer; 
             position: relative;
             flex-shrink: 0;
-            transition: transform 0.2s;
+            background: #000;
         `;
 
         const img = document.createElement('img');
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name||'?')[0]||'?')}`;
+        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
         
-        // --- ZOOM LOGIC ---
+        // --- 2. ZOOM LOGIC (यह हिस्सा गायब था) ---
         let box = null;
         if(group.photos && group.photos.length > 0) {
-            const photo = group.photos[0]; 
-            if(photo.faces && Array.isArray(photo.faces)) {
-                // Find face data for this FaceId
-                const faceData = photo.faces.find(f => f.FaceId === group.id || (photo.face_ids && photo.face_ids.includes(group.id)));
+            // उस फोटो को ढूँढें जिसमें चेहरे का डेटा (faces list) हो
+            const photo = group.photos.find(p => p.faces && p.faces.length > 0);
+            
+            if(photo) {
+                // कोशिश करें कि सही FaceId वाला डेटा मिले
+                let faceData = photo.faces.find(f => f.FaceId === group.id);
+                // अगर न मिले, तो पहला चेहरा ले लें
+                if(!faceData) faceData = photo.faces[0];
+
                 if(faceData && faceData.BoundingBox) {
                     box = faceData.BoundingBox;
                 }
@@ -1038,18 +1044,19 @@ function renderFaceIcons() {
 
         if(box) {
             // CSS Math to Zoom into the Face
-            const zoomLevel = 2.5;
-            const shiftX = (box.Left + (box.Width / 2)) * 100;
-            const shiftY = (box.Top + (box.Height / 2)) * 100;
+            const zoom = 2.5; // कितना ज़ूम करना है
+            const x = (box.Left + (box.Width / 2)) * 100;
+            const y = (box.Top + (box.Height / 2)) * 100;
             
             img.style.width = "100%";
             img.style.height = "100%";
             img.style.objectFit = "cover";
-            img.style.objectPosition = `${shiftX}% ${shiftY}%`;
-            img.style.transform = `scale(${zoomLevel})`;
-            img.style.transformOrigin = `${shiftX}% ${shiftY}%`; 
+            // चेहरा सेंटर में लाएं
+            img.style.transformOrigin = `${x}% ${y}%`;
+            // फोटो को बड़ा करें
+            img.style.transform = `scale(${zoom})`;
         } else {
-            // Fallback
+            // अगर डेटा नहीं है तो नार्मल दिखाएं
             img.style.width = "100%";
             img.style.height = "100%";
             img.style.objectFit = "cover";
@@ -1058,6 +1065,36 @@ function renderFaceIcons() {
         img.title = `${group.name} (${group.count || group.photos.length} photos)`;
         wrapper.appendChild(img);
 
+        // Click Event (Selection Logic)
+        wrapper.onclick = (e) => {
+            if (e.shiftKey) {
+                if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
+                else selectedFaces.add(group.id);
+            } else {
+                selectedFaces.clear();
+                selectedFaces.add(group.id);
+            }
+            
+            // Highlight Selected
+            bar.querySelectorAll('.face-icon-wrapper').forEach(el => {
+                el.style.borderColor = 'var(--brand)';
+                el.style.transform = 'scale(1)';
+            });
+            entries.forEach((g, idx) => {
+                if (selectedFaces.has(g.id)) {
+                     const el = bar.children[idx];
+                     el.style.borderColor = 'var(--ok)';
+                     el.style.transform = 'scale(1.1)';
+                }
+            });
+
+            if (!e.shiftKey) showFacePhotos(group.id);
+            else applyFaceFilter();
+        };
+
+        bar.appendChild(wrapper);
+    });
+}
         // Click Handler
         wrapper.onclick = (e) => {
             if (e.shiftKey) {
