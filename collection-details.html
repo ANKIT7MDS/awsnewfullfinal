@@ -260,12 +260,30 @@
         /* Face Icons Bar */
         #faceIconsBar {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             overflow-x: auto;
             margin-bottom: 20px;
-            padding-bottom: 10px;
+            padding-bottom: 15px;
         }
-        /* Face Icon Wrapper styles are injected via JS for dynamic Zoom */
+        /* Item Container for Face + Name */
+        .face-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 60px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .face-name-label {
+            font-size: 11px;
+            color: var(--text);
+            margin-top: 6px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
 
         /* History Viewer */
         #historyViewer {
@@ -841,7 +859,7 @@ async function fetchPhotos() {
         });
         const data = json || {};
         allPhotos = (data.photos || []).map(p => {
-            // Normalize face_ids (primary) + faces (optional)
+            // Normalize face_ids
             if (!p.face_ids || !Array.isArray(p.face_ids)) p.face_ids = [];
             if ((!p.face_ids || p.face_ids.length === 0) && Array.isArray(p.faces) && p.faces.length > 0) {
                 p.face_ids = p.faces.map(f => f.FaceId).filter(Boolean);
@@ -851,10 +869,8 @@ async function fetchPhotos() {
         });
         filteredPhotos = [...allPhotos];
 
-        // REVERTED to Standard Grouping: Assign photo to ALL its face IDs
+        // --- NEW FACE GROUPING LOGIC (Subset Filtering) ---
         buildLocalFaceMap(); 
-        
-        // Enhance from list_people (names + best thumbnails)
         await enhanceFacesFromDirectory();
 
         displayedPhotosCount = 0;
@@ -911,25 +927,74 @@ function renderNextBatch() {
 }
 document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
 
-/* ======================= FACE GROUPS ======================= */
+/* ======================= FACE GROUPS (LOGIC FIX) ======================= */
 function buildLocalFaceMap() {
     faceGroups = {};
+    const faceCounts = {};
+    const facePhotosMap = {}; // FaceID -> Set of Photo URLs
 
+    // 1. Calculate stats
     allPhotos.forEach(photo => {
-        // Collect all valid Face IDs for this photo
-        let fids = [];
-        if (Array.isArray(photo.face_ids) && photo.face_ids.length > 0) {
-            fids = photo.face_ids;
-        } else if (Array.isArray(photo.faces)) {
-            fids = photo.faces.map(f => f.FaceId || f.faceId).filter(Boolean);
-        }
-
-        // For each face in this photo, add photo to that group
+        const fids = photo.face_ids || [];
+        const pUrl = photo.url;
+        
         fids.forEach(fid => {
+            if (!fid) return;
+            faceCounts[fid] = (faceCounts[fid] || 0) + 1;
+            if (!facePhotosMap[fid]) facePhotosMap[fid] = new Set();
+            facePhotosMap[fid].add(pUrl);
+        });
+    });
+
+    // 2. Identify "Subset/Redundant" IDs
+    // Logic: If ID_A appears ONLY in photos where ID_B also appears, AND Count(B) > Count(A),
+    // then ID_A is likely a specific instance of ID_B (Group Leader). Hide A.
+    const hiddenIDs = new Set();
+    const allIDs = Object.keys(faceCounts);
+
+    allIDs.forEach(idA => {
+        const photosA = facePhotosMap[idA];
+        // Check against all other IDs
+        for (const idB of allIDs) {
+            if (idA === idB) continue;
+            
+            // Optimization: If A has more photos than B, A cannot be a subset of B
+            if (faceCounts[idA] > faceCounts[idB]) continue;
+
+            const photosB = facePhotosMap[idB];
+            
+            // Check if A is subset of B
+            let isSubset = true;
+            for (const p of photosA) {
+                if (!photosB.has(p)) {
+                    isSubset = false;
+                    break;
+                }
+            }
+
+            if (isSubset) {
+                // If counts are equal, keep one based on string comparison to be deterministic
+                if (faceCounts[idA] === faceCounts[idB]) {
+                    if (idA > idB) hiddenIDs.add(idA);
+                } else {
+                    hiddenIDs.add(idA); // A is definitely a subset
+                }
+                break; // A is hidden, stop checking
+            }
+        }
+    });
+
+    // 3. Build Groups (Only for non-hidden IDs)
+    allPhotos.forEach(photo => {
+        const fids = photo.face_ids || [];
+        
+        fids.forEach(fid => {
+            if (!fid || hiddenIDs.has(fid)) return;
+
             if (!faceGroups[fid]) {
                 faceGroups[fid] = {
                     id: fid,
-                    name: 'Unknown Person',
+                    name: 'Unknown',
                     thumbnail: null, 
                     count: 0,
                     photos: [],
@@ -937,36 +1002,22 @@ function buildLocalFaceMap() {
                 };
             }
 
-            // Add photo to group
             faceGroups[fid].photos.push(photo);
             faceGroups[fid].count++;
 
-            // CHECK ZOOM DATA for Thumbnail
-            // Does this photo have specific details (BoundingBox) for this face?
+            // Update thumbnail with zoom preference
             let faceData = null;
             if (photo.faces && Array.isArray(photo.faces)) {
                 faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
             }
-
             const hasZoom = (faceData && faceData.BoundingBox);
 
-            // Update thumbnail if:
-            // 1. No thumbnail yet.
-            // 2. Current thumbnail has NO zoom, but this new photo DOES.
             if (!faceGroups[fid].thumbnail || (!faceGroups[fid].hasZoomData && hasZoom)) {
                 faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
                 if (hasZoom) faceGroups[fid].hasZoomData = true;
             }
         });
     });
-
-    if (Object.keys(faceGroups).length === 0) {
-        dbgAdd({
-            ok: false, type: 'WARN', label: 'faces-missing',
-            ts: Date.now(),
-            details: "No face data found in photos response. Check projection & indexing."
-        });
-    }
 }
 
 async function enhanceFacesFromDirectory(){
@@ -976,24 +1027,18 @@ async function enhanceFacesFromDirectory(){
     people.forEach(p=>{
         const fid = p.FaceId || p.face_id || p.faceId;
         if(!fid) return;
-        
-        // If group exists from photos, update name
         if(faceGroups[fid]){
-            if(p.FaceName) faceGroups[fid].name = p.FaceName;
-        } else {
-            // Optional: Show people even if no photos found (usually we skip this to avoid empty icons)
-            // faceGroups[fid] = { id: fid, name: p.FaceName || 'Unknown', ... }
+            if(p.FaceName && p.FaceName !== "Unknown") faceGroups[fid].name = p.FaceName;
         }
     });
 }
 
-/* ======================= FACE ICON RENDER (SMART ZOOM & BG IMAGE) ======================= */
+/* ======================= FACE ICON RENDER (ZOOM + NAME) ======================= */
 function renderFaceIcons() {
     const bar = document.getElementById('faceIconsBar');
     bar.innerHTML = '';
     bar.style.display = 'flex';
 
-    // Sort by count
     const entries = Object.values(faceGroups)
         .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
         .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
@@ -1004,7 +1049,11 @@ function renderFaceIcons() {
     }
 
     entries.forEach(group => {
-        // Wrapper
+        // Container for Icon + Name
+        const itemContainer = document.createElement('div');
+        itemContainer.className = 'face-item';
+
+        // 1. Wrapper (Circle)
         const wrapper = document.createElement('div');
         wrapper.className = 'face-icon-wrapper';
         wrapper.style.cssText = `
@@ -1016,11 +1065,10 @@ function renderFaceIcons() {
             position: relative;
             flex-shrink: 0;
             background: #000;
-            margin-right: 8px;
             transition: transform 0.2s;
         `;
 
-        // Inner Div for Background Image (Best for centering)
+        // Inner Div for Background Image
         const faceImg = document.createElement('div');
         faceImg.style.width = '100%';
         faceImg.style.height = '100%';
@@ -1031,24 +1079,17 @@ function renderFaceIcons() {
 
         // --- ZOOM LOGIC ---
         let box = null;
-        // Try to find the specific face BoundingBox in the thumbnail photo
-        // Since we stored the best thumbnail photo reference, we can look it up?
-        // Actually we only stored the URL in group.thumbnail.
-        // Let's re-find the photo object that matches the thumbnail URL to get BoundingBox.
         const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
         
         if(thumbPhoto && thumbPhoto.faces) {
             let faceData = thumbPhoto.faces.find(f => f.FaceId === group.id);
-            if(!faceData && thumbPhoto.faces.length > 0) faceData = thumbPhoto.faces[0]; // fallback
+            if(!faceData && thumbPhoto.faces.length > 0) faceData = thumbPhoto.faces[0];
             if(faceData && faceData.BoundingBox) box = faceData.BoundingBox;
         }
 
         if(box) {
-            // Center calculation
             const faceCX = (box.Left + box.Width / 2) * 100;
             const faceCY = (box.Top + box.Height / 2) * 100;
-            
-            // Zoom calculation
             let zoomPct = 65 / (box.Width || 0.2);
             if(zoomPct < 100) zoomPct = 100; 
             if(zoomPct > 600) zoomPct = 600; 
@@ -1061,9 +1102,13 @@ function renderFaceIcons() {
         }
 
         wrapper.appendChild(faceImg);
-        wrapper.title = `${group.name} (${group.count} photos)`;
+        
+        // Name Label
+        const label = document.createElement('div');
+        label.className = 'face-name-label';
+        label.textContent = group.name || 'Unknown';
 
-        // Click Event
+        // Click Logic
         wrapper.onclick = (e) => {
             if (e.shiftKey) {
                 if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
@@ -1073,14 +1118,17 @@ function renderFaceIcons() {
                 selectedFaces.add(group.id);
             }
             
-            // Visual Highlight
             bar.querySelectorAll('.face-icon-wrapper').forEach(el => {
                 el.style.borderColor = 'var(--brand)';
                 el.style.transform = 'scale(1)';
             });
+            
+            // Re-check all items to highlight selection
+            // We need to iterate entries again to match state
+            const allWrappers = bar.querySelectorAll('.face-icon-wrapper');
             entries.forEach((g, idx) => {
                 if (selectedFaces.has(g.id)) {
-                     const el = bar.children[idx];
+                     const el = allWrappers[idx];
                      el.style.borderColor = 'var(--ok)';
                      el.style.transform = 'scale(1.15)';
                 }
@@ -1090,7 +1138,9 @@ function renderFaceIcons() {
             else applyFaceFilter();
         };
 
-        bar.appendChild(wrapper);
+        itemContainer.appendChild(wrapper);
+        itemContainer.appendChild(label);
+        bar.appendChild(itemContainer);
     });
 }
 
