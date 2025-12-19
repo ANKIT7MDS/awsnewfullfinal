@@ -87,7 +87,7 @@
         }
         .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 
-        /* ANALYTICS NEW VIEW - SELFIE + CLICK */
+        /* ANALYTICS NEW VIEW */
         .lead-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -222,7 +222,7 @@
         }
         .photo-card img.loaded { opacity: 1; }
 
-        /* DATE HEADERS IN GALLERY */
+        /* DATE HEADERS */
         .date-header {
             grid-column: 1 / -1;
             color: var(--muted);
@@ -265,7 +265,6 @@
             margin-bottom: 20px;
             padding-bottom: 15px;
         }
-        /* Item Container for Face + Name */
         .face-item {
             display: flex;
             flex-direction: column;
@@ -496,7 +495,7 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
                 <h3>Events</h3>
-                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
+                <button class="btn" id="newEvtBtn">+ New Event</button>
             </div>
 
             <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
@@ -505,7 +504,7 @@
                     <input type="date" id="eventDate">
                 </div>
                 <div style="text-align:right;">
-                    <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
+                    <button class="btn secondary" id="cancelEventBtn">Cancel</button>
                     <button class="btn" id="saveEventBtn">Save</button>
                 </div>
             </div>
@@ -801,8 +800,8 @@ function renderEvents(events) {
                     <td>${ev.event_date || '-'}</td>
                     <td>${ev.photo_count || 0}</td>
                     <td>
-                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
+                        <button class="edit-btn" onclick="window.editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
+                        <button class="delete-btn" onclick="window.deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
                     </td>
                 </tr>`;
         }
@@ -1119,6 +1118,7 @@ window.switchTab = function(tabId) {
 
 /* ======================= UI HANDLERS ======================= */
 
+// Helper functions for create/update
 async function createEvent() {
     const name = document.getElementById('eventName').value;
     const date = document.getElementById('eventDate').value;
@@ -1153,12 +1153,19 @@ async function updateEvent(eventId) {
     init();
 }
 
+// Global functions attached to window for HTML access
+window.createEvent = createEvent;
+window.updateEvent = updateEvent;
+
 window.editEvent = function(eventId, name, date) {
     document.getElementById('eventName').value = name;
     document.getElementById('eventDate').value = date;
     const btn = document.getElementById('saveEventBtn');
+    
+    // Override onclick for Update mode
     btn.onclick = () => updateEvent(eventId);
     btn.textContent = "Update";
+    
     document.getElementById('eventForm').style.display = 'block';
 };
 
@@ -1224,18 +1231,74 @@ window.closeViewer = () => {
 }
 
 /* ======================= EVENT LISTENERS ======================= */
-document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
-document.getElementById('saveEventBtn').onclick = createEvent;
-document.getElementById('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
-document.getElementById('saveFaceBtn').addEventListener('click', saveFaceName);
-document.getElementById('downloadZipBtn').addEventListener('click', async (e)=>{
-    await downloadAllZip(e.currentTarget);
-});
-
-/* ======================= START APP ======================= */
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Core Init
     init();
     fetchPhotos();
+
+    // 2. Button Listeners (Safe Attachment)
+    const attach = (id, evt, fn) => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener(evt, fn);
+    };
+
+    attach('loadMoreBtn', 'click', renderNextBatch);
+    attach('saveEventBtn', 'click', createEvent); // Default is Create
+    attach('cancelFaceBtn', 'click', cancelFaceNaming);
+    attach('saveFaceBtn', 'click', saveFaceName);
+    attach('downloadZipBtn', 'click', async (e) => await downloadAllZip(e.currentTarget));
+    
+    // Add missing cancel event listener
+    attach('cancelEventBtn', 'click', () => {
+        document.getElementById('eventForm').style.display = 'none';
+        // Reset form
+        document.getElementById('eventName').value = '';
+        document.getElementById('eventDate').value = '';
+        const btn = document.getElementById('saveEventBtn');
+        btn.textContent = 'Save';
+        btn.onclick = createEvent;
+    });
+    
+    attach('newEvtBtn', 'click', () => {
+        document.getElementById('eventForm').style.display='block';
+        // Reset form to Create mode
+        document.getElementById('eventName').value = '';
+        document.getElementById('eventDate').value = '';
+        const btn = document.getElementById('saveEventBtn');
+        btn.textContent = 'Save';
+        btn.onclick = createEvent;
+    });
+
+    // Upload & Link Listeners
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    if(dropZone && fileInput) {
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
+        dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
+        dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+        fileInput.onchange = () => handleFiles(fileInput.files);
+    }
+
+    const genLinkBtn = document.getElementById('genLinkBtn');
+    if(genLinkBtn) {
+        genLinkBtn.onclick = async () => {
+            const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
+            if (selected.length === 0) return alert('Select at least one event');
+
+            const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
+            });
+            const data = json || {};
+            const box = document.getElementById('linkResult');
+            const linkEl = document.getElementById('generatedLink');
+            linkEl.href = data.searchUrl;
+            linkEl.textContent = data.searchUrl;
+            box.style.display = 'block';
+        };
+    }
 });
 </script>
 </body>
