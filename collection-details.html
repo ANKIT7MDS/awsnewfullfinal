@@ -743,49 +743,21 @@ async function apiFetch(label, url, options){
 }
 
 /* ======================= STATE ======================= */
-// Photo Gallery
 let allPhotos = [];
 let filteredPhotos = [];
 let displayedPhotosCount = 0;
 const PHOTOS_BATCH_SIZE = 20;
 let viewerIndex = 0;
 
-// Leads Analytics
 let allLeads = [];
 let filteredLeads = [];
 let leadsDisplayCount = 0;
 const LEADS_BATCH_SIZE = 10;
 
-// Face Groups
-let faceGroups = {};              // FaceId -> {id,name,thumbnail,count,photos[]}
-let directoryPeople = [];         // list_people response
+let faceGroups = {};
+let directoryPeople = [];
 let currentNamingFaceId = null;
-let selectedFaces = new Set();    
-
-/* ======================= TABS ======================= */
-window.switchTab = function(tabId) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-    const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
-    if(tabEl) tabEl.classList.add('active');
-    const contentEl = document.getElementById(tabId);
-    if(contentEl) contentEl.classList.add('active');
-
-    if(tabId === 'galleryTab') {
-        if(allPhotos.length === 0) fetchPhotos();
-        else {
-            displayedPhotosCount = 0;
-            document.getElementById('galleryContainer').innerHTML = '';
-            renderNextBatch();
-            renderFaceIcons();
-        }
-    } else if (tabId === 'analyticsTab') {
-        fetchAnalytics(true);
-    } else if (tabId === 'eventsTab') {
-        init();
-    }
-}
+let selectedFaces = new Set();
 
 /* ======================= UTILS ======================= */
 function formatLeadTime(isoString) {
@@ -809,7 +781,62 @@ function escapeAttr(s){
     return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
 }
 
-/* ======================= PEOPLE (list_people) ======================= */
+/* ======================= CORE FUNCTIONS ======================= */
+function renderEvents(events) {
+    const tbody = document.getElementById('eventsTbody');
+    const uploadSelect = document.getElementById('uploadEventSelect');
+    const linkList = document.getElementById('linkEventList');
+
+    if(tbody) tbody.innerHTML = '';
+    if(uploadSelect) uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+    if(linkList) linkList.innerHTML = '';
+
+    if(!events || !Array.isArray(events)) return;
+
+    events.forEach(ev => {
+        if(tbody) {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${ev.name}</td>
+                    <td>${ev.event_date || '-'}</td>
+                    <td>${ev.photo_count || 0}</td>
+                    <td>
+                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
+                    </td>
+                </tr>`;
+        }
+        if(uploadSelect) uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+        if(linkList) {
+            linkList.innerHTML += `
+                <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+                    <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
+                </label>`;
+        }
+    });
+}
+
+async function init() {
+    try {
+        const {json} = await apiFetch('get-events', GET_EVENTS_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
+        const data = json || {};
+        const summary = data.collection_summary || {};
+        document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+        document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
+        document.getElementById('totalLeads').textContent = summary.leads_count || 0;
+        document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
+        document.title = `${summary.name || 'Collection'} • Manager`;
+        renderEvents(data.events || []);
+    } catch (e) {
+        console.error("Init failed:", e);
+        document.getElementById('collectionName').textContent = "Error Loading";
+    }
+}
+
 async function fetchPeopleDirectory() {
     try {
         const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
@@ -825,136 +852,168 @@ async function fetchPeopleDirectory() {
     }
 }
 
-/* ======================= EVENTS LOGIC (Moved here to fix ReferenceError) ======================= */
-function renderEvents(events) {
-    const tbody = document.getElementById('eventsTbody');
-    const uploadSelect = document.getElementById('uploadEventSelect');
-    const linkList = document.getElementById('linkEventList');
-
-    if (tbody) tbody.innerHTML = '';
-    if (uploadSelect) uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-    if (linkList) linkList.innerHTML = '';
-
-    if (!events || !Array.isArray(events)) return;
-
-    events.forEach(ev => {
-        if (tbody) {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${ev.name}</td>
-                    <td>${ev.event_date || '-'}</td>
-                    <td>${ev.photo_count || 0}</td>
-                    <td>
-                        <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
-                    </td>
-                </tr>`;
-        }
-        if (uploadSelect) uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-        if (linkList) {
-            linkList.innerHTML += `
-                <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
-                    <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
-                </label>`;
-        }
-    });
-}
-
-window.editEvent = function(eventId, name, date) {
-    document.getElementById('eventName').value = name;
-    document.getElementById('eventDate').value = date;
-
-    const btn = document.getElementById('saveEventBtn');
-    btn.onclick = () => updateEvent(eventId);
-    btn.textContent = "Update";
-
-    document.getElementById('eventForm').style.display = 'block';
-};
-
-async function updateEvent(eventId) {
-    const name = document.getElementById('eventName').value;
-    const date = document.getElementById('eventDate').value;
-    if(!name) return alert('Name required');
-
-    await apiFetch('upsert-event(update)', UPSERT_EVENT_API, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
-    });
-
-    document.getElementById('eventForm').style.display = 'none';
-    const btn = document.getElementById('saveEventBtn');
-    btn.textContent = "Save";
-    btn.onclick = createEvent;
-
-    init();
-}
-
-// Default create handler
-async function createEvent() {
-    const name = document.getElementById('eventName').value;
-    const date = document.getElementById('eventDate').value;
-    if(!name) return alert('Name required');
-
-    await apiFetch('upsert-event(create)', UPSERT_EVENT_API, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-    });
-
-    document.getElementById('eventForm').style.display = 'none';
-    init();
-}
-document.getElementById('saveEventBtn').onclick = createEvent;
-
-window.deleteEvent = async function(eventId, name) {
-    if (!confirm(`Delete ${name}?`)) return;
-    try {
-        await apiFetch('delete-event', DELETE_EVENT_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
-        });
-        init();
-    } catch (e) {
-        alert('Delete failed.');
-        console.error(e);
-    }
-}
-
-/* ======================= PHOTO GALLERY ======================= */
-async function fetchPhotos() {
-    const container = document.getElementById('galleryContainer');
-    container.innerHTML = '<p class="loading">Loading photos...</p>';
-    try {
-        const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-        const data = json || {};
-        allPhotos = (data.photos || []).map(p => {
-            if (!p.face_ids || !Array.isArray(p.face_ids)) p.face_ids = [];
-            if ((!p.face_ids || p.face_ids.length === 0) && Array.isArray(p.faces) && p.faces.length > 0) {
-                p.face_ids = p.faces.map(f => f.FaceId).filter(Boolean);
+function buildLocalFaceMap() {
+    faceGroups = {};
+    allPhotos.forEach(photo => {
+        const fids = photo.face_ids || [];
+        fids.forEach(fid => {
+            if (!fid) return;
+            if (!faceGroups[fid]) {
+                faceGroups[fid] = {
+                    id: fid,
+                    name: 'Unknown',
+                    thumbnail: null, 
+                    count: 0,
+                    photos: [],
+                    hasZoomData: false
+                };
             }
-            p.faces = Array.isArray(p.faces) ? p.faces : [];
-            return p;
+            faceGroups[fid].photos.push(photo);
+            faceGroups[fid].count++;
+
+            let faceData = null;
+            if (photo.faces && Array.isArray(photo.faces)) {
+                faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
+            }
+            const hasZoom = (faceData && faceData.BoundingBox);
+
+            if (!faceGroups[fid].thumbnail || (!faceGroups[fid].hasZoomData && hasZoom)) {
+                faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
+                if (hasZoom) faceGroups[fid].hasZoomData = true;
+            }
         });
-        filteredPhotos = [...allPhotos];
+    });
+}
 
-        // Grouping Logic
-        buildLocalFaceMap(); 
-        await enhanceFacesFromDirectory();
+async function enhanceFacesFromDirectory(){
+    const people = await fetchPeopleDirectory();
+    if(!people || people.length === 0) return;
 
-        displayedPhotosCount = 0;
-        container.innerHTML = '';
-        renderNextBatch();
-        renderFaceIcons();
-    } catch (err) {
-        container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Open Debug panel.</p>';
-        console.error('Photo fetch error:', err);
+    people.forEach(p=>{
+        const fid = p.FaceId || p.face_id || p.faceId;
+        if(!fid) return;
+        if(faceGroups[fid]){
+            if(p.FaceName && p.FaceName !== "Unknown") faceGroups[fid].name = p.FaceName;
+        }
+    });
+    
+    // Merge Logic
+    const mergedGroups = {};
+    Object.values(faceGroups).forEach(group => {
+        const key = group.name === 'Unknown' ? group.id : group.name; 
+        if (!mergedGroups[key]) {
+            mergedGroups[key] = group;
+        } else {
+            mergedGroups[key].photos.push(...group.photos);
+            mergedGroups[key].count += group.count;
+            if (!mergedGroups[key].hasZoomData && group.hasZoomData) {
+                mergedGroups[key].thumbnail = group.thumbnail;
+                mergedGroups[key].hasZoomData = true;
+                mergedGroups[key].id = group.id; 
+            }
+        }
+    });
+    Object.values(mergedGroups).forEach(g => {
+        g.photos = [...new Set(g.photos)];
+        g.count = g.photos.length;
+    });
+    faceGroups = mergedGroups;
+}
+
+function renderFaceIcons() {
+    const bar = document.getElementById('faceIconsBar');
+    bar.innerHTML = '';
+    bar.style.display = 'flex';
+
+    const entries = Object.values(faceGroups)
+        .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
+        .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
+
+    if (entries.length === 0) {
+        bar.style.display = 'none';
+        return;
     }
+
+    entries.forEach(group => {
+        const itemContainer = document.createElement('div');
+        itemContainer.className = 'face-item';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'face-icon-wrapper';
+        wrapper.style.cssText = `
+            width: 55px; height: 55px; 
+            border-radius: 50%; 
+            border: 2px solid var(--brand); 
+            overflow: hidden; 
+            cursor: pointer; 
+            position: relative;
+            flex-shrink: 0;
+            background: #000;
+            transition: transform 0.2s;
+        `;
+
+        const faceImg = document.createElement('div');
+        faceImg.style.width = '100%';
+        faceImg.style.height = '100%';
+        faceImg.style.backgroundRepeat = 'no-repeat';
+        
+        const thumbUrl = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
+        faceImg.style.backgroundImage = `url('${thumbUrl}')`;
+
+        let box = null;
+        const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
+        if(thumbPhoto && thumbPhoto.faces) {
+            let faceData = thumbPhoto.faces.find(f => f.FaceId === group.id);
+            if(!faceData && thumbPhoto.faces.length > 0) faceData = thumbPhoto.faces[0];
+            if(faceData && faceData.BoundingBox) box = faceData.BoundingBox;
+        }
+
+        if(box) {
+            const faceCX = (box.Left + box.Width / 2) * 100;
+            const faceCY = (box.Top + box.Height / 2) * 100;
+            let zoomPct = 65 / (box.Width || 0.2);
+            if(zoomPct < 100) zoomPct = 100; 
+            if(zoomPct > 600) zoomPct = 600; 
+
+            faceImg.style.backgroundPosition = `${faceCX}% ${faceCY}%`;
+            faceImg.style.backgroundSize = `${zoomPct}% auto`; 
+        } else {
+            faceImg.style.backgroundSize = 'cover';
+            faceImg.style.backgroundPosition = 'center';
+        }
+
+        wrapper.appendChild(faceImg);
+        
+        const label = document.createElement('div');
+        label.className = 'face-name-label';
+        label.textContent = group.name || 'Unknown';
+
+        wrapper.onclick = (e) => {
+            if (e.shiftKey) {
+                selectedFaces.clear();
+                selectedFaces.add(group.id);
+            } else {
+                selectedFaces.clear();
+                selectedFaces.add(group); 
+            }
+            
+            const allWrappers = bar.querySelectorAll('.face-icon-wrapper');
+            allWrappers.forEach(el => {
+                el.style.borderColor = 'var(--brand)';
+                el.style.transform = 'scale(1)';
+            });
+            
+            wrapper.style.borderColor = 'var(--ok)';
+            wrapper.style.transform = 'scale(1.15)';
+
+            if (!e.shiftKey) showFacePhotos(group.id, group);
+            else applyFaceFilter();
+        };
+
+        itemContainer.appendChild(wrapper);
+        itemContainer.appendChild(label);
+        bar.appendChild(itemContainer);
+    });
 }
 
 function renderNextBatch() {
@@ -999,208 +1058,112 @@ function renderNextBatch() {
     const btn = document.getElementById('loadMoreBtn');
     btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
 }
-document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
 
-/* ======================= FACE GROUPS ======================= */
-function buildLocalFaceMap() {
-    faceGroups = {};
-    
-    // Grouping by FaceID - Simple and Robust
-    // 1 Person = 1 FaceID = 1 Icon
-    // Merging happens if you NAME them the same later
-    
-    allPhotos.forEach(photo => {
-        const fids = photo.face_ids || [];
-        
-        fids.forEach(fid => {
-            if (!fid) return;
-
-            if (!faceGroups[fid]) {
-                faceGroups[fid] = {
-                    id: fid,
-                    name: 'Unknown',
-                    thumbnail: null, 
-                    count: 0,
-                    photos: [],
-                    hasZoomData: false
-                };
-            }
-
-            faceGroups[fid].photos.push(photo);
-            faceGroups[fid].count++;
-
-            // Prefer a photo that has face coordinates for the icon
-            let faceData = null;
-            if (photo.faces && Array.isArray(photo.faces)) {
-                faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
-            }
-            const hasZoom = (faceData && faceData.BoundingBox);
-
-            if (!faceGroups[fid].thumbnail || (!faceGroups[fid].hasZoomData && hasZoom)) {
-                faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
-                if (hasZoom) faceGroups[fid].hasZoomData = true;
-            }
+async function fetchPhotos() {
+    const container = document.getElementById('galleryContainer');
+    container.innerHTML = '<p class="loading">Loading photos...</p>';
+    try {
+        const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId })
         });
-    });
-}
-
-async function enhanceFacesFromDirectory(){
-    const people = await fetchPeopleDirectory();
-    if(!people || people.length === 0) return;
-
-    people.forEach(p=>{
-        const fid = p.FaceId || p.face_id || p.faceId;
-        if(!fid) return;
-        if(faceGroups[fid]){
-            if(p.FaceName && p.FaceName !== "Unknown") faceGroups[fid].name = p.FaceName;
-        }
-    });
-    
-    // MERGE LOGIC: Merge groups with the same name
-    const mergedGroups = {};
-    Object.values(faceGroups).forEach(group => {
-        const key = group.name === 'Unknown' ? group.id : group.name; // If unknown, keep separate by ID
-        
-        if (!mergedGroups[key]) {
-            mergedGroups[key] = group;
-        } else {
-            // Merge into existing group
-            mergedGroups[key].photos.push(...group.photos);
-            mergedGroups[key].count += group.count;
-            // Keep the better thumbnail
-            if (!mergedGroups[key].hasZoomData && group.hasZoomData) {
-                mergedGroups[key].thumbnail = group.thumbnail;
-                mergedGroups[key].hasZoomData = true;
-                // Also update ID to the one with better data for zoom reference
-                mergedGroups[key].id = group.id; 
+        const data = json || {};
+        allPhotos = (data.photos || []).map(p => {
+            if (!p.face_ids || !Array.isArray(p.face_ids)) p.face_ids = [];
+            if ((!p.face_ids || p.face_ids.length === 0) && Array.isArray(p.faces) && p.faces.length > 0) {
+                p.face_ids = p.faces.map(f => f.FaceId).filter(Boolean);
             }
-        }
-    });
-    
-    // Deduplicate photos in merged groups
-    Object.values(mergedGroups).forEach(g => {
-        g.photos = [...new Set(g.photos)];
-        g.count = g.photos.length;
-    });
-    
-    faceGroups = mergedGroups;
-}
+            p.faces = Array.isArray(p.faces) ? p.faces : [];
+            return p;
+        });
+        filteredPhotos = [...allPhotos];
 
-/* ======================= FACE ICON RENDER ======================= */
-function renderFaceIcons() {
-    const bar = document.getElementById('faceIconsBar');
-    bar.innerHTML = '';
-    bar.style.display = 'flex';
+        buildLocalFaceMap(); 
+        await enhanceFacesFromDirectory();
 
-    const entries = Object.values(faceGroups)
-        .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
-        .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
-
-    if (entries.length === 0) {
-        bar.style.display = 'none';
-        return;
+        displayedPhotosCount = 0;
+        container.innerHTML = '';
+        renderNextBatch();
+        renderFaceIcons();
+    } catch (err) {
+        container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Open Debug panel.</p>';
+        console.error('Photo fetch error:', err);
     }
-
-    entries.forEach(group => {
-        const itemContainer = document.createElement('div');
-        itemContainer.className = 'face-item';
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'face-icon-wrapper';
-        wrapper.style.cssText = `
-            width: 55px; height: 55px; 
-            border-radius: 50%; 
-            border: 2px solid var(--brand); 
-            overflow: hidden; 
-            cursor: pointer; 
-            position: relative;
-            flex-shrink: 0;
-            background: #000;
-            transition: transform 0.2s;
-        `;
-
-        const faceImg = document.createElement('div');
-        faceImg.style.width = '100%';
-        faceImg.style.height = '100%';
-        faceImg.style.backgroundRepeat = 'no-repeat';
-        
-        const thumbUrl = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
-        faceImg.style.backgroundImage = `url('${thumbUrl}')`;
-
-        // Zoom Logic
-        let box = null;
-        // Find a photo that matches the thumbnail to get coordinates
-        const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
-        
-        if(thumbPhoto && thumbPhoto.faces) {
-            // Try to find the exact face ID if possible, else take the first valid face
-            let faceData = thumbPhoto.faces.find(f => f.FaceId === group.id);
-            if(!faceData && thumbPhoto.faces.length > 0) faceData = thumbPhoto.faces[0];
-            if(faceData && faceData.BoundingBox) box = faceData.BoundingBox;
-        }
-
-        if(box) {
-            const faceCX = (box.Left + box.Width / 2) * 100;
-            const faceCY = (box.Top + box.Height / 2) * 100;
-            let zoomPct = 65 / (box.Width || 0.2);
-            if(zoomPct < 100) zoomPct = 100; 
-            if(zoomPct > 600) zoomPct = 600; 
-
-            faceImg.style.backgroundPosition = `${faceCX}% ${faceCY}%`;
-            faceImg.style.backgroundSize = `${zoomPct}% auto`; 
-        } else {
-            faceImg.style.backgroundSize = 'cover';
-            faceImg.style.backgroundPosition = 'center';
-        }
-
-        wrapper.appendChild(faceImg);
-        
-        const label = document.createElement('div');
-        label.className = 'face-name-label';
-        label.textContent = group.name || 'Unknown';
-
-        wrapper.onclick = (e) => {
-            if (e.shiftKey) {
-                // Multi-select logic can be added here if needed
-                selectedFaces.clear(); // Simpler for now
-                selectedFaces.add(group.id); // Use ID or Name key
-            } else {
-                selectedFaces.clear();
-                // If merged group, we might need a way to track it better, 
-                // but for filtering, filtering by photos list is safer
-                selectedFaces.add(group); 
-            }
-            
-            // Highlight
-            const allWrappers = bar.querySelectorAll('.face-icon-wrapper');
-            allWrappers.forEach(el => {
-                el.style.borderColor = 'var(--brand)';
-                el.style.transform = 'scale(1)';
-            });
-            wrapper.style.borderColor = 'var(--ok)';
-            wrapper.style.transform = 'scale(1.15)';
-
-            // Open Naming or Filter
-            // We pass the GROUP ID (which might be FaceID) to the naming function
-            if (!e.shiftKey) showFacePhotos(group.id, group);
-            else applyFaceFilter();
-        };
-
-        itemContainer.appendChild(wrapper);
-        itemContainer.appendChild(label);
-        bar.appendChild(itemContainer);
-    });
 }
 
-/* ======================= FACE NAMING UX ======================= */
+/* ======================= TABS ======================= */
+window.switchTab = function(tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
+    if(tabEl) tabEl.classList.add('active');
+    const contentEl = document.getElementById(tabId);
+    if(contentEl) contentEl.classList.add('active');
+
+    if(tabId === 'galleryTab') {
+        if(allPhotos.length === 0) fetchPhotos();
+        else {
+            displayedPhotosCount = 0;
+            document.getElementById('galleryContainer').innerHTML = '';
+            renderNextBatch();
+            renderFaceIcons();
+        }
+    } else if (tabId === 'analyticsTab') {
+        fetchAnalytics(true);
+    } else if (tabId === 'eventsTab') {
+        init();
+    }
+}
+
+/* ======================= UI HANDLERS ======================= */
+window.editEvent = function(eventId, name, date) {
+    document.getElementById('eventName').value = name;
+    document.getElementById('eventDate').value = date;
+    const btn = document.getElementById('saveEventBtn');
+    btn.onclick = () => updateEvent(eventId);
+    btn.textContent = "Update";
+    document.getElementById('eventForm').style.display = 'block';
+};
+
+window.deleteEvent = async function(eventId, name) {
+    if (!confirm(`Delete ${name}?`)) return;
+    try {
+        await apiFetch('delete-event', DELETE_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
+        });
+        init();
+    } catch (e) {
+        alert('Delete failed.');
+        console.error(e);
+    }
+}
+
+window.applyFilters = function() {
+    if (selectedFaces.size === 0) {
+        filteredPhotos = [...allPhotos];
+    } else {
+        filteredPhotos = allPhotos.filter(photo => {
+            const photoFaces = photo.face_ids || [];
+            if(!Array.isArray(photoFaces) || photoFaces.length === 0){
+                return Array.from(selectedFaces).every(fid => (faceGroups[fid]?.photos || []).includes(photo));
+            }
+            return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
+        });
+    }
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML = '';
+    renderNextBatch();
+}
+
 window.showFacePhotos = (faceId, groupObj) => {
-    // If we have a merged group object, use it directly
     const group = groupObj || faceGroups[faceId];
     if (!group) return;
 
-    currentNamingFaceId = group.id; // Store the ID for saving name
-    
-    // UI Updates
+    currentNamingFaceId = group.id; 
     const header = document.getElementById('faceNamingHeader');
     document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
     document.getElementById('faceNameInput').value = (group.name && group.name !== 'Unknown') ? group.name : '';
@@ -1209,72 +1172,12 @@ window.showFacePhotos = (faceId, groupObj) => {
     header.style.display = 'flex';
     document.querySelector('.filter-row-top').style.display = 'none';
 
-    // Show photos ONLY for this group
     filteredPhotos = group.photos;
     displayedPhotosCount = 0;
     document.getElementById('galleryContainer').innerHTML = '';
     renderNextBatch();
 };
 
-function cancelFaceNaming() {
-    currentNamingFaceId = null;
-    document.getElementById('faceNamingHeader').style.display = 'none';
-    document.querySelector('.filter-row-top').style.display = 'flex';
-    
-    // Reset to show all photos
-    filteredPhotos = [...allPhotos];
-    displayedPhotosCount = 0;
-    document.getElementById('galleryContainer').innerHTML = '';
-    renderNextBatch();
-    
-    // Re-render icons to reflect any name changes
-    renderFaceIcons();
-}
-document.getElementById('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
-
-async function saveFaceName() {
-    const newName = document.getElementById('faceNameInput').value.trim();
-    if(!newName || !currentNamingFaceId) return;
-
-    const btn = document.getElementById('saveFaceBtn');
-    btn.textContent = "Saving...";
-    btn.disabled = true;
-    try {
-        const {res} = await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                FaceId: currentNamingFaceId,
-                FaceName: newName,
-                CollectionId: collectionId
-            })
-        });
-        if(res && res.ok) {
-            // Update local state immediately
-            if(faceGroups[currentNamingFaceId]) {
-                faceGroups[currentNamingFaceId].name = newName;
-            }
-            alert("Name saved!");
-            
-            // Reload faces to trigger merge logic
-            buildLocalFaceMap();
-            await enhanceFacesFromDirectory();
-            renderFaceIcons();
-            
-            cancelFaceNaming();
-        } else {
-            alert("Failed to save name.");
-        }
-    } catch(e) {
-        alert("Error saving name.");
-    } finally {
-        btn.textContent = "Save";
-        btn.disabled = false;
-    }
-}
-document.getElementById('saveFaceBtn').addEventListener('click', saveFaceName);
-
-/* ======================= VIEWER ======================= */
 window.openViewer = (idx) => {
     if(!filteredPhotos[idx]) return;
     viewerIndex = idx;
@@ -1285,48 +1188,20 @@ window.closeViewer = () => {
     document.getElementById('viewer').classList.remove('open');
 }
 
-/* ======================= DOWNLOAD ZIP ======================= */
+/* ======================= EVENT LISTENERS ======================= */
+document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
+document.getElementById('saveEventBtn').onclick = createEvent;
+document.getElementById('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
+document.getElementById('saveFaceBtn').addEventListener('click', saveFaceName);
 document.getElementById('downloadZipBtn').addEventListener('click', async (e)=>{
     await downloadAllZip(e.currentTarget);
 });
 
-async function downloadAllZip(btnEl) {
-    if(filteredPhotos.length === 0) return alert("No photos to download");
-
-    const zip = new JSZip();
-    const folder = zip.folder("photos");
-    const limit = filteredPhotos.slice(0, 100);
-
-    const btn = btnEl || document.getElementById('downloadZipBtn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Zipping...';
-
-    let count = 0;
-    for(let i=0; i<limit.length; i++) {
-        try {
-            const response = await fetch(limit[i].url);
-            const blob = await response.blob();
-            folder.file(`photo_${i+1}.jpg`, blob);
-            count++;
-            btn.textContent = `Zipping ${count}/${limit.length}`;
-        } catch(e) {
-            dbgAdd({ok:false,type:'ZIP',label:'download',ts:Date.now(),details:`Failed to download photo ${i+1}\n${e.message}`});
-        }
-    }
-
-    zip.generateAsync({type:"blob"}).then(c => {
-        saveAs(c, "photos.zip");
-    }).finally(() => {
-        btn.disabled = false;
-        btn.textContent = originalText;
-    });
-}
-
 /* ======================= START APP ======================= */
-// Init called at the end to ensure all functions are defined
-init();
-fetchPhotos();
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    fetchPhotos();
+});
 </script>
 </body>
 </html>
