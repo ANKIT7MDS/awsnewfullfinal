@@ -752,7 +752,13 @@ const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
 const urlParams = new URLSearchParams(window.location.search);
 const collectionId = urlParams.get("id");
 const collectionNameParam = urlParams.get("name");
-const idToken = localStorage.getItem("idToken");
+let idToken = null;
+try {
+    idToken = localStorage.getItem("idToken");
+} catch (e) {
+    console.warn("localStorage access failed (possibly due to file:// protocol). Using null token.");
+    dbgAdd({ ok: false, type: 'STORAGE', label: 'localStorage error', ts: Date.now(), details: e.message });
+}
 /* ======================= SAFE UTILS ======================= */
 const $ = (id) => document.getElementById(id);
 const safeText = (v) => (v === null || v === undefined) ? "" : String(v);
@@ -958,7 +964,7 @@ async function init() {
   try {
     const {json} = await apiFetch('get-events', GET_EVENTS_API, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ collection_id: collectionId })
     });
     const data = json || {};
@@ -1088,7 +1094,7 @@ function renderFaceIcons() {
     faceImg.style.width = '100%';
     faceImg.style.height = '100%';
     faceImg.style.backgroundRepeat = 'no-repeat';
-    const thumbUrl = escapeHtml(group.thumbnail || `https://placehold.co/60x60/333/fff?text=?`);
+    const thumbUrl = group.thumbnail || `https://placehold.co/60x60/333/fff?text=?`; // Removed escapeHtml for URLs (assumed safe from API)
     faceImg.style.backgroundImage = `url('${thumbUrl}')`;
     let box = null;
     const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
@@ -1192,10 +1198,10 @@ async function fetchPhotos(page = 1, limit = 100) { // Added pagination
   const container = $('galleryContainer');
   if(container) container.innerHTML = '<p class="loading">Loading photos...</p>';
   try{
-    const {json} = await apiFetch('get-photos', `${GET_PHOTOS_API}?page=${page}&limit=${limit}`, {
+    const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection_id: collectionId })
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection_id: collectionId, page, limit })
     });
     const data = json || {};
     const photos = (data.photos || []).map(p=>{
@@ -1285,7 +1291,7 @@ async function saveFaceName(){
   try{
     await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name })
     });
     for(const g of Object.values(faceGroups)){
@@ -1301,7 +1307,7 @@ function showSuggestions(value){
   const suggestions = $('faceSuggestions');
   suggestions.innerHTML = '';
   if(!value) { suggestions.style.display = 'none'; return; }
-  const matches = directoryPeople.filter(p => p.FaceName.toLowerCase().includes(value.toLowerCase())).slice(0,5);
+  const matches = directoryPeople.filter(p => p.FaceName?.toLowerCase().includes(value.toLowerCase())).slice(0,5);
   if(!matches.length) { suggestions.style.display = 'none'; return; }
   for(const m of matches){
     const item = document.createElement('div');
@@ -1384,7 +1390,7 @@ async function saveEvent(){
   try{
     await apiFetch(`upsert-event(${eventState.mode})`, UPSERT_EVENT_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     $('eventForm').style.display = 'none';
@@ -1400,7 +1406,7 @@ async function deleteEvent(eventId, name){
   try{
     await apiFetch('delete-event', DELETE_EVENT_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
     });
     await init();
@@ -1422,7 +1428,7 @@ async function handleFiles(files){
   try{
     const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type':'application/json' },
       body: JSON.stringify({ collection_id: collectionId, event_id: eventId, count: files.length })
     });
     const urls = json?.urls || [];
@@ -1470,7 +1476,7 @@ async function handleFiles(files){
       const retryBtn = document.createElement('button');
       retryBtn.className = 'btn retry-btn';
       retryBtn.textContent = 'Retry Failed';
-      retryBtn.addEventListener('click', () => handleFiles(files.filter(f => failedFiles.includes(f.name))));
+      retryBtn.addEventListener('click', () => handleFiles(Array.from(files).filter(f => failedFiles.includes(f.name))));
       status.appendChild(retryBtn);
     }
     setTimeout(async () => {
@@ -1505,7 +1511,7 @@ async function generateLink(){
   try{
     const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type':'application/json' },
       body: JSON.stringify({
         collection_id: collectionId,
         event_ids: selected,
@@ -1533,7 +1539,7 @@ async function fetchLeadsData(){
   try{
     const { json } = await apiFetch('get-leads', GET_LEADS_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type':'application/json' },
       body: JSON.stringify({ collection_id: collectionId })
     });
     allLeads = Array.isArray(json?.leads) ? json.leads : [];
@@ -1612,7 +1618,7 @@ async function showLeadHistory(linkId){
   try{
     const { json } = await apiFetch(`get-history-${linkId}`, GET_HISTORY_API, {
       method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type':'application/json' },
       body: JSON.stringify({ collection_id: collectionId, link_id: linkId })
     });
     const history = Array.isArray(json?.history) ? json.history : [];
