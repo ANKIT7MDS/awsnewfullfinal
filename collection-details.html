@@ -189,8 +189,29 @@
             transform: none;
             box-shadow: none;
         }
-        .toggle-btn { background: rgba(66,133,244,0.2); border: 1px solid var(--brand); color: var(--brand); min-width: 120px; justify-content: space-between; }
+        .toggle-btn { 
+            background: rgba(66,133,244,0.2); 
+            border: 1px solid var(--brand); 
+            color: var(--brand); 
+            min-width: 120px; 
+            justify-content: space-between; 
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
         .toggle-btn.active { background: var(--brand); color: #fff; }
+        .toggle-btn:hover { transform: translateY(-1px); }
+        .error-state {
+            background: rgba(234,67,53,0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .retry-btn { background: var(--ok); margin-top: 10px; }
         /* TABLES */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
@@ -216,6 +237,8 @@
         #progress-bar { height: 6px; background: linear-gradient(var(--brand), var(--brand-hover)); width: 0%; margin-top: 10px; border-radius: 3px; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(66,133,244,0.5); }
         #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
         #uploadStatus.error { color: var(--danger); }
+        #fileList div { padding: 5px; font-size: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
+        #fileList div:last-child { border-bottom: none; }
         /* GALLERY */
         .gallery-grid {
             display: grid;
@@ -411,7 +434,7 @@
         }
         .face-header-content { flex-grow: 1; }
         .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
-        .face-input-group { display: flex; gap: 10px; max-width: 380px; }
+        .face-input-group { display: flex; gap: 10px; max-width: 380px; position: relative; }
         .face-input-group input{ flex:1; }
         #faceSuggestions { 
             position: absolute; 
@@ -423,6 +446,7 @@
             z-index: 10; 
             display: none; 
             width: 200px; 
+            top: 100%; left: 0;
         }
         .suggestion-item { padding: 8px; cursor: pointer; font-size: 12px; transition: background 0.2s; }
         .suggestion-item:hover { background: rgba(66,133,244,0.1); }
@@ -492,6 +516,8 @@
         .dbg-pre{white-space:pre-wrap; color:#cfcfcf; margin-top:8px}
         .dbg-muted{color:#9a9a9a}
         .dbg-warn{color:#ffcc80}
+        .spinner { border: 2px solid #333; border-top: 2px solid var(--brand); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-right: 5px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -538,7 +564,7 @@
             <img id="faceHeaderImg" src="">
             <div class="face-header-content">
                 <h3 id="faceHeaderTitle">Who is this?</h3>
-                <div class="face-input-group" style="position: relative;">
+                <div class="face-input-group">
                     <input type="text" id="faceNameInput" placeholder="Enter Name" oninput="showSuggestions(this.value)">
                     <div id="faceSuggestions"></div>
                     <button class="btn" id="saveFaceBtn">Save</button>
@@ -575,6 +601,7 @@
                 <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
                 <tbody id="eventsTbody"></tbody>
             </table>
+            <div id="eventsError" class="error-state" style="display:none;"></div>
         </div>
     </div>
     <!-- UPLOAD TAB -->
@@ -582,7 +609,7 @@
         <div class="card" style="max-width:800px; margin:0 auto;">
             <div style="margin-bottom:20px;">
                 <label style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
-                <select id="uploadEventSelect"><option value="">Loading...</option></select>
+                <select id="uploadEventSelect"><option value="">Loading events...</option></select>
             </div>
             <div id="dropZone">
                 <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
@@ -591,15 +618,13 @@
             </div>
             <div id="uploadControls" style="display:none;">
                 <button class="btn secondary" id="clearFilesBtn">Clear Files</button>
-                <button class="btn" id="startUploadBtn">Start Upload</button>
+                <button class="btn" id="startUploadBtn">Start Upload <span class="spinner" style="display:none;"></span></button>
             </div>
             <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center;">
                 <label class="toggle-btn" id="optimizeToggleLabel">
-                    <input type="checkbox" id="optimizeToggle" checked style="display:none;">
                     Optimize (reduce size)
                 </label>
-                <label class="toggle-btn" id="convertToggleLabel">
-                    <input type="checkbox" id="convertUnsupported" checked style="display:none;">
+                <label class="toggle-btn active" id="convertToggleLabel">
                     Convert to JPG
                 </label>
                 <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
@@ -620,7 +645,8 @@
                 <div id="progress-bar"></div>
                 <p id="uploadStatus"></p>
             </div>
-            <div id="fileList" style="margin-top:10px; max-height:100px; overflow-y:auto; display:none;"></div>
+            <div id="fileList"></div>
+            <div id="uploadError" class="error-state" style="display:none;"></div>
         </div>
     </div>
     <!-- LINKS TAB -->
@@ -631,11 +657,12 @@
             <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px; background:#111;"></div>
             <input type="number" id="expiryHours" placeholder="Expiry in hours (0 for no expiry)" style="margin-bottom:10px;">
             <input type="password" id="linkPassword" placeholder="Optional password" style="margin-bottom:15px;">
-            <button class="btn" id="genLinkBtn">Generate Link</button>
+            <button class="btn" id="genLinkBtn">Generate Link <span class="spinner" style="display:none;"></span></button>
             <div id="linkResult">
                 <a id="generatedLink" href="#" target="_blank">Click to open link</a>
                 <button class="btn secondary" style="margin-top:8px; padding:6px 16px; font-size:12px;" onclick="copyLink()">Copy Link</button>
             </div>
+            <div id="linkError" class="error-state" style="display:none;"></div>
         </div>
     </div>
     <!-- GUESTS TAB -->
@@ -646,6 +673,7 @@
                 <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics()">
                 <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="fetchAnalytics()">
                 <button class="btn secondary" onclick="clearLeadsFilters()" style="flex: 0 0 auto; min-width: 120px;">Clear</button>
+                <button class="btn secondary" onclick="fetchAnalytics()" id="retryLeadsBtn" style="display:none;">Retry Fetch</button>
             </div>
             <div id="leadsContainer" style="display: block;">
                 <div id="leadsGrid" class="lead-grid"></div>
@@ -665,6 +693,7 @@
                     <tbody id="historyBody"></tbody>
                 </table>
             </div>
+            <div id="leadsError" class="error-state" style="display:none;"></div>
         </div>
     </div>
 </div>
@@ -698,7 +727,7 @@
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const GET_EVENTS_API = `${API_BASE}/get-events`;
 const GET_PHOTOS_API = `${API_BASE}/get-photos`;
-const GET_LEADS_API = `${API_BASE}/get-leads`;
+const GET_LEADS_API = `${API_BASE}/get-leads`; // Ensure backend has this endpoint
 const GET_HISTORY_API = `${API_BASE}/get-search-history`;
 const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
 const DELETE_EVENT_API = `${API_BASE}/delete-event`;
@@ -706,14 +735,16 @@ const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
 const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
 const LIST_PEOPLE_API = `${API_BASE}/list_people`;
 const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
-const MERGE_FACES_API = `${API_BASE}/merge-faces`; // New for advanced clustering
+const MERGE_FACES_API = `${API_BASE}/merge-faces`;
 /* ======================= PARAMS / AUTH ======================= */
 const urlParams = new URLSearchParams(window.location.search);
 const collectionId = urlParams.get("id");
 const collectionNameParam = urlParams.get("name");
-const idToken = localStorage.getItem("idToken");
+let idToken = localStorage.getItem("idToken");
 if (!idToken) {
-    console.warn("No idToken found. Some API calls may fail.");
+    idToken = prompt('Enter idToken for auth (from localStorage or backend):') || '';
+    if (idToken) localStorage.setItem("idToken", idToken);
+    console.warn("Using manual idToken. Check auth.");
 }
 if (document.getElementById('assistantLink')) {
     document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
@@ -782,9 +813,19 @@ async function apiFetch(label, url, options){
             ts,
             details: `URL: ${url}\nStatus: ${res.status}\nRequest: ${safeOptions.body ? safeOptions.body.substring(0,100) + '...' : '-'}\nResponse: ${json ? JSON.stringify(json,null,2).substring(0,200) + '...' : text.substring(0,200)}`
         });
-        if (!res.ok) throw new Error(`API ${label} failed: ${res.status}`);
+        if (!res.ok) {
+            let errorMsg = `API ${label} failed: ${res.status}`;
+            if (res.status === 400) errorMsg += ` - Bad Request. Check JSON body (e.g., missing fields like event_id). Backend logs in CloudWatch.`;
+            if (json && json.message) errorMsg += ` Details: ${json.message}`;
+            throw new Error(errorMsg);
+        }
         return {res, json, text};
     }catch(err){
+        // CORS specific handling
+        if (err.message.includes('Failed to fetch') || err.message.includes('CORS') || err.message.includes('Access-Control-Allow-Origin')) {
+            err.message += '\n\n🚨 CORS Fix: AWS API Gateway > Enable CORS > Add Origin: https://selfphotos.netlify.app or *. Allow Methods: GET,POST,OPTIONS. Headers: Content-Type,Authorization. Deploy & retry.';
+            alert(err.message);
+        }
         dbgAdd({
             ok:false, type:'API', label,
             ts,
@@ -883,16 +924,23 @@ function showSuggestions(value) {
 function selectSuggestion(name) {
     document.getElementById('faceNameInput').value = name;
     document.getElementById('faceSuggestions').style.display = 'none';
+    showSuggestions(''); // Hide after select
 }
 /* ======================= CORE FUNCTIONS ======================= */
 function renderEvents(events) {
     const tbody = document.getElementById('eventsTbody');
     const uploadSelect = document.getElementById('uploadEventSelect');
     const linkList = document.getElementById('linkEventList');
+    const eventsError = document.getElementById('eventsError');
     if(tbody) tbody.innerHTML = '';
     if(uploadSelect) uploadSelect.innerHTML = '<option value="">Select Event...</option>';
     if(linkList) linkList.innerHTML = '';
-    if(!events || !Array.isArray(events)) return;
+    eventsError.style.display = 'none';
+    if(!events || !Array.isArray(events)) {
+        eventsError.innerHTML = 'No events found. <button class="btn secondary retry-btn" onclick="init()">Retry</button>';
+        eventsError.style.display = 'block';
+        return;
+    }
     events.forEach(ev => {
         if(tbody) {
             tbody.innerHTML += `
@@ -916,6 +964,8 @@ function renderEvents(events) {
     });
 }
 async function init() {
+    const eventsError = document.getElementById('eventsError');
+    eventsError.style.display = 'none';
     try {
         const {json} = await apiFetch('get-events', GET_EVENTS_API, {
             method: 'POST',
@@ -933,6 +983,8 @@ async function init() {
     } catch (e) {
         console.error("Init failed:", e);
         document.getElementById('collectionName').textContent = "Error Loading";
+        eventsError.innerHTML = `Failed to load events: ${e.message} <button class="btn secondary retry-btn" onclick="init()">Retry</button>`;
+        eventsError.style.display = 'block';
         dbgAdd({ok: false, type: 'INIT', label: 'get-events', ts: Date.now(), details: e.message});
     }
 }
@@ -992,18 +1044,17 @@ async function enhanceFacesFromDirectory() {
         if(!fid || !faceGroups[fid]) return;
         if(p.FaceName && p.FaceName !== "Unknown") faceGroups[fid].name = p.FaceName;
     });
-    // Advanced Merge: Similarity-based
+    // Advanced Merge: Similarity-based (skip if no box to avoid errors)
     const mergedGroups = {};
-    const groupList = Object.values(faceGroups);
+    const groupList = Object.values(faceGroups).filter(g => g.boundingBox); // Only with box
     for (let i = 0; i < groupList.length; i++) {
         let group = groupList[i];
         let merged = false;
         for (let j = i + 1; j < groupList.length; j++) {
             let other = groupList[j];
             if (group.name !== 'Unknown' && other.name !== 'Unknown' && group.name !== other.name) continue;
-            const sim = calculateSimilarity({BoundingBox: group.boundingBox}, {BoundingBox: other.boundingBox});
-            if (sim > 0.7) { // Threshold for auto-merge
-                // Merge into larger group
+            const sim = calculateSimilarity(group, other);
+            if (sim > 0.7) { // Threshold
                 if (group.count > other.count) {
                     other.photos.forEach(p => group.photos.push(p));
                     group.count += other.count;
@@ -1011,8 +1062,6 @@ async function enhanceFacesFromDirectory() {
                         group.thumbnail = other.thumbnail;
                         group.hasZoomData = true;
                     }
-                    merged = true;
-                    delete faceGroups[other.id];
                 } else {
                     group.photos.forEach(p => other.photos.push(p));
                     other.count += group.count;
@@ -1020,9 +1069,9 @@ async function enhanceFacesFromDirectory() {
                         other.thumbnail = group.thumbnail;
                         other.hasZoomData = true;
                     }
-                    merged = true;
-                    delete faceGroups[group.id];
                 }
+                merged = true;
+                delete faceGroups[other.id];
                 break;
             }
         }
@@ -1030,12 +1079,17 @@ async function enhanceFacesFromDirectory() {
             const key = group.name === 'Unknown' ? group.id : group.name.toLowerCase();
             if (!mergedGroups[key]) mergedGroups[key] = group;
             else {
-                // Name-based merge if same
                 mergedGroups[key].photos.push(...group.photos);
                 mergedGroups[key].count += group.count;
             }
         }
     }
+    // Add non-merged groups
+    Object.keys(faceGroups).forEach(fid => {
+        if (!mergedGroups[fid] && faceGroups[fid].boundingBox === null) {
+            mergedGroups[fid] = faceGroups[fid];
+        }
+    });
     Object.values(mergedGroups).forEach(g => {
         g.photos = [...new Set(g.photos)];
         g.count = g.photos.length;
@@ -1183,7 +1237,7 @@ async function fetchPhotos() {
         applyFilters();
         renderFaceIcons();
     } catch (err) {
-        container.innerHTML = '<p style="color:var(--danger); text-align:center; animation: none;">Failed to load photos. Check Debug panel.</p>';
+        container.innerHTML = `<div class="error-state">Failed to load photos: ${err.message} <button class="btn secondary retry-btn" onclick="fetchPhotos()">Retry</button></div>`;
         console.error('Photo fetch error:', err);
     }
 }
@@ -1247,8 +1301,7 @@ window.switchTab = function(tabId) {
     } else if (tabId === 'eventsTab') {
         init();
     } else if (tabId === 'uploadTab') {
-        // Refresh event select
-        init();
+        init(); // Refresh events
     }
 };
 /* ======================= GALLERY / FACES ADVANCE ======================= */
@@ -1287,7 +1340,6 @@ window.saveFaceName = async function() {
         });
         if (faceGroups[currentNamingFaceId]) {
             faceGroups[currentNamingFaceId].name = name;
-            // Trigger re-merge
             await enhanceFacesFromDirectory();
             renderFaceIcons();
         }
@@ -1317,11 +1369,10 @@ window.mergeSelectedFaces = async function() {
     }
 };
 window.suggestMerge = function() {
-    // Simple suggest based on similarity
     const suggestions = [];
     Array.from(selectedFaces).forEach(fid1 => {
         Object.keys(faceGroups).forEach(fid2 => {
-            if (fid1 !== fid2 && !selectedFaces.has(fid2)) {
+            if (fid1 !== fid2 && !selectedFaces.has(fid2) && faceGroups[fid2].boundingBox) {
                 const sim = calculateSimilarity(faceGroups[fid1], faceGroups[fid2]);
                 if (sim > 0.6) suggestions.push({id: fid2, sim});
             }
@@ -1433,21 +1484,23 @@ window.deleteEvent = async function(eventId, name) {
 /* ======================= UPLOAD PREMIUM ======================= */
 function updateFileList() {
     const list = document.getElementById('fileList');
-    list.innerHTML = selectedFiles.map(f => `<div style="padding:5px; font-size:12px; border-bottom:1px solid #333;">${f.name} (${formatBytes(f.size)})</div>`).join('');
+    const uploadError = document.getElementById('uploadError');
+    list.innerHTML = selectedFiles.map(f => `<div>${escapeAttr(f.name)} (${formatBytes(f.size)})</div>`).join('');
     list.style.display = selectedFiles.length > 0 ? 'block' : 'none';
     document.getElementById('uploadControls').style.display = selectedFiles.length > 0 ? 'flex' : 'none';
     document.getElementById('startUploadBtn').disabled = selectedFiles.length === 0;
+    uploadError.style.display = 'none';
 }
 document.getElementById('dropZone').ondragover = (e) => { e.preventDefault(); e.currentTarget.style.background = 'rgba(66,133,244,0.1)'; };
 document.getElementById('dropZone').ondragleave = (e) => { e.currentTarget.style.background = 'linear-gradient(145deg, #151515, #1a1a1a)'; };
 document.getElementById('dropZone').ondrop = (e) => {
     e.preventDefault();
-    selectedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    selectedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.name.toLowerCase().match(/\.(heic|webp|gif)$/));
     updateFileList();
     e.currentTarget.style.background = 'linear-gradient(145deg, #151515, #1a1a1a)';
 };
 document.getElementById('fileInput').onchange = (e) => {
-    selectedFiles = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+    selectedFiles = Array.from(e.target.files).filter(f => f.type.startsWith('image/') || f.name.toLowerCase().match(/\.(heic|webp|gif)$/));
     updateFileList();
 };
 document.getElementById('clearFilesBtn').onclick = () => {
@@ -1455,11 +1508,18 @@ document.getElementById('clearFilesBtn').onclick = () => {
     document.getElementById('fileInput').value = '';
     updateFileList();
 };
-document.getElementById('startUploadBtn').onclick = handleFiles;
+document.getElementById('startUploadBtn').onclick = async function() {
+    const spinner = this.querySelector('.spinner');
+    spinner.style.display = 'inline-block';
+    this.disabled = true;
+    await handleFiles();
+    spinner.style.display = 'none';
+    this.disabled = false;
+};
 async function handleFiles() {
     if (!selectedFiles.length) return alert('No files selected');
     const eventId = document.getElementById('uploadEventSelect').value;
-    if (!eventId) return alert('Select an event');
+    if (!eventId) return alert('Select an event first');
     const optimize = document.getElementById('optimizeToggle').checked;
     const maxW = parseInt(document.getElementById('maxWidthSelect').value);
     const quality = parseFloat(document.getElementById('jpegQuality').value);
@@ -1467,18 +1527,20 @@ async function handleFiles() {
     const progressBar = document.getElementById('progress-bar');
     const status = document.getElementById('uploadStatus');
     const container = document.getElementById('progress-container');
+    const uploadError = document.getElementById('uploadError');
+    uploadError.style.display = 'none';
     container.style.display = 'block';
     progressBar.style.width = '0%';
-    status.textContent = 'Preparing...';
+    status.textContent = 'Generating URLs...';
     status.className = '';
     try {
         const {json} = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, count: selectedFiles.length })
+            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, count: selectedFiles.length }) // Ensure event_id present
         });
         const urls = json?.urls || [];
-        if (urls.length < selectedFiles.length) throw new Error('Insufficient upload URLs');
+        if (urls.length < selectedFiles.length) throw new Error(`Only ${urls.length} URLs generated, need ${selectedFiles.length}. Backend issue?`);
         let uploaded = 0;
         for (let i = 0; i < selectedFiles.length; i++) {
             let file = selectedFiles[i];
@@ -1501,7 +1563,7 @@ async function handleFiles() {
                 body: blob,
                 headers: { 'Content-Type': 'image/jpeg' }
             });
-            if (!resp.ok) throw new Error(`Upload failed for ${file.name}: ${resp.status}`);
+            if (!resp.ok) throw new Error(`Upload failed for ${file.name}: ${resp.status} - Check file format/size`);
             uploaded++;
             const pct = ((i + 1) / selectedFiles.length) * 100;
             progressBar.style.width = `${pct}%`;
@@ -1518,16 +1580,16 @@ async function handleFiles() {
     } catch (e) {
         status.className = 'error';
         status.textContent = `Error: ${e.message}`;
+        uploadError.innerHTML = `${e.message} <button class="btn secondary retry-btn" onclick="handleFiles()">Retry Upload</button>`;
+        uploadError.style.display = 'block';
     }
 }
-document.getElementById('optimizeToggle').onchange = () => {
-    const label = document.getElementById('optimizeToggleLabel');
-    label.classList.toggle('active', document.getElementById('optimizeToggle').checked);
-};
-document.getElementById('convertUnsupported').onchange = () => {
-    const label = document.getElementById('convertToggleLabel');
-    label.classList.toggle('active', document.getElementById('convertUnsupported').checked);
-};
+['optimizeToggle', 'convertUnsupported'].forEach(id => {
+    const cb = document.getElementById(id);
+    const label = document.getElementById(id + 'Label');
+    cb.onchange = () => label.classList.toggle('active', cb.checked);
+    if (label) label.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
+});
 document.getElementById('jpegQuality').oninput = (e) => {
     document.getElementById('jpegQualityVal').textContent = e.target.value;
 };
@@ -1545,11 +1607,16 @@ window.copyLink = function() {
         }, 2000);
     }).catch(() => alert('Copy failed - manual copy the link'));
 };
-document.getElementById('genLinkBtn').onclick = async () => {
+document.getElementById('genLinkBtn').onclick = async function() {
+    const spinner = this.querySelector('.spinner');
+    spinner.style.display = 'inline-block';
+    this.disabled = true;
     const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
     if (selected.length === 0) return alert('Select at least one event');
     const expiry = parseInt(document.getElementById('expiryHours').value) || 0;
     const password = document.getElementById('linkPassword').value || null;
+    const linkError = document.getElementById('linkError');
+    linkError.style.display = 'none';
     try {
         const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
             method: 'POST',
@@ -1565,14 +1632,26 @@ document.getElementById('genLinkBtn').onclick = async () => {
         const box = document.getElementById('linkResult');
         const linkEl = document.getElementById('generatedLink');
         linkEl.href = data.searchUrl || '#';
-        linkEl.textContent = data.searchUrl || 'No URL generated';
+        linkEl.textContent = data.searchUrl || 'No URL generated - check backend';
         box.style.display = 'block';
     } catch (e) {
-        alert('Link generation failed: ' + e.message);
+        linkError.innerHTML = `${e.message} <button class="btn secondary retry-btn" onclick="this.parentElement.parentElement.querySelector('.btn').onclick()">Retry</button>`;
+        linkError.style.display = 'block';
+    } finally {
+        spinner.style.display = 'none';
+        this.disabled = false;
     }
 };
 /* ======================= ANALYTICS ======================= */
 async function fetchLeadsData() {
+    const leadsError = document.getElementById('leadsError');
+    const noMsg = document.getElementById('noLeadsMessage');
+    const retryBtn = document.getElementById('retryLeadsBtn');
+    leadsError.style.display = 'none';
+    noMsg.style.display = 'none';
+    retryBtn.style.display = 'none';
+    noMsg.innerHTML = 'Loading leads... <span class="spinner"></span>';
+    noMsg.style.display = 'block';
     try {
         const {json} = await apiFetch('get-leads', GET_LEADS_API, {
             method: 'POST',
@@ -1583,6 +1662,9 @@ async function fetchLeadsData() {
     } catch (e) {
         console.error('Fetch leads failed:', e);
         allLeads = [];
+        leadsError.innerHTML = `Failed to fetch leads: ${e.message} (Likely CORS or endpoint missing). <button class="btn secondary retry-btn" onclick="fetchAnalytics()">Retry</button>`;
+        leadsError.style.display = 'block';
+        retryBtn.style.display = 'inline-flex';
     }
 }
 function applyLeadsFilter() {
@@ -1609,7 +1691,7 @@ function applyLeadsFilter() {
     }
 }
 window.fetchAnalytics = async function() {
-    if (allLeads.length === 0) await fetchLeadsData();
+    await fetchLeadsData();
     applyLeadsFilter();
 };
 window.clearLeadsFilters = function() {
@@ -1680,6 +1762,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('saveEventBtn').textContent = 'Save';
         document.getElementById('saveEventBtn').onclick = createEvent;
     };
+    document.getElementById('saveEventBtn').onclick = createEvent;
     document.getElementById('cancelEventBtn').onclick = () => {
         document.getElementById('eventForm').style.display = 'none';
         document.getElementById('eventName').value = '';
@@ -1693,13 +1776,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('downloadZipBtn').onclick = (e) => downloadAllZip(e.target);
     document.getElementById('clearFiltersBtn').onclick = clearFilters;
     document.getElementById('dropZone').onclick = () => document.getElementById('fileInput').click();
-    // Toggle labels
-    ['optimizeToggle', 'convertUnsupported'].forEach(id => {
-        const cb = document.getElementById(id);
-        const label = document.getElementById(id.replace('Toggle', 'ToggleLabel') || id + 'Label');
-        cb.onchange = () => label.classList.toggle('active', cb.checked);
-        label.onclick = () => { cb.checked = !cb.checked; label.classList.toggle('active', cb.checked); cb.onchange(); };
-    });
 });
 </script>
 </body>
