@@ -729,8 +729,8 @@
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const GET_EVENTS_API = `${API_BASE}/get-events`;
 const GET_PHOTOS_API = `${API_BASE}/get-photos`;
-const GET_LEADS_API = `${API_BASE}/get-leads`;
-const GET_HISTORY_API = `${API_BASE}/get-search-history`;
+const GET_LEADS_API = null; // not deployed in this API
+const GET_HISTORY_API = null; // not deployed in this API
 const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
 const DELETE_EVENT_API = `${API_BASE}/delete-event`;
 const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
@@ -1158,33 +1158,43 @@ function ensureDateSection(container, photoDate){
     lastRenderedDate = photoDate;
   }
 }
+
 function renderNextBatch() {
   const container = $('galleryContainer');
   if(!container) return;
-  const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
-  for(const photo of nextBatch){
+
+  const startIndex = displayedPhotosCount;
+  const nextBatch = filteredPhotos.slice(startIndex, startIndex + PHOTOS_BATCH_SIZE);
+
+  for(let i=0; i<nextBatch.length; i++){
+    const photo = nextBatch[i];
+    const idx = startIndex + i;
+
     const photoDate = photo.created_at
       ? new Date(photo.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
       : 'Unknown Date';
+
     ensureDateSection(container, photoDate);
+
     const card = document.createElement('div');
     card.className = 'photo-card';
-    const idx = displayedPhotosCount; // approx; fix exact by computing after push
-    // We'll open by calculating from container render count:
-    const openIdx = displayedPhotosCount + (container.querySelectorAll('.photo-card').length % PHOTOS_BATCH_SIZE); // ok-ish
-    card.addEventListener('click', ()=> openViewer(openIdx));
+    card.addEventListener('click', ()=> openViewer(idx));
+
     const img = document.createElement('img');
     img.loading = 'lazy';
     img.src = photo.thumbnail_url || photo.url;
     img.addEventListener('load', ()=> img.classList.add('loaded'));
     img.addEventListener('error', ()=> { card.style.display='none'; });
     card.appendChild(img);
+
     currentGridEl.appendChild(card);
     displayedPhotosCount++;
   }
+
   const btn = $('loadMoreBtn');
   if(btn) btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
 }
+
 async function fetchPhotos() {
   const container = $('galleryContainer');
   if(container) container.innerHTML = '<p class="loading">Loading photos...</p>';
@@ -1445,100 +1455,139 @@ function renderFileList() {
     list.appendChild(div);
   }
 }
-async function handleFiles(files) {
+
+async function handleFiles(files){
   if(!files?.length) return;
-  const eventId = $('uploadEventSelect').value;
+
+  const eventId = $('uploadEventSelect')?.value;
   if(!eventId) return alert('Select event');
-  const optimize = $('optimizeToggle')?.checked || false;
-  const maxW = parseInt($('maxWidthSelect').value, 10);
-  const quality = parseFloat($('jpegQuality').value);
-  const convert = $('convertToggle')?.checked || false;
-    const filesMeta = Array.from(files).map(f => {
-      const originalName = f?.name || `upload_${Date.now()}.jpg`;
-      const originalType = (f?.type || '').toLowerCase();
-      const isHeic = originalType.includes('heic') || originalType.includes('heif') || /\.(heic|heif)$/i.test(originalName);
 
-      // We convert HEIC/HEIF to JPEG in the upload loop (even if Convert toggle is off)
-      const willConvertToJpg = isHeic || (convert && !['image/jpeg','image/jpg','image/png'].includes(originalType));
+  const optimize = !!$('optimizeToggle')?.checked;
+  const convertToJpg = !!$('convertToggle')?.checked;
+  const maxW = parseInt($('maxWidthSelect')?.value || '0', 10) || 0;
+  const quality = parseFloat($('jpegQuality')?.value || '0.82');
 
-      let name = originalName;
-      if (willConvertToJpg && !/\.(jpe?g)$/i.test(name)) {
-        name = name.replace(/\.[^.]+$/, '') + '.jpg';
-      }
+  // Build upload plan first (so we can request correct ContentType + filename)
+  const plans = [];
+  for(const f of Array.from(files)){
+    const origName = safeText(f.name || 'photo');
+    const origMime = safeText(f.type || '').toLowerCase();
 
-      const type = willConvertToJpg ? 'image/jpeg' : (originalType || 'image/jpeg');
-      return { name, type };
+    // Decide output mime/name
+    let outMime = origMime || 'image/jpeg';
+    let outName = origName;
+
+    // HEIC/HEIF must become JPEG
+    const isHeic = origMime.includes('heic') || origMime.includes('heif') || origName.toLowerCase().endswith('.heic') || origName.toLowerCase().endswith('.heif');
+
+    if(convertToJpg || isHeic){
+      outMime = 'image/jpeg';
+      // force .jpg extension
+      outName = origName.replace(/\.(heic|heif|png|webp|bmp|tiff|tif|gif|jpeg|jpg)$/i, '') + '.jpg';
+    }else{
+      // keep original name/mime, but if mime missing, assume jpeg
+      if(!outMime) outMime = 'image/jpeg';
+    }
+
+    plans.push({ file: f, outName, outMime, isHeic });
+  }
+
+  // UI
+  const progressBar = $('progress-bar');
+  const status = $('uploadStatus');
+  const container = $('progress-container');
+  if(container){ container.style.display = 'block'; }
+  if(progressBar){ progressBar.style.width = '0%'; }
+  if(status){ status.textContent = ''; status.className = ''; }
+
+  try{
+    // Request presigned URLs with correct metadata expected by Lambda
+    const reqPayload = {
+      collection_id: collectionId,
+      event_id: eventId,
+      files: plans.map(p => ({ filename: p.outName, content_type: p.outMime }))
+    };
+
+    const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify(reqPayload)
     });
 
-    try{
-        const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
-            method:'POST',
-            headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
-            body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: filesMeta })
-        });
-        const urls = Array.isArray(json?.urls) ? json.urls : [];
-    if(urls.length < files.length) return alert('Not enough upload URLs generated');
-    const progressBar = $('progress-bar');
-    const status = $('uploadStatus');
-    const container = $('progress-container');
-    container.style.display = 'block';
-    progressBar.style.width = '0%';
-    status.textContent = '';
-    status.className = '';
+    const urls = Array.isArray(json?.urls) ? json.urls : [];
+    if(urls.length < plans.length) throw new Error('Not enough upload URLs generated');
+
     let uploaded = 0;
-    for(let i=0;i<files.length;i++){
-      const file = files[i];
+
+    for(let i=0;i<plans.length;i++){
+      const plan = plans[i];
+      const file = plan.file;
+
       let blob = file;
-      // basic format detection
-      const mime = (file.type || blob.type || '').toLowerCase();
-      // HEIC/HEIF (some phones)
-      if(mime.includes('heic') || mime.includes('heif')){
+
+      // HEIC → JPEG
+      if(plan.isHeic){
         try{
           blob = await heic2any({ blob: file, toType: "image/jpeg", quality });
         }catch(e){
           console.warn('HEIC conversion failed:', e);
+          // continue with original blob
         }
       }
-      if(convert){
-        const bt = (blob.type || '').toLowerCase();
-        if(!['image/jpeg','image/jpg','image/png'].includes(bt)){
-          try{ blob = await imageToJpeg(blob, quality); }
-          catch(e){ console.warn('Conversion failed:', e); }
-        }
+
+      // Convert to JPEG (if requested) and blob is not jpeg
+      if(plan.outMime === 'image/jpeg' && (blob.type || '').toLowerCase() !== 'image/jpeg'){
+        try{ blob = await imageToJpeg(blob, quality); }
+        catch(e){ console.warn('Conversion failed:', e); }
       }
+
+      // Resize/optimize
       if(optimize && maxW > 0){
         blob = await resizeImage(blob, maxW, quality);
       }
-      const uploadUrl = urls[i]?.uploadURL || urls[i]?.uploadUrl || urls[i]?.url;
-      if(!uploadUrl) throw new Error('Missing upload URL from backend');
-      const resp = await fetch(uploadUrl, {
+
+      // Ensure mime matches what we asked URL for (critical for presigned URL)
+      const contentType = plan.outMime || blob.type || 'application/octet-stream';
+
+      const uploadURL = urls[i]?.uploadURL || urls[i]?.upload_url || urls[i];
+      if(!uploadURL) throw new Error('Upload URL missing');
+
+      const resp = await fetch(uploadURL, {
         method:'PUT',
         body: blob,
-        headers:{ 'Content-Type': (filesMeta[i]?.type || blob.type || 'image/jpeg') }
+        headers:{ 'Content-Type': contentType }
       });
-      if(!resp.ok) throw new Error(`Upload failed for ${file.name}`);
+
+      if(!resp.ok){
+        const t = await resp.text().catch(()=> '');
+        throw new Error(`Upload failed for ${plan.outName} (HTTP ${resp.status}) ${t}`);
+      }
+
       uploaded++;
-      const pct = ((i+1)/files.length)*100;
-      progressBar.style.width = `${pct}%`;
-      status.textContent = `Uploaded ${i+1}/${files.length}`;
+      const pct = ((i+1)/plans.length)*100;
+      if(progressBar) progressBar.style.width = `${pct}%`;
+      if(status) status.textContent = `Uploaded ${i+1}/${plans.length}`;
     }
-    status.className = uploaded === files.length ? 'success' : 'error';
-    status.textContent = uploaded === files.length ? 'All uploaded successfully!' : `Completed with ${uploaded}/${files.length} successes`;
+
+    if(status){
+      status.className = uploaded === plans.length ? 'success' : 'error';
+      status.textContent = uploaded === plans.length ? 'All uploaded successfully!' : `Completed with ${uploaded}/${plans.length} successes`;
+    }
+
+    // refresh after a short delay (allow backend to register uploads)
     setTimeout(async ()=>{
       await fetchPhotos();
       await init();
     }, 1200);
+
   }catch(e){
-    $('uploadStatus').textContent = `Error: ${e.message}`;
-    $('uploadStatus').className = 'error';
-  } finally {
-    selectedFiles = [];
-    renderFileList();
-    $('uploadControls').style.display = 'none';
-    $('startUploadBtn').querySelector('.spinner').style.display = 'none';
-    $('progress-container').style.display = 'none';
+    if(status){
+      status.textContent = `Error: ${e.message}`;
+      status.className = 'error';
+    }
   }
 }
+
 /* ======================= LINKS ======================= */
 function copyLink(){
   const link = $('generatedLink').href;
@@ -1553,15 +1602,13 @@ function copyLink(){
 window.copyLink = copyLink;
 /* ======================= ANALYTICS (XSS safe) ======================= */
 async function fetchLeadsData(){
-  try{
-    const { json } = await apiFetch('get-leads', GET_LEADS_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ collection_id: collectionId })
-    });
-    allLeads = Array.isArray(json?.leads) ? json.leads : [];
-  }catch{
-    allLeads = [];
+  // This project export does not include /get-leads or /get-search-history routes on the current API Gateway.
+  // So we keep the UI error-free and show a helpful message instead of failing CORS preflight.
+  allLeads = [];
+  const noMsg = $('noLeadsMessage');
+  if(noMsg){
+    noMsg.style.display = 'block';
+    noMsg.textContent = 'Guest Leads API not deployed for this backend yet.';
   }
 }
 function renderLeadCard(lead){
@@ -1641,30 +1688,7 @@ function loadMoreLeads(){
 }
 window.loadMoreLeads = loadMoreLeads;
 async function showLeadHistory(linkId){
-  try{
-    const { json } = await apiFetch(`get-history-${linkId}`, GET_HISTORY_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ collection_id: collectionId, link_id: linkId })
-    });
-    const history = Array.isArray(json?.history) ? json.history : [];
-    const tbody = $('historyBody');
-    tbody.innerHTML = '';
-    for(const h of history){
-      const tr = document.createElement('tr');
-      const td1 = document.createElement('td'); td1.textContent = formatLeadTime(h.search_time || h.time);
-      const td2 = document.createElement('td'); td2.textContent = h.link_id || linkId;
-      const td3 = document.createElement('td'); td3.textContent = h.name || h.captured_name || 'Unknown';
-      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
-      tbody.appendChild(tr);
-    }
-    $('historyHeader').textContent = `Search History for Link ${linkId}`;
-    $('leadsContainer').style.display = 'none';
-    $('historyViewer').style.display = 'block';
-  }catch(e){
-    alert('Failed to load history');
-    console.error(e);
-  }
+  alert('Search history API is not deployed on this backend yet.');
 }
 window.showLeadHistory = showLeadHistory;
 function hideHistoryViewer(){
