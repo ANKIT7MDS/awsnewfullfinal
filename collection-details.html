@@ -6,7 +6,6 @@
     <title>Collection Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -520,36 +519,6 @@
                 <p>Drag photos here to upload</p>
                 <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
-
-            <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
-                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
-                    <input type="checkbox" id="optimizeToggle" checked>
-                    Optimize (reduce size)
-                </label>
-
-                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
-                    Max Width
-                    <select id="maxWidthSelect" class="input" style="height:36px; padding:6px 10px; border-radius:10px;">
-                        <option value="0">Original</option>
-                        <option value="2048" selected>2048px</option>
-                        <option value="1600">1600px</option>
-                        <option value="1280">1280px</option>
-                        <option value="1024">1024px</option>
-                    </select>
-                </label>
-
-                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
-                    Quality
-                    <input id="jpegQuality" type="range" min="0.6" max="0.95" step="0.01" value="0.82">
-                    <span id="jpegQualityVal" style="min-width:40px; color:var(--text); font-size:13px;">0.82</span>
-                </label>
-
-                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
-                    <input type="checkbox" id="convertUnsupported" checked>
-                    Convert unsupported formats (HEIC/WEBP/GIF) → JPG
-                </label>
-            </div>
-
             <div id="progress-container" style="display:none;">
                 <div id="progress-bar"></div>
                 <p id="uploadStatus"></p>
@@ -832,12 +801,11 @@ async function init() {
  */
 async function fetchPeopleDirectory() {
     try {
-        const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
+        const {json} = await apiFetch('list_people', LIST_PEOPLE_API, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId })
         });
-        if (!res || !res.ok) return [];
         directoryPeople = (json && json.people) ? json.people : [];
         return directoryPeople;
     } catch (e) {
@@ -856,15 +824,7 @@ async function fetchPhotos() {
             body: JSON.stringify({ collection_id: collectionId })
         });
         const data = json || {};
-        allPhotos = (data.photos || []).map(p => {
-            // Normalize face_ids (primary) + faces (optional)
-            if (!p.face_ids || !Array.isArray(p.face_ids)) p.face_ids = [];
-            if ((!p.face_ids || p.face_ids.length === 0) && Array.isArray(p.faces) && p.faces.length > 0) {
-                p.face_ids = p.faces.map(f => f.FaceId).filter(Boolean);
-            }
-            p.faces = Array.isArray(p.faces) ? p.faces : [];
-            return p;
-        });
+        allPhotos = data.photos || [];
         filteredPhotos = [...allPhotos];
 
         // Build groups using whatever is available in photo items
@@ -933,57 +893,44 @@ document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch
  */
 function buildLocalFaceMap() {
     faceGroups = {};
-
-    // 1) Primary: face_ids (fast + stable for UI filtering)
     allPhotos.forEach(photo => {
-        const fids = Array.isArray(photo.face_ids) ? photo.face_ids : [];
-        fids.forEach(fid => {
-            if (!fid) return;
-            if (!faceGroups[fid]) {
-                faceGroups[fid] = {
-                    id: fid,
-                    name: 'Unknown Person',
+        const facesArr = photo.faces || []; // optional
+        facesArr.forEach(face => {
+            const faceId = face.FaceId || face.faceId;
+            if(!faceId) return;
+
+            if (!faceGroups[faceId]) {
+                faceGroups[faceId] = {
+                    id: faceId,
+                    name: face.FaceName || 'Unknown Person',
                     thumbnail: photo.thumbnail_url || photo.url,
                     count: 0,
                     photos: []
                 };
             }
-            faceGroups[fid].count++;
-            faceGroups[fid].photos.push(photo);
-            if (!faceGroups[fid].thumbnail) faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
+            faceGroups[faceId].count++;
+            faceGroups[faceId].photos.push(photo);
         });
+
+        // Also allow mapping if photo.face_ids exists
+        const ids = photo.face_ids || photo.faceIds || null;
+        if(Array.isArray(ids)){
+            ids.forEach(fid=>{
+                if(!faceGroups[fid]){
+                    faceGroups[fid] = { id: fid, name:'Unknown Person', thumbnail: photo.thumbnail_url || photo.url, count:0, photos:[] };
+                }
+                faceGroups[fid].count++;
+                faceGroups[fid].photos.push(photo);
+            });
+        }
     });
 
-    // 2) Fallback: faces[] (only if face_ids missing everywhere)
-    if (Object.keys(faceGroups).length === 0) {
-        allPhotos.forEach(photo => {
-            const facesArr = Array.isArray(photo.faces) ? photo.faces : [];
-            facesArr.forEach(face => {
-                const faceId = face.FaceId || face.faceId;
-                if (!faceId) return;
-
-                if (!faceGroups[faceId]) {
-                    faceGroups[faceId] = {
-                        id: faceId,
-                        name: face.FaceName || 'Unknown Person',
-                        thumbnail: photo.thumbnail_url || photo.url,
-                        count: 0,
-                        photos: []
-                    };
-                }
-                faceGroups[faceId].count++;
-                faceGroups[faceId].photos.push(photo);
-                if (!faceGroups[faceId].thumbnail) faceGroups[faceId].thumbnail = photo.thumbnail_url || photo.url;
-            });
-        });
-    }
-
-    // Debug warning if still no faces found
-    if (Object.keys(faceGroups).length === 0) {
+    // Debug warning if no faces found
+    if(Object.keys(faceGroups).length === 0){
         dbgAdd({
-            ok: false, type: 'WARN', label: 'faces-missing',
-            ts: Date.now(),
-            details: "No face data found in photos response. Check:\n1) get-photos ProjectionExpression includes faces + face_ids.\n2) Dynamo items contain faces/face_ids.\n3) UI should build faceGroups from face_ids."
+            ok:false, type:'WARN', label:'faces-missing',
+            ts:Date.now(),
+            details: "No face data found in photos response (no photo.faces and no photo.face_ids). Face icons will not show.\nFix options:\n1) Add face_ids in get-photos projection.\n2) Store faces/face_ids in items and return.\n3) Enhance list_people to return thumbnail_url + count."
         });
     }
 }
@@ -1422,177 +1369,58 @@ dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
 dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
 fileInput.onchange = () => handleFiles(fileInput.files);
 
-const jpegQuality = document.getElementById('jpegQuality');
-const jpegQualityVal = document.getElementById('jpegQualityVal');
-if(jpegQuality && jpegQualityVal){
-    jpegQualityVal.textContent = Number(jpegQuality.value).toFixed(2);
-    jpegQuality.addEventListener('input', ()=>{ jpegQualityVal.textContent = Number(jpegQuality.value).toFixed(2); });
-}
-
 async function handleFiles(files) {
     const eventId = document.getElementById('uploadEventSelect').value;
-    if (!eventId) return alert("Select an event first!");
+    if(!eventId) return alert("Select an event first!");
 
     const total = files.length;
-    if (total === 0) return;
+    if(total === 0) return;
 
-    // Options
-    const optimize = !!document.getElementById('optimizeToggle')?.checked;
-    const convertUnsupported = !!document.getElementById('convertUnsupported')?.checked;
-    const maxW = parseInt(document.getElementById('maxWidthSelect')?.value || "0", 10) || 0;
-    const quality = parseFloat(document.getElementById('jpegQuality')?.value || "0.82");
-
-    // Accept any image/* file, convert unsupported formats to JPEG if option enabled
-    const incoming = Array.from(files).filter(f => (f && (f.type || '').startsWith('image/')));
-    const skipped = total - incoming.length;
-    if (skipped > 0) alert(`Skipped ${skipped} non-image files.`);
-
-    if (incoming.length === 0) return;
+    const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png'].includes(f.type));
+    if (validFiles.length < total) {
+        alert(`Skipped ${total - validFiles.length} invalid files. Only JPG and PNG are supported.`);
+    }
+    if (validFiles.length === 0) return;
 
     document.getElementById('progress-container').style.display = 'block';
     const progressBar = document.getElementById('progress-bar');
     const status = document.getElementById('uploadStatus');
-    status.className = '';
-    status.innerHTML = 'Preparing files...';
-    progressBar.style.width = `0%`;
 
-    // Helpers
-    const isHeic = (f) => {
-        const t = (f.type || '').toLowerCase();
-        const n = (f.name || '').toLowerCase();
-        return t.includes('heic') || t.includes('heif') || n.endsWith('.heic') || n.endsWith('.heif');
-    };
-
-    async function toJpegBlob(file, { optimize, maxW, quality }) {
-        // 1) HEIC/HEIF → JPEG using heic2any
-        if (isHeic(file)) {
-            if (!window.heic2any) throw new Error("HEIC converter not loaded (heic2any).");
-            const converted = await window.heic2any({ blob: file, toType: "image/jpeg", quality: quality });
-            // heic2any can return Blob or Array of Blobs
-            const blob = Array.isArray(converted) ? converted[0] : converted;
-            return blob;
-        }
-
-        // 2) If it's already JPEG/PNG and user doesn't want optimize, keep original
-        const t = (file.type || '').toLowerCase();
-        const alreadyOk = (t === 'image/jpeg' || t === 'image/png');
-        if (alreadyOk && !optimize) return file;
-
-        // 3) Convert/optimize via canvas (works for PNG/JPEG/WEBP/GIF first frame etc.)
-        const imgUrl = URL.createObjectURL(file);
-        try {
-            const img = await new Promise((resolve, reject) => {
-                const i = new Image();
-                i.onload = () => resolve(i);
-                i.onerror = () => reject(new Error("Cannot decode image: " + (file.name || 'file')));
-                i.src = imgUrl;
-            });
-
-            let w = img.naturalWidth || img.width;
-            let h = img.naturalHeight || img.height;
-
-            if (maxW && w > maxW) {
-                const ratio = maxW / w;
-                w = Math.round(w * ratio);
-                h = Math.round(h * ratio);
-            }
-
-            // If not converting unsupported and the file isn't JPEG/PNG, we still need Rekognition-friendly format
-            if (!alreadyOk && !convertUnsupported) {
-                // keep as-is (but Rekognition may fail). We warn silently here:
-                dbgAdd({ ok:false, type:'WARN', label:'upload-format', ts:Date.now(), details:`Uploading unsupported format as-is: ${file.name} (${file.type})`});
-                return file;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-
-            const blob = await new Promise((resolve) => {
-                canvas.toBlob((b) => resolve(b), 'image/jpeg', quality);
-            });
-
-            if (!blob) throw new Error("Failed to compress image: " + (file.name || 'file'));
-            return blob;
-        } finally {
-            URL.revokeObjectURL(imgUrl);
-        }
-    }
-
-    // Prepare files (convert + optimize)
-    const prepared = [];
-    for (let i = 0; i < incoming.length; i++) {
-        const f = incoming[i];
-        status.innerHTML = `Preparing... ${i + 1}/${incoming.length}`;
-        progressBar.style.width = `${Math.round(((i + 1) / incoming.length) * 20)}%`; // prep phase (0-20%)
-
-        const blob = await toJpegBlob(f, { optimize, maxW, quality });
-
-        // Ensure we upload with correct name/type
-        let outType = blob.type || f.type || 'image/jpeg';
-        let outName = f.name || `photo_${Date.now()}_${i}.jpg`;
-
-        // If converted to jpeg but name not .jpg, fix
-        if (outType === 'image/jpeg' && !outName.toLowerCase().endsWith('.jpg') && !outName.toLowerCase().endsWith('.jpeg')) {
-            outName = outName.replace(/\.[^/.]+$/, '') + '.jpg';
-        }
-
-        // Wrap Blob as File so we keep name/type
-        const outFile = (blob instanceof File) ? blob : new File([blob], outName, { type: outType });
-        prepared.push(outFile);
-    }
-
-    // Upload in batches
     const BATCH_SIZE = 10;
-    const totalValid = prepared.length;
+    const fileArr = validFiles;
+    const totalValid = fileArr.length;
     let uploaded = 0;
-
+    status.className = '';
     status.innerHTML = 'Starting upload...';
-    progressBar.style.width = `20%`;
 
-    for (let i = 0; i < totalValid; i += BATCH_SIZE) {
-        const batch = prepared.slice(i, i + BATCH_SIZE);
+    for(let i=0; i<totalValid; i+=BATCH_SIZE) {
+        const batch = fileArr.slice(i, i+BATCH_SIZE);
         const fileData = batch.map(f => ({ name: f.name, type: f.type }));
-
         try {
-            const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
+            const {json} = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
             });
-
             const data = json || {};
-            const urls = data.urls || [];
 
-            await Promise.all(urls.map(async (u, idx) => {
+            await Promise.all((data.urls || []).map(async (u, idx) => {
                 const file = batch[idx];
-                await apiFetch('s3-put', u.uploadURL, {
-                    method: 'PUT',
-                    body: file,
-                    headers: { 'Content-Type': file.type }
-                });
+                await apiFetch('s3-put', u.uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
                 uploaded++;
-                // upload phase (20-100%)
-                const pct = 20 + Math.round((uploaded / totalValid) * 80);
-                progressBar.style.width = `${pct}%`;
+                progressBar.style.width = `${(uploaded/totalValid)*100}%`;
                 status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
             }));
-        } catch (err) {
+        } catch(err) {
             status.className = 'error';
             status.innerHTML = `Error: ${err.message}`;
             console.error(err);
-            return;
         }
     }
-
     status.className = 'success';
     status.innerHTML = '✅ Upload Complete! Indexing in progress...';
-
     setTimeout(() => {
         init();
-        fetchPhotos();
         status.innerHTML = 'Photos indexed and ready!';
     }, 3000);
 }
