@@ -1,4 +1,4 @@
-ME CODE DE RAAH HU TU ITNA KAR USKO SAMAJH KAAH GALTI HAI OR SUDHAR KAR DEDE <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -846,6 +846,7 @@ let selectedFaces = new Set();
 let lastRenderedDate = null;
 let currentGridEl = null;
 const eventState = { mode: 'create', eventId: null };
+let selectedFiles = [];
 /* ======================= IMAGE UTILS ======================= */
 async function resizeImage(blob, maxWidth, quality) {
   return new Promise((resolve) => {
@@ -1318,6 +1319,26 @@ async function saveFaceName(){
   }
 }
 window.saveFaceName = saveFaceName;
+function showSuggestions(val) {
+  const sug = $('faceSuggestions');
+  sug.innerHTML = '';
+  if (!val) { sug.style.display = 'none'; return; }
+  const lowerVal = val.toLowerCase();
+  const matches = directoryPeople.filter(p => p.FaceName && p.FaceName.toLowerCase().includes(lowerVal));
+  if (!matches.length) { sug.style.display = 'none'; return; }
+  for (const m of matches) {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    item.textContent = m.FaceName;
+    item.addEventListener('click', () => {
+      $('faceNameInput').value = m.FaceName;
+      sug.style.display = 'none';
+    });
+    sug.appendChild(item);
+  }
+  sug.style.display = 'block';
+}
+window.showSuggestions = showSuggestions;
 /* ======================= VIEWER ======================= */
 let viewerIndex = 0;
 function openViewer(idx){
@@ -1411,14 +1432,25 @@ async function deleteEvent(eventId, name){
   }
 }
 /* ======================= UPLOAD (same logic, minor hardening) ======================= */
-async function handleFiles(files){
+function renderFileList() {
+  const list = $('fileList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!selectedFiles.length) return;
+  for (const file of selectedFiles) {
+    const div = document.createElement('div');
+    div.textContent = `${file.name} (${formatBytes(file.size)})`;
+    list.appendChild(div);
+  }
+}
+async function handleFiles(files) {
   if(!files?.length) return;
   const eventId = $('uploadEventSelect').value;
   if(!eventId) return alert('Select event');
-  const optimize = $('optimizeToggle').checked;
+  const optimize = $('optimizeToggleLabel').classList.contains('active');
   const maxW = parseInt($('maxWidthSelect').value, 10);
   const quality = parseFloat($('jpegQuality').value);
-  const convert = $('convertUnsupported').checked;
+  const convert = $('convertToggleLabel').classList.contains('active');
   try{
     const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
       method:'POST',
@@ -1478,6 +1510,12 @@ async function handleFiles(files){
   }catch(e){
     $('uploadStatus').textContent = `Error: ${e.message}`;
     $('uploadStatus').className = 'error';
+  } finally {
+    selectedFiles = [];
+    renderFileList();
+    $('uploadControls').style.display = 'none';
+    $('startUploadBtn').querySelector('.spinner').style.display = 'none';
+    $('progress-container').style.display = 'none';
   }
 }
 /* ======================= LINKS ======================= */
@@ -1662,9 +1700,38 @@ document.addEventListener('DOMContentLoaded', ()=>{
     dropZone.addEventListener('click', ()=> fileInput.click());
     dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); dropZone.style.background = '#222'; });
     dropZone.addEventListener('dragleave', ()=>{ dropZone.style.background = '#151515'; });
-    dropZone.addEventListener('drop', (e)=>{ e.preventDefault(); dropZone.style.background = '#151515'; handleFiles(e.dataTransfer.files); });
-    fileInput.addEventListener('change', ()=> handleFiles(fileInput.files));
+    dropZone.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      dropZone.style.background = '#151515';
+      selectedFiles = Array.from(e.dataTransfer.files);
+      renderFileList();
+      $('uploadControls').style.display = 'flex';
+    });
+    fileInput.addEventListener('change', ()=>{
+      selectedFiles = Array.from(fileInput.files);
+      renderFileList();
+      $('uploadControls').style.display = 'flex';
+    });
   }
+  $('clearFilesBtn')?.addEventListener('click', ()=>{
+    selectedFiles = [];
+    renderFileList();
+    $('uploadControls').style.display = 'none';
+  });
+  $('startUploadBtn')?.addEventListener('click', ()=>{
+    if (!selectedFiles.length) return;
+    $('startUploadBtn').querySelector('.spinner').style.display = 'inline-block';
+    handleFiles(selectedFiles);
+  });
+  // toggle buttons
+  ['optimizeToggleLabel', 'convertToggleLabel'].forEach(id => {
+    const lbl = $(id);
+    if (lbl) {
+      lbl.addEventListener('click', () => {
+        lbl.classList.toggle('active');
+      });
+    }
+  });
   // generate link
   $('genLinkBtn')?.addEventListener('click', async ()=>{
     const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c=>c.value);
