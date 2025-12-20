@@ -1,1419 +1,1245 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Collection Manager • Premium</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* ========== MODERN THEME VARIABLES ========== */
-        :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-card: linear-gradient(145deg, #1a1a25, #232331);
-            --bg-hover: rgba(99, 102, 241, 0.1);
-            --border: rgba(255, 255, 255, 0.08);
-            --border-light: rgba(255, 255, 255, 0.12);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --brand: #6366f1;
-            --brand-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --brand-hover: #4f46e5;
-            --success: #10b981;
-            --success-light: rgba(16, 185, 129, 0.15);
-            --danger: #ef4444;
-            --danger-light: rgba(239, 68, 68, 0.15);
-            --warning: #f59e0b;
-            --info: #3b82f6;
-            --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-            --shadow-light: 0 5px 15px rgba(0, 0, 0, 0.2);
-            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 24px;
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            --glass: rgba(20, 20, 30, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-        }
-
-        /* ========== BASE STYLES ========== */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            min-height: 100vh;
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* ========== SCROLLBAR ========== */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--brand);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--brand-hover);
-        }
-
-        /* ========== LAYOUT ========== */
-        .wrap {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        /* ========== HEADER ========== */
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 32px;
-            padding: 20px 24px;
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .top-bar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-            background: var(--brand-gradient);
-        }
-
-        .header-left h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            background: linear-gradient(90deg, #f8fafc, #94a3b8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-left h1 i {
-            font-size: 24px;
-            color: var(--brand);
-        }
-
-        .stats-line {
-            display: flex;
-            gap: 20px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius-sm);
-        }
-
-        .stat-item i {
-            color: var(--brand);
-            font-size: 12px;
-        }
-
-        .stat-value {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            transition: var(--transition);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .back-link:hover {
-            color: var(--brand);
-            background: rgba(99, 102, 241, 0.1);
-            transform: translateX(-3px);
-        }
-
-        /* ========== TABS ========== */
-        .tabs-container {
-            position: relative;
-            margin-bottom: 32px;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 4px;
-            background: var(--bg-secondary);
-            border-radius: var(--radius-lg);
-            padding: 6px;
-            box-shadow: var(--shadow-light);
-            position: relative;
-            overflow-x: auto;
-        }
-
-        .tab {
-            flex: 1;
-            min-width: 140px;
-            padding: 16px 24px;
-            text-align: center;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 600;
-            border-radius: var(--radius-md);
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            white-space: nowrap;
-            position: relative;
-            z-index: 1;
-        }
-
-        .tab i {
-            font-size: 16px;
-            transition: var(--transition);
-        }
-
-        .tab:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .tab.active {
-            color: var(--text-primary);
-            background: var(--brand-gradient);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .tab.active i {
-            transform: scale(1.1);
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ========== CARDS ========== */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 28px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-card);
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card:hover {
-            border-color: var(--border-light);
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--brand-gradient);
-            opacity: 0;
-            transition: var(--transition);
-        }
-
-        .card:hover::before {
-            opacity: 1;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .card-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .card-title i {
-            color: var(--brand);
-        }
-
-        /* ========== BUTTONS ========== */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 600;
-            border-radius: var(--radius-md);
-            border: none;
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            text-decoration: none;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-
-        .btn:hover::before {
-            width: 300px;
-            height: 300px;
-        }
-
-        .btn-primary {
-            background: var(--brand-gradient);
-            color: white;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--border-light);
-            transform: translateY(-3px);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 13px;
-        }
-
-        .btn-icon {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ========== GALLERY ========== */
-        .filter-row {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filter-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            flex: 1;
-        }
-
-        .filter-input, .filter-select {
-            flex: 1;
-            min-width: 180px;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: var(--transition);
-        }
-
-        .filter-input:focus, .filter-select:focus {
-            outline: none;
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .filter-input::placeholder {
-            color: var(--text-muted);
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .photo-card {
-            aspect-ratio: 1;
-            background: var(--bg-secondary);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            position: relative;
-            cursor: pointer;
-            transition: var(--transition);
-            border: 1px solid var(--border);
-        }
-
-        .photo-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--brand);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-        }
-
-        .photo-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .photo-card:hover img {
-            transform: scale(1.05);
-        }
-
-        .photo-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-            padding: 16px;
-            transform: translateY(100%);
-            transition: var(--transition);
-        }
-
-        .photo-card:hover .photo-overlay {
-            transform: translateY(0);
-        }
-
-        .photo-meta {
-            font-size: 12px;
-            color: var(--text-secondary);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* ========== FACE ICONS ========== */
-        #faceIconsBar {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 28px;
-            padding-bottom: 20px;
-            overflow-x: auto;
-            scrollbar-width: thin;
-        }
-
-        .face-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 80px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .face-icon-wrapper {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid transparent;
-            transition: var(--transition);
-            position: relative;
-            background: var(--bg-secondary);
-        }
-
-        .face-icon-wrapper:hover {
-            transform: scale(1.1);
-            border-color: var(--brand);
-        }
-
-        .face-icon-wrapper.selected {
-            border-color: var(--success);
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-        }
-
-        .face-icon-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .face-name-label {
-            margin-top: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-align: center;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* ========== UPLOAD ZONE ========== */
-        #dropZone {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius-lg);
-            padding: 60px 40px;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.02);
-            transition: var(--transition);
-            cursor: pointer;
-            margin-bottom: 24px;
-            position: relative;
-        }
-
-        #dropZone:hover, #dropZone.dragover {
-            border-color: var(--brand);
-            background: rgba(99, 102, 241, 0.05);
-            transform: translateY(-5px);
-        }
-
-        #dropZone i {
-            font-size: 48px;
-            color: var(--brand);
-            margin-bottom: 16px;
-            display: block;
-        }
-
-        .upload-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 32px;
-            padding: 24px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-        }
-
-        .option-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 200px;
-        }
-
-        .option-label {
-            font-size: 14px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* ========== LEAD CARDS ========== */
-        .lead-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-        }
-
-        .lead-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            border: 1px solid var(--border);
-            transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .lead-card:hover {
-            border-color: var(--brand);
-            transform: translateY(-5px);
-            box-shadow: var(--shadow);
-        }
-
-        .selfie-img {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--brand);
-            flex-shrink: 0;
-        }
-
-        .lead-info {
-            flex-grow: 1;
-        }
-
-        .lead-name {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .lead-mobile {
-            color: var(--brand);
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .lead-meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border);
-            padding-top: 8px;
-        }
-
-        .match-count {
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        /* ========== TABLES ========== */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.03);
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        tr {
-            transition: var(--transition);
-        }
-
-        tr:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        /* ========== PROGRESS BAR ========== */
-        .progress-container {
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            height: 8px;
-        }
-
-        #progress-bar {
-            height: 100%;
-            background: var(--brand-gradient);
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: var(--radius-md);
-        }
-
-        /* ========== VIEWER ========== */
-        .viewer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .viewer.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .viewer img {
-            max-width: 90%;
-            max-height: 90vh;
-            border-radius: var(--radius-md);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-        }
-
-        .viewer-close {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            transition: var(--transition);
-            border: none;
-        }
-
-        .viewer-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: rotate(90deg);
-        }
-
-        /* ========== FORM ELEMENTS ========== */
-        input, select, textarea {
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: var(--transition);
-            width: 100%;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        /* ========== TOGGLE SWITCHES ========== */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 30px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.1);
-            transition: var(--transition);
-            border-radius: 34px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 4px;
-            bottom: 4px;
-            background: white;
-            transition: var(--transition);
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background: var(--brand);
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(30px);
-        }
-
-        /* ========== EMPTY STATES ========== */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
-
-        .empty-state i {
-            font-size: 48px;
-            color: var(--brand);
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        /* ========== LOADING STATES ========== */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
-
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top: 3px solid var(--brand);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* ========== RESPONSIVE DESIGN ========== */
-        @media (max-width: 1024px) {
-            .wrap {
-                padding: 16px;
-            }
-            
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            }
-            
-            .lead-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            }
-        }
-
-        @media (max-width: 768px) {
-            .top-bar {
-                flex-direction: column;
-                gap: 20px;
-                text-align: center;
-            }
-            
-            .stats-line {
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            
-            .tabs {
-                flex-wrap: wrap;
-            }
-            
-            .tab {
-                min-width: calc(50% - 8px);
-            }
-            
-            .filter-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .filter-group {
-                flex-direction: column;
-            }
-            
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                gap: 12px;
-            }
-            
-            .lead-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .card {
-                padding: 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .tab {
-                min-width: 100%;
-            }
-            
-            .gallery-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .photo-card {
-                aspect-ratio: 4/3;
-            }
-            
-            .header-left h1 {
-                font-size: 24px;
-            }
-        }
-
-        /* ========== ANIMATIONS ========== */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .float-animation {
-            animation: float 3s ease-in-out infinite;
-        }
-
-        /* ========== UTILITY CLASSES ========== */
-        .text-gradient {
-            background: var(--brand-gradient);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .glass {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 20px;
-            background: var(--brand);
-            color: white;
-        }
-
-        .badge-success {
-            background: var(--success);
-        }
-
-        .badge-danger {
-            background: var(--danger);
-        }
-
-        .badge-warning {
-            background: var(--warning);
-        }
-
-        .divider {
-            height: 1px;
-            background: var(--border);
-            margin: 24px 0;
-        }
-
-        .tooltip {
-            position: relative;
-        }
-
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 8px 12px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 1000;
-            margin-bottom: 8px;
-        }
-
-        /* ========== DEBUG PANEL ========== */
-        #debugFab {
-            position: fixed;
-            right: 24px;
-            bottom: 24px;
-            background: var(--brand-gradient);
-            color: white;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            cursor: pointer;
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
-            transition: var(--transition);
-            z-index: 999;
-        }
-
-        #debugFab:hover {
-            transform: scale(1.1) rotate(15deg);
-            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.6);
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Collection Details</title>
+  <style>
+    :root{
+      --bg:#0b0d10;
+      --panel:#11151b;
+      --panel2:#0f1318;
+      --text:#e7edf5;
+      --muted:#a9b4c2;
+      --line:#1f2732;
+      --brand:#3b82f6;
+      --brand2:#22c55e;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --shadow:0 12px 40px rgba(0,0,0,.45);
+      --r:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:radial-gradient(1200px 700px at 30% 0%, rgba(59,130,246,.15), transparent 55%),
+                 radial-gradient(900px 600px at 80% 20%, rgba(34,197,94,.12), transparent 55%),
+                 var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit; text-decoration:none}
+    .wrap{max-width:1200px; margin:0 auto; padding:18px 16px 32px}
+    .topbar{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      position:sticky; top:0; padding:14px 0; z-index:10; backdrop-filter: blur(8px);
+      background:linear-gradient(to bottom, rgba(11,13,16,.85), rgba(11,13,16,.35), transparent);
+    }
+    .left{display:flex; gap:12px; align-items:center}
+    .backbtn{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 12px; border:1px solid var(--line); border-radius:14px;
+      background:rgba(17,21,27,.55);
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 12px; border:1px solid var(--line); border-radius:14px;
+      background:rgba(17,21,27,.55);
+    }
+    .title{
+      display:flex; flex-direction:column; line-height:1.1;
+    }
+    .title h1{margin:0; font-size:22px; letter-spacing:.2px}
+    .title .sub{margin-top:4px; color:var(--muted); font-size:13px}
+    .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .btn{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      color:var(--text);
+      padding:10px 12px; border-radius:14px; cursor:pointer;
+      display:inline-flex; align-items:center; gap:10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.22);
+    }
+    .btn.primary{border-color:rgba(59,130,246,.55); background:linear-gradient(180deg, rgba(59,130,246,.25), rgba(59,130,246,.08));}
+    .btn.good{border-color:rgba(34,197,94,.55); background:linear-gradient(180deg, rgba(34,197,94,.20), rgba(34,197,94,.06));}
+    .btn.warn{border-color:rgba(245,158,11,.55); background:linear-gradient(180deg, rgba(245,158,11,.20), rgba(245,158,11,.06));}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+    .grid2{display:grid; grid-template-columns: 1.4fr .8fr; gap:14px; align-items:start}
+    @media (max-width: 980px){.grid2{grid-template-columns:1fr}}
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--r);
+      background: linear-gradient(180deg, rgba(17,21,27,.82), rgba(17,21,27,.55));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{padding:14px 14px 10px; display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .card .hd h2{margin:0; font-size:14px; color:var(--muted); font-weight:650; letter-spacing:.2px}
+    .card .bd{padding:14px}
+    .stats{display:flex; gap:10px; flex-wrap:wrap}
+    .stat{
+      padding:10px 12px;
+      border:1px solid var(--line);
+      background:rgba(15,19,24,.6);
+      border-radius:14px;
+      display:flex; gap:10px; align-items:center;
+      min-width: 170px;
+    }
+    .stat .k{font-size:12px; color:var(--muted)}
+    .stat .v{font-size:16px; font-weight:750}
+    .tabs{display:flex; gap:8px; margin:14px 0 10px; flex-wrap:wrap}
+    .tab{
+      padding:10px 12px; border-radius:14px; cursor:pointer;
+      border:1px solid var(--line);
+      background:rgba(17,21,27,.45);
+      color:var(--muted);
+      font-weight:650;
+    }
+    .tab.active{color:var(--text); border-color:rgba(59,130,246,.55); background:rgba(59,130,246,.12)}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .input, select{
+      background:rgba(15,19,24,.55);
+      border:1px solid var(--line);
+      border-radius:14px;
+      color:var(--text);
+      padding:10px 12px;
+      outline:none;
+      min-height:40px;
+    }
+    .input::placeholder{color:#708399}
+    .muted{color:var(--muted)}
+    .hint{font-size:12px; color:var(--muted)}
+    .hr{height:1px; background:var(--line); margin:12px 0}
+    .photoGrid{display:grid; grid-template-columns: repeat(5, 1fr); gap:10px}
+    @media (max-width:1200px){.photoGrid{grid-template-columns: repeat(4, 1fr);}}
+    @media (max-width:900px){.photoGrid{grid-template-columns: repeat(3, 1fr);}}
+    @media (max-width:600px){.photoGrid{grid-template-columns: repeat(2, 1fr);}}
+    .pWrap{position:relative; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,.06); background:#0a0e14}
+    .pWrap::before{content:""; display:block; padding-top:100%;}
+    .pImg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scale(1.02);}
+    .pOverlay{position:absolute; inset:auto 0 0 0; padding:10px; display:flex; justify-content:space-between; gap:10px;
+      background:linear-gradient(to top, rgba(0,0,0,.68), rgba(0,0,0,0));
+    }
+    .chip{display:inline-flex; align-items:center; gap:8px; padding:7px 10px; border-radius:999px; font-size:12px;
+      border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25);
+    }
+    .dateHeader{margin:18px 0 10px; font-size:13px; color:var(--muted); display:flex; align-items:center; gap:10px}
+    .dateHeader::after{content:""; height:1px; flex:1; background:var(--line)}
+
+    /* modal */
+    .modal{position:fixed; inset:0; background:rgba(0,0,0,.62); display:none; align-items:center; justify-content:center; padding:14px; z-index:50}
+    .modal.open{display:flex}
+    .modal .box{width:min(1100px, 100%); border-radius:22px; overflow:hidden; border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(17,21,27,.95), rgba(17,21,27,.78)); box-shadow: var(--shadow);
+    }
+    .modalTop{display:flex; justify-content:space-between; align-items:center; padding:14px 14px 10px; border-bottom:1px solid var(--line)}
+    .modalTop .t{font-weight:800}
+    .modalBody{display:grid; grid-template-columns: 1.3fr .7fr; gap:0}
+    @media (max-width: 980px){.modalBody{grid-template-columns:1fr}}
+    .viewer{padding:14px; border-right:1px solid var(--line)}
+    @media (max-width: 980px){.viewer{border-right:none; border-bottom:1px solid var(--line)}}
+    .viewer .big{width:100%; max-height:70vh; object-fit:contain; border-radius:18px; background:#0a0e14; border:1px solid rgba(255,255,255,.06)}
+    .faces{padding:14px; max-height:75vh; overflow:auto}
+    .faceRow{display:flex; gap:10px; align-items:center; padding:10px; border:1px solid rgba(255,255,255,.07); border-radius:16px; background:rgba(15,19,24,.55); margin-bottom:10px}
+    .faceThumb{width:56px; height:56px; border-radius:14px; background:#0a0e14; border:1px solid rgba(255,255,255,.08); overflow:hidden; flex:0 0 auto;}
+    .faceThumb img{width:100%; height:100%; object-fit:cover}
+    .faceMeta{flex:1}
+    .faceMeta .id{font-size:11px; color:#7c8ea5}
+    .faceMeta .nm{font-weight:750}
+    .faceMeta .nm input{width:100%;}
+    .faceActions{display:flex; flex-direction:column; gap:8px}
+    .tagPills{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+    .tagPills .chip{background:rgba(59,130,246,.10); border-color:rgba(59,130,246,.25)}
+
+    /* upload */
+    .drop{border:1px dashed rgba(255,255,255,.18); border-radius:18px; background:rgba(15,19,24,.4); padding:18px; text-align:center}
+    .drop.drag{border-color:rgba(34,197,94,.6); background:rgba(34,197,94,.08)}
+    .files{margin-top:12px; display:grid; grid-template-columns:1fr; gap:10px}
+    .fileItem{display:flex; justify-content:space-between; align-items:center; gap:10px;
+      border:1px solid rgba(255,255,255,.07); border-radius:16px; padding:10px 12px; background:rgba(15,19,24,.55)}
+    .bar{height:8px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden}
+    .bar > div{height:100%; width:0%; background:linear-gradient(90deg, rgba(59,130,246,.9), rgba(34,197,94,.9));}
+    .toast{position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:100;
+      display:none; padding:12px 14px; border-radius:16px; border:1px solid rgba(255,255,255,.10);
+      background:rgba(17,21,27,.92); box-shadow:var(--shadow);
+      min-width:min(560px, calc(100% - 24px));
+    }
+    .toast.show{display:block}
+    .toast .m{color:var(--text); font-weight:650}
+    .toast .s{color:var(--muted); font-size:12px; margin-top:4px}
+    .kbd{font-size:12px; color:var(--muted); border:1px solid rgba(255,255,255,.12); padding:2px 6px; border-radius:8px; background:rgba(0,0,0,.25)}
+    .mini{font-size:12px}
+    .table{width:100%; border-collapse:separate; border-spacing:0 10px}
+    .table td, .table th{padding:10px 12px; text-align:left}
+    .table tr{background:rgba(15,19,24,.55); border:1px solid rgba(255,255,255,.07)}
+    .table tr td:first-child, .table tr th:first-child{border-top-left-radius:14px; border-bottom-left-radius:14px}
+    .table tr td:last-child, .table tr th:last-child{border-top-right-radius:14px; border-bottom-right-radius:14px}
+  </style>
 </head>
 <body>
-<div class="wrap">
-    <!-- HEADER -->
-    <div class="top-bar glass">
-        <div class="header-left">
-            <a href="dashboard.html" class="back-link">
-                <i class="fas fa-arrow-left"></i> Dashboard
-            </a>
-            <h1>
-                <i class="fas fa-images"></i>
-                <span id="collectionName">Loading...</span>
-            </h1>
-            <div class="stats-line">
-                <div class="stat-item">
-                    <i class="fas fa-camera"></i>
-                    <span id="totalPhotos">0</span> Photos
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-users"></i>
-                    <span id="totalLeads">0</span> Guests
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-database"></i>
-                    <span id="storageUsed">0 MB</span>
-                </div>
-            </div>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="left">
+        <a class="backbtn" href="dashboard.html" title="Back to dashboard">
+          <span aria-hidden="true">←</span>
+          <span class="mini">Dashboard</span>
+        </a>
+        <div class="title">
+          <h1 id="collectionName">Collection</h1>
+          <div class="sub" id="collectionSub">ID: <span id="collectionIdTxt" class="kbd">—</span></div>
         </div>
-        <div class="header-actions">
-            <button class="btn btn-secondary" onclick="window.location.reload()">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-            <a href="#" id="assistantLink" target="_blank" class="btn btn-primary">
-                <i class="fas fa-bolt"></i> Staff Upload Link
-            </a>
-        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnRefresh">⟳ Refresh</button>
+        <button class="btn warn" id="btnStaffLink">⚡ Staff Upload Link</button>
+        <button class="btn primary" id="btnDebug">● Debug</button>
+      </div>
     </div>
 
-    <!-- TABS -->
-    <div class="tabs-container">
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('galleryTab')">
-                <i class="fas fa-images"></i> Photos
-            </div>
-            <div class="tab" onclick="switchTab('eventsTab')">
-                <i class="fas fa-calendar-alt"></i> Events
-            </div>
-            <div class="tab" onclick="switchTab('uploadTab')">
-                <i class="fas fa-cloud-upload-alt"></i> Upload
-            </div>
-            <div class="tab" onclick="switchTab('linksTab')">
-                <i class="fas fa-link"></i> Links
-            </div>
-            <div class="tab" onclick="switchTab('analyticsTab')">
-                <i class="fas fa-chart-line"></i> Guests
-            </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="hd">
+          <h2>Overview</h2>
+          <div class="hint">Generated: 2025-12-20T11:00:23.681743Z</div>
         </div>
-    </div>
-
-    <!-- GALLERY TAB -->
-    <div id="galleryTab" class="tab-content active">
-        <div class="card">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <select id="filterType" class="filter-select" onchange="applyFilters()">
-                        <option value="ALL">All Photos</option>
-                        <option value="BEST">⭐ Best Shots</option>
-                        <option value="HAPPY">😊 Happy</option>
-                        <option value="GROUP">👥 Groups</option>
-                    </select>
-                    <input type="text" id="tagSearch" class="filter-input" placeholder="Search tags..." oninput="applyFilters()">
-                </div>
-                <div class="filter-actions">
-                    <button class="btn btn-secondary" onclick="clearFilters()">
-                        <i class="fas fa-times"></i> Clear
-                    </button>
-                    <button class="btn btn-primary" id="downloadZipBtn" onclick="downloadAllZip(this)">
-                        <i class="fas fa-download"></i> Download Zip
-                    </button>
-                </div>
+        <div class="bd">
+          <div class="stats">
+            <div class="stat">
+              <div>
+                <div class="k">Selected Event</div>
+                <div class="v" id="statEvent">—</div>
+              </div>
             </div>
-
-            <!-- Face Icons -->
-            <div id="faceIconsBar"></div>
-
-            <!-- Face Naming Header -->
-            <div id="faceNamingHeader" class="card" style="display:none;">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-user-tag"></i>
-                        <span id="faceHeaderTitle">Who is this?</span>
-                    </h3>
-                </div>
-                <div style="display: flex; gap: 16px; align-items: center;">
-                    <img id="faceHeaderImg" src="" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--brand);">
-                    <div style="flex-grow: 1;">
-                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                            <input type="text" id="faceNameInput" placeholder="Enter name..." style="flex-grow: 1;">
-                            <button class="btn btn-primary" id="saveFaceBtn">
-                                <i class="fas fa-save"></i> Save
-                            </button>
-                            <button class="btn btn-secondary" id="cancelFaceBtn">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
-                        </div>
-                        <div id="faceSuggestions" style="color: var(--text-muted); font-size: 13px;"></div>
-                    </div>
-                </div>
+            <div class="stat">
+              <div>
+                <div class="k">Photos in Event</div>
+                <div class="v" id="statPhotos">0</div>
+              </div>
             </div>
+            <div class="stat">
+              <div>
+                <div class="k">Guest Leads</div>
+                <div class="v" id="statLeads">0</div>
+              </div>
+            </div>
+          </div>
 
-            <!-- Gallery -->
-            <div id="galleryContainer">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading photos...</p>
+          <div class="tabs" style="margin-top:14px">
+            <button class="tab active" data-tab="photos">Photos</button>
+            <button class="tab" data-tab="events">Events</button>
+            <button class="tab" data-tab="upload">Upload</button>
+            <button class="tab" data-tab="links">Links</button>
+            <button class="tab" data-tab="leads">Guests / Leads</button>
+          </div>
+
+          <!-- PHOTOS -->
+          <div id="tab-photos">
+            <div class="row" style="margin:10px 0 12px">
+              <select id="eventSelect" title="Choose Event"></select>
+              <select id="photoFilter">
+                <option value="all">All photos</option>
+                <option value="faces">With faces</option>
+                <option value="nofaces">No faces</option>
+              </select>
+              <input class="input" id="tagSearch" placeholder="Search tags (e.g. stage, cake, red)" style="flex:1; min-width:240px" />
+              <button class="btn" id="btnClearFilters">Clear filters</button>
+              <button class="btn" id="btnDownloadZip" title="(Optional) downloads visible photos one-by-one">⬇ Download</button>
+            </div>
+            <div class="hint">Tip: click any photo to open viewer + face naming.</div>
+            <div id="photosArea"></div>
+          </div>
+
+          <!-- EVENTS -->
+          <div id="tab-events" style="display:none">
+            <div class="hint">Events are loaded from <span class="kbd">/get-events</span>. Select an event above to filter photos.</div>
+            <div class="hr"></div>
+            <div id="eventsArea"></div>
+          </div>
+
+          <!-- UPLOAD -->
+          <div id="tab-upload" style="display:none">
+            <div class="row" style="justify-content:space-between">
+              <div>
+                <div style="font-weight:800">Upload photos to selected event</div>
+                <div class="hint">Fix applied: request now sends <span class="kbd">files: [{name,type}]</span> so <span class="kbd">generate-upload-urls</span> will not crash.</div>
+              </div>
+              <div class="row">
+                <input type="file" id="filePicker" multiple accept="image/*" style="display:none" />
+                <button class="btn" id="btnPickFiles">＋ Choose Photos</button>
+                <button class="btn good" id="btnStartUpload" disabled>⬆ Upload</button>
+              </div>
+            </div>
+            <div class="hr"></div>
+            <div class="drop" id="dropZone">
+              <div style="font-weight:800; font-size:16px">Drag & drop images here</div>
+              <div class="hint" style="margin-top:6px">or click <span class="kbd">Choose Photos</span></div>
+            </div>
+            <div class="files" id="fileList"></div>
+            <div style="margin-top:12px">
+              <div class="bar"><div id="uploadBar"></div></div>
+              <div class="hint" id="uploadHint" style="margin-top:8px"></div>
+            </div>
+          </div>
+
+          <!-- LINKS -->
+          <div id="tab-links" style="display:none">
+            <div class="row" style="justify-content:space-between; align-items:flex-start">
+              <div>
+                <div style="font-weight:800">Guest search link</div>
+                <div class="hint">This calls <span class="kbd">/generate-search-link</span> (stores link in DynamoDB and returns a URL).</div>
+              </div>
+              <button class="btn primary" id="btnGenerateLink">⚡ Generate Link</button>
+            </div>
+            <div class="hr"></div>
+            <div id="linksArea" class="hint">No link generated yet.</div>
+          </div>
+
+          <!-- LEADS -->
+          <div id="tab-leads" style="display:none">
+            <div class="row" style="justify-content:space-between; align-items:flex-start">
+              <div>
+                <div style="font-weight:800">Guest Leads</div>
+                <div class="hint">
+                  Fix applied: leads are fetched from <span class="kbd">/save-details</span> (GET), then filtered by <span class="kbd">collection_id</span>.
+                  This avoids the empty <span class="kbd">/get-leads</span> response.
                 </div>
+              </div>
+              <div class="row">
+                <input class="input" id="leadMobileFilter" placeholder="Filter by mobile" />
+                <input class="input" id="leadDateFilter" type="date" />
+                <button class="btn" id="btnClearLeadFilters">Clear</button>
+              </div>
             </div>
+            <div class="hr"></div>
+            <div id="leadsArea"></div>
+          </div>
 
-            <div style="text-align: center; margin-top: 32px;">
-                <button id="loadMoreBtn" class="btn btn-secondary" style="display:none;">
-                    <i class="fas fa-plus"></i> Load More
-                </button>
-            </div>
         </div>
-    </div>
+      </div>
 
-    <!-- EVENTS TAB -->
-    <div id="eventsTab" class="tab-content">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-calendar-alt"></i> Events
-                </h3>
-                <button class="btn btn-primary" id="newEvtBtn">
-                    <i class="fas fa-plus"></i> New Event
-                </button>
-            </div>
-
-            <div id="eventForm" style="display:none; margin-bottom: 24px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-                    <input type="text" id="eventName" placeholder="Event Name">
-                    <input type="date" id="eventDate">
-                </div>
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button class="btn btn-secondary" id="cancelEventBtn">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                    <button class="btn btn-primary" id="saveEventBtn">
-                        <i class="fas fa-save"></i> Save
-                    </button>
-                </div>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Date</th>
-                        <th>Photos</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="eventsTbody"></tbody>
-            </table>
+      <div class="card" id="debugCard" style="display:none">
+        <div class="hd">
+          <h2>Debug Panel</h2>
+          <div class="row">
+            <button class="btn" id="btnCopyDebug">Copy</button>
+            <button class="btn" id="btnClearDebug">Clear</button>
+            <button class="btn" id="btnCloseDebug">Close</button>
+          </div>
         </div>
-    </div>
-
-    <!-- UPLOAD TAB -->
-    <div id="uploadTab" class="tab-content">
-        <div class="card" style="max-width: 800px; margin: 0 auto;">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-cloud-upload-alt"></i> Upload Photos
-                </h3>
-            </div>
-
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">
-                    <i class="fas fa-calendar"></i> Select Event
-                </label>
-                <select id="uploadEventSelect">
-                    <option value="">Loading events...</option>
-                </select>
-            </div>
-
-            <div id="dropZone">
-                <i class="fas fa-cloud-upload-alt float-animation"></i>
-                <h3 style="margin-bottom: 12px;">Drop photos here or click to browse</h3>
-                <p style="color: var(--text-secondary);">Supports JPG, PNG, HEIC up to 10MB each</p>
-                <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
-            </div>
-
-            <div id="uploadControls" style="display:none; margin-top: 24px;">
-                <div style="display: flex; gap: 12px; justify-content: center;">
-                    <button class="btn btn-secondary" id="clearFilesBtn">
-                        <i class="fas fa-trash"></i> Clear Files
-                    </button>
-                    <button class="btn btn-primary" id="startUploadBtn">
-                        <i class="fas fa-upload"></i> Start Upload
-                    </button>
-                </div>
-            </div>
-
-            <div class="upload-options">
-                <div class="option-group">
-                    <label class="option-label">
-                        <i class="fas fa-compress-alt"></i> Optimize images
-                    </label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="optimizeToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="option-group">
-                    <label class="option-label">
-                        <i class="fas fa-exchange-alt"></i> Convert to JPG
-                    </label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="convertToggle" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="option-group">
-                    <label class="option-label">
-                        <i class="fas fa-ruler-horizontal"></i> Max Width
-                    </label>
-                    <select id="maxWidthSelect">
-                        <option value="0">Original</option>
-                        <option value="2048" selected>2048px</option>
-                        <option value="1600">1600px</option>
-                        <option value="1280">1280px</option>
-                    </select>
-                </div>
-
-                <div class="option-group">
-                    <label class="option-label">
-                        <i class="fas fa-tachometer-alt"></i> Quality
-                    </label>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <input id="jpegQuality" type="range" min="0.6" max="0.95" step="0.01" value="0.82" style="flex-grow: 1;">
-                        <span id="jpegQualityVal" style="min-width: 40px; color: var(--text-primary);">0.82</span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="fileList" style="margin-top: 24px;"></div>
-
-            <div id="progress-container" style="display:none; margin-top: 24px;">
-                <div class="progress-container">
-                    <div id="progress-bar"></div>
-                </div>
-                <p id="uploadStatus" style="text-align: center; margin-top: 12px; color: var(--text-secondary);"></p>
-            </div>
+        <div class="bd">
+          <pre id="debugLog" style="white-space:pre-wrap; word-break:break-word; margin:0; color:#b9c6d8; font-size:12px; line-height:1.45"></pre>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- LINKS TAB -->
-    <div id="linksTab" class="tab-content">
-        <div class="card" style="max-width: 600px; margin: 0 auto;">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-link"></i> Generate Search Link
-                </h3>
-            </div>
-
-            <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                Select events to include in the guest search link. This link allows guests to search for their photos.
-            </p>
-
-            <div id="linkEventList" style="max-height: 200px; overflow-y: auto; padding: 16px; background: rgba(255, 255, 255, 0.03); border-radius: var(--radius-md); margin-bottom: 20px;"></div>
-
-            <div style="display: grid; gap: 16px; margin-bottom: 24px;">
-                <div>
-                    <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">
-                        <i class="fas fa-clock"></i> Expiry (hours)
-                    </label>
-                    <input type="number" id="expiryHours" placeholder="0 for no expiry" min="0">
-                </div>
-
-                <div>
-                    <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">
-                        <i class="fas fa-lock"></i> Optional Password
-                    </label>
-                    <input type="password" id="linkPassword" placeholder="Leave empty for no password">
-                </div>
-            </div>
-
-            <button class="btn btn-primary" id="genLinkBtn" style="width: 100%;">
-                <i class="fas fa-magic"></i> Generate Link
-            </button>
-
-            <div id="linkResult" style="display:none; margin-top: 24px; padding: 20px; background: rgba(99, 102, 241, 0.1); border-radius: var(--radius-md); border: 1px dashed var(--brand);">
-                <h4 style="margin-bottom: 12px; color: var(--brand);">
-                    <i class="fas fa-check-circle"></i> Link Generated!
-                </h4>
-                <a id="generatedLink" href="#" target="_blank" style="display: block; color: var(--brand); text-decoration: none; word-break: break-all; margin-bottom: 16px;"></a>
-                <button class="btn btn-secondary" onclick="copyLink()" style="width: 100%;">
-                    <i class="fas fa-copy"></i> Copy Link
-                </button>
-            </div>
+  <!-- PHOTO MODAL -->
+  <div class="modal" id="photoModal" role="dialog" aria-modal="true">
+    <div class="box">
+      <div class="modalTop">
+        <div class="t" id="modalTitle">Photo</div>
+        <div class="row">
+          <button class="btn" id="btnPrev">← Prev</button>
+          <button class="btn" id="btnNext">Next →</button>
+          <button class="btn" id="btnCloseModal">✕ Close</button>
         </div>
-    </div>
-
-    <!-- GUESTS TAB -->
-    <div id="analyticsTab" class="tab-content">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-users"></i> Guest Leads
-                </h3>
-            </div>
-
-            <div class="filter-row">
-                <div class="filter-group">
-                    <input type="date" id="dateFilter" class="filter-input" placeholder="Filter by Date" onchange="fetchAnalytics()">
-                    <input type="tel" id="mobileFilter" class="filter-input" placeholder="Filter by Mobile" oninput="fetchAnalytics()">
-                </div>
-                <div class="filter-actions">
-                    <button class="btn btn-secondary" onclick="clearLeadsFilters()">
-                        <i class="fas fa-times"></i> Clear Filters
-                    </button>
-                </div>
-            </div>
-
-            <div id="leadsContainer">
-                <div id="leadsGrid" class="lead-grid"></div>
-                <div id="noLeadsMessage" class="empty-state" style="display:none;">
-                    <i class="fas fa-users-slash"></i>
-                    <h3 style="margin-bottom: 12px; color: var(--text-secondary);">No leads yet</h3>
-                    <p style="color: var(--text-muted);">Guest leads will appear here once guests search for their photos.</p>
-                </div>
-                <div style="text-align: center; margin-top: 32px;">
-                    <button id="loadMoreLeadsBtn" class="btn btn-secondary" style="display:none;" onclick="loadMoreLeads()">
-                        <i class="fas fa-plus"></i> Load More Leads
-                    </button>
-                </div>
-            </div>
+      </div>
+      <div class="modalBody">
+        <div class="viewer">
+          <img id="modalImg" class="big" alt="Photo preview"/>
+          <div class="tagPills" id="modalTags"></div>
         </div>
+        <div class="faces">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px">
+            <div style="font-weight:800">Faces</div>
+            <button class="btn" id="btnReloadPeople">↻ Reload Names</button>
+          </div>
+          <div class="hint" style="margin-top:6px">Tap a name, edit and press <span class="kbd">Save</span>.</div>
+          <div class="hr"></div>
+          <div id="facesList"></div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- PHOTO VIEWER -->
-<div class="viewer" id="viewer" onclick="closeViewer()">
-    <button class="viewer-close" onclick="event.stopPropagation(); closeViewer()">
-        <i class="fas fa-times"></i>
-    </button>
-    <img id="viewerImg" onclick="event.stopPropagation()">
-</div>
+  <div class="toast" id="toast">
+    <div class="m" id="toastM">—</div>
+    <div class="s" id="toastS"></div>
+  </div>
 
-<!-- DEBUG FAB -->
-<div id="debugFab" onclick="toggleDebugPanel()">
-    <i class="fas fa-bug"></i>
-</div>
-
-<!-- The rest of your JavaScript code remains exactly the same -->
 <script>
-// All your existing JavaScript code goes here
-// I haven't modified any logic, only the CSS/HTML structure
+(() => {
+  // ========= CONFIG =========
+  const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+  const API = {
+    getEvents: `${API_BASE}/get-events`,
+    getPhotos: `${API_BASE}/get-photos`,
+    genUploadUrls: `${API_BASE}/generate-upload-urls`,
+    genSearchLink: `${API_BASE}/generate-search-link`,
+    saveDetails: `${API_BASE}/save-details`,
+    listPeople: `${API_BASE}/list_people`,
+    saveFaceName: `${API_BASE}/save-face-name`,
+  };
+
+  // ========= STATE =========
+  const qs = new URLSearchParams(location.search);
+  const collectionId = qs.get("id") || qs.get("collection_id") || "";
+  const collectionName = qs.get("name") || "Collection";
+  let idToken = (localStorage.getItem("idToken") || localStorage.getItem("token") || "").trim();
+
+  let events = [];
+  let photosAll = [];         // all photos from API
+  let photosView = [];        // filtered + sorted list for current view
+  let leadsAll = [];          // all leads from save-details
+  let leadsView = [];
+
+  let peopleByFaceId = new Map(); // face_id -> {name, updated_at}
+  let selectedEventId = "";
+  let activeTab = "photos";
+
+  let modalIndex = -1;
+  let uploading = false;
+  let uploadFiles = [];
+
+  // ========= DOM =========
+  const el = (id) => document.getElementById(id);
+  const logEl = el("debugLog");
+  const debugCard = el("debugCard");
+
+  // ========= UTIL =========
+  function log(...args) {
+    const msg = args.map(a => {
+      try { return typeof a === "string" ? a : JSON.stringify(a, null, 2); }
+      catch(e) { return String(a); }
+    }).join(" ");
+    if (logEl) logEl.textContent += (logEl.textContent ? "\n" : "") + msg;
+    console.log(...args);
+  }
+
+  function toast(message, sub = "") {
+    el("toastM").textContent = message;
+    el("toastS").textContent = sub;
+    const t = el("toast");
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3600);
+  }
+
+  function bearer(token) {
+    if (!token) return "";
+    return token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+  }
+
+  function safeJsonParse(txt) {
+    try { return JSON.parse(txt); } catch(e) { return null; }
+  }
+
+  async function apiFetch(url, { method="POST", body=null, auth=true, raw=false } = {}) {
+    const headers = {"Content-Type":"application/json"};
+    if (auth && idToken) headers["Authorization"] = bearer(idToken);
+
+    const init = { method, headers };
+    if (body !== null) init.body = JSON.stringify(body);
+
+    let res;
+    try {
+      res = await fetch(url, init);
+    } catch (e) {
+      toast("Network error", String(e));
+      throw e;
+    }
+
+    const text = await res.text();
+    const data = raw ? text : (safeJsonParse(text) ?? { raw:text });
+
+    if (!res.ok) {
+      const msg = (data && (data.message || data.error)) ? (data.message || data.error) : `HTTP ${res.status}`;
+      log("API ERROR:", url, res.status, data);
+      // common token expiry from Cognito authorizer
+      if (res.status === 401 || res.status === 403) {
+        const m = (data && (data.message || data.error)) ? String(data.message || data.error) : "";
+        if (m.toLowerCase().includes("token") && m.toLowerCase().includes("expired")) {
+          localStorage.removeItem("idToken");
+          toast("Session expired", "Please login again (token expired).");
+        }
+      }
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  function fmtDate(dStr) {
+    try {
+      const d = new Date(dStr);
+      return d.toLocaleDateString(undefined, { year:"numeric", month:"short", day:"2-digit" });
+    } catch(e) {
+      return dStr || "";
+    }
+  }
+  function dayKey(dStr) {
+    try {
+      const d = new Date(dStr);
+      return d.toISOString().slice(0,10);
+    } catch(e) {
+      return "unknown";
+    }
+  }
+
+  function bytes(n) {
+    if (!Number.isFinite(n)) return "0 B";
+    const units = ["B","KB","MB","GB","TB"];
+    let i=0; let v=n;
+    while (v>=1024 && i<units.length-1) { v/=1024; i++; }
+    return `${v.toFixed(v>=10 || i===0 ? 0 : 1)} ${units[i]}`;
+  }
+
+  // ========= TABS =========
+  function setTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+    ["photos","events","upload","links","leads"].forEach(t => {
+      el(`tab-${t}`).style.display = (t === tab) ? "" : "none";
+    });
+  }
+
+  // ========= LOADERS =========
+  async function loadPeople() {
+    try {
+      const data = await apiFetch(API.listPeople, {
+        method:"POST",
+        body: { collection_id: collectionId },
+        auth:true
+      });
+      const list = (data.people || []);
+      peopleByFaceId = new Map(list.map(p => [p.face_id, p]));
+      log("People loaded:", list.length);
+    } catch (e) {
+      log("People load failed:", String(e));
+    }
+  }
+
+  async function loadEvents() {
+    const data = await apiFetch(API.getEvents, {
+      method:"POST",
+      body: { collection_id: collectionId },
+      auth:true
+    });
+    events = data.events || [];
+    // newest first
+    events.sort((a,b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    renderEvents();
+    if (!selectedEventId) {
+      selectedEventId = (events[0] && events[0].event_id) ? events[0].event_id : "";
+    }
+    renderEventSelect();
+  }
+
+  async function loadPhotos() {
+    const data = await apiFetch(API.getPhotos, {
+      method:"POST",
+      body: { collection_id: collectionId },
+      auth:true
+    });
+    photosAll = data.photos || [];
+    log("Photos loaded:", photosAll.length);
+    applyPhotoFilters();
+  }
+
+  async function loadLeads() {
+    // Use save-details GET (public-ish) and filter by collection_id on client.
+    // It returns: { leads:[...] }
+    try {
+      const res = await fetch(API.saveDetails, {
+        method:"GET",
+        headers: idToken ? { "Authorization": bearer(idToken) } : {}
+      });
+      const txt = await res.text();
+      const data = safeJsonParse(txt) ?? {};
+      if (!res.ok) throw new Error((data.error || data.message || `HTTP ${res.status}`));
+      leadsAll = (data.leads || []);
+      // filter by current collection
+      leadsAll = leadsAll.filter(x => String(x.collection_id || "") === String(collectionId));
+      leadsAll.sort((a,b) => String(b.created_at||"").localeCompare(String(a.created_at||"")));
+      applyLeadFilters();
+      log("Leads loaded:", leadsAll.length);
+    } catch(e) {
+      log("Leads load failed:", String(e));
+      leadsAll = [];
+      applyLeadFilters();
+    }
+  }
+
+  async function refreshAll() {
+    if (!collectionId) {
+      toast("Missing collection id", "Open from dashboard or add ?id=...");
+      return;
+    }
+    el("collectionName").textContent = collectionName;
+    el("collectionIdTxt").textContent = collectionId;
+    await Promise.allSettled([
+      loadPeople(),
+      loadEvents(),
+      loadPhotos(),
+      loadLeads(),
+    ]);
+    updateStats();
+    if (activeTab === "photos") renderPhotos();
+  }
+
+  // ========= EVENTS UI =========
+  function renderEventSelect() {
+    const s = el("eventSelect");
+    s.innerHTML = "";
+    const optAll = document.createElement("option");
+    optAll.value = "";
+    optAll.textContent = "All Events";
+    s.appendChild(optAll);
+
+    for (const ev of events) {
+      const o = document.createElement("option");
+      o.value = ev.event_id;
+      o.textContent = `${ev.event_name || ev.name || ev.event_id}`;
+      s.appendChild(o);
+    }
+    s.value = selectedEventId || "";
+  }
+
+  function renderEvents() {
+    const box = el("eventsArea");
+    if (!events.length) {
+      box.innerHTML = `<div class="hint">No events found.</div>`;
+      return;
+    }
+    const rows = events.map(ev => {
+      const name = ev.event_name || ev.name || ev.event_id;
+      const pc = ev.photo_count ?? ev.photos_count ?? 0;
+      const when = fmtDate(ev.created_at || ev.updated_at || "");
+      return `<tr>
+        <td style="font-weight:800">${escapeHtml(name)}</td>
+        <td class="muted">${escapeHtml(ev.event_id || "")}</td>
+        <td>${pc}</td>
+        <td class="muted">${when}</td>
+        <td><button class="btn mini" data-ev="${ev.event_id}">Select</button></td>
+      </tr>`;
+    }).join("");
+    box.innerHTML = `
+      <table class="table">
+        <thead>
+          <tr style="background:transparent">
+            <th>Name</th><th>Event ID</th><th>Photos</th><th>Created</th><th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    box.querySelectorAll("button[data-ev]").forEach(b => {
+      b.addEventListener("click", () => {
+        selectedEventId = b.dataset.ev || "";
+        el("eventSelect").value = selectedEventId;
+        applyPhotoFilters();
+        updateStats();
+        setTab("photos");
+      });
+    });
+  }
+
+  // ========= PHOTOS UI =========
+  function applyPhotoFilters() {
+    const filter = el("photoFilter").value;
+    const tagQ = (el("tagSearch").value || "").trim().toLowerCase();
+
+    let list = photosAll.slice();
+
+    // filter event
+    if (selectedEventId) {
+      list = list.filter(p => String(p.event_id || "") === String(selectedEventId));
+    }
+
+    // face filter
+    if (filter === "faces") {
+      list = list.filter(p => (p.face_count || 0) > 0);
+    } else if (filter === "nofaces") {
+      list = list.filter(p => (p.face_count || 0) === 0);
+    }
+
+    // tag search
+    if (tagQ) {
+      list = list.filter(p => {
+        const tags = (p.tags || []).map(t => String(t).toLowerCase());
+        return tags.some(t => t.includes(tagQ));
+      });
+    }
+
+    // sort newest first
+    list.sort((a,b) => String(b.created_at||"").localeCompare(String(a.created_at||"")));
+    photosView = list;
+    renderPhotos();
+    updateStats();
+  }
+
+  function renderPhotos() {
+    const area = el("photosArea");
+    if (!photosView.length) {
+      area.innerHTML = `<div class="hint" style="margin-top:12px">No photos match current filter.</div>`;
+      return;
+    }
+    // group by day
+    const groups = new Map();
+    for (const p of photosView) {
+      const k = dayKey(p.created_at || p.updated_at || "");
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(p);
+    }
+    const keys = Array.from(groups.keys()).sort((a,b)=>b.localeCompare(a));
+    area.innerHTML = keys.map(k => {
+      const dayPhotos = groups.get(k);
+      const label = (()=>{ try{ return new Date(k).toLocaleDateString(undefined, {year:"numeric",month:"short",day:"2-digit"}); }catch(e){return k} })();
+      const grid = dayPhotos.map(p => photoCardHtml(p)).join("");
+      return `
+        <div class="dateHeader">${label} <span class="muted">• ${dayPhotos.length} photos</span></div>
+        <div class="photoGrid">${grid}</div>
+      `;
+    }).join("");
+
+    area.querySelectorAll("[data-photo-index]").forEach(node => {
+      node.addEventListener("click", () => {
+        const idx = Number(node.dataset.photoIndex);
+        openModal(idx);
+      });
+    });
+  }
+
+  function photoCardHtml(p) {
+    const idx = photosView.indexOf(p);
+    const faces = p.face_count || 0;
+    const tags = (p.tags || []).slice(0,2);
+    const tagTxt = tags.length ? tags.join(", ") : "—";
+    const url = p.url || p.s3_url || p.presigned_url || "";
+    return `
+      <div class="pWrap" data-photo-index="${idx}" title="Click to open">
+        <img class="pImg" src="${escapeAttr(url)}" alt="photo"/>
+        <div class="pOverlay">
+          <span class="chip">🙂 ${faces}</span>
+          <span class="chip">🏷 ${escapeHtml(tagTxt)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // ========= MODAL =========
+  function openModal(idx) {
+    modalIndex = idx;
+    const p = photosView[modalIndex];
+    if (!p) return;
+    el("photoModal").classList.add("open");
+    renderModal();
+  }
+  function closeModal() {
+    el("photoModal").classList.remove("open");
+    modalIndex = -1;
+  }
+  function renderModal() {
+    const p = photosView[modalIndex];
+    if (!p) return;
+    el("modalTitle").textContent = `Photo • ${p.event_id || "—"}`;
+    el("modalImg").src = p.url || "";
+    // tags
+    const tags = (p.tags || []);
+    el("modalTags").innerHTML = tags.map(t => `<span class="chip">${escapeHtml(String(t))}</span>`).join("") || `<span class="hint">No tags found.</span>`;
+    // faces
+    renderFaces(p);
+  }
+
+  async function renderFaces(photo) {
+    const faces = Array.isArray(photo.faces) ? photo.faces : [];
+    const list = el("facesList");
+    if (!faces.length) {
+      list.innerHTML = `<div class="hint">No faces detected in this photo.</div>`;
+      return;
+    }
+
+    // Build face UI now; load crops async
+    list.innerHTML = faces.map((f, i) => {
+      const faceId = f.face_id || `face_${i}`;
+      const person = peopleByFaceId.get(faceId);
+      const name = person?.face_name || person?.name || "";
+      return `
+        <div class="faceRow" data-face="${escapeAttr(faceId)}">
+          <div class="faceThumb"><img alt="face" data-face-img="${escapeAttr(faceId)}" /></div>
+          <div class="faceMeta">
+            <div class="id">${escapeHtml(faceId)}</div>
+            <div class="nm"><input class="input" value="${escapeAttr(name)}" placeholder="Name (optional)"/></div>
+            <div class="hint">Click Save to attach name to this FaceId</div>
+          </div>
+          <div class="faceActions">
+            <button class="btn good mini" data-save="${escapeAttr(faceId)}">Save</button>
+            <button class="btn mini" data-copy="${escapeAttr(faceId)}">Copy</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // actions
+    list.querySelectorAll("[data-copy]").forEach(b => {
+      b.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(b.dataset.copy || "");
+        toast("Copied", b.dataset.copy || "");
+      });
+    });
+    list.querySelectorAll("[data-save]").forEach(b => {
+      b.addEventListener("click", async () => {
+        const faceId = b.dataset.save;
+        const row = list.querySelector(`.faceRow[data-face="${cssEscape(faceId)}"]`);
+        const input = row?.querySelector("input");
+        const faceName = (input?.value || "").trim();
+        if (!faceName) {
+          toast("Name required", "Type a name then Save.");
+          return;
+        }
+        try {
+          await apiFetch(API.saveFaceName, {
+            method:"POST",
+            auth:true,
+            body: {
+              collection_id: collectionId,
+              face_id: faceId,
+              face_name: faceName
+            }
+          });
+          peopleByFaceId.set(faceId, { face_id: faceId, face_name: faceName });
+          toast("Saved", `${faceName} → ${faceId.slice(0,8)}…`);
+        } catch(e) {
+          toast("Save failed", String(e));
+        }
+      });
+    });
+
+    // create face crops
+    for (const f of faces) {
+      const faceId = f.face_id;
+      const imgEl = list.querySelector(`img[data-face-img="${cssEscape(faceId)}"]`);
+      if (!imgEl) continue;
+      const bb = f.bounding_box || f.BoundingBox || f.boundingBox;
+      if (!bb) {
+        imgEl.src = photo.url; // fallback
+        continue;
+      }
+      // crop using canvas
+      cropFace(photo.url, bb).then(dataUrl => {
+        imgEl.src = dataUrl;
+      }).catch(() => {
+        imgEl.src = photo.url;
+      });
+    }
+  }
+
+  async function cropFace(imgUrl, bb) {
+    // bb expected normalized: {Left, Top, Width, Height}
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    const p = new Promise((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+    });
+    img.src = imgUrl;
+    await p;
+
+    const W = img.naturalWidth || img.width;
+    const H = img.naturalHeight || img.height;
+
+    const L = (bb.Left ?? bb.left ?? 0) * W;
+    const T = (bb.Top ?? bb.top ?? 0) * H;
+    const w = (bb.Width ?? bb.width ?? 0.2) * W;
+    const h = (bb.Height ?? bb.height ?? 0.2) * H;
+
+    // expand crop a bit for nicer zoom
+    const pad = 0.65;
+    const cx = L + w/2, cy = T + h/2;
+    const size = Math.max(w, h) * (1 + pad);
+    const x = Math.max(0, cx - size/2);
+    const y = Math.max(0, cy - size/2);
+    const cw = Math.min(W - x, size);
+    const ch = Math.min(H - y, size);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 180;
+    canvas.height = 180;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, x, y, cw, ch, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  }
+
+  // ========= LINKS =========
+  async function generateLink() {
+    if (!selectedEventId) {
+      toast("Select an event first", "Use the event dropdown.");
+      return;
+    }
+    try {
+      const data = await apiFetch(API.genSearchLink, {
+        method:"POST",
+        auth:true,
+        body: {
+          collection_id: collectionId,
+          event_ids: [selectedEventId]
+        }
+      });
+      const url = data.searchUrl || data.url || "";
+      if (!url) {
+        el("linksArea").innerHTML = `<div class="hint">No URL returned. Response: ${escapeHtml(JSON.stringify(data))}</div>`;
+        return;
+      }
+      el("linksArea").innerHTML = `
+        <div class="row" style="gap:10px; flex-wrap:wrap">
+          <input class="input" style="flex:1; min-width:240px" value="${escapeAttr(url)}" readonly />
+          <button class="btn" id="btnCopyLink">Copy</button>
+          <a class="btn primary" href="${escapeAttr(url)}" target="_blank" rel="noreferrer">Open</a>
+        </div>
+        <div class="hint" style="margin-top:10px">Share this with guests. It will ask name & mobile, then call <span class="kbd">save-details</span>.</div>
+      `;
+      el("btnCopyLink").addEventListener("click", async ()=> {
+        await navigator.clipboard.writeText(url);
+        toast("Copied link");
+      });
+      toast("Link generated");
+    } catch(e) {
+      toast("Link error", String(e));
+    }
+  }
+
+  // ========= LEADS =========
+  function applyLeadFilters() {
+    const mobQ = (el("leadMobileFilter").value || "").trim();
+    const dt = el("leadDateFilter").value || "";
+    let list = leadsAll.slice();
+    if (mobQ) {
+      list = list.filter(l => String(l.mobile || l.phone || "").includes(mobQ));
+    }
+    if (dt) {
+      list = list.filter(l => String(l.created_at || "").slice(0,10) === dt);
+    }
+    leadsView = list;
+    renderLeads();
+    updateStats();
+  }
+
+  function renderLeads() {
+    const box = el("leadsArea");
+    if (!leadsView.length) {
+      box.innerHTML = `<div class="hint">No leads found matching criteria.</div>`;
+      return;
+    }
+    const rows = leadsView.map(l => {
+      const name = l.name || "—";
+      const mob = l.mobile || l.phone || "—";
+      const when = fmtDate(l.created_at || l.timestamp || "");
+      const match = l.match_count ?? 0;
+      const link = l.link_id || "—";
+      return `<tr>
+        <td style="font-weight:800">${escapeHtml(name)}</td>
+        <td>${escapeHtml(String(mob))}</td>
+        <td>${match}</td>
+        <td class="muted">${escapeHtml(link)}</td>
+        <td class="muted">${when}</td>
+        <td><button class="btn mini" data-history="${escapeAttr(String(mob))}">History</button></td>
+      </tr>`;
+    }).join("");
+    box.innerHTML = `
+      <table class="table">
+        <thead>
+          <tr style="background:transparent">
+            <th>Name</th><th>Mobile</th><th>Matches</th><th>Link</th><th>Date</th><th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    box.querySelectorAll("[data-history]").forEach(b => {
+      b.addEventListener("click", () => showHistory(b.dataset.history));
+    });
+  }
+
+  async function showHistory(mobile) {
+    try {
+      const url = `${API.saveDetails}?mobile=${encodeURIComponent(mobile)}`;
+      const res = await fetch(url, {
+        method:"GET",
+        headers: idToken ? { "Authorization": bearer(idToken) } : {}
+      });
+      const txt = await res.text();
+      const data = safeJsonParse(txt) ?? {};
+      if (!res.ok) throw new Error((data.error || data.message || `HTTP ${res.status}`));
+      const hist = data.history || [];
+      const lines = hist.slice(0, 30).map(h => `• ${h.created_at || h.timestamp || ""} | match_count=${h.match_count ?? 0} | link_id=${h.link_id || ""}`).join("\n");
+      toast("History loaded", `${mobile} (showing up to 30)`);
+      log("HISTORY", mobile, hist);
+      alert(`History for ${mobile}\n\n${lines || "(empty)"}`);
+    } catch(e) {
+      toast("History error", String(e));
+    }
+  }
+
+  // ========= UPLOAD =========
+  function setUploadFiles(files) {
+    uploadFiles = files;
+    const list = el("fileList");
+    list.innerHTML = "";
+    if (!files.length) {
+      el("btnStartUpload").disabled = true;
+      el("uploadHint").textContent = "";
+      el("uploadBar").style.width = "0%";
+      return;
+    }
+    el("btnStartUpload").disabled = false;
+    for (const f of files) {
+      const node = document.createElement("div");
+      node.className = "fileItem";
+      node.innerHTML = `
+        <div>
+          <div style="font-weight:750">${escapeHtml(f.name)}</div>
+          <div class="hint">${bytes(f.size)} • ${escapeHtml(f.type || "image")}</div>
+        </div>
+        <button class="btn mini" data-remove="${escapeAttr(f.name)}">Remove</button>
+      `;
+      list.appendChild(node);
+    }
+    list.querySelectorAll("[data-remove]").forEach(b => {
+      b.addEventListener("click", () => {
+        const name = b.dataset.remove;
+        setUploadFiles(uploadFiles.filter(f => f.name !== name));
+      });
+    });
+  }
+
+  async function startUpload() {
+    if (uploading) return;
+    if (!selectedEventId) {
+      toast("Select an event first", "Upload needs event_id.");
+      return;
+    }
+    if (!uploadFiles.length) {
+      toast("Pick files first");
+      return;
+    }
+    uploading = true;
+    el("btnStartUpload").disabled = true;
+    el("btnPickFiles").disabled = true;
+    el("uploadHint").textContent = "Generating upload URLs...";
+    try {
+      const payload = {
+        collection_id: collectionId,
+        event_id: selectedEventId,
+        files: uploadFiles.map(f => ({ name: f.name, type: f.type || "application/octet-stream" }))
+      };
+      const data = await apiFetch(API.genUploadUrls, {
+        method:"POST",
+        auth:true,
+        body: payload
+      });
+      const urls = data.urls || data.URLs || data.upload_urls || [];
+      if (!Array.isArray(urls) || !urls.length) throw new Error("No presigned urls returned");
+
+      // Map by filename to be safe
+      const map = new Map(urls.map(u => [u.filename, u.uploadURL]));
+      let done = 0;
+      const total = uploadFiles.length;
+
+      for (const f of uploadFiles) {
+        const putUrl = map.get(f.name);
+        if (!putUrl) {
+          log("Missing URL for", f.name, urls);
+          continue;
+        }
+        el("uploadHint").textContent = `Uploading ${done+1} / ${total}: ${f.name}`;
+        const putRes = await fetch(putUrl, {
+          method:"PUT",
+          headers: { "Content-Type": f.type || "application/octet-stream" },
+          body: f
+        });
+        if (!putRes.ok) {
+          const t = await putRes.text();
+          throw new Error(`Upload failed: ${f.name} (HTTP ${putRes.status}) ${t.slice(0,120)}`);
+        }
+        done++;
+        el("uploadBar").style.width = `${Math.round((done/total)*100)}%`;
+      }
+
+      toast("Upload complete", "Indexing may take a few seconds.");
+      setUploadFiles([]);
+      // reload photos after short delay
+      setTimeout(async ()=> {
+        await loadPhotos();
+        applyPhotoFilters();
+      }, 2500);
+
+    } catch(e) {
+      toast("Upload error", String(e));
+      log("UPLOAD ERROR", e);
+    } finally {
+      uploading = false;
+      el("btnPickFiles").disabled = false;
+      el("btnStartUpload").disabled = uploadFiles.length === 0;
+      el("uploadHint").textContent = "";
+    }
+  }
+
+  // ========= STATS =========
+  function updateStats() {
+    const ev = events.find(e => String(e.event_id) === String(selectedEventId));
+    el("statEvent").textContent = ev ? (ev.event_name || ev.name || ev.event_id) : (selectedEventId ? selectedEventId : "All Events");
+    el("statPhotos").textContent = String(photosView.length);
+    el("statLeads").textContent = String(leadsAll.length);
+  }
+
+  // ========= DOWNLOAD (simple) =========
+  async function downloadVisible() {
+    if (!photosView.length) {
+      toast("No photos to download");
+      return;
+    }
+    toast("Download started", "Browser will download images one-by-one.");
+    for (let i=0; i<Math.min(photosView.length, 40); i++) {
+      const p = photosView[i];
+      const a = document.createElement("a");
+      a.href = p.url;
+      a.download = `photo_${i+1}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      await new Promise(r => setTimeout(r, 350));
+    }
+    toast("Done", "Downloaded first 40 photos (limit to avoid browser block).");
+  }
+
+  // ========= ESCAPING =========
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/'/g, "&#39;");
+  }
+  function cssEscape(s) {
+    // minimal
+    return String(s).replace(/"/g, '\"');
+  }
+
+  // ========= INIT =========
+  // hydrate
+  el("collectionName").textContent = collectionName;
+  el("collectionIdTxt").textContent = collectionId;
+
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+  el("btnRefresh").addEventListener("click", refreshAll);
+  el("btnGenerateLink").addEventListener("click", generateLink);
+  el("btnDownloadZip").addEventListener("click", downloadVisible);
+
+  el("eventSelect").addEventListener("change", (e) => {
+    selectedEventId = e.target.value;
+    applyPhotoFilters();
+    updateStats();
+  });
+  el("photoFilter").addEventListener("change", applyPhotoFilters);
+  el("tagSearch").addEventListener("input", () => {
+    // debounce light
+    clearTimeout(window.__tagTimer);
+    window.__tagTimer = setTimeout(applyPhotoFilters, 200);
+  });
+  el("btnClearFilters").addEventListener("click", () => {
+    el("photoFilter").value = "all";
+    el("tagSearch").value = "";
+    applyPhotoFilters();
+  });
+
+  el("leadMobileFilter").addEventListener("input", () => {
+    clearTimeout(window.__leadTimer);
+    window.__leadTimer = setTimeout(applyLeadFilters, 200);
+  });
+  el("leadDateFilter").addEventListener("change", applyLeadFilters);
+  el("btnClearLeadFilters").addEventListener("click", () => {
+    el("leadMobileFilter").value = "";
+    el("leadDateFilter").value = "";
+    applyLeadFilters();
+  });
+
+  el("btnDebug").addEventListener("click", () => {
+    debugCard.style.display = (debugCard.style.display === "none" || !debugCard.style.display) ? "" : "none";
+  });
+  el("btnCopyDebug").addEventListener("click", async () => {
+    await navigator.clipboard.writeText(logEl.textContent || "");
+    toast("Debug copied");
+  });
+  el("btnClearDebug").addEventListener("click", () => logEl.textContent = "");
+  el("btnCloseDebug").addEventListener("click", () => debugCard.style.display = "none");
+
+  // modal controls
+  el("btnCloseModal").addEventListener("click", closeModal);
+  el("photoModal").addEventListener("click", (e) => {
+    if (e.target === el("photoModal")) closeModal();
+  });
+  el("btnPrev").addEventListener("click", () => {
+    if (modalIndex <= 0) return;
+    modalIndex--;
+    renderModal();
+  });
+  el("btnNext").addEventListener("click", () => {
+    if (modalIndex >= photosView.length-1) return;
+    modalIndex++;
+    renderModal();
+  });
+  el("btnReloadPeople").addEventListener("click", async () => {
+    await loadPeople();
+    if (modalIndex >= 0) renderModal();
+    toast("Names reloaded");
+  });
+  window.addEventListener("keydown", (e) => {
+    if (!el("photoModal").classList.contains("open")) return;
+    if (e.key === "Escape") closeModal();
+    if (e.key === "ArrowLeft") el("btnPrev").click();
+    if (e.key === "ArrowRight") el("btnNext").click();
+  });
+
+  // upload
+  const drop = el("dropZone");
+  const picker = el("filePicker");
+  el("btnPickFiles").addEventListener("click", () => picker.click());
+  picker.addEventListener("change", () => {
+    const files = Array.from(picker.files || []);
+    setUploadFiles(dedupeFiles(uploadFiles.concat(files)));
+    picker.value = "";
+  });
+  el("btnStartUpload").addEventListener("click", startUpload);
+
+  function dedupeFiles(list) {
+    const map = new Map();
+    for (const f of list) map.set(f.name, f);
+    return Array.from(map.values());
+  }
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, (e) => {
+    e.preventDefault(); e.stopPropagation();
+    drop.classList.add("drag");
+  }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, (e) => {
+    e.preventDefault(); e.stopPropagation();
+    drop.classList.remove("drag");
+  }));
+  drop.addEventListener("drop", (e) => {
+    const files = Array.from(e.dataTransfer.files || []).filter(f => (f.type || "").startsWith("image/"));
+    if (files.length) setUploadFiles(dedupeFiles(uploadFiles.concat(files)));
+  });
+
+  // staff link button: open quick-upload with params
+  el("btnStaffLink").addEventListener("click", () => {
+    if (!selectedEventId) {
+      toast("Select an event first");
+      return;
+    }
+    const url = `quick-upload.html?id=${encodeURIComponent(collectionId)}&event_id=${encodeURIComponent(selectedEventId)}&name=${encodeURIComponent(collectionName)}`;
+    window.open(url, "_blank");
+  });
+
+  // first load
+  refreshAll().catch(e => log("Init error:", String(e)));
+})();
 </script>
 </body>
 </html>
