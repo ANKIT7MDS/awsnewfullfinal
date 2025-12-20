@@ -152,6 +152,8 @@
 
         /* Button style consistency */
         .btn {
+      min-height: 42px;
+
             background: var(--brand);
             color: #fff;
             border: none;
@@ -266,6 +268,10 @@
             padding-bottom: 10px;
         }
         .face-icon {
+      background-repeat: no-repeat;
+      background-size: 180%;
+      background-position: 50% 35%;
+      
             width: 50px;
             height: 50px;
             border-radius: 50%;
@@ -744,6 +750,66 @@ let viewerIndex = 0;
 
 // Leads Analytics
 let allLeads = [];
+
+
+function updateEventPhotoCounts() {
+  try {
+    // Build counts per event_id from allPhotos
+    const counts = {};
+    (allPhotos || []).forEach(p => {
+      const eid = p?.event_id || p?.eventId || p?.event || '';
+      if (!eid) return;
+      counts[eid] = (counts[eid] || 0) + 1;
+    });
+
+    // Update the Events table rows (if visible)
+    const rows = document.querySelectorAll('#eventsTableBody tr');
+    rows.forEach(tr => {
+      const eid = tr.getAttribute('data-event-id');
+      if (!eid) return;
+      const td = tr.querySelector('[data-ev-photo-count]');
+      if (td) td.textContent = String(counts[eid] || 0);
+    });
+
+    // Update Upload Event dropdown label counts (optional)
+    const ddl = document.getElementById('uploadEventSelect');
+    if (ddl) {
+      Array.from(ddl.options).forEach(opt => {
+        const eid = opt.value;
+        if (!eid || eid === 'all') return;
+        const base = opt.getAttribute('data-base-label') || opt.textContent.split(' (')[0];
+        opt.setAttribute('data-base-label', base);
+        opt.textContent = `${base} (${counts[eid] || 0})`;
+      });
+    }
+  } catch (e) {
+    console.warn('updateEventPhotoCounts error', e);
+  }
+}
+
+function updateHeaderCounts() {
+  try {
+    const photosEl = document.getElementById('totalPhotos');
+    const guestsEl = document.getElementById('totalGuests');
+    const storageEl = document.getElementById('totalStorage');
+
+    if (photosEl) photosEl.textContent = `${(allPhotos || []).length} Photos`;
+    if (guestsEl) guestsEl.textContent = `${(allLeads || []).length} Guests`;
+
+    // Best-effort storage calc (only if size present)
+    if (storageEl) {
+      const bytes = (allPhotos || []).reduce((sum, p) => {
+        const v = Number(p?.size || p?.bytes || p?.file_size || p?.content_length || 0);
+        return sum + (Number.isFinite(v) ? v : 0);
+      }, 0);
+      // If API already provided a storage number, don't override with 0
+      if (bytes > 0) storageEl.textContent = formatBytes(bytes);
+    }
+  } catch (e) {
+    console.warn('updateHeaderCounts error', e);
+  }
+}
+
 let filteredLeads = [];
 let leadsDisplayCount = 0;
 const LEADS_BATCH_SIZE = 10;
@@ -812,7 +878,7 @@ async function init() {
         const data = json || {};
         const summary = data.collection_summary || {};
         document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-        document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
+        document.getElementById('totalPhotos').textContent = `${summary.photo_count || 0} Photos`;
         document.getElementById('totalLeads').textContent = summary.leads_count || 0;
         document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
         document.title = `${summary.name || 'Collection'} • Manager`;
@@ -830,6 +896,19 @@ async function init() {
  * To show thumbnails, we attach thumbnail from any photo that contains that FaceId (if photo.face_ids exists),
  * or fallback to the first photo URL if nothing is available.
  */
+
+function rebuildFaceGroupsWithNames() {
+  try {
+    if (!faceNameMap || typeof faceNameMap !== 'object') return;
+    Object.keys(faceGroups || {}).forEach(fid => {
+      const nm = faceNameMap[fid];
+      if (nm && nm.trim()) faceGroups[fid].name = nm.trim();
+    });
+  } catch (e) {
+    console.warn('rebuildFaceGroupsWithNames error', e);
+  }
+}
+
 async function fetchPeopleDirectory() {
     try {
         const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
@@ -1027,50 +1106,99 @@ async function enhanceFacesFromDirectory(){
 }
 
 /* ======================= FACE ICON RENDER ======================= */
+
 function renderFaceIcons() {
-    const bar = document.getElementById('faceIconsBar');
+    const bar = document.getElementById('faceBar');
+    if (!bar) return;
+
     bar.innerHTML = '';
-    bar.style.display = 'flex';
 
-    const entries = Object.values(faceGroups)
-        .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
-        .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
+    // Build display groups: group by saved name if available (same name => same group)
+    const tmp = {};
+    Object.values(faceGroups || {}).forEach(g => {
+        const fid = g.id;
+        const nm = (faceNameMap && faceNameMap[fid]) ? String(faceNameMap[fid]).trim() : '';
+        const key = nm ? `name:${nm.toLowerCase()}` : `id:${fid}`;
+        if (!tmp[key]) {
+            tmp[key] = {
+                key,
+                label: nm || fid,
+                // keep a canonical faceId to open naming modal etc.
+                primaryface_id: fid,
+                faceIds: [],
+                count: 0,
+                thumbnail: g.thumbnail,
+                bbox: g.bbox || null
+            };
+        }
+        tmp[key].faceIds.push(fid);
+        tmp[key].count += Number(g.count || 0);
+        if (!tmp[key].thumbnail && g.thumbnail) tmp[key].thumbnail = g.thumbnail;
+        if (!tmp[key].bbox && g.bbox) tmp[key].bbox = g.bbox;
+    });
 
-    if (entries.length === 0) {
-        bar.style.display = 'none';
-        return;
-    }
+    const groups = Object.values(tmp).sort((a,b) => (b.count||0) - (a.count||0));
 
-    entries.forEach(group => {
-        const img = document.createElement('img');
-        img.className = 'face-icon';
-        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name||'?')[0]||'?')}`;
-        img.title = `${group.name} (${group.count || group.photos.length} photos)`;
+    groups.forEach(group => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'face-wrapper';
 
-        img.onclick = (e) => {
-            // UX polish: Shift for multi-select; click for single select
-            if (e.shiftKey) {
-                if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
-                else selectedFaces.add(group.id);
+        const thumb = group.thumbnail || `https://placehold.co/96x96/png?text=Face`;
+        const icon = document.createElement('div');
+        icon.className = 'face-icon';
+        icon.title = `${group.label} • ${group.count} photo(s)`;
+        icon.style.backgroundImage = `url('${thumb}')`;
+
+        // Zoom/crop best-effort
+        const bbox = group.bbox;
+        if (bbox && (bbox.Width || bbox.width) && (bbox.Left !== undefined || bbox.left !== undefined)) {
+            const W = Number(bbox.Width ?? bbox.width);
+            const H = Number(bbox.Height ?? bbox.height);
+            const L = Number(bbox.Left ?? bbox.left);
+            const T = Number(bbox.Top ?? bbox.top);
+            const minWH = Math.max(0.06, Math.min(W || 0.2, H || 0.2));
+            const scale = Math.min(12, Math.max(2.5, 1 / minWH));
+            const cx = (L + (W || 0.2)/2) * 100;
+            const cy = (T + (H || 0.2)/2) * 100;
+            icon.style.backgroundSize = `${scale * 100}%`;
+            icon.style.backgroundPosition = `${cx}% ${cy}%`;
+        } else {
+            icon.style.backgroundSize = '180%';
+            icon.style.backgroundPosition = '50% 35%';
+        }
+
+        // Selected state (if ANY faceId from this group is selected)
+        const isSelected = group.faceIds.some(fid => selectedFaces.has(fid));
+        if (isSelected) wrapper.classList.add('active');
+
+        // Single click: toggle this group in filter (adds/removes all faceIds)
+        icon.onclick = () => {
+            const anySelected = group.faceIds.some(fid => selectedFaces.has(fid));
+            if (anySelected) {
+                group.faceIds.forEach(fid => selectedFaces.delete(fid));
             } else {
-                selectedFaces.clear();
-                selectedFaces.add(group.id);
+                group.faceIds.forEach(fid => selectedFaces.add(fid));
             }
-            // highlight selected
-            bar.querySelectorAll('.face-icon').forEach(icon => icon.classList.remove('selected'));
-            entries.forEach((g, idx) => {
-                const el = bar.children[idx];
-                if (selectedFaces.has(g.id)) el.classList.add('selected');
-            });
-
-            // If single click without shift -> open naming header + show photos
-            if (!e.shiftKey) showFacePhotos(group.id);
-            else applyFaceFilter();
+            applyFaceFilters();
+            renderFaceIcons();
         };
 
-        bar.appendChild(img);
+        // Double click: open naming modal for the primary faceId
+        icon.ondblclick = () => {
+            showFacePhotos(group.primaryFaceId);
+        };
+
+        wrapper.appendChild(icon);
+
+        const label = document.createElement('div');
+        label.className = 'face-label';
+        label.textContent = group.label;
+        wrapper.appendChild(label);
+
+        bar.appendChild(wrapper);
     });
 }
+
 
 /* ======================= APPLY FACE FILTER ======================= */
 function applyFaceFilter() {
@@ -1081,9 +1209,9 @@ function applyFaceFilter() {
             const photoFaces = photo.face_ids || [];
             if(!Array.isArray(photoFaces) || photoFaces.length === 0){
                 // fallback: if we have prebuilt group photos, use that intersection
-                return Array.from(selectedFaces).every(fid => (faceGroups[fid]?.photos || []).includes(photo));
+                return Array.from(selectedFaces).some(fid => (faceGroups[fid]?.photos || []).includes(photo));
             }
-            return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
+            return Array.from(selectedFaces).some(fid => photoFaces.includes(fid));
         });
     }
     displayedPhotosCount = 0;
@@ -1147,9 +1275,9 @@ async function saveFaceName() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                FaceId: currentNamingFaceId,
-                FaceName: newName,
-                CollectionId: collectionId
+                face_id: currentNamingFaceId,
+                face_name: newName,
+                collection_id: collectionId
             })
         });
         if(res && res.ok) {
@@ -1191,10 +1319,10 @@ function renderEvents(events) {
 
     events.forEach(ev => {
         tbody.innerHTML += `
-            <tr>
-                <td>${ev.name}</td>
+            <tr data-event-id="${ev.event_id || ev.id || ""}">
+          <td>${ev.name}</td>
                 <td>${ev.event_date || '-'}</td>
-                <td>${ev.photo_count || 0}</td>
+                <td data-ev-photo-count>${ev.photo_count || 0}</td>
                 <td>
                     <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
                     <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
@@ -1280,7 +1408,8 @@ async function fetchAnalytics(forceRefetch = false) {
         noLeadsMessage.style.display = 'block';
         try {
             const {res, json} = await apiFetch('save-details(list)', GUEST_API, {
-                method: 'GET'
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
             });
             if (!res.ok) throw new Error('Failed to fetch');
             allLeads = (json && json.leads) ? json.leads : [];
@@ -1360,8 +1489,9 @@ window.showGuestHistory = async function(mobile, name) {
 
     try {
         const {res, json} = await apiFetch('save-details(history)', `${GUEST_API}?mobile=${encodeURIComponent(mobile)}`, {
-            method: 'GET'
-            });
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
         if (!res.ok) throw new Error('API Error');
         const history = (json && json.history) ? json.history : [];
 
