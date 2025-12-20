@@ -10,7 +10,7 @@
     <style>
         :root {
             --bg: #0f0f0f;
-            --card: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            --card: #1e1e1e;
             --border: #333;
             --text: #e0e0e0;
             --muted: #888;
@@ -26,9 +26,10 @@
             color: var(--text);
             font-family: 'Google Sans', Roboto, Arial, sans-serif;
             padding-bottom: 60px;
-            overflow-x: hidden;
         }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        /* HEADER */
         .top-bar {
             display: flex;
             align-items: center;
@@ -44,19 +45,20 @@
             display:flex;
             align-items:center;
             gap:5px;
-            transition: all 0.2s ease;
         }
-        .back-link:hover { color: var(--brand); transform: translateX(-2px); }
         h1 { font-size: 22px; margin: 5px 0; font-weight: 500; }
+
+        /* STATS LINE */
         .stats-line { font-size:13px; color:var(--muted); margin-top:5px; }
         .stats-line b { color:white; font-weight:600; }
+
+        /* TABS */
         .tabs {
             display: flex;
             gap: 30px;
             border-bottom: 1px solid var(--border);
             margin-bottom: 20px;
             overflow-x: auto;
-            padding-bottom: 10px;
         }
         .tab {
             padding: 12px 0;
@@ -66,27 +68,26 @@
             font-weight: 500;
             border-bottom: 3px solid transparent;
             white-space: nowrap;
-            transition: all 0.2s ease;
-            position: relative;
         }
-        .tab::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 0; height: 2px; background: var(--brand); transition: width 0.3s ease; }
         .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
-        .tab.active::after { width: 100%; }
         .tab:hover { color: var(--brand-hover); }
-        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+
+        .tab-content { display: none; }
         .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS */
         .card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: box-shadow 0.2s;
         }
-        .card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateY(-4px); }
+        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 
+        /* ANALYTICS NEW VIEW - SELFIE + CLICK */
         .lead-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -94,25 +95,25 @@
             margin-top: 20px;
         }
         .lead-card {
-            background: linear-gradient(145deg, #151515, #1a1a1a);
-            border-radius: 12px;
-            padding: 16px;
+            background: #151515;
+            border-radius: 10px;
+            padding: 15px;
             display: flex;
             align-items: center;
             gap: 15px;
             border: 1px solid var(--border);
-            transition: all 0.2s ease;
+            transition: border-color 0.2s;
             cursor: pointer;
         }
-        .lead-card:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(66,133,244,0.2); }
+        .lead-card:hover { border-color: var(--brand); }
         .selfie-img {
             width: 70px;
             height: 70px;
+            min-width: 70px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--brand);
             background: #222;
-            transition: border-color 0.2s;
         }
         .lead-info { flex-grow: 1; }
         .lead-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
@@ -128,15 +129,17 @@
         }
         .match-count { font-weight: 600; color: var(--ok); }
 
+        /* Dropdown and Search Layout */
         .filter-row-top {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
             flex-wrap: wrap;
-            animation: slideDown 0.3s ease;
         }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        .filter-row-top > * { flex: 1 1 150px; min-width: 150px; }
+        .filter-row-top > * {
+            flex: 1 1 150px;
+            min-width: 150px;
+        }
         .filter-row-top select, .filter-row-top input {
             background: #111;
             border: 1px solid var(--border);
@@ -145,16 +148,15 @@
             color: #fff;
             outline: none;
             height: 44px;
-            transition: all 0.2s ease;
         }
-        .filter-row-top select:focus, .filter-row-top input:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(66,133,244,0.2); }
 
+        /* Button style consistency */
         .btn {
-            background: linear-gradient(145deg, var(--brand), var(--brand-hover));
+            background: var(--brand);
             color: #fff;
             border: none;
             border-radius: 20px;
-            padding: 10px 24px;
+            padding: 8px 20px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
@@ -164,76 +166,40 @@
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(66,133,244,0.3);
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(66,133,244,0.4); }
-        .btn:active { transform: translateY(0); }
         .btn.secondary {
             background: transparent;
             border: 1px solid var(--border);
             color: var(--text);
-            box-shadow: none;
         }
-        .btn.secondary:hover { border-color: var(--brand); color: var(--brand); background: rgba(66,133,244,0.1); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .toggle-btn {
-            background: rgba(66,133,244,0.2);
-            border: 1px solid var(--brand);
-            color: var(--brand);
-            min-width: 120px;
-            justify-content: space-between;
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            display:flex;
-            align-items:center;
-            gap:10px;
-            user-select:none;
-        }
-        .toggle-btn.active { background: var(--brand); color: #fff; }
-        .toggle-btn:hover { transform: translateY(-1px); }
-        .toggle-btn input{ display:none; }
-
-        .error-state {
-            background: rgba(234,67,53,0.1);
-            border: 1px solid var(--danger);
-            color: var(--danger);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
+        /* TABLES */
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { text-align: left; padding: 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
         td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
-        tr:hover { background: rgba(66, 133, 244, 0.05); }
+        tr:hover { background: rgba(66, 133, 244, 0.1); }
 
-        input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; transition: all 0.2s ease; }
-        input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(66,133,244,0.2); }
+        /* FORMS */
+        input, select { background: #111; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; width: 100%; outline: none; }
+        input:focus { border-color: var(--brand); }
         input::placeholder { color: var(--muted); }
 
-        #dropZone {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 60px;
-            text-align: center;
-            background: linear-gradient(145deg, #151515, #1a1a1a);
-            transition: all 0.2s ease;
-            cursor: pointer;
-            position: relative;
-        }
-        #dropZone:hover { border-color: var(--brand); background: rgba(66,133,244,0.05); transform: scale(1.02); }
-        #uploadControls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-        #progress-bar { height: 6px; background: linear-gradient(var(--brand), var(--brand-hover)); width: 0%; margin-top: 10px; border-radius: 3px; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(66,133,244,0.5); }
+        /* UPLOAD */
+        #dropZone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px; text-align: center; background: #151515; transition: background 0.2s; cursor: pointer; }
+        #dropZone:hover { border-color: var(--brand); }
+        #progress-bar { height: 4px; background: var(--brand); width: 0%; margin-top: 10px; border-radius: 2px; transition: width 0.3s ease; }
         #uploadStatus { text-align: center; color: var(--ok); font-weight: 600; margin-top: 10px; }
         #uploadStatus.error { color: var(--danger); }
-        #fileList div { padding: 5px; font-size: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
-        #fileList div:last-child { border-bottom: none; }
+        #uploadStatus.success { color: var(--ok); }
 
+        /* Load More */
+        .load-more-container { text-align: center; margin-top: 30px; }
+
+        /* GALLERY FIXES */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -243,21 +209,20 @@
             aspect-ratio: 1;
             overflow: hidden;
             background: #000;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
             position: relative;
-            transition: all 0.2s ease;
         }
-        .photo-card:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         .photo-card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s;
         }
         .photo-card img.loaded { opacity: 1; }
 
+        /* DATE HEADERS IN GALLERY */
         .date-header {
             grid-column: 1 / -1;
             color: var(--muted);
@@ -268,17 +233,17 @@
             border-bottom: 1px solid #222;
         }
 
+        /* VIEWER */
         .viewer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95);
             display: flex; align-items: center; justify-content: center;
             z-index: 1000;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.2s;
         }
         .viewer.open { opacity: 1; pointer-events: auto; }
-        .viewer img { max-width: 90%; max-height: 90vh; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); transition: transform 0.2s; }
-        .viewer img:hover { transform: scale(1.02); }
+        .viewer img { max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .viewer-close {
             position: absolute;
             top: 20px;
@@ -287,104 +252,92 @@
             font-size: 30px;
             cursor: pointer;
             background: rgba(0,0,0,0.5);
-            padding: 8px 14px;
+            padding: 5px 12px;
             border-radius: 50%;
             line-height: 1;
-            transition: all 0.2s ease;
         }
-        .viewer-close:hover { background: rgba(0,0,0,0.8); transform: scale(1.1); }
 
-        #faceIconsBar { display: flex; gap: 12px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 15px; }
-        .face-item { display:flex; flex-direction:column; align-items:center; width:60px; flex-shrink:0; cursor:pointer; position:relative; }
-        .face-icon-wrapper {
-            width: 55px; height: 55px;
+        /* Face Icons Bar */
+        #faceIconsBar {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .face-icon {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
+            object-fit: cover;
             border: 2px solid var(--brand);
-            overflow: hidden;
             cursor: pointer;
-            position: relative;
-            flex-shrink: 0;
-            background: #000;
-            transition: all 0.2s ease;
+            transition: transform 0.2s;
         }
-        .face-icon-wrapper:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(66,133,244,0.3); }
-        .face-icon-wrapper.selected { border-color: var(--ok); transform: scale(1.15); }
-        .face-icon-wrapper.multi-selected { border-color: var(--ok); transform: scale(1.05); box-shadow: 0 0 0 2px var(--ok); }
-        .face-name-label {
-            font-size: 11px;
-            color: var(--text);
-            margin-top: 6px;
-            text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            width: 100%;
-        }
+        .face-icon.selected { border-color: var(--ok); transform: scale(1.1); }
+        .face-icon:hover { transform: scale(1.1); }
 
-        #mergeMenu {
-            position: absolute;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px;
-            z-index: 1001;
-            display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .merge-option { padding: 6px 10px; cursor: pointer; font-size: 12px; border-radius: 4px; transition: background 0.2s; }
-        .merge-option:hover { background: rgba(66,133,244,0.1); }
-
+        /* History Viewer */
         #historyViewer {
             display: none;
             margin-top: 30px;
-            background: var(--card);
+            background: #151515;
             padding: 20px;
             border-radius: 12px;
             border: 1px solid var(--border);
-            animation: slideUp 0.3s ease;
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         #historyViewer table { font-size: 13px; }
 
-        .empty-state { text-align: center; padding: 80px 20px; color: var(--muted); font-size: 16px; }
-        .empty-state .btn { margin-top: 20px; }
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--muted);
+            font-size: 16px;
+        }
+        .empty-state button { margin-top: 20px; }
 
+        /* Link Result */
         #linkResult {
-            background: rgba(66,133,244,0.1);
+            background: #111;
             border: 1px dashed var(--brand);
             padding: 15px;
             border-radius: 8px;
             display: none;
             margin-top: 15px;
-            animation: fadeIn 0.3s ease;
         }
-        #generatedLink { color: var(--brand); text-decoration: none; font-size: 14px; word-break: break-all; display: block; margin-bottom: 8px; }
+        #generatedLink {
+            color: var(--brand);
+            text-decoration: none;
+            font-size: 14px;
+            word-break: break-all;
+            display: block;
+            margin-bottom: 8px;
+        }
         #generatedLink:hover { text-decoration: underline; }
 
+        /* Edit Event Button */
         .edit-btn {
             background: var(--brand);
             color: #fff;
             border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 4px 8px;
+            border-radius: 4px;
             font-size: 11px;
             cursor: pointer;
             margin-right: 5px;
-            transition: all 0.2s ease;
         }
-        .edit-btn:hover { background: var(--brand-hover); transform: translateY(-1px); }
         .delete-btn {
             background: var(--danger);
             color: #fff;
             border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 4px 8px;
+            border-radius: 4px;
             font-size: 11px;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
-        .delete-btn:hover { background: #d93025; transform: translateY(-1px); }
 
+        /* Face Name Header */
         .face-header {
             background: var(--card);
             padding: 15px;
@@ -394,93 +347,75 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            animation: slideDown 0.3s ease;
         }
-        .face-header img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--brand); }
+        .face-header img {
+            width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--brand);
+        }
         .face-header-content { flex-grow: 1; }
         .face-header h3 { margin: 0 0 5px 0; font-size: 18px; }
-        .face-input-group { display: flex; gap: 10px; max-width: 380px; position: relative; }
+        .face-input-group { display: flex; gap: 10px; max-width: 380px; }
         .face-input-group input{ flex:1; }
-        #faceSuggestions {
-            position: absolute;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            max-height: 150px;
-            overflow-y: auto;
-            z-index: 10;
-            display: none;
-            width: 200px;
-            top: 100%; left: 0;
-        }
-        .suggestion-item { padding: 8px; cursor: pointer; font-size: 12px; transition: background 0.2s; }
-        .suggestion-item:hover { background: rgba(66,133,244,0.1); }
 
+        /* Mobile */
         @media (max-width: 768px) {
             .filter-row-top { flex-direction: column; gap: 10px; }
             .filter-row-top > * { width: 100%; }
             .lead-grid { grid-template-columns: 1fr; }
             .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
             .tabs { gap: 20px; }
-            .top-bar { flex-direction: column; gap: 10px; align-items: flex-start; }
-            #uploadControls { flex-direction: column; align-items: center; }
         }
-        .loading { text-align: center; padding: 40px; color: var(--muted); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Loading */
+        .loading { text-align: center; padding: 40px; color: var(--muted); }
+
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
         #uploadEventSelect:invalid { color: var(--muted); }
 
+        /* DEBUG PANEL */
         #debugFab{
             position:fixed; right:14px; bottom:14px; z-index:9999;
-            background: linear-gradient(var(--brand), var(--brand-hover));
-            border: none; color:#fff;
+            background:#151515; border:1px solid var(--border); color:#fff;
             border-radius:999px; padding:10px 14px; cursor:pointer;
             font-size:12px; display:flex; align-items:center; gap:8px;
-            box-shadow:0 4px 12px rgba(66,133,244,0.3);
-            transition: all 0.2s ease;
+            box-shadow:0 6px 20px rgba(0,0,0,0.35);
         }
-        #debugFab:hover { transform: scale(1.05); box-shadow:0 6px 20px rgba(66,133,244,0.4); }
         #debugFab .dot{width:10px;height:10px;border-radius:50%;background:var(--ok);}
         #debugPanel{
             position:fixed; right:14px; bottom:64px; z-index:9999;
             width:min(520px, calc(100vw - 28px));
             max-height:55vh;
-            background:var(--card); border:1px solid #2b2b2b; border-radius:14px;
+            background:#0c0c0c; border:1px solid #2b2b2b; border-radius:14px;
             display:none; overflow:hidden;
             box-shadow:0 10px 30px rgba(0,0,0,0.55);
-            animation: slideUp 0.3s ease;
         }
         #debugPanelHeader{
             display:flex; justify-content:space-between; align-items:center;
             padding:10px 12px; border-bottom:1px solid #222;
-            background: linear-gradient(#121212, #1a1a1a);
+            background:#121212;
         }
         #debugPanelHeader b{font-size:13px}
         #debugPanelHeader .actions{display:flex; gap:8px}
         #debugPanelHeader button{
             background:#1a1a1a; color:#fff; border:1px solid #333;
             border-radius:10px; padding:6px 10px; cursor:pointer; font-size:12px;
-            transition: all 0.2s ease;
         }
-        #debugPanelHeader button:hover { background: #333; transform: translateY(-1px); }
         #debugBody{
             padding:10px 12px; overflow:auto; max-height:calc(55vh - 48px);
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             font-size:12px; line-height:1.35;
         }
-        .dbg-item{border:1px solid #222; border-radius:12px; padding:10px; margin-bottom:10px; background:#101010; transition: all 0.2s; }
-        .dbg-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .dbg-item{border:1px solid #222; border-radius:12px; padding:10px; margin-bottom:10px; background:#101010}
         .dbg-item .row{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
         .dbg-tag{padding:2px 8px; border-radius:999px; border:1px solid #333; color:#ddd; font-size:11px}
         .dbg-tag.ok{border-color:rgba(52,168,83,0.6); color:#c8f5d6}
         .dbg-tag.err{border-color:rgba(234,67,53,0.6); color:#ffd0cc}
         .dbg-pre{white-space:pre-wrap; color:#cfcfcf; margin-top:8px}
         .dbg-muted{color:#9a9a9a}
-        .spinner { border: 2px solid #333; border-top: 2px solid var(--brand); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-left: 8px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .dbg-warn{color:#ffcc80}
     </style>
 </head>
 <body>
@@ -496,7 +431,7 @@
             </div>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
-            <button class="btn secondary" style="font-size:12px; padding:8px 16px;" onclick="window.location.reload()">Refresh Data 🔄</button>
+            <button class="btn secondary" style="font-size:12px; padding:6px 12px;" onclick="window.location.reload()">Refresh Data 🔄</button>
             <a href="#" id="assistantLink" target="_blank" class="btn secondary" style="font-size:12px;">⚡ Staff Upload Link</a>
         </div>
     </div>
@@ -519,19 +454,19 @@
                 <option value="GROUP">👥 Groups</option>
             </select>
             <input type="text" id="tagSearch" placeholder="Search tags (e.g. Stage, Red)" oninput="applyFilters()">
-            <button class="btn secondary" id="clearFiltersBtn" onclick="clearFilters()" style="flex: 0 0 auto; min-width: 120px;">Clear Filters</button>
-            <button class="btn" id="downloadZipBtn">⬇ Download Zip</button>
+            <button class="btn secondary" id="downloadZipBtn">⬇ Download Zip</button>
         </div>
 
-        <div id="faceIconsBar"></div>
+        <!-- Face Icons Bar -->
+        <div id="faceIconsBar" class="face-group-grid"></div>
 
+        <!-- Face Naming Header -->
         <div id="faceNamingHeader" class="face-header" style="display:none;">
             <img id="faceHeaderImg" src="">
             <div class="face-header-content">
                 <h3 id="faceHeaderTitle">Who is this?</h3>
                 <div class="face-input-group">
-                    <input type="text" id="faceNameInput" placeholder="Enter Name" oninput="showSuggestions(this.value)">
-                    <div id="faceSuggestions"></div>
+                    <input type="text" id="faceNameInput" placeholder="Enter Name">
                     <button class="btn" id="saveFaceBtn">Save</button>
                     <button class="btn secondary" id="cancelFaceBtn">Cancel</button>
                 </div>
@@ -539,7 +474,10 @@
             </div>
         </div>
 
-        <div id="galleryContainer"><p class="loading">Loading photos...</p></div>
+        <div id="galleryContainer">
+            <p class="loading">Loading photos...</p>
+        </div>
+
         <div class="load-more-container">
             <button id="loadMoreBtn" class="btn secondary" style="display:none;">Load More</button>
         </div>
@@ -550,15 +488,16 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
                 <h3>Events</h3>
-                <button class="btn" id="newEvtBtn">+ New Event</button>
+                <button class="btn" onclick="document.getElementById('eventForm').style.display='block'">+ New Event</button>
             </div>
-            <div id="eventForm" style="display:none; background: linear-gradient(#151515, #1a1a1a); padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+
+            <div id="eventForm" style="display:none; background:#151515; padding:20px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
                     <input type="text" id="eventName" placeholder="Event Name">
                     <input type="date" id="eventDate">
                 </div>
                 <div style="text-align:right;">
-                    <button class="btn secondary" id="cancelEventBtn">Cancel</button>
+                    <button class="btn secondary" onclick="document.getElementById('eventForm').style.display='none'">Cancel</button>
                     <button class="btn" id="saveEventBtn">Save</button>
                 </div>
             </div>
@@ -566,7 +505,6 @@
                 <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
                 <tbody id="eventsTbody"></tbody>
             </table>
-            <div id="eventsError" class="error-state" style="display:none;"></div>
         </div>
     </div>
 
@@ -575,30 +513,23 @@
         <div class="card" style="max-width:800px; margin:0 auto;">
             <div style="margin-bottom:20px;">
                 <label style="display:block; margin-bottom:5px; color:var(--muted);">Select Event</label>
-                <select id="uploadEventSelect"><option value="">Loading events...</option></select>
+                <select id="uploadEventSelect"><option value="">Loading...</option></select>
             </div>
-
             <div id="dropZone">
                 <div style="font-size:40px; color:var(--muted); margin-bottom:10px;">☁️</div>
-                <p>Drag photos here or click to browse</p>
+                <p>Drag photos here to upload</p>
                 <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
             </div>
 
-            <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center;">
-                <label class="toggle-btn" id="optimizeToggleLabel">
-                    <input type="checkbox" id="optimizeToggle">
+            <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
+                    <input type="checkbox" id="optimizeToggle" checked>
                     Optimize (reduce size)
                 </label>
-                <label class="toggle-btn active" id="convertToggleLabel">
-                    <input type="checkbox" id="convertUnsupported" checked>
-                    Convert to JPG
-                </label>
+
                 <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
-                    Quality: <input id="jpegQuality" type="range" min="0.6" max="0.95" step="0.01" value="0.82" style="width:80px;">
-                    <span id="jpegQualityVal" style="min-width:40px; color:var(--text); font-size:13px;">0.82</span>
-                </label>
-                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
-                    Max Width: <select id="maxWidthSelect" style="height:36px; padding:4px 8px; border-radius:6px; background:#111; border:1px solid var(--border); color:#fff;">
+                    Max Width
+                    <select id="maxWidthSelect" class="input" style="height:36px; padding:6px 10px; border-radius:10px;">
                         <option value="0">Original</option>
                         <option value="2048" selected>2048px</option>
                         <option value="1600">1600px</option>
@@ -606,19 +537,23 @@
                         <option value="1024">1024px</option>
                     </select>
                 </label>
-            </div>
 
-            <div id="uploadControls" style="display:none;">
-                <button class="btn secondary" id="clearFilesBtn">Clear Files</button>
-                <button class="btn" id="startUploadBtn">Start Upload <span class="spinner" id="uploadSpinner" style="display:none;"></span></button>
+                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
+                    Quality
+                    <input id="jpegQuality" type="range" min="0.6" max="0.95" step="0.01" value="0.82">
+                    <span id="jpegQualityVal" style="min-width:40px; color:var(--text); font-size:13px;">0.82</span>
+                </label>
+
+                <label style="display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px;">
+                    <input type="checkbox" id="convertUnsupported" checked>
+                    Convert unsupported formats (HEIC/WEBP/GIF) → JPG
+                </label>
             </div>
 
             <div id="progress-container" style="display:none;">
                 <div id="progress-bar"></div>
                 <p id="uploadStatus"></p>
             </div>
-            <div id="fileList"></div>
-            <div id="uploadError" class="error-state" style="display:none;"></div>
         </div>
     </div>
 
@@ -630,12 +565,11 @@
             <div id="linkEventList" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px; background:#111;"></div>
             <input type="number" id="expiryHours" placeholder="Expiry in hours (0 for no expiry)" style="margin-bottom:10px;">
             <input type="password" id="linkPassword" placeholder="Optional password" style="margin-bottom:15px;">
-            <button class="btn" id="genLinkBtn">Generate Link <span class="spinner" id="genLinkSpinner" style="display:none;"></span></button>
+            <button class="btn" id="genLinkBtn">Generate Link</button>
             <div id="linkResult">
                 <a id="generatedLink" href="#" target="_blank">Click to open link</a>
-                <button class="btn secondary" style="margin-top:8px; padding:6px 16px; font-size:12px;" onclick="copyLink()">Copy Link</button>
+                <button class="btn secondary" style="margin-top:8px; padding:5px 12px; font-size:12px;" onclick="copyLink()">Copy Link</button>
             </div>
-            <div id="linkError" class="error-state" style="display:none;"></div>
         </div>
     </div>
 
@@ -646,18 +580,17 @@
             <div class="filter-row-top">
                 <input type="date" id="dateFilter" placeholder="Filter by Date" onchange="fetchAnalytics()">
                 <input type="tel" id="mobileFilter" placeholder="Filter by Mobile" oninput="fetchAnalytics()">
-                <button class="btn secondary" onclick="clearLeadsFilters()" style="flex: 0 0 auto; min-width: 120px;">Clear</button>
-                <button class="btn secondary" onclick="fetchAnalytics(true)" id="retryLeadsBtn" style="display:none;">Retry Fetch</button>
             </div>
-
-            <div id="leadsContainer" style="display: block;">
+            <div id="analyticsBodyContainer">
                 <div id="leadsGrid" class="lead-grid"></div>
                 <p id="noLeadsMessage" style="text-align:center; padding:40px; color:var(--muted); display:none;">Loading leads...</p>
+
                 <div class="load-more-container">
                     <button id="loadMoreLeadsBtn" class="btn secondary" style="display:none;" onclick="loadMoreLeads()">Load More Leads</button>
                 </div>
             </div>
 
+            <!-- History Viewer -->
             <div id="historyViewer">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h3 id="historyHeader" style="margin:0;">Search History</h3>
@@ -668,22 +601,14 @@
                     <tbody id="historyBody"></tbody>
                 </table>
             </div>
-
-            <div id="leadsError" class="error-state" style="display:none;"></div>
         </div>
     </div>
 </div>
 
 <!-- PHOTO VIEWER -->
-<div class="viewer" id="viewer" onclick="closeViewer(event)">
-    <div class="viewer-close" onclick="event.stopPropagation(); closeViewer(event)">×</div>
+<div class="viewer" id="viewer" onclick="closeViewer()">
+    <div class="viewer-close" onclick="closeViewer()">×</div>
     <img id="viewerImg" onclick="event.stopPropagation()">
-</div>
-
-<!-- MERGE MENU -->
-<div id="mergeMenu">
-    <div class="merge-option" onclick="mergeSelectedFaces()">Merge Selected</div>
-    <div class="merge-option" onclick="suggestMerge()">Suggest Similar</div>
 </div>
 
 <!-- DEBUG UI -->
@@ -711,16 +636,9 @@ const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
 const DELETE_EVENT_API = `${API_BASE}/delete-event`;
 const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
 const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
+const GUEST_API = `${API_BASE}/save-details`;
 const LIST_PEOPLE_API = `${API_BASE}/list_people`;
 const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
-
-/**
- * IMPORTANT:
- * Leads + History are taken from SAME lambda: /save-details (as per your backend).
- * - GET /save-details -> {"leads":[...]}
- * - GET /save-details?mobile=9999 -> {"history":[...]}
- */
-const SAVE_DETAILS_API = `${API_BASE}/save-details`;
 
 /* ======================= PARAMS / AUTH ======================= */
 const urlParams = new URLSearchParams(window.location.search);
@@ -728,1122 +646,1018 @@ const collectionId = urlParams.get("id");
 const collectionNameParam = urlParams.get("name");
 const idToken = localStorage.getItem("idToken");
 
-/* ======================= SAFE UTILS ======================= */
-const $ = (id) => document.getElementById(id);
-const safeText = (v) => (v === null || v === undefined) ? "" : String(v);
-function escapeHtml(str){
-  return safeText(str)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#39;");
+if (!idToken) {
+    console.warn("No idToken found. Some API calls may fail.");
 }
-function formatBytes(bytes) {
-  if (!+bytes) return '0 B';
-  const k = 1024, sizes = ['B','KB','MB','GB','TB'];
-  const i = Math.floor(Math.log(bytes)/Math.log(k));
-  return `${parseFloat((bytes/Math.pow(k,i)).toFixed(2))} ${sizes[i]}`;
-}
-function formatLeadTime(isoString) {
-  if (!isoString) return '-';
-  try {
-    const d = new Date(isoString);
-    return d.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-  } catch {
-    return safeText(isoString).substring(0,19);
-  }
-}
-function normIso(v){
-  if(!v) return '';
-  const s = safeText(v);
-  if(s.includes('T')) return s;
-  // if it's a date only
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + "T00:00:00";
-  return s;
-}
-function ensureCreatedAt(item){
-  if(!item) return item;
-  if(!item.created_at && item.timestamp) item.created_at = item.timestamp;
-  if(!item.search_time && item.created_at) item.search_time = item.created_at;
-  if(item.phone && !item.mobile) item.mobile = item.phone;
-  return item;
+if (document.getElementById('assistantLink')) {
+    document.getElementById('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
 }
 
 /* ======================= DEBUG PANEL LOGIC ======================= */
-const dbg = { items: [], maxItems: 60 };
-function dbgAdd(entry){
-  dbg.items.unshift(entry);
-  if(dbg.items.length > dbg.maxItems) dbg.items.pop();
-  const body = $('debugBody');
-  if(!body) return;
-  const div = document.createElement('div');
-  div.className = 'dbg-item';
-  const tagClass = entry.ok ? 'ok' : 'err';
-  const when = new Date(entry.ts).toLocaleString();
-  // mask simple PII patterns
-  let details = safeText(entry.details);
-  details = details.replace(/"mobile"\s*:\s*"[^"]+"/gi, `"mobile":"***"`);
-  details = details.replace(/"password"\s*:\s*"[^"]+"/gi, `"password":"***"`);
-  div.innerHTML = `
-    <div class="row">
-      <div>
-        <span class="dbg-tag ${tagClass}">${entry.ok ? 'OK' : 'ERR'}</span>
-        <span class="dbg-tag">${escapeHtml(entry.type)}</span>
-        <span class="dbg-muted">${escapeHtml(when)}</span>
-      </div>
-      <div class="dbg-muted">${escapeHtml(entry.label || '')}</div>
-    </div>
-    <div class="dbg-pre">${escapeHtml(details)}</div>
-  `;
-  body.prepend(div);
-  if(!entry.ok && $('dbgDot')) $('dbgDot').style.background = 'var(--danger)';
-}
+const dbg = {
+    items: [],
+    maxItems: 60
+};
+function dbgOpen(){ document.getElementById('debugPanel').style.display='block'; }
+function dbgClose(){ document.getElementById('debugPanel').style.display='none'; }
 function dbgClear(){
-  dbg.items = [];
-  if($('debugBody')) $('debugBody').innerHTML = '';
-  if($('dbgDot')) $('dbgDot').style.background = 'var(--ok)';
+    dbg.items = [];
+    document.getElementById('debugBody').innerHTML = '';
+    document.getElementById('dbgDot').style.background = 'var(--ok)';
 }
-function dbgClose(){ if($('debugPanel')) $('debugPanel').style.display='none'; }
+function dbgAdd(entry){
+    dbg.items.unshift(entry);
+    if(dbg.items.length > dbg.maxItems) dbg.items.pop();
+
+    const body = document.getElementById('debugBody');
+    const div = document.createElement('div');
+    div.className = 'dbg-item';
+    const tagClass = entry.ok ? 'ok' : 'err';
+    div.innerHTML = `
+        <div class="row">
+            <div><span class="dbg-tag ${tagClass}">${entry.ok ? 'OK' : 'ERR'}</span>
+                 <span class="dbg-tag">${entry.type}</span>
+                 <span class="dbg-muted">${new Date(entry.ts).toLocaleString()}</span>
+            </div>
+            <div class="dbg-muted">${entry.label || ''}</div>
+        </div>
+        <div class="dbg-pre">${entry.details || ''}</div>
+    `;
+    body.prepend(div);
+
+    if(!entry.ok) document.getElementById('dbgDot').style.background = 'var(--danger)';
+}
+document.getElementById('debugFab').addEventListener('click', ()=>{
+    const p = document.getElementById('debugPanel');
+    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+});
+document.getElementById('dbgCloseBtn').addEventListener('click', dbgClose);
+document.getElementById('dbgClearBtn').addEventListener('click', dbgClear);
+
 window.addEventListener('error', (e)=>{
-  dbgAdd({ ok:false, type:'JS', label:'window.error', ts:Date.now(),
-    details: `${e.message}\n${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack || ''}` });
+    dbgAdd({
+        ok:false, type:'JS', label:'window.error',
+        ts:Date.now(),
+        details: `${e.message}\n${e.filename}:${e.lineno}:${e.colno}\n${e.error && e.error.stack ? e.error.stack : ''}`
+    });
 });
 window.addEventListener('unhandledrejection', (e)=>{
-  dbgAdd({ ok:false, type:'JS', label:'unhandledrejection', ts:Date.now(),
-    details: (e.reason?.stack) ? e.reason.stack : String(e.reason) });
-});
-async function apiFetch(label, url, options){
-  const ts = Date.now();
-  let safeOptions = {};
-  try{
-    safeOptions = options ? JSON.parse(JSON.stringify(options)) : {};
-    if(safeOptions.headers?.Authorization) safeOptions.headers.Authorization = 'Bearer ***';
-  }catch{ safeOptions = { note: "unclonable options" }; }
-  try{
-    const res = await fetch(url, options);
-    const text = await res.text();
-    let json = null; try{ json = JSON.parse(text); }catch{}
     dbgAdd({
-      ok: res.ok, type:'API', label, ts,
-      details: `URL: ${url}\nStatus: ${res.status}\nRequest: ${safeOptions.body || '-'}\nResponse: ${json ? JSON.stringify(json,null,2) : text}`
+        ok:false, type:'JS', label:'unhandledrejection',
+        ts:Date.now(),
+        details: (e.reason && e.reason.stack) ? e.reason.stack : String(e.reason)
     });
-    return {res, json, text};
-  }catch(err){
-    dbgAdd({ ok:false, type:'API', label, ts, details: `URL: ${url}\nError: ${err.message}\n${err.stack || ''}` });
-    throw err;
-  }
+});
+
+async function apiFetch(label, url, options){
+    const ts = Date.now();
+    const safeOptions = options ? JSON.parse(JSON.stringify(options)) : {};
+    if(safeOptions.headers && safeOptions.headers.Authorization) safeOptions.headers.Authorization = 'Bearer ***';
+    try{
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let json = null;
+        try{ json = JSON.parse(text); }catch{}
+        dbgAdd({
+            ok: res.ok, type:'API', label,
+            ts,
+            details: `URL: ${url}\nStatus: ${res.status}\nRequest: ${safeOptions.body ? safeOptions.body : '-'}\nResponse: ${json ? JSON.stringify(json,null,2) : text}`
+        });
+        return {res, json, text};
+    }catch(err){
+        dbgAdd({
+            ok:false, type:'API', label,
+            ts,
+            details: `URL: ${url}\nError: ${err.message}\n${err.stack || ''}`
+        });
+        throw err;
+    }
 }
 
 /* ======================= STATE ======================= */
+// Photo Gallery
 let allPhotos = [];
 let filteredPhotos = [];
 let displayedPhotosCount = 0;
 const PHOTOS_BATCH_SIZE = 20;
+let viewerIndex = 0;
 
+// Leads Analytics
 let allLeads = [];
 let filteredLeads = [];
 let leadsDisplayCount = 0;
 const LEADS_BATCH_SIZE = 10;
 
-let faceGroups = {}; // {key -> group}
-let directoryPeople = [];
+// Face Groups
+let faceGroups = {};              // FaceId -> {id,name,thumbnail,count,photos[]}
+let directoryPeople = [];         // list_people response
 let currentNamingFaceId = null;
-let selectedFaces = new Set();
-let lastRenderedDate = null;
-let currentGridEl = null;
-const eventState = { mode: 'create', eventId: null };
+let selectedFaces = new Set();    // FIX: was missing in your code
 
-/* ======================= IMAGE UTILS ======================= */
-async function resizeImage(blob, maxWidth, quality) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const url = URL.createObjectURL(blob);
-    img.onload = () => {
-      try{
-        if (!maxWidth || img.width <= maxWidth) { resolve(blob); return; }
-        const ratio = maxWidth / img.width;
-        canvas.width = maxWidth;
-        canvas.height = Math.round(img.height * ratio);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((resizedBlob) => resolve(resizedBlob || blob), 'image/jpeg', quality);
-      } finally { URL.revokeObjectURL(url); }
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(blob); };
-    img.src = url;
-  });
-}
-async function imageToJpeg(fileOrBlob, quality) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(fileOrBlob);
-    img.onload = () => {
-      try{
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob((b) => resolve(b), 'image/jpeg', quality);
-      } finally { URL.revokeObjectURL(url); }
-    };
-    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
-    img.src = url;
-  });
-}
+/* ======================= TABS ======================= */
+window.switchTab = function(tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-/* ======================= EVENTS RENDER (XSS safe) ======================= */
-function renderEvents(events) {
-  const tbody = $('eventsTbody');
-  const uploadSelect = $('uploadEventSelect');
-  const linkList = $('linkEventList');
-  if(tbody) tbody.innerHTML = '';
-  if(uploadSelect) uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-  if(linkList) linkList.innerHTML = '';
-  if(!Array.isArray(events)) return;
+    const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
+    if(tabEl) tabEl.classList.add('active');
+    const contentEl = document.getElementById(tabId);
+    if(contentEl) contentEl.classList.add('active');
 
-  for(const ev of events){
-    const evId = safeText(ev.event_id);
-    const evName = safeText(ev.name);
-    const evDate = safeText(ev.event_date || '-');
-    const pCount = safeText(ev.photo_count || 0);
-
-    if(tbody){
-      const tr = document.createElement('tr');
-      const tdName = document.createElement('td'); tdName.textContent = evName;
-      const tdDate = document.createElement('td'); tdDate.textContent = evDate;
-      const tdPhotos = document.createElement('td'); tdPhotos.textContent = pCount;
-      const tdAct = document.createElement('td');
-
-      const editBtn = document.createElement('button');
-      editBtn.className = 'edit-btn';
-      editBtn.textContent = 'Edit';
-      editBtn.addEventListener('click', () => openEditEvent(evId, evName, ev.event_date || ''));
-
-      const delBtn = document.createElement('button');
-      delBtn.className = 'delete-btn';
-      delBtn.textContent = 'Delete';
-      delBtn.addEventListener('click', () => deleteEvent(evId, evName));
-
-      tdAct.appendChild(editBtn);
-      tdAct.appendChild(delBtn);
-
-      tr.appendChild(tdName);
-      tr.appendChild(tdDate);
-      tr.appendChild(tdPhotos);
-      tr.appendChild(tdAct);
-      tbody.appendChild(tr);
-    }
-
-    if(uploadSelect){
-      const opt = document.createElement('option');
-      opt.value = evId;
-      opt.textContent = evName;
-      uploadSelect.appendChild(opt);
-    }
-
-    if(linkList){
-      const label = document.createElement('label');
-      label.style.cssText = "display:block; margin-bottom:5px; font-size:13px; cursor:pointer;";
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = evId;
-      cb.className = 'link-check';
-      label.appendChild(cb);
-      label.appendChild(document.createTextNode(' ' + evName));
-      linkList.appendChild(label);
-    }
-  }
-}
-
-/* ======================= INIT ======================= */
-async function init() {
-  try {
-    const {json} = await apiFetch('get-events', GET_EVENTS_API, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection_id: collectionId })
-    });
-    const data = json || {};
-    const summary = data.collection_summary || {};
-    $('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-    $('totalPhotos').textContent = summary.photo_count || 0;
-    $('totalLeads').textContent = summary.leads_count || 0;
-    $('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
-    document.title = `${summary.name || 'Collection'} • Manager`;
-    renderEvents(data.events || []);
-    populateAssistantLink();
-    populateUploadEventInvalidStyle();
-  } catch (e) {
-    console.error("Init failed:", e);
-    $('collectionName').textContent = "Error Loading";
-  }
-}
-function populateAssistantLink(){
-  const a = $('assistantLink');
-  if(!a) return;
-  a.href = `quick-upload.html?id=${encodeURIComponent(collectionId || '')}&name=${encodeURIComponent(collectionNameParam || 'Event')}`;
-}
-function populateUploadEventInvalidStyle(){
-  const sel = $('uploadEventSelect');
-  if(!sel) return;
-  sel.required = true;
-}
-
-/* ======================= PEOPLE DIRECTORY ======================= */
-async function fetchPeopleDirectory() {
-  try {
-    const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection_id: collectionId })
-    });
-    if (!res?.ok) return [];
-    directoryPeople = Array.isArray(json?.people) ? json.people : [];
-    return directoryPeople;
-  } catch {
-    return [];
-  }
-}
-
-/* ======================= FACES MAP (merge-safe) ======================= */
-function buildLocalFaceMap() {
-  faceGroups = {};
-  for(const photo of allPhotos){
-    const fids = Array.isArray(photo.face_ids) ? photo.face_ids : [];
-    for(const fid of fids){
-      if(!fid) continue;
-      if(!faceGroups[fid]){
-        faceGroups[fid] = { ids:[fid], id: fid, name:'Unknown', thumbnail:null, count:0, photos:[], hasZoomData:false };
-      }
-      const g = faceGroups[fid];
-      g.photos.push(photo);
-      g.count++;
-      let faceData = null;
-      if(Array.isArray(photo.faces)) faceData = photo.faces.find(f => (f.FaceId === fid || f.faceId === fid));
-      const hasZoom = !!(faceData && faceData.BoundingBox);
-      if(!g.thumbnail || (!g.hasZoomData && hasZoom)){
-        g.thumbnail = photo.thumbnail_url || photo.url;
-        if(hasZoom) g.hasZoomData = true;
-      }
-    }
-  }
-}
-async function enhanceFacesFromDirectory(){
-  const people = await fetchPeopleDirectory();
-  if(!people?.length) return;
-  for(const p of people){
-    const fid = p.FaceId || p.face_id || p.faceId;
-    if(!fid) continue;
-    if(faceGroups[fid] && p.FaceName && p.FaceName !== "Unknown"){
-      faceGroups[fid].name = p.FaceName;
-    }
-  }
-  const merged = {};
-  for(const g of Object.values(faceGroups)){
-    const key = (g.name && g.name !== 'Unknown') ? g.name : g.id;
-    if(!merged[key]){
-      merged[key] = {...g, ids:[...new Set(g.ids)]};
-    }else{
-      merged[key].photos.push(...g.photos);
-      merged[key].ids.push(...g.ids);
-      merged[key].ids = [...new Set(merged[key].ids)];
-      if(!merged[key].hasZoomData && g.hasZoomData){
-        merged[key].thumbnail = g.thumbnail;
-        merged[key].hasZoomData = true;
-        merged[key].id = g.id;
-      }
-    }
-  }
-  for(const m of Object.values(merged)){
-    m.photos = [...new Set(m.photos)];
-    m.count = m.photos.length;
-  }
-  faceGroups = merged;
-}
-
-/* ======================= FACE ICONS ======================= */
-function renderFaceIcons() {
-  const bar = $('faceIconsBar');
-  if(!bar) return;
-  bar.innerHTML = '';
-  const entries = Object.values(faceGroups)
-    .filter(g => (g.count || 0) > 0)
-    .sort((a,b) => (b.count||0) - (a.count||0));
-  if(entries.length === 0){ bar.style.display = 'none'; return; }
-  bar.style.display = 'flex';
-
-  for(const group of entries){
-    const item = document.createElement('div');
-    item.className = 'face-item';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'face-icon-wrapper';
-    wrapper.dataset.faceId = group.id;
-
-    const faceImg = document.createElement('div');
-    faceImg.style.width = '100%';
-    faceImg.style.height = '100%';
-    faceImg.style.backgroundRepeat = 'no-repeat';
-    const thumbUrl = group.thumbnail || `https://placehold.co/50x50/333/fff?text=?`;
-    faceImg.style.backgroundImage = `url('${thumbUrl}')`;
-
-    let box = null;
-    const thumbPhoto = group.photos.find(p => (p.thumbnail_url === group.thumbnail || p.url === group.thumbnail));
-    if(thumbPhoto?.faces){
-      let faceData = thumbPhoto.faces.find(f => f.FaceId === group.id);
-      if(!faceData && thumbPhoto.faces.length) faceData = thumbPhoto.faces[0];
-      if(faceData?.BoundingBox) box = faceData.BoundingBox;
-    }
-    if(box){
-      const faceCX = (box.Left + box.Width/2) * 100;
-      const faceCY = (box.Top + box.Height/2) * 100;
-      let zoomPct = 65 / (box.Width || 0.2);
-      zoomPct = Math.min(600, Math.max(100, zoomPct));
-      faceImg.style.backgroundPosition = `${faceCX}% ${faceCY}%`;
-      faceImg.style.backgroundSize = `${zoomPct}% auto`;
-    }else{
-      faceImg.style.backgroundSize = 'cover';
-      faceImg.style.backgroundPosition = 'center';
-    }
-
-    wrapper.appendChild(faceImg);
-
-    const label = document.createElement('div');
-    label.className = 'face-name-label';
-    label.textContent = group.name || 'Unknown';
-
-    wrapper.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const isMulti = e.shiftKey;
-      const faceId = group.id;
-
-      if(!isMulti){
-        selectedFaces.clear();
-        selectedFaces.add(faceId);
-        document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
-          el.style.borderColor='var(--brand)'; el.style.transform='scale(1)';
-        });
-        wrapper.style.borderColor='var(--ok)';
-        wrapper.style.transform='scale(1.15)';
-        showFacePhotos(faceId, group);
-        return;
-      }
-
-      if(selectedFaces.has(faceId)) selectedFaces.delete(faceId);
-      else selectedFaces.add(faceId);
-
-      document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
-        if(selectedFaces.has(el.dataset.faceId)){
-          el.style.borderColor='var(--ok)';
-          el.style.transform='scale(1.05)';
-        }else{
-          el.style.borderColor='var(--brand)';
-          el.style.transform='scale(1)';
+    if(tabId === 'galleryTab') {
+        if(allPhotos.length === 0) fetchPhotos();
+        else {
+            displayedPhotosCount = 0;
+            document.getElementById('galleryContainer').innerHTML = '';
+            renderNextBatch();
+            renderFaceIcons();
         }
-      });
-      applyFilters();
+    } else if (tabId === 'analyticsTab') {
+        fetchAnalytics(true);
+    } else if (tabId === 'eventsTab') {
+        init();
+    }
+}
+
+/* ======================= UTILS ======================= */
+function formatLeadTime(isoString) {
+    if (!isoString) return '-';
+    try {
+        const dateObj = new Date(isoString);
+        return dateObj.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    } catch {
+        return isoString.substring(0, 10);
+    }
+}
+
+function formatBytes(bytes) {
+    if (!+bytes) return '0 B';
+    const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+function escapeAttr(s){
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+}
+
+/* ======================= INIT (events + summary) ======================= */
+async function init() {
+    try {
+        const {json} = await apiFetch('get-events', GET_EVENTS_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
+        const data = json || {};
+        const summary = data.collection_summary || {};
+        document.getElementById('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+        document.getElementById('totalPhotos').textContent = summary.photo_count || 0;
+        document.getElementById('totalLeads').textContent = summary.leads_count || 0;
+        document.getElementById('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
+        document.title = `${summary.name || 'Collection'} • Manager`;
+        renderEvents(data.events || []);
+    } catch (e) {
+        console.error("Init failed:", e);
+        document.getElementById('collectionName').textContent = "Error Loading";
+    }
+}
+
+/* ======================= PEOPLE (list_people) ======================= */
+/**
+ * Loads people directory (FaceId + FaceName).
+ * NOTE: Your current list_people lambda returns only FaceId/FaceName/CollectionId.
+ * To show thumbnails, we attach thumbnail from any photo that contains that FaceId (if photo.face_ids exists),
+ * or fallback to the first photo URL if nothing is available.
+ */
+async function fetchPeopleDirectory() {
+    try {
+        const {res, json} = await apiFetch('list_people', LIST_PEOPLE_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
+        if (!res || !res.ok) return [];
+        directoryPeople = (json && json.people) ? json.people : [];
+        return directoryPeople;
+    } catch (e) {
+        return [];
+    }
+}
+
+/* ======================= PHOTO GALLERY ======================= */
+async function fetchPhotos() {
+    const container = document.getElementById('galleryContainer');
+    container.innerHTML = '<p class="loading">Loading photos...</p>';
+    try {
+        const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
+        const data = json || {};
+        allPhotos = (data.photos || []).map(p => {
+            // Normalize face_ids (primary) + faces (optional)
+            if (!p.face_ids || !Array.isArray(p.face_ids)) p.face_ids = [];
+            if ((!p.face_ids || p.face_ids.length === 0) && Array.isArray(p.faces) && p.faces.length > 0) {
+                p.face_ids = p.faces.map(f => f.FaceId).filter(Boolean);
+            }
+            p.faces = Array.isArray(p.faces) ? p.faces : [];
+            return p;
+        });
+        filteredPhotos = [...allPhotos];
+
+        // Build groups using whatever is available in photo items
+        buildLocalFaceMap(); // from photo.faces if present
+        // Enhance from list_people (names + best thumbnails)
+        await enhanceFacesFromDirectory();
+
+        displayedPhotosCount = 0;
+        container.innerHTML = '';
+        renderNextBatch();
+        renderFaceIcons();
+    } catch (err) {
+        container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Open Debug panel.</p>';
+        console.error('Photo fetch error:', err);
+    }
+}
+
+function renderNextBatch() {
+    const container = document.getElementById('galleryContainer');
+    const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
+
+    if (nextBatch.length === 0 && displayedPhotosCount === 0) {
+        container.innerHTML = '<p class="empty-state">No photos found.</p>';
+        document.getElementById('loadMoreBtn').style.display = 'none';
+        return;
+    }
+    let lastDate = '';
+
+    nextBatch.forEach((photo, localIdx) => {
+        const globalIdx = displayedPhotosCount + localIdx;
+        const photoDate = photo.created_at ? new Date(photo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date';
+        if (photoDate !== lastDate) {
+            const dateHeader = document.createElement('div');
+            dateHeader.className = 'date-header';
+            dateHeader.textContent = photoDate;
+            container.appendChild(dateHeader);
+
+            const grid = document.createElement('div');
+            grid.className = 'gallery-grid';
+            grid.id = `grid-${globalIdx}`;
+            container.appendChild(grid);
+            lastDate = photoDate;
+        }
+        const currentGrid = container.querySelectorAll('.gallery-grid');
+        const targetGrid = currentGrid[currentGrid.length - 1];
+
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.onclick = () => openViewer(globalIdx);
+
+        const thumbnailUrl = photo.thumbnail_url || photo.url;
+        card.innerHTML = `<img src="${escapeAttr(thumbnailUrl)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.style.display='none'">`;
+        targetGrid.appendChild(card);
     });
 
-    item.appendChild(wrapper);
-    item.appendChild(label);
-    bar.appendChild(item);
-  }
+    displayedPhotosCount += nextBatch.length;
+    const btn = document.getElementById('loadMoreBtn');
+    btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
+}
+document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
+
+/* ======================= FACE GROUPS ======================= */
+/**
+ * Build from photo.faces if present (some pipelines store full face objects).
+ * If your photos items don't include faces/face_ids, icons will hide, and debug will warn.
+ */
+function buildLocalFaceMap() {
+    faceGroups = {};
+
+    // 1) Primary: face_ids (fast + stable for UI filtering)
+    allPhotos.forEach(photo => {
+        const fids = Array.isArray(photo.face_ids) ? photo.face_ids : [];
+        fids.forEach(fid => {
+            if (!fid) return;
+            if (!faceGroups[fid]) {
+                faceGroups[fid] = {
+                    id: fid,
+                    name: 'Unknown Person',
+                    thumbnail: photo.thumbnail_url || photo.url,
+                    count: 0,
+                    photos: []
+                };
+            }
+            faceGroups[fid].count++;
+            faceGroups[fid].photos.push(photo);
+            if (!faceGroups[fid].thumbnail) faceGroups[fid].thumbnail = photo.thumbnail_url || photo.url;
+        });
+    });
+
+    // 2) Fallback: faces[] (only if face_ids missing everywhere)
+    if (Object.keys(faceGroups).length === 0) {
+        allPhotos.forEach(photo => {
+            const facesArr = Array.isArray(photo.faces) ? photo.faces : [];
+            facesArr.forEach(face => {
+                const faceId = face.FaceId || face.faceId;
+                if (!faceId) return;
+
+                if (!faceGroups[faceId]) {
+                    faceGroups[faceId] = {
+                        id: faceId,
+                        name: face.FaceName || 'Unknown Person',
+                        thumbnail: photo.thumbnail_url || photo.url,
+                        count: 0,
+                        photos: []
+                    };
+                }
+                faceGroups[faceId].count++;
+                faceGroups[faceId].photos.push(photo);
+                if (!faceGroups[faceId].thumbnail) faceGroups[faceId].thumbnail = photo.thumbnail_url || photo.url;
+            });
+        });
+    }
+
+    // Debug warning if still no faces found
+    if (Object.keys(faceGroups).length === 0) {
+        dbgAdd({
+            ok: false, type: 'WARN', label: 'faces-missing',
+            ts: Date.now(),
+            details: "No face data found in photos response. Check:\n1) get-photos ProjectionExpression includes faces + face_ids.\n2) Dynamo items contain faces/face_ids.\n3) UI should build faceGroups from face_ids."
+        });
+    }
 }
 
-/* ======================= GALLERY RENDER ======================= */
-function resetGalleryRender(){
-  displayedPhotosCount = 0;
-  lastRenderedDate = null;
-  currentGridEl = null;
-  const container = $('galleryContainer');
-  if(container) container.innerHTML = '';
+/**
+ * Pull names from list_people, and try to attach thumbnail by scanning photos for that FaceId if face_ids exist.
+ */
+async function enhanceFacesFromDirectory(){
+    const people = await fetchPeopleDirectory();
+    if(!people || people.length === 0) return;
+
+    // Create missing groups from directory too (even if photos didn't include faces)
+    people.forEach(p=>{
+        const fid = p.FaceId || p.face_id || p.faceId;
+        if(!fid) return;
+        if(!faceGroups[fid]){
+            faceGroups[fid] = { id: fid, name: p.FaceName || 'Unknown Person', thumbnail: null, count: 0, photos: [] };
+        } else {
+            if(p.FaceName) faceGroups[fid].name = p.FaceName;
+        }
+    });
+
+    // If we have face_ids in photos, map thumbnails + photos
+    const hasFaceIds = allPhotos.some(p=>Array.isArray(p.face_ids) && p.face_ids.length);
+    if(hasFaceIds){
+        Object.values(faceGroups).forEach(g=>{ g.photos = []; g.count = 0; });
+        allPhotos.forEach(p=>{
+            (p.face_ids||[]).forEach(fid=>{
+                const g = faceGroups[fid];
+                if(!g) return;
+                g.photos.push(p);
+                g.count++;
+                if(!g.thumbnail) g.thumbnail = p.thumbnail_url || p.url;
+            });
+        });
+    }else{
+        // thumbnails fallback (first photo) to avoid blank icons if user wants naming only
+        const firstPhotoUrl = allPhotos[0] ? (allPhotos[0].thumbnail_url || allPhotos[0].url) : null;
+        Object.values(faceGroups).forEach(g=>{ if(!g.thumbnail) g.thumbnail = firstPhotoUrl; });
+    }
 }
-function ensureDateSection(container, photoDate){
-  if(photoDate !== lastRenderedDate){
-    const header = document.createElement('div');
-    header.className = 'date-header';
-    header.textContent = photoDate;
-    container.appendChild(header);
-    currentGridEl = document.createElement('div');
-    currentGridEl.className = 'gallery-grid';
-    container.appendChild(currentGridEl);
-    lastRenderedDate = photoDate;
-  }
+
+/* ======================= FACE ICON RENDER ======================= */
+function renderFaceIcons() {
+    const bar = document.getElementById('faceIconsBar');
+    bar.innerHTML = '';
+    bar.style.display = 'flex';
+
+    const entries = Object.values(faceGroups)
+        .filter(g => (g.count || 0) > 0 || (g.photos && g.photos.length > 0))
+        .sort((a,b) => (b.count||b.photos.length) - (a.count||a.photos.length));
+
+    if (entries.length === 0) {
+        bar.style.display = 'none';
+        return;
+    }
+
+    entries.forEach(group => {
+        const img = document.createElement('img');
+        img.className = 'face-icon';
+        img.src = group.thumbnail || `https://placehold.co/50x50/333/fff?text=${encodeURIComponent((group.name||'?')[0]||'?')}`;
+        img.title = `${group.name} (${group.count || group.photos.length} photos)`;
+
+        img.onclick = (e) => {
+            // UX polish: Shift for multi-select; click for single select
+            if (e.shiftKey) {
+                if (selectedFaces.has(group.id)) selectedFaces.delete(group.id);
+                else selectedFaces.add(group.id);
+            } else {
+                selectedFaces.clear();
+                selectedFaces.add(group.id);
+            }
+            // highlight selected
+            bar.querySelectorAll('.face-icon').forEach(icon => icon.classList.remove('selected'));
+            entries.forEach((g, idx) => {
+                const el = bar.children[idx];
+                if (selectedFaces.has(g.id)) el.classList.add('selected');
+            });
+
+            // If single click without shift -> open naming header + show photos
+            if (!e.shiftKey) showFacePhotos(group.id);
+            else applyFaceFilter();
+        };
+
+        bar.appendChild(img);
+    });
 }
-function renderNextBatch() {
-  const container = $('galleryContainer');
-  if(!container) return;
 
-  const nextBatch = filteredPhotos.slice(displayedPhotosCount, displayedPhotosCount + PHOTOS_BATCH_SIZE);
-  for(let i=0;i<nextBatch.length;i++){
-    const photo = nextBatch[i];
-
-    const photoDate = photo.created_at
-      ? new Date(photo.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
-      : 'Unknown Date';
-
-    ensureDateSection(container, photoDate);
-
-    const globalIdx = displayedPhotosCount; // correct index before increment
-
-    const card = document.createElement('div');
-    card.className = 'photo-card';
-    card.addEventListener('click', ()=> openViewer(globalIdx));
-
-    const img = document.createElement('img');
-    img.loading = 'lazy';
-    img.src = photo.thumbnail_url || photo.url;
-    img.addEventListener('load', ()=> img.classList.add('loaded'));
-    img.addEventListener('error', ()=> { card.style.display='none'; });
-
-    card.appendChild(img);
-    currentGridEl.appendChild(card);
-
-    displayedPhotosCount++;
-  }
-
-  const btn = $('loadMoreBtn');
-  if(btn) btn.style.display = displayedPhotosCount < filteredPhotos.length ? 'inline-block' : 'none';
+/* ======================= APPLY FACE FILTER ======================= */
+function applyFaceFilter() {
+    if (selectedFaces.size === 0) {
+        filteredPhotos = [...allPhotos];
+    } else {
+        filteredPhotos = allPhotos.filter(photo => {
+            const photoFaces = photo.face_ids || [];
+            if(!Array.isArray(photoFaces) || photoFaces.length === 0){
+                // fallback: if we have prebuilt group photos, use that intersection
+                return Array.from(selectedFaces).every(fid => (faceGroups[fid]?.photos || []).includes(photo));
+            }
+            return Array.from(selectedFaces).every(fid => photoFaces.includes(fid));
+        });
+    }
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML = '';
+    renderNextBatch();
 }
-async function fetchPhotos() {
-  const container = $('galleryContainer');
-  if(container) container.innerHTML = '<p class="loading">Loading photos...</p>';
-  try{
-    const {json} = await apiFetch('get-photos', GET_PHOTOS_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection_id: collectionId })
+
+/* ======================= FACE NAMING UX ======================= */
+window.showFacePhotos = (faceId) => {
+    if (!faceGroups[faceId]) return;
+
+    currentNamingFaceId = faceId;
+    const group = faceGroups[faceId];
+
+    // Show header
+    const header = document.getElementById('faceNamingHeader');
+    document.getElementById('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
+    document.getElementById('faceNameInput').value = (group.name && group.name !== 'Unknown Person') ? group.name : '';
+    document.getElementById('faceHeaderTitle').textContent = (group.name && group.name !== 'Unknown Person') ? `Photos of ${group.name}` : "Who is this?";
+    document.getElementById('faceHint').textContent = "Tip: Enter name and Save. Shift+click faces to filter multiple faces.";
+    header.style.display = 'flex';
+
+    // Filter photos
+    if(group.photos && group.photos.length > 0){
+        filteredPhotos = group.photos;
+    } else {
+        // if we don't have mapping, keep current filtered
+        filteredPhotos = [...allPhotos];
+        dbgAdd({ ok:false, type:'WARN', label:'no-face-mapping', ts:Date.now(), details:`FaceId ${faceId} has no mapped photos. If your photos API doesn't return face_ids/faces, mapping isn't possible.` });
+    }
+
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML = '';
+    renderNextBatch();
+
+    document.querySelector('.filter-row-top').style.display = 'none';
+};
+
+function cancelFaceNaming() {
+    currentNamingFaceId = null;
+    document.getElementById('faceNamingHeader').style.display = 'none';
+    document.querySelector('.filter-row-top').style.display = 'flex';
+    selectedFaces.clear();
+    filteredPhotos = [...allPhotos];
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML = '';
+    renderNextBatch();
+    renderFaceIcons();
+}
+document.getElementById('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
+
+async function saveFaceName() {
+    const newName = document.getElementById('faceNameInput').value.trim();
+    if(!newName || !currentNamingFaceId) return;
+
+    const btn = document.getElementById('saveFaceBtn');
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+    try {
+        const {res} = await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                FaceId: currentNamingFaceId,
+                FaceName: newName,
+                CollectionId: collectionId
+            })
+        });
+        if(res && res.ok) {
+            faceGroups[currentNamingFaceId].name = newName;
+            alert("Name saved!");
+            cancelFaceNaming();
+        } else {
+            alert("Failed to save name.");
+        }
+    } catch(e) {
+        alert("Error saving name.");
+    } finally {
+        btn.textContent = "Save";
+        btn.disabled = false;
+    }
+}
+document.getElementById('saveFaceBtn').addEventListener('click', saveFaceName);
+
+/* ======================= VIEWER ======================= */
+window.openViewer = (idx) => {
+    if(!filteredPhotos[idx]) return;
+    viewerIndex = idx;
+    document.getElementById('viewerImg').src = filteredPhotos[idx].url;
+    document.getElementById('viewer').classList.add('open');
+}
+window.closeViewer = () => {
+    document.getElementById('viewer').classList.remove('open');
+}
+
+/* ======================= EVENTS LOGIC ======================= */
+function renderEvents(events) {
+    const tbody = document.getElementById('eventsTbody');
+    const uploadSelect = document.getElementById('uploadEventSelect');
+    const linkList = document.getElementById('linkEventList');
+
+    tbody.innerHTML = '';
+    uploadSelect.innerHTML = '<option value="">Select Event...</option>';
+    linkList.innerHTML = '';
+
+    events.forEach(ev => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${ev.name}</td>
+                <td>${ev.event_date || '-'}</td>
+                <td>${ev.photo_count || 0}</td>
+                <td>
+                    <button class="edit-btn" onclick="editEvent('${ev.event_id}', '${escapeAttr(ev.name)}', '${ev.event_date || ''}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteEvent('${ev.event_id}', '${escapeAttr(ev.name)}')">Delete</button>
+                </td>
+            </tr>`;
+        uploadSelect.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+        linkList.innerHTML += `
+            <label style="display:block; margin-bottom:5px; font-size:13px; cursor:pointer;">
+                <input type="checkbox" value="${ev.event_id}" class="link-check"> ${ev.name}
+            </label>`;
+    });
+}
+
+window.editEvent = function(eventId, name, date) {
+    document.getElementById('eventName').value = name;
+    document.getElementById('eventDate').value = date;
+
+    const btn = document.getElementById('saveEventBtn');
+    btn.onclick = () => updateEvent(eventId);
+    btn.textContent = "Update";
+
+    document.getElementById('eventForm').style.display = 'block';
+};
+
+async function updateEvent(eventId) {
+    const name = document.getElementById('eventName').value;
+    const date = document.getElementById('eventDate').value;
+    if(!name) return alert('Name required');
+
+    await apiFetch('upsert-event(update)', UPSERT_EVENT_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, event_id: eventId, name, event_date: date })
+    });
+
+    document.getElementById('eventForm').style.display = 'none';
+    const btn = document.getElementById('saveEventBtn');
+    btn.textContent = "Save";
+    btn.onclick = createEvent;
+
+    init();
+}
+
+// Default create handler
+async function createEvent() {
+    const name = document.getElementById('eventName').value;
+    const date = document.getElementById('eventDate').value;
+    if(!name) return alert('Name required');
+
+    await apiFetch('upsert-event(create)', UPSERT_EVENT_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+    });
+
+    document.getElementById('eventForm').style.display = 'none';
+    init();
+}
+document.getElementById('saveEventBtn').onclick = createEvent;
+
+window.deleteEvent = async function(eventId, name) {
+    if (!confirm(`Delete ${name}?`)) return;
+    try {
+        await apiFetch('delete-event', DELETE_EVENT_API, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
+        });
+        init();
+    } catch (e) {
+        alert('Delete failed.');
+        console.error(e);
+    }
+}
+
+/* ======================= ANALYTICS LOGIC ======================= */
+async function fetchAnalytics(forceRefetch = false) {
+    const dateFilter = document.getElementById('dateFilter').value;
+    const mobileFilter = document.getElementById('mobileFilter').value.trim();
+    const noLeadsMessage = document.getElementById('noLeadsMessage');
+    if (allLeads.length === 0 || forceRefetch) {
+        noLeadsMessage.textContent = 'Loading leads...';
+        noLeadsMessage.style.display = 'block';
+        try {
+            const {res, json} = await apiFetch('save-details(list)', GUEST_API, {
+                method: 'GET'
+            });
+            if (!res.ok) throw new Error('Failed to fetch');
+            allLeads = (json && json.leads) ? json.leads : [];
+        } catch(e) {
+            console.error("Fetch Leads Error:", e);
+            noLeadsMessage.textContent = 'Failed to fetch leads.';
+            return;
+        }
+    }
+
+    filteredLeads = allLeads.filter(l => {
+        const matchesMobile = !mobileFilter || (l.mobile && l.mobile.includes(mobileFilter));
+        const matchesDate = !dateFilter || (l.created_at && l.created_at.startsWith(dateFilter));
+        return matchesMobile && matchesDate;
+    });
+    leadsDisplayCount = 0;
+    document.getElementById('leadsGrid').innerHTML = '';
+    noLeadsMessage.style.display = 'none';
+    if(filteredLeads.length === 0) {
+        noLeadsMessage.textContent = 'No leads found matching criteria.';
+        noLeadsMessage.style.display = 'block';
+    } else {
+        loadMoreLeads();
+    }
+}
+
+window.loadMoreLeads = function() {
+    const leadsGrid = document.getElementById('leadsGrid');
+    const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
+
+    if (nextBatch.length === 0) {
+        document.getElementById('loadMoreLeadsBtn').style.display = 'none';
+        return;
+    }
+    const html = nextBatch.map(l => {
+        const timeStr = formatLeadTime(l.created_at);
+        let selfieSrc = 'https://placehold.co/70x70/333/fff?text=No+Selfie';
+        if (l.selfie_b64) {
+            selfieSrc = `data:image/jpeg;base64,${(l.selfie_b64.split(';base64,')[1] || l.selfie_b64)}`;
+        }
+        const matchCount = l.match_count || 0;
+
+        return `
+            <div class="lead-card" onclick="showGuestHistory('${escapeAttr(l.mobile)}', '${escapeAttr(l.name || 'Unknown')}')">
+                <img src="${escapeAttr(selfieSrc)}" class="selfie-img" alt="Selfie" onerror="this.src='https://placehold.co/70x70/333/fff?text=No+Selfie'">
+                <div class="lead-info">
+                    <div class="lead-name">${l.name || 'Unknown Guest'}</div>
+                    <div class="lead-mobile">${l.mobile || '-'}</div>
+                    <div class="lead-meta">
+                        <span>Link ID: ${l.link_id || '-'}</span>
+                        <span class="match-count">📸 Found: ${matchCount}</span>
+                    </div>
+                    <div class="lead-meta">
+                        <span>Last: ${timeStr}</span>
+                        <span>Total Searches: ${l.total_searches || 1}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    leadsGrid.innerHTML += html;
+    leadsDisplayCount += nextBatch.length;
+    const btn = document.getElementById('loadMoreLeadsBtn');
+    btn.style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
+}
+
+window.showGuestHistory = async function(mobile, name) {
+    const container = document.getElementById('analyticsBodyContainer');
+    const historyViewer = document.getElementById('historyViewer');
+    const historyBody = document.getElementById('historyBody');
+
+    container.style.display = 'none';
+    historyViewer.style.display = 'block';
+    document.getElementById('historyHeader').textContent = `${name}`;
+    historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--muted);">Loading history...</td></tr>';
+
+    try {
+        const {res, json} = await apiFetch('save-details(history)', `${GUEST_API}?mobile=${encodeURIComponent(mobile)}`, {
+            method: 'GET'
+            });
+        if (!res.ok) throw new Error('API Error');
+        const history = (json && json.history) ? json.history : [];
+
+        if(history.length === 0) {
+            historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">No search events found.</td></tr>';
+            return;
+        }
+        historyBody.innerHTML = history.map(h => `
+            <tr>
+                <td>${formatLeadTime(h.created_at)}</td>
+                <td><span style="background:#222; padding:2px 6px; border-radius:4px; font-size:11px;">${h.link_id || '-'}</span></td>
+                <td style="color:var(--muted);">${h.name || '-'} (Found: ${h.match_count || 0})</td>
+            </tr>
+        `).join('');
+    } catch(e) {
+        historyBody.innerHTML = '<tr><td colspan="3" style="color:var(--danger); text-align:center;">Failed to fetch history.</td></tr>';
+    }
+}
+window.hideHistoryViewer = function() {
+    document.getElementById('analyticsBodyContainer').style.display = 'block';
+    document.getElementById('historyViewer').style.display = 'none';
+}
+
+/* ======================= LINK GENERATION ======================= */
+document.getElementById('genLinkBtn').onclick = async () => {
+    const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c => c.value);
+    if (selected.length === 0) return alert('Select at least one event');
+
+    const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId, event_ids: selected })
     });
     const data = json || {};
-    allPhotos = (data.photos || []).map(p=>{
-      p.face_ids = Array.isArray(p.face_ids) ? p.face_ids : [];
-      p.faces = Array.isArray(p.faces) ? p.faces : [];
-      if(p.face_ids.length === 0 && p.faces.length){
-        p.face_ids = p.faces.map(f=>f.FaceId).filter(Boolean);
-      }
-      return p;
-    });
-    filteredPhotos = [...allPhotos];
-    buildLocalFaceMap();
-    await enhanceFacesFromDirectory();
-    renderFaceIcons();
-    applyFilters();
-  }catch(err){
-    if(container) container.innerHTML = '<p style="color:var(--danger); text-align:center;">Failed to load photos. Open Debug panel.</p>';
-    console.error(err);
-  }
+    const box = document.getElementById('linkResult');
+    const linkEl = document.getElementById('generatedLink');
+    linkEl.href = data.searchUrl;
+    linkEl.textContent = data.searchUrl;
+    box.style.display = 'block';
+};
+
+window.copyLink = function() {
+    const linkText = document.getElementById('generatedLink').textContent;
+    navigator.clipboard.writeText(linkText).then(() => {
+        alert('Link copied to clipboard');
+    }).catch(err => alert('Copy failed'));
+};
+
+/* ======================= UPLOAD LOGIC ======================= */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.onclick = () => fileInput.click();
+dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = '#222'; };
+dropZone.ondragleave = () => { dropZone.style.background = '#151515'; };
+dropZone.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+fileInput.onchange = () => handleFiles(fileInput.files);
+
+const jpegQuality = document.getElementById('jpegQuality');
+const jpegQualityVal = document.getElementById('jpegQualityVal');
+if(jpegQuality && jpegQualityVal){
+    jpegQualityVal.textContent = Number(jpegQuality.value).toFixed(2);
+    jpegQuality.addEventListener('input', ()=>{ jpegQualityVal.textContent = Number(jpegQuality.value).toFixed(2); });
+}
+
+async function handleFiles(files) {
+    const eventId = document.getElementById('uploadEventSelect').value;
+    if (!eventId) return alert("Select an event first!");
+
+    const total = files.length;
+    if (total === 0) return;
+
+    // Options
+    const optimize = !!document.getElementById('optimizeToggle')?.checked;
+    const convertUnsupported = !!document.getElementById('convertUnsupported')?.checked;
+    const maxW = parseInt(document.getElementById('maxWidthSelect')?.value || "0", 10) || 0;
+    const quality = parseFloat(document.getElementById('jpegQuality')?.value || "0.82");
+
+    // Accept any image/* file, convert unsupported formats to JPEG if option enabled
+    const incoming = Array.from(files).filter(f => (f && (f.type || '').startsWith('image/')));
+    const skipped = total - incoming.length;
+    if (skipped > 0) alert(`Skipped ${skipped} non-image files.`);
+
+    if (incoming.length === 0) return;
+
+    document.getElementById('progress-container').style.display = 'block';
+    const progressBar = document.getElementById('progress-bar');
+    const status = document.getElementById('uploadStatus');
+    status.className = '';
+    status.innerHTML = 'Preparing files...';
+    progressBar.style.width = `0%`;
+
+    // Helpers
+    const isHeic = (f) => {
+        const t = (f.type || '').toLowerCase();
+        const n = (f.name || '').toLowerCase();
+        return t.includes('heic') || t.includes('heif') || n.endsWith('.heic') || n.endsWith('.heif');
+    };
+
+    async function toJpegBlob(file, { optimize, maxW, quality }) {
+        // 1) HEIC/HEIF → JPEG using heic2any
+        if (isHeic(file)) {
+            if (!window.heic2any) throw new Error("HEIC converter not loaded (heic2any).");
+            const converted = await window.heic2any({ blob: file, toType: "image/jpeg", quality: quality });
+            // heic2any can return Blob or Array of Blobs
+            const blob = Array.isArray(converted) ? converted[0] : converted;
+            return blob;
+        }
+
+        // 2) If it's already JPEG/PNG and user doesn't want optimize, keep original
+        const t = (file.type || '').toLowerCase();
+        const alreadyOk = (t === 'image/jpeg' || t === 'image/png');
+        if (alreadyOk && !optimize) return file;
+
+        // 3) Convert/optimize via canvas (works for PNG/JPEG/WEBP/GIF first frame etc.)
+        const imgUrl = URL.createObjectURL(file);
+        try {
+            const img = await new Promise((resolve, reject) => {
+                const i = new Image();
+                i.onload = () => resolve(i);
+                i.onerror = () => reject(new Error("Cannot decode image: " + (file.name || 'file')));
+                i.src = imgUrl;
+            });
+
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+
+            if (maxW && w > maxW) {
+                const ratio = maxW / w;
+                w = Math.round(w * ratio);
+                h = Math.round(h * ratio);
+            }
+
+            // If not converting unsupported and the file isn't JPEG/PNG, we still need Rekognition-friendly format
+            if (!alreadyOk && !convertUnsupported) {
+                // keep as-is (but Rekognition may fail). We warn silently here:
+                dbgAdd({ ok:false, type:'WARN', label:'upload-format', ts:Date.now(), details:`Uploading unsupported format as-is: ${file.name} (${file.type})`});
+                return file;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+
+            const blob = await new Promise((resolve) => {
+                canvas.toBlob((b) => resolve(b), 'image/jpeg', quality);
+            });
+
+            if (!blob) throw new Error("Failed to compress image: " + (file.name || 'file'));
+            return blob;
+        } finally {
+            URL.revokeObjectURL(imgUrl);
+        }
+    }
+
+    // Prepare files (convert + optimize)
+    const prepared = [];
+    for (let i = 0; i < incoming.length; i++) {
+        const f = incoming[i];
+        status.innerHTML = `Preparing... ${i + 1}/${incoming.length}`;
+        progressBar.style.width = `${Math.round(((i + 1) / incoming.length) * 20)}%`; // prep phase (0-20%)
+
+        const blob = await toJpegBlob(f, { optimize, maxW, quality });
+
+        // Ensure we upload with correct name/type
+        let outType = blob.type || f.type || 'image/jpeg';
+        let outName = f.name || `photo_${Date.now()}_${i}.jpg`;
+
+        // If converted to jpeg but name not .jpg, fix
+        if (outType === 'image/jpeg' && !outName.toLowerCase().endsWith('.jpg') && !outName.toLowerCase().endsWith('.jpeg')) {
+            outName = outName.replace(/\.[^/.]+$/, '') + '.jpg';
+        }
+
+        // Wrap Blob as File so we keep name/type
+        const outFile = (blob instanceof File) ? blob : new File([blob], outName, { type: outType });
+        prepared.push(outFile);
+    }
+
+    // Upload in batches
+    const BATCH_SIZE = 10;
+    const totalValid = prepared.length;
+    let uploaded = 0;
+
+    status.innerHTML = 'Starting upload...';
+    progressBar.style.width = `20%`;
+
+    for (let i = 0; i < totalValid; i += BATCH_SIZE) {
+        const batch = prepared.slice(i, i + BATCH_SIZE);
+        const fileData = batch.map(f => ({ name: f.name, type: f.type }));
+
+        try {
+            const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileData })
+            });
+
+            const data = json || {};
+            const urls = data.urls || [];
+
+            await Promise.all(urls.map(async (u, idx) => {
+                const file = batch[idx];
+                await apiFetch('s3-put', u.uploadURL, {
+                    method: 'PUT',
+                    body: file,
+                    headers: { 'Content-Type': file.type }
+                });
+                uploaded++;
+                // upload phase (20-100%)
+                const pct = 20 + Math.round((uploaded / totalValid) * 80);
+                progressBar.style.width = `${pct}%`;
+                status.innerHTML = `Uploading... ${uploaded}/${totalValid}`;
+            }));
+        } catch (err) {
+            status.className = 'error';
+            status.innerHTML = `Error: ${err.message}`;
+            console.error(err);
+            return;
+        }
+    }
+
+    status.className = 'success';
+    status.innerHTML = '✅ Upload Complete! Indexing in progress...';
+
+    setTimeout(() => {
+        init();
+        fetchPhotos();
+        status.innerHTML = 'Photos indexed and ready!';
+    }, 3000);
 }
 
 /* ======================= FILTERS ======================= */
-function applyFilters(){
-  const type = $('filterType')?.value || 'ALL';
-  const tagSearch = ($('tagSearch')?.value || '').toLowerCase().trim();
-  const searchTerms = tagSearch ? tagSearch.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean) : [];
-  const container = $('galleryContainer');
+window.applyFilters = function() {
+    const type = document.getElementById('filterType').value;
+    const query = document.getElementById('tagSearch').value.toLowerCase();
 
-  filteredPhotos = allPhotos.filter(photo=>{
-    if(searchTerms.length){
-      const tags = Array.isArray(photo.tags) ? photo.tags : [];
-      const has = tags.some(t=>{
-        const lt = String(t || '').toLowerCase();
-        return searchTerms.some(term => lt.includes(term));
-      });
-      if(!has) return false;
-    }
+    // Reset face selection when using top filters
+    selectedFaces.clear();
 
-    if(type !== 'ALL'){
-      const faceCount = Array.isArray(photo.face_ids) ? photo.face_ids.length : 0;
-      if(type === 'BEST' && faceCount < 3) return false;
-      if(type === 'GROUP' && faceCount < 2) return false;
-      if(type === 'HAPPY'){
-        const hasHappy = photo.faces?.some(f => f?.Emotions?.some(e => e.Type === 'HAPPY' && (e.Confidence || 0) > 50)) || faceCount > 0;
-        if(!hasHappy) return false;
-      }
-    }
+    filteredPhotos = allPhotos.filter(p => {
+        const matchesType = (type === 'ALL') ||
+            (type === 'BEST' && (p.quality_score || 0) > 85) ||
+            (type === 'HAPPY' && (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60)) ||
+            (type === 'GROUP' && (p.face_count || 0) >= 3);
 
-    if(selectedFaces.size){
-      const photoFaces = Array.isArray(photo.face_ids) ? photo.face_ids : [];
-      return Array.from(selectedFaces).some(fid => photoFaces.includes(fid));
-    }
-
-    return true;
-  });
-
-  if(!container) return;
-
-  if(filteredPhotos.length === 0){
-    container.innerHTML = `<p class="empty-state">No photos match your search. <button class="btn secondary" onclick="clearFilters()">Clear Filters</button></p>`;
-    if($('loadMoreBtn')) $('loadMoreBtn').style.display='none';
-    return;
-  }
-
-  resetGalleryRender();
-  renderNextBatch();
-}
-window.applyFilters = applyFilters;
-
-function clearFilters(){
-  if($('filterType')) $('filterType').value = 'ALL';
-  if($('tagSearch')) $('tagSearch').value = '';
-  selectedFaces.clear();
-  document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
-    el.style.borderColor = 'var(--brand)';
-    el.style.transform = 'scale(1)';
-  });
-  if($('faceNamingHeader')) $('faceNamingHeader').style.display = 'none';
-  const fr = document.querySelector('.filter-row-top');
-  if(fr) fr.style.display = 'flex';
-  currentNamingFaceId = null;
-  applyFilters();
-}
-window.clearFilters = clearFilters;
-
-/* ======================= FACE VIEW + NAMING ======================= */
-function showFacePhotos(faceId, groupObj){
-  const group = groupObj || faceGroups[faceId];
-  if(!group) return;
-  currentNamingFaceId = group.id;
-  $('faceHeaderImg').src = group.thumbnail || "https://placehold.co/60x60";
-  $('faceNameInput').value = (group.name && group.name !== 'Unknown') ? group.name : '';
-  $('faceHeaderTitle').textContent = (group.name && group.name !== 'Unknown') ? `Photos of ${group.name}` : "Who is this?";
-  $('faceHint').textContent = "Enter name to merge similar faces.";
-  $('faceNamingHeader').style.display = 'flex';
-  const fr = document.querySelector('.filter-row-top');
-  if(fr) fr.style.display = 'none';
-  filteredPhotos = group.photos;
-  resetGalleryRender();
-  renderNextBatch();
-}
-window.showFacePhotos = showFacePhotos;
-
-function cancelFaceNaming(){
-  if($('faceNamingHeader')) $('faceNamingHeader').style.display = 'none';
-  const fr = document.querySelector('.filter-row-top');
-  if(fr) fr.style.display = 'flex';
-  currentNamingFaceId = null;
-  selectedFaces.clear();
-  document.querySelectorAll('.face-icon-wrapper').forEach(el=>{
-    el.style.borderColor='var(--brand)';
-    el.style.transform='scale(1)';
-  });
-  applyFilters();
-}
-window.cancelFaceNaming = cancelFaceNaming;
-
-async function saveFaceName(){
-  const name = ($('faceNameInput')?.value || '').trim();
-  if(!name || name === 'Unknown') return alert('Enter a valid name');
-  try{
-    await apiFetch('save-face-name', SAVE_FACE_NAME_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name })
+        const matchesQuery = !query || (p.ai_tags || []).some(t => String(t).toLowerCase().includes(query));
+        return matchesType && matchesQuery;
     });
-    for(const g of Object.values(faceGroups)){
-      if(g.id === currentNamingFaceId) g.name = name;
-    }
-    renderFaceIcons();
-    cancelFaceNaming();
-  }catch{
-    alert('Save failed');
-  }
+    displayedPhotosCount = 0;
+    document.getElementById('galleryContainer').innerHTML = '';
+    renderNextBatch();
 }
-window.saveFaceName = saveFaceName;
-
-/* ======================= VIEWER ======================= */
-let viewerIndex = 0;
-function openViewer(idx){
-  if(!filteredPhotos[idx]) return;
-  viewerIndex = idx;
-  $('viewerImg').src = filteredPhotos[idx].url;
-  $('viewer').classList.add('open');
-}
-function closeViewer(e){
-  if(e) e.stopPropagation();
-  $('viewer').classList.remove('open');
-}
-window.openViewer = openViewer;
-window.closeViewer = closeViewer;
 
 /* ======================= DOWNLOAD ZIP ======================= */
-async function downloadAllZip(btn){
-  if(!filteredPhotos.length) return alert('No photos to download');
-  btn.disabled = true;
-  const old = btn.textContent;
-  btn.textContent = 'Zipping...';
-  try{
-    const zip = new JSZip();
-    const collectionName = $('collectionName').textContent || 'collection';
-    let i = 0;
-    for(const photo of filteredPhotos){
-      i++;
-      const resp = await fetch(photo.url);
-      const blob = await resp.blob();
-      const base = photo.filename ? safeText(photo.filename) : `photo_${i}.jpg`;
-      const safeName = base.replace(/[^a-z0-9._-]/gi,'_');
-      zip.file(`${String(i).padStart(4,'0')}_${safeName}`, blob);
-    }
-    const content = await zip.generateAsync({ type:"blob" });
-    saveAs(content, `${collectionName.replace(/[^a-z0-9]/gi,'_')}.zip`);
-  }catch(e){
-    alert('Download failed');
-    console.error(e);
-  }finally{
-    btn.disabled = false;
-    btn.textContent = old;
-  }
-}
-window.downloadAllZip = downloadAllZip;
-
-/* ======================= EVENTS ======================= */
-function openCreateEvent(){
-  eventState.mode = 'create';
-  eventState.eventId = null;
-  $('eventName').value = '';
-  $('eventDate').value = '';
-  $('eventForm').style.display = 'block';
-  $('saveEventBtn').textContent = 'Save';
-}
-function openEditEvent(eventId, name, date){
-  eventState.mode = 'update';
-  eventState.eventId = eventId;
-  $('eventName').value = name || '';
-  $('eventDate').value = date || '';
-  $('eventForm').style.display = 'block';
-  $('saveEventBtn').textContent = 'Update';
-}
-async function saveEvent(){
-  const name = ($('eventName').value || '').trim();
-  const date = $('eventDate').value || '';
-  if(!name) return alert('Name required');
-  const payload = { collection_id: collectionId, name, event_date: date };
-  if(eventState.mode === 'update' && eventState.eventId){
-    payload.event_id = eventState.eventId;
-  }
-  await apiFetch(`upsert-event(${eventState.mode})`, UPSERT_EVENT_API, {
-    method:'POST',
-    headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  $('eventForm').style.display = 'none';
-  eventState.mode = 'create';
-  eventState.eventId = null;
-  await init();
-}
-async function deleteEvent(eventId, name){
-  if(!confirm(`Delete ${name}?`)) return;
-  try{
-    await apiFetch('delete-event', DELETE_EVENT_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_id: eventId, collection_id: collectionId })
-    });
-    await init();
-  }catch(e){
-    alert('Delete failed.');
-    console.error(e);
-  }
-}
-
-/* ======================= UPLOAD ======================= */
-async function handleFiles(files){
-  if(!files?.length) return;
-  const eventId = $('uploadEventSelect').value;
-  if(!eventId) return alert('Select event');
-
-  const optimize = !!$('optimizeToggle')?.checked;
-  const maxW = parseInt($('maxWidthSelect')?.value || '0', 10);
-  const quality = parseFloat($('jpegQuality')?.value || '0.82');
-  const convert = !!$('convertUnsupported')?.checked;
-
-  try{
-    const { json } = await apiFetch('generate-upload-urls', UPLOAD_URLS_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, count: files.length })
-    });
-    const urls = json?.urls || [];
-    if(urls.length < files.length) return alert('Not enough upload URLs generated');
-
-    const progressBar = $('progress-bar');
-    const status = $('uploadStatus');
-    const container = $('progress-container');
-    container.style.display = 'block';
-    progressBar.style.width = '0%';
-    status.textContent = '';
-    status.className = '';
-
-    let uploaded = 0;
-    for(let i=0;i<files.length;i++){
-      const file = files[i];
-      let blob = file;
-
-      const mime = (file.type || blob.type || '').toLowerCase();
-      if(mime.includes('heic') || mime.includes('heif')){
-        try{
-          blob = await heic2any({ blob: file, toType: "image/jpeg", quality });
-        }catch(e){
-          console.warn('HEIC conversion failed:', e);
-        }
-      }
-      if(convert){
-        const bt = (blob.type || '').toLowerCase();
-        if(!['image/jpeg','image/jpg','image/png'].includes(bt)){
-          try{ blob = await imageToJpeg(blob, quality); }
-          catch(e){ console.warn('Conversion failed:', e); }
-        }
-      }
-      if(optimize && maxW > 0){
-        blob = await resizeImage(blob, maxW, quality);
-      }
-
-      const resp = await fetch(urls[i], {
-        method:'PUT',
-        body: blob,
-        headers:{ 'Content-Type': blob.type || 'image/jpeg' }
-      });
-      if(!resp.ok) throw new Error(`Upload failed for ${file.name}`);
-
-      uploaded++;
-      const pct = ((i+1)/files.length)*100;
-      progressBar.style.width = `${pct}%`;
-      status.textContent = `Uploaded ${i+1}/${files.length}`;
-    }
-
-    status.className = uploaded === files.length ? 'success' : 'error';
-    status.textContent = uploaded === files.length ? 'All uploaded successfully!' : `Completed with ${uploaded}/${files.length} successes`;
-
-    setTimeout(async ()=>{
-      await fetchPhotos();
-      await init();
-    }, 1200);
-  }catch(e){
-    $('uploadStatus').textContent = `Error: ${e.message}`;
-    $('uploadStatus').className = 'error';
-  }
-}
-
-/* ======================= LINKS ======================= */
-function copyLink(){
-  const link = $('generatedLink').href;
-  navigator.clipboard.writeText(link).then(()=>{
-    const btn = document.querySelector('#linkResult button.btn.secondary');
-    if(!btn) return;
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    setTimeout(()=> btn.textContent = orig, 2000);
-  }).catch(()=> alert('Copy failed'));
-}
-window.copyLink = copyLink;
-
-/* ======================= ANALYTICS (Leads from /save-details) ======================= */
-async function fetchLeadsData(force=false){
-  try{
-    $('retryLeadsBtn').style.display = 'none';
-    const {res, json, text} = await apiFetch('save-details(GET leads)', SAVE_DETAILS_API, {
-      method:'GET',
-      headers:{ 'Authorization': `Bearer ${idToken || ''}` }
-    });
-    if(!res.ok) throw new Error(json?.error || text || `HTTP ${res.status}`);
-
-    let leads = [];
-    if(Array.isArray(json?.leads)) leads = json.leads;
-    else if(Array.isArray(json)) leads = json;
-    else leads = [];
-
-    leads = leads.map(ensureCreatedAt);
-
-    // Filter by current collectionId if present in data
-    if(collectionId){
-      const hasCollectionField = leads.some(l => l && (l.collection_id !== undefined && l.collection_id !== null && l.collection_id !== ""));
-      if(hasCollectionField){
-        leads = leads.filter(l => safeText(l.collection_id) === safeText(collectionId));
-      }
-    }
-
-    // Normalize selfie display
-    leads = leads.map(l=>{
-      if(!l) return l;
-      if(!l.selfie_url && l.selfie_b64){
-        l.selfie_url = `data:image/jpeg;base64,${l.selfie_b64}`;
-      }
-      return l;
-    });
-
-    allLeads = leads;
-  }catch(e){
-    allLeads = [];
-    $('retryLeadsBtn').style.display = 'inline-flex';
-    dbgAdd({ok:false, type:'UI', label:'fetchLeadsData', ts:Date.now(), details: e.message || String(e)});
-  }
-}
-
-function renderLeadCard(lead){
-  const card = document.createElement('div');
-  card.className = 'lead-card';
-  const mobile = safeText(lead.mobile || lead.phone || '');
-  const linkId = safeText(lead.link_id || lead.linkId || '');
-  card.addEventListener('click', ()=> showLeadHistory(mobile, linkId));
-
-  const img = document.createElement('img');
-  img.className = 'selfie-img';
-  img.src = lead.selfie_url || 'https://placehold.co/70x70/333/fff?text=?';
-  img.onerror = () => img.src = 'https://placehold.co/70x70/333/fff?text=?';
-
-  const info = document.createElement('div');
-  info.className = 'lead-info';
-
-  const nm = document.createElement('div');
-  nm.className = 'lead-name';
-  nm.textContent = lead.name || 'Unknown';
-
-  const mob = document.createElement('div');
-  mob.className = 'lead-mobile';
-  mob.textContent = mobile || '-';
-
-  const meta = document.createElement('div');
-  meta.className = 'lead-meta';
-
-  const t = document.createElement('span');
-  t.textContent = formatLeadTime(lead.search_time || lead.created_at || lead.timestamp);
-
-  const mc = document.createElement('span');
-  mc.className = 'match-count';
-  mc.textContent = `${lead.match_count || 0} matches`;
-
-  meta.appendChild(t);
-  meta.appendChild(mc);
-
-  info.appendChild(nm);
-  info.appendChild(mob);
-  info.appendChild(meta);
-
-  card.appendChild(img);
-  card.appendChild(info);
-  return card;
-}
-
-function applyLeadsFilter(){
-  const dateF = $('dateFilter').value;
-  const mobileF = ($('mobileFilter').value || '').toLowerCase();
-  filteredLeads = allLeads.filter(lead=>{
-    if(dateF){
-      const iso = normIso(lead.search_time || lead.created_at || lead.timestamp);
-      const leadDate = iso ? new Date(iso).toISOString().split('T')[0] : '';
-      if(leadDate !== dateF) return false;
-    }
-    if(mobileF && !safeText(lead.mobile || lead.phone).toLowerCase().includes(mobileF)) return false;
-    return true;
-  });
-
-  leadsDisplayCount = 0;
-  $('leadsGrid').innerHTML = '';
-  loadMoreLeads();
-
-  const noMsg = $('noLeadsMessage');
-  if(filteredLeads.length === 0){
-    noMsg.style.display = 'block';
-    noMsg.innerHTML = allLeads.length === 0
-      ? (collectionId ? 'No leads yet for this collection.' : 'No leads yet.')
-      : 'No leads match your filter. <button class="btn secondary" style="margin-top:10px;" onclick="clearLeadsFilters()">Clear Filters</button>';
-  }else{
-    noMsg.style.display = 'none';
-  }
-
-  // Update header stat
-  $('totalLeads').textContent = allLeads.length || 0;
-}
-
-async function fetchAnalytics(forceRefetch=false){
-  $('noLeadsMessage').style.display = 'block';
-  $('noLeadsMessage').textContent = 'Loading leads...';
-  if(forceRefetch || allLeads.length === 0){
-    await fetchLeadsData(forceRefetch);
-  }
-  applyLeadsFilter();
-}
-window.fetchAnalytics = fetchAnalytics;
-
-function clearLeadsFilters(){
-  $('dateFilter').value = '';
-  $('mobileFilter').value = '';
-  fetchAnalytics(false);
-}
-window.clearLeadsFilters = clearLeadsFilters;
-
-function loadMoreLeads(){
-  const nextBatch = filteredLeads.slice(leadsDisplayCount, leadsDisplayCount + LEADS_BATCH_SIZE);
-  if(!nextBatch.length) return;
-  const grid = $('leadsGrid');
-  nextBatch.forEach(lead => grid.appendChild(renderLeadCard(lead)));
-  leadsDisplayCount += nextBatch.length;
-  $('loadMoreLeadsBtn').style.display = leadsDisplayCount < filteredLeads.length ? 'inline-block' : 'none';
-}
-window.loadMoreLeads = loadMoreLeads;
-
-async function showLeadHistory(mobile, linkId){
-  if(!mobile) return alert('Mobile missing for this lead');
-  try{
-    const url = `${SAVE_DETAILS_API}?mobile=${encodeURIComponent(mobile)}`;
-    const {res, json, text} = await apiFetch(`save-details(GET history)`, url, {
-      method:'GET',
-      headers:{ 'Authorization': `Bearer ${idToken || ''}` }
-    });
-    if(!res.ok) throw new Error(json?.error || text || `HTTP ${res.status}`);
-
-    let history = Array.isArray(json?.history) ? json.history : (Array.isArray(json) ? json : []);
-    history = history.map(ensureCreatedAt);
-
-    if(collectionId){
-      const hasCollectionField = history.some(h => h && (h.collection_id !== undefined && h.collection_id !== null && h.collection_id !== ""));
-      if(hasCollectionField){
-        history = history.filter(h => safeText(h.collection_id) === safeText(collectionId));
-      }
-    }
-    if(linkId){
-      history = history.filter(h => !h.link_id || safeText(h.link_id) === safeText(linkId));
-    }
-
-    const tbody = $('historyBody');
-    tbody.innerHTML = '';
-    for(const h of history){
-      const tr = document.createElement('tr');
-      const td1 = document.createElement('td'); td1.textContent = formatLeadTime(h.search_time || h.created_at || h.timestamp);
-      const td2 = document.createElement('td'); td2.textContent = h.link_id || linkId || '-';
-      const td3 = document.createElement('td'); td3.textContent = h.name || h.captured_name || 'Unknown';
-      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
-      tbody.appendChild(tr);
-    }
-
-    $('historyHeader').textContent = `Search History • ${mobile}`;
-    $('leadsContainer').style.display = 'none';
-    $('historyViewer').style.display = 'block';
-  }catch(e){
-    alert('Failed to load history');
-    dbgAdd({ok:false, type:'UI', label:'showLeadHistory', ts:Date.now(), details: e.message || String(e)});
-    console.error(e);
-  }
-}
-window.showLeadHistory = showLeadHistory;
-
-function hideHistoryViewer(){
-  $('historyViewer').style.display = 'none';
-  $('leadsContainer').style.display = 'block';
-}
-window.hideHistoryViewer = hideHistoryViewer;
-
-/* ======================= TABS ======================= */
-function switchTab(tabId){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  const tabEl = document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`);
-  tabEl?.classList.add('active');
-  $(tabId)?.classList.add('active');
-
-  if(tabId === 'galleryTab'){
-    if(!allPhotos.length) fetchPhotos();
-    else applyFilters();
-  }else if(tabId === 'analyticsTab'){
-    fetchAnalytics(false);
-  }else if(tabId === 'eventsTab'){
-    init();
-  }
-}
-window.switchTab = switchTab;
-
-/* ======================= TOGGLES ======================= */
-function syncToggle(labelId, inputId){
-  const lab = $(labelId);
-  const inp = $(inputId);
-  if(!lab || !inp) return;
-  const update = ()=>{ lab.classList.toggle('active', !!inp.checked); };
-  update();
-  lab.addEventListener('click', (e)=>{
-    // allow clicking label toggles checkbox
-    if(e.target && e.target.tagName.toLowerCase() === 'input') return;
-    inp.checked = !inp.checked;
-    update();
-  });
-  inp.addEventListener('change', update);
-}
-
-/* ======================= DOM READY ======================= */
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(!collectionId) dbgAdd({ok:false, type:'UI', label:'missing collectionId', ts:Date.now(), details:'URL must have ?id=...'});
-  // debug controls
-  $('debugFab')?.addEventListener('click', ()=>{
-    const p = $('debugPanel');
-    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-  });
-  $('dbgCloseBtn')?.addEventListener('click', dbgClose);
-  $('dbgClearBtn')?.addEventListener('click', dbgClear);
-
-  // toggles
-  syncToggle('optimizeToggleLabel', 'optimizeToggle');
-  syncToggle('convertToggleLabel', 'convertUnsupported');
-
-  // init
-  init();
-  fetchPhotos();
-
-  // gallery
-  $('loadMoreBtn')?.addEventListener('click', renderNextBatch);
-  $('downloadZipBtn')?.addEventListener('click', (e)=> downloadAllZip(e.currentTarget));
-
-  // face naming
-  $('cancelFaceBtn')?.addEventListener('click', cancelFaceNaming);
-  $('saveFaceBtn')?.addEventListener('click', saveFaceName);
-
-  // events
-  $('newEvtBtn')?.addEventListener('click', openCreateEvent);
-  $('cancelEventBtn')?.addEventListener('click', ()=>{ $('eventForm').style.display='none'; eventState.mode='create'; eventState.eventId=null; });
-  $('saveEventBtn')?.addEventListener('click', saveEvent);
-
-  // quality slider
-  $('jpegQuality')?.addEventListener('input', (e)=>{ $('jpegQualityVal').textContent = e.target.value; });
-
-  // upload
-  const dropZone = $('dropZone');
-  const fileInput = $('fileInput');
-  if(dropZone && fileInput){
-    dropZone.addEventListener('click', ()=> fileInput.click());
-    dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); dropZone.style.background = '#222'; });
-    dropZone.addEventListener('dragleave', ()=>{ dropZone.style.background = '#151515'; });
-    dropZone.addEventListener('drop', (e)=>{ e.preventDefault(); dropZone.style.background = '#151515'; handleFiles(e.dataTransfer.files); });
-    fileInput.addEventListener('change', ()=> handleFiles(fileInput.files));
-  }
-
-  // generate link
-  $('genLinkBtn')?.addEventListener('click', async ()=>{
-    const spinner = $('genLinkSpinner'); if(spinner) spinner.style.display='inline-block';
-    try{
-      const selected = Array.from(document.querySelectorAll('.link-check:checked')).map(c=>c.value);
-      if(!selected.length) return alert('Select at least one event');
-      const expiry = $('expiryHours').value;
-      const password = $('linkPassword').value;
-      const {json} = await apiFetch('generate-search-link', GENERATE_LINK_API, {
-        method:'POST',
-        headers:{ 'Authorization': `Bearer ${idToken || ''}`, 'Content-Type':'application/json' },
-        body: JSON.stringify({
-          collection_id: collectionId,
-          event_ids: selected,
-          expiry_hours: parseInt(expiry,10) || 0,
-          password: password || null
-        })
-      });
-      const data = json || {};
-      const box = $('linkResult');
-      const linkEl = $('generatedLink');
-      linkEl.href = data.searchUrl;
-      linkEl.textContent = data.searchUrl;
-      box.style.display = 'block';
-    } finally {
-      if(spinner) spinner.style.display='none';
-    }
-  });
+document.getElementById('downloadZipBtn').addEventListener('click', async (e)=>{
+    await downloadAllZip(e.currentTarget);
 });
+
+async function downloadAllZip(btnEl) {
+    if(filteredPhotos.length === 0) return alert("No photos to download");
+
+    const zip = new JSZip();
+    const folder = zip.folder("photos");
+    const limit = filteredPhotos.slice(0, 100);
+
+    const btn = btnEl || document.getElementById('downloadZipBtn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Zipping...';
+
+    let count = 0;
+    for(let i=0; i<limit.length; i++) {
+        try {
+            const response = await fetch(limit[i].url);
+            const blob = await response.blob();
+            folder.file(`photo_${i+1}.jpg`, blob);
+            count++;
+            btn.textContent = `Zipping ${count}/${limit.length}`;
+        } catch(e) {
+            dbgAdd({ok:false,type:'ZIP',label:'download',ts:Date.now(),details:`Failed to download photo ${i+1}\n${e.message}`});
+        }
+    }
+
+    zip.generateAsync({type:"blob"}).then(c => {
+        saveAs(c, "photos.zip");
+    }).finally(() => {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    });
+}
+
+/* ======================= START APP ======================= */
+init();
+fetchPhotos();
 </script>
 </body>
 </html>
