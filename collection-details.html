@@ -729,14 +729,14 @@
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const GET_EVENTS_API = `${API_BASE}/get-events`;
 const GET_PHOTOS_API = `${API_BASE}/get-photos`;
-const GET_LEADS_API = `${API_BASE}/get-leads`;
-const GET_HISTORY_API = `${API_BASE}/get-search-history`;
+const GET_LEADS_API = `${API_BASE}/save-details`;
+const GET_HISTORY_API = `${API_BASE}/save-details`;
 const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
 const DELETE_EVENT_API = `${API_BASE}/delete-event`;
 const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
 const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
 const LIST_PEOPLE_API = `${API_BASE}/list_people`;
-const SAVE_FACE_NAME_API = `${API_BASE}/save_face_name`;
+const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
 /* ======================= PARAMS / AUTH ======================= */
 const urlParams = new URLSearchParams(window.location.search);
 const collectionId = urlParams.get("id");
@@ -1536,16 +1536,23 @@ window.copyLink = copyLink;
 /* ======================= ANALYTICS (XSS safe) ======================= */
 async function fetchLeadsData(){
   try{
-    const { json } = await apiFetch('get-leads', GET_LEADS_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ collection_id: collectionId })
+    // NOTE: Backend route is /save-details (GET with no params returns unique latest leads)
+    const { json } = await apiFetch('save-details(leads)', GET_LEADS_API, {
+      method:'GET',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' }
     });
-    allLeads = Array.isArray(json?.leads) ? json.leads : [];
+
+    let leads = [];
+    if(Array.isArray(json?.leads)) leads = json.leads;
+    else if(Array.isArray(json)) leads = json; // just in case backend returns an array
+
+    // Filter leads for this collection (admin view)
+    allLeads = leads.filter(l => !l?.collection_id || String(l.collection_id) === String(collectionId));
   }catch{
     allLeads = [];
   }
 }
+
 function renderLeadCard(lead){
   const card = document.createElement('div');
   card.className = 'lead-card';
@@ -1624,22 +1631,26 @@ function loadMoreLeads(){
 window.loadMoreLeads = loadMoreLeads;
 async function showLeadHistory(linkId){
   try{
-    const { json } = await apiFetch(`get-history-${linkId}`, GET_HISTORY_API, {
-      method:'POST',
-      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ collection_id: collectionId, link_id: linkId })
+    // NOTE: Backend route is /save-details?linkId=... (returns array of history items)
+    const url = `${GET_HISTORY_API}?linkId=${encodeURIComponent(linkId)}`;
+    const { json } = await apiFetch(`save-details(history)-${linkId}`, url, {
+      method:'GET',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' }
     });
-    const history = Array.isArray(json?.history) ? json.history : [];
+
+    const history = Array.isArray(json) ? json : (Array.isArray(json?.history) ? json.history : []);
+
     const tbody = $('historyBody');
     tbody.innerHTML = '';
     for(const h of history){
       const tr = document.createElement('tr');
-      const td1 = document.createElement('td'); td1.textContent = formatLeadTime(h.search_time || h.time);
+      const td1 = document.createElement('td'); td1.textContent = formatLeadTime(h.search_time || h.time || h.timestamp || h.created_at);
       const td2 = document.createElement('td'); td2.textContent = h.link_id || linkId;
       const td3 = document.createElement('td'); td3.textContent = h.name || h.captured_name || 'Unknown';
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
       tbody.appendChild(tr);
     }
+
     $('historyHeader').textContent = `Search History for Link ${linkId}`;
     $('leadsContainer').style.display = 'none';
     $('historyViewer').style.display = 'block';
@@ -1648,6 +1659,7 @@ async function showLeadHistory(linkId){
     console.error(e);
   }
 }
+
 window.showLeadHistory = showLeadHistory;
 function hideHistoryViewer(){
   $('historyViewer').style.display = 'none';
