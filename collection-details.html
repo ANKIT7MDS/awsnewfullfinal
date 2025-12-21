@@ -1053,6 +1053,186 @@
             transform: scale(1.1) rotate(15deg);
             box-shadow: 0 12px 30px rgba(99, 102, 241, 0.6);
         }
+
+        /* ========== NEW STYLES ========== */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--brand);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ai-tag {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .face-tag {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1100;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .photo-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .photo-detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-section:last-child {
+            border-bottom: none;
+        }
+
+        .detail-section h4 {
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .face-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .face-detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .face-detail-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--brand);
+        }
+
+        .face-detail-name {
+            font-size: 12px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .ai-filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .ai-filter-chip {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .ai-filter-chip:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+
+        .ai-filter-chip.active {
+            background: var(--brand-gradient);
+            color: white;
+            border-color: transparent;
+        }
+
+        .upload-format-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
     </style>
 </head>
 <body>
@@ -1125,6 +1305,10 @@
                         <option value="GROUP">👥 Groups</option>
                     </select>
                     <input type="text" id="tagSearch" class="filter-input" placeholder="Search tags...">
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="aiTagSearch" class="filter-input" placeholder="Search AI tags...">
+                        <div id="aiTagSuggestions" class="ai-filter-group" style="position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-top: 4px; display: none; z-index: 100;"></div>
+                    </div>
                 </div>
                 <div class="filter-actions">
                     <button class="btn btn-secondary" id="clearFiltersBtn">
@@ -1136,7 +1320,7 @@
                 </div>
             </div>
 
-            <!-- Face Icons -->
+            <!-- Face Icons (Google Photos Style) -->
             <div id="faceIconsBar"></div>
 
             <!-- Face Naming Header -->
@@ -1146,12 +1330,15 @@
                         <i class="fas fa-user-tag"></i>
                         <span id="faceHeaderTitle">Who is this?</span>
                     </h3>
+                    <button class="btn btn-secondary" id="closeFaceNamingBtn">
+                        <i class="fas fa-times"></i> Close
+                    </button>
                 </div>
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <img id="faceHeaderImg" src="" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--brand);">
+                    <img id="faceHeaderImg" src="" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--brand); object-fit: cover;">
                     <div style="flex-grow: 1;">
                         <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                            <input type="text" id="faceNameInput" placeholder="Enter name...">
+                            <input type="text" id="faceNameInput" placeholder="Enter name..." style="flex-grow: 1;">
                             <button class="btn btn-primary" id="saveFaceBtn">
                                 <i class="fas fa-save"></i> Save
                             </button>
@@ -1242,8 +1429,9 @@
             <div id="dropZone">
                 <i class="fas fa-cloud-upload-alt float-animation"></i>
                 <h3 style="margin-bottom: 12px;">Drop photos here or click to browse</h3>
-                <p style="color: var(--text-secondary);">Supports JPG, PNG, HEIC up to 10MB each</p>
-                <input type="file" id="fileInput" multiple style="display:none" accept="image/*">
+                <p style="color: var(--text-secondary);">Supports JPG, PNG, HEIC, WEBP, GIF, BMP, TIFF up to 20MB each</p>
+                <input type="file" id="fileInput" multiple style="display:none" 
+                       accept="image/*,.heic,.heif,.webp,.bmp,.tiff,.tif">
             </div>
 
             <div id="uploadControls" style="display:none; margin-top: 24px;">
@@ -1252,7 +1440,7 @@
                         <i class="fas fa-trash"></i> Clear Files
                     </button>
                     <button class="btn btn-primary" id="startUploadBtn">
-                        <i class="fas fa-upload"></i> Start Upload
+                        <i class="fas fa-upload"></i> Start Upload (Batch)
                     </button>
                 </div>
             </div>
@@ -1263,7 +1451,7 @@
                         <i class="fas fa-compress-alt"></i> Optimize images
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="optimizeToggle">
+                        <input type="checkbox" id="optimizeToggle" checked>
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -1284,9 +1472,10 @@
                     </label>
                     <select id="maxWidthSelect">
                         <option value="0">Original</option>
-                        <option value="2048" selected>2048px</option>
-                        <option value="1600">1600px</option>
-                        <option value="1280">1280px</option>
+                        <option value="4096">4096px (4K)</option>
+                        <option value="2048" selected>2048px (2K)</option>
+                        <option value="1920">1920px (Full HD)</option>
+                        <option value="1280">1280px (HD)</option>
                     </select>
                 </div>
 
@@ -1295,8 +1484,8 @@
                         <i class="fas fa-tachometer-alt"></i> Quality
                     </label>
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <input id="jpegQuality" type="range" min="0.6" max="0.95" step="0.01" value="0.82" style="flex-grow: 1;">
-                        <span id="jpegQualityVal" style="min-width: 40px; color: var(--text-primary);">0.82</span>
+                        <input id="jpegQuality" type="range" min="0.5" max="0.95" step="0.01" value="0.85" style="flex-grow: 1;">
+                        <span id="jpegQualityVal" style="min-width: 40px; color: var(--text-primary);">0.85</span>
                     </div>
                 </div>
             </div>
@@ -1405,6 +1594,59 @@
     <img id="viewerImg">
 </div>
 
+<!-- PHOTO DETAILS MODAL -->
+<div class="modal" id="photoDetailsModal">
+    <div class="modal-content">
+        <button class="modal-close" id="closePhotoDetailsBtn">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <h3 style="margin-bottom: 20px; color: var(--text-primary);">
+            <i class="fas fa-info-circle"></i> Photo Details
+        </h3>
+        
+        <div class="photo-detail-grid">
+            <div>
+                <img id="detailPhotoImg" src="" style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border);">
+            </div>
+            
+            <div>
+                <div class="detail-section">
+                    <h4><i class="fas fa-file-alt"></i> File Information</h4>
+                    <p><strong>Filename:</strong> <span id="detailFilename"></span></p>
+                    <p><strong>Size:</strong> <span id="detailFileSize"></span></p>
+                    <p><strong>Format:</strong> <span id="detailFileFormat" class="badge"></span></p>
+                    <p><strong>Uploaded:</strong> <span id="detailUploadDate"></span></p>
+                </div>
+                
+                <div class="detail-section">
+                    <h4><i class="fas fa-calendar"></i> Event</h4>
+                    <p id="detailEventName"></p>
+                </div>
+                
+                <div class="detail-section">
+                    <h4><i class="fas fa-user-friends"></i> People in this Photo</h4>
+                    <div id="detailPeople" class="face-grid"></div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4><i class="fas fa-tags"></i> AI Tags</h4>
+                    <div id="detailTags" class="tags-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closePhotoDetails()">
+                <i class="fas fa-times"></i> Close
+            </button>
+            <button class="btn btn-primary" onclick="downloadSinglePhoto()">
+                <i class="fas fa-download"></i> Download
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- DEBUG FAB -->
 <div id="debugFab">
     <i class="fas fa-bug"></i>
@@ -1421,6 +1663,10 @@ const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
 const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
 const LIST_PEOPLE_API = `${API_BASE}/list_people`;
 const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
+const GET_LEADS_API = `${API_BASE}/get-leads`;
+
+// Backend compatibility: we always upload JPEG so Rekognition + indexing stays consistent.
+const BACKEND_UPLOAD_MIME = 'image/jpeg';
 
 // ======================= UTILITY FUNCTIONS =======================
 const $ = (id) => document.getElementById(id);
@@ -1457,332 +1703,94 @@ let allLeads = [];
 let selectedFiles = [];
 let faceGroups = {};
 let currentNamingFaceId = null;
+let currentSelectedFaceId = null;
+let uniqueAITags = [];
 
-// ======================= INITIALIZATION =======================
-async function init() {
-    if (!collectionId) {
-        showToast('Collection ID not found in URL', 'error');
-        return;
-    }
+// ======================= FORMAT SUPPORT FUNCTIONS =======================
+const SUPPORTED_FORMATS = {
+    'image/jpeg': 'JPG',
+    'image/png': 'PNG',
+    'image/heic': 'HEIC',
+    'image/heif': 'HEIF',
+    'image/webp': 'WEBP',
+    'image/gif': 'GIF',
+    'image/bmp': 'BMP',
+    'image/tiff': 'TIFF'
+};
 
-    if (!idToken) {
-        showToast('Please login first', 'error');
-        setTimeout(() => window.location.href = 'login.html', 2000);
-        return;
-    }
-
-    try {
-        // Fetch collection data
-        const response = await fetch(GET_EVENTS_API, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-
-        if (!response.ok) throw new Error('Failed to load collection');
-
-        const data = await response.json();
-        const summary = data.collection_summary || {};
-
-        // Update UI
-        $('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-        $('totalPhotos').textContent = summary.photo_count || 0;
-        $('totalLeads').textContent = summary.leads_count || 0;
-        $('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
-
-        // Load events
-        loadEvents();
-        
-        // Load photos
-        loadPhotos();
-
-        // Setup staff upload link
-        $('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent($('collectionName').textContent)}`;
-
-    } catch (error) {
-        console.error('Init error:', error);
-        showToast('Failed to initialize: ' + error.message, 'error');
-    }
-}
-
-// ======================= EVENTS MANAGEMENT =======================
-async function loadEvents() {
-    try {
-        const response = await fetch(GET_EVENTS_API, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-
-        if (!response.ok) throw new Error('Failed to load events');
-
-        const data = await response.json();
-        const events = data.events || [];
-
-        // Update events table
-        const tbody = $('eventsTbody');
-        tbody.innerHTML = '';
-
-        events.forEach(event => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${event.name || 'Unnamed'}</td>
-                <td>${event.event_date || 'No date'}</td>
-                <td>${event.photo_count || 0}</td>
-                <td>
-                    <button class="btn btn-sm btn-secondary" onclick="editEvent('${event.event_id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteEventConfirm('${event.event_id}', '${event.name}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-
-        // Update upload event select
-        const uploadSelect = $('uploadEventSelect');
-        uploadSelect.innerHTML = '<option value="">Select Event...</option>';
-        events.forEach(event => {
-            const option = document.createElement('option');
-            option.value = event.event_id;
-            option.textContent = event.name;
-            uploadSelect.appendChild(option);
-        });
-
-        // Update link event list
-        const linkList = $('linkEventList');
-        linkList.innerHTML = '';
-        events.forEach(event => {
-            const label = document.createElement('label');
-            label.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;';
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = event.event_id;
-            checkbox.className = 'link-check';
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(event.name));
-            linkList.appendChild(label);
-        });
-
-    } catch (error) {
-        console.error('Load events error:', error);
-        showToast('Failed to load events', 'error');
-    }
-}
-
-async function createEvent() {
-    const name = $('eventName').value.trim();
-    const date = $('eventDate').value;
-
-    if (!name) {
-        showToast('Event name is required', 'error');
-        return;
-    }
-
-    try {
-        const response = await fetch(UPSERT_EVENT_API, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                collection_id: collectionId,
-                name: name,
-                event_date: date
-            })
-        });
-
-        if (!response.ok) throw new Error('Failed to create event');
-
-        showToast('Event created successfully');
-        $('eventForm').style.display = 'none';
-        $('eventName').value = '';
-        $('eventDate').value = '';
-        loadEvents();
-
-    } catch (error) {
-        console.error('Create event error:', error);
-        showToast('Failed to create event', 'error');
-    }
-}
-
-async function editEvent(eventId) {
-    const events = Array.from($('eventsTbody').querySelectorAll('tr'));
-    const eventRow = events.find(row => row.cells[3].querySelector(`button[onclick*="${eventId}"]`));
+function getFileFormat(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const type = file.type;
     
-    if (eventRow) {
-        const name = eventRow.cells[0].textContent;
-        const date = eventRow.cells[1].textContent;
-        
-        $('eventName').value = name;
-        $('eventDate').value = date;
-        $('eventForm').style.display = 'block';
-        $('saveEventBtn').onclick = () => updateEvent(eventId);
-    }
+    if (type.includes('heic') || ext === 'heic') return 'HEIC';
+    if (type.includes('heif') || ext === 'heif') return 'HEIF';
+    if (type.includes('webp') || ext === 'webp') return 'WEBP';
+    
+    return SUPPORTED_FORMATS[type] || ext.toUpperCase();
 }
 
-async function updateEvent(eventId) {
-    const name = $('eventName').value.trim();
-    const date = $('eventDate').value;
-
-    if (!name) {
-        showToast('Event name is required', 'error');
-        return;
+function normalizeUploadFilename(originalName) {
+    if (!originalName) return 'photo.jpg';
+    const base = originalName.split('/').pop().split('\\').pop();
+    const lower = base.toLowerCase();
+    // Replace common unsupported extensions with .jpg
+    if (/(\.heic|\.heif|\.png|\.webp|\.bmp|\.tif|\.tiff|\.gif)$/.test(lower)) {
+        return base.replace(/\.(heic|heif|png|webp|bmp|tif|tiff|gif)$/i, '.jpg');
     }
-
-    try {
-        const response = await fetch(UPSERT_EVENT_API, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                collection_id: collectionId,
-                event_id: eventId,
-                name: name,
-                event_date: date
-            })
-        });
-
-        if (!response.ok) throw new Error('Failed to update event');
-
-        showToast('Event updated successfully');
-        $('eventForm').style.display = 'none';
-        loadEvents();
-
-    } catch (error) {
-        console.error('Update event error:', error);
-        showToast('Failed to update event', 'error');
-    }
+    if (lower.endsWith('.jpeg')) return base.replace(/\.jpeg$/i, '.jpg');
+    if (lower.endsWith('.jpg')) return base;
+    // If unknown/no extension, add .jpg
+    if (!lower.includes('.')) return base + '.jpg';
+    // Keep original extension if it's already image/jpg-compatible; otherwise force jpg
+    return base + '.jpg';
 }
 
-async function deleteEventConfirm(eventId, eventName) {
-    if (confirm(`Are you sure you want to delete "${eventName}"?`)) {
+async function convertToJpegIfNeeded(blob, filename) {
+    const format = getFileFormat({name: filename, type: blob.type});
+    
+    if (['HEIC', 'HEIF', 'WEBP', 'PNG', 'BMP', 'TIFF'].includes(format)) {
         try {
-            const response = await fetch(DELETE_EVENT_API, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    collection_id: collectionId,
-                    event_id: eventId
-                })
-            });
-
-            if (!response.ok) throw new Error('Failed to delete event');
-
-            showToast('Event deleted successfully');
-            loadEvents();
-
+            // For HEIC/HEIF
+            if (format === 'HEIC' || format === 'HEIF') {
+                return await heic2any({ 
+                    blob: blob, 
+                    toType: "image/jpeg",
+                    quality: parseFloat($('jpegQuality').value) || 0.85
+                });
+            }
+            
+            // For other formats, use canvas conversion
+            return await convertImageToJpeg(blob);
         } catch (error) {
-            console.error('Delete event error:', error);
-            showToast('Failed to delete event', 'error');
+            console.warn(`Conversion failed for ${filename}:`, error);
+            return blob; // Return original if conversion fails
         }
     }
+    
+    return blob; // Already JPEG or don't convert
 }
 
-// ======================= PHOTOS MANAGEMENT =======================
-async function loadPhotos() {
-    try {
-        const response = await fetch(GET_PHOTOS_API, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-
-        if (!response.ok) throw new Error('Failed to load photos');
-
-        const data = await response.json();
-        allPhotos = data.photos || [];
-        filteredPhotos = [...allPhotos];
+async function convertImageToJpeg(blob) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
         
-        renderPhotos();
-        loadFaceGroups();
-
-    } catch (error) {
-        console.error('Load photos error:', error);
-        $('galleryContainer').innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Failed to load photos</h3>
-                <button class="btn btn-primary" onclick="loadPhotos()">Retry</button>
-            </div>
-        `;
-    }
-}
-
-function renderPhotos() {
-    const container = $('galleryContainer');
-    
-    if (filteredPhotos.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-images"></i>
-                <h3>No photos found</h3>
-                <p>Upload photos to get started</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = '';
-    
-    // Group photos by date
-    const photosByDate = {};
-    filteredPhotos.forEach(photo => {
-        const date = new Date(photo.created_at).toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-        });
-        if (!photosByDate[date]) photosByDate[date] = [];
-        photosByDate[date].push(photo);
-    });
-
-    // Render photos by date
-    Object.keys(photosByDate).forEach(date => {
-        const dateHeader = document.createElement('h3');
-        dateHeader.textContent = date;
-        dateHeader.style.cssText = 'margin: 24px 0 16px 0; color: var(--text-secondary);';
-        container.appendChild(dateHeader);
-
-        const grid = document.createElement('div');
-        grid.className = 'gallery-grid';
-        
-        photosByDate[date].forEach(photo => {
-            const card = document.createElement('div');
-            card.className = 'photo-card';
-            card.onclick = () => openViewer(photo.url || photo.thumbnail_url);
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
             
-            const img = document.createElement('img');
-            img.src = photo.thumbnail_url || photo.url;
-            img.alt = photo.filename || 'Photo';
-            img.loading = 'lazy';
-            
-            card.appendChild(img);
-            grid.appendChild(card);
-        });
+            canvas.toBlob((jpegBlob) => {
+                resolve(jpegBlob || blob);
+            }, 'image/jpeg', parseFloat($('jpegQuality').value) || 0.85);
+        };
         
-        container.appendChild(grid);
+        img.src = URL.createObjectURL(blob);
     });
 }
 
-// ======================= FACE MANAGEMENT =======================
+// ======================= FACE MANAGEMENT (Google Photos Style) =======================
 async function loadFaceGroups() {
     try {
         const response = await fetch(LIST_PEOPLE_API, {
@@ -1810,7 +1818,34 @@ function renderFaceIcons() {
     const bar = $('faceIconsBar');
     bar.innerHTML = '';
 
-    if (faceGroups.length === 0) return;
+    if (faceGroups.length === 0) {
+        bar.innerHTML = `
+            <div style="text-align: center; width: 100%; padding: 20px; color: var(--text-muted);">
+                <i class="fas fa-users" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                <p>No faces detected yet</p>
+            </div>
+        `;
+        return;
+    }
+
+    function applyBBoxCrop(imgEl, bbox) {
+        if (!bbox || !imgEl) return;
+        const left = Number(bbox.Left ?? bbox.left ?? 0);
+        const top = Number(bbox.Top ?? bbox.top ?? 0);
+        const width = Number(bbox.Width ?? bbox.width ?? 1);
+        const height = Number(bbox.Height ?? bbox.height ?? 1);
+
+        if (!isFinite(left) || !isFinite(top) || !isFinite(width) || !isFinite(height) || width <= 0 || height <= 0) return;
+
+        // CSS crop trick:
+        // scale image so that the face box fills the icon, then translate so the face box aligns.
+        const scaleX = 1 / width;
+        const scaleY = 1 / height;
+        imgEl.style.transformOrigin = 'top left';
+        imgEl.style.transform = `translate(${-left * 100}%, ${-top * 100}%) scale(${scaleX}, ${scaleY})`;
+        imgEl.style.width = '100%';
+        imgEl.style.height = '100%';
+    }
 
     faceGroups.forEach(face => {
         const item = document.createElement('div');
@@ -1818,20 +1853,37 @@ function renderFaceIcons() {
         
         const wrapper = document.createElement('div');
         wrapper.className = 'face-icon-wrapper';
-        wrapper.onclick = () => showFacePhotos(face.FaceId);
+        if (currentSelectedFaceId === face.FaceId) {
+            wrapper.classList.add('selected');
+        }
         
-        const img = document.createElement('div');
-        img.style.cssText = `
-            width: 100%;
-            height: 100%;
-            background-image: url('${face.thumbnail || 'https://placehold.co/70x70/333/fff?text=?'}');
-            background-size: cover;
-            background-position: center;
-        `;
+        wrapper.onclick = (e) => {
+            e.stopPropagation();
+            toggleFaceSelection(face.FaceId);
+        };
+        
+        const img = document.createElement('img');
+        img.src = face.thumbnail || face.photo_url || 'https://placehold.co/70x70/333/fff?text=Face';
+        img.alt = face.FaceName || 'Unknown';
+        img.loading = 'lazy';
+
+        // If we have a representative photo + bounding box, crop it to make a real face icon.
+        img.onload = () => {
+            if (!face.thumbnail && face.photo_url && face.BoundingBox) {
+                applyBBoxCrop(img, face.BoundingBox);
+            }
+        };
         
         const label = document.createElement('div');
         label.className = 'face-name-label';
         label.textContent = face.FaceName || 'Unknown';
+        label.title = face.FaceName || 'Unknown';
+        
+        // Double click to name face
+        wrapper.ondblclick = (e) => {
+            e.stopPropagation();
+            startFaceNaming(face.FaceId);
+        };
         
         wrapper.appendChild(img);
         item.appendChild(wrapper);
@@ -1840,21 +1892,49 @@ function renderFaceIcons() {
     });
 }
 
-function showFacePhotos(faceId) {
+function toggleFaceSelection(faceId) {
+    if (currentSelectedFaceId === faceId) {
+        // Deselect if already selected
+        currentSelectedFaceId = null;
+        filteredPhotos = [...allPhotos];
+    } else {
+        // Select new face
+        currentSelectedFaceId = faceId;
+        const face = faceGroups.find(f => f.FaceId === faceId);
+        
+        if (face) {
+            filteredPhotos = allPhotos.filter(photo => 
+                photo.face_ids && photo.face_ids.includes(faceId)
+            );
+        }
+    }
+    
+    renderPhotos();
+    renderFaceIcons(); // Update selection state
+}
+
+function startFaceNaming(faceId) {
     currentNamingFaceId = faceId;
     const face = faceGroups.find(f => f.FaceId === faceId);
     
     if (face) {
         $('faceHeaderImg').src = face.thumbnail || '';
-        $('faceHeaderTitle').textContent = `Photos of ${face.FaceName || 'Unknown'}`;
+        $('faceHeaderTitle').textContent = face.FaceName ? `Edit name for ${face.FaceName}` : 'Who is this?';
         $('faceNameInput').value = face.FaceName || '';
         $('faceNamingHeader').style.display = 'block';
         
-        // Filter photos by this face
-        filteredPhotos = allPhotos.filter(photo => 
-            photo.face_ids && photo.face_ids.includes(faceId)
-        );
-        renderPhotos();
+        // Generate suggestions based on existing names
+        const suggestions = faceGroups
+            .filter(f => f.FaceName && f.FaceId !== faceId)
+            .map(f => f.FaceName)
+            .filter((name, index, arr) => arr.indexOf(name) === index)
+            .slice(0, 5);
+        
+        if (suggestions.length > 0) {
+            $('faceSuggestions').innerHTML = `Suggestions: ${suggestions.join(', ')}`;
+        } else {
+            $('faceSuggestions').innerHTML = '';
+        }
     }
 }
 
@@ -1895,11 +1975,46 @@ async function saveFaceName() {
 function cancelFaceNaming() {
     $('faceNamingHeader').style.display = 'none';
     currentNamingFaceId = null;
-    filteredPhotos = [...allPhotos];
-    renderPhotos();
 }
 
-// ======================= UPLOAD MANAGEMENT =======================
+// ======================= AI TAG FILTERING =======================
+function extractAITags() {
+    uniqueAITags = [];
+    const tagSet = new Set();
+    
+    allPhotos.forEach(photo => {
+        if (photo.ai_tags && Array.isArray(photo.ai_tags)) {
+            photo.ai_tags.forEach(tag => tagSet.add(tag));
+        }
+    });
+    
+    uniqueAITags = Array.from(tagSet).sort();
+    renderAITagSuggestions();
+}
+
+function renderAITagSuggestions() {
+    const container = $('aiTagSuggestions');
+    container.innerHTML = '';
+    
+    if (uniqueAITags.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    uniqueAITags.forEach(tag => {
+        const chip = document.createElement('div');
+        chip.className = 'ai-filter-chip';
+        chip.textContent = tag;
+        chip.onclick = () => {
+            $('aiTagSearch').value = tag;
+            applyFilters();
+            container.style.display = 'none';
+        };
+        container.appendChild(chip);
+    });
+}
+
+// ======================= UPLOAD MANAGEMENT (Batch Upload like Quick Upload) =======================
 function setupUpload() {
     const dropZone = $('dropZone');
     const fileInput = $('fileInput');
@@ -1935,7 +2050,25 @@ function handleFiles(files) {
         return;
     }
 
-    selectedFiles = Array.from(files);
+    // Check file sizes and formats
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    Array.from(files).forEach(file => {
+        if (file.size > 20 * 1024 * 1024) { // 20MB limit
+            invalidFiles.push(`${file.name} (too large)`);
+        } else if (!file.type.startsWith('image/')) {
+            invalidFiles.push(`${file.name} (not an image)`);
+        } else {
+            validFiles.push(file);
+        }
+    });
+    
+    if (invalidFiles.length > 0) {
+        showToast(`Skipped ${invalidFiles.length} invalid files`, 'warning');
+    }
+    
+    selectedFiles = [...selectedFiles, ...validFiles];
     renderFileList();
     $('uploadControls').style.display = 'flex';
 }
@@ -1945,13 +2078,16 @@ function renderFileList() {
     container.innerHTML = '';
 
     selectedFiles.forEach((file, index) => {
+        const format = getFileFormat(file);
         const div = document.createElement('div');
-        div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px;';
+        div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px; position: relative;';
         div.innerHTML = `
-            <div>
-                <i class="fas fa-image" style="color: var(--brand); margin-right: 8px;"></i>
-                <span>${file.name}</span>
-                <small style="color: var(--text-muted); margin-left: 8px;">(${formatBytes(file.size)})</small>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-image" style="color: var(--brand);"></i>
+                <div>
+                    <div>${file.name}</div>
+                    <small style="color: var(--text-muted);">${formatBytes(file.size)} • ${format}</small>
+                </div>
             </div>
             <button class="btn btn-sm btn-danger" onclick="removeFile(${index})">
                 <i class="fas fa-times"></i>
@@ -1991,10 +2127,12 @@ async function startUpload() {
     $('uploadStatus').textContent = 'Starting upload...';
 
     try {
-        // Step 1: Get upload URLs
+        // Step 1: Get upload URLs for all files (BATCH)
+        // IMPORTANT: Backend (Rekognition indexing) is JPEG-centric.
+        // We request presigned URLs as JPEG and we will upload JPEG bytes.
         const filesPayload = selectedFiles.map(file => ({
-            filename: file.name,
-            content_type: file.type || 'image/jpeg'
+            name: normalizeUploadFilename(file.name),
+            type: BACKEND_UPLOAD_MIME
         }));
 
         const urlsResponse = await fetch(UPLOAD_URLS_API, {
@@ -2015,58 +2153,71 @@ async function startUpload() {
         const urlsData = await urlsResponse.json();
         const uploadUrls = urlsData.urls || [];
 
-        // Step 2: Upload each file
+        // Step 2: Upload in batches (like quick upload)
+        const BATCH_SIZE = 5; // Smaller batches for better progress tracking
         let uploadedCount = 0;
+        const totalFiles = selectedFiles.length;
         
-        for (let i = 0; i < selectedFiles.length; i++) {
-            const file = selectedFiles[i];
-            const uploadInfo = uploadUrls[i];
+        for (let i = 0; i < totalFiles; i += BATCH_SIZE) {
+            const batch = selectedFiles.slice(i, i + BATCH_SIZE);
+            const batchUrls = uploadUrls.slice(i, i + BATCH_SIZE);
             
-            if (!uploadInfo || !uploadInfo.uploadURL) {
-                console.error('No upload URL for file:', file.name);
-                continue;
-            }
-
-            $('uploadStatus').textContent = `Uploading ${i + 1}/${selectedFiles.length}: ${file.name}`;
-            
-            // Convert HEIC to JPEG if needed
-            let blob = file;
-            if (file.type.includes('heic') || file.name.toLowerCase().endsWith('.heic')) {
-                try {
-                    blob = await heic2any({ blob: file, toType: "image/jpeg" });
-                } catch (e) {
-                    console.warn('HEIC conversion failed:', e);
+            await Promise.all(batch.map(async (file, batchIndex) => {
+                const uploadInfo = batchUrls[batchIndex];
+                
+                if (!uploadInfo || !uploadInfo.uploadURL) {
+                    console.error('No upload URL for file:', file.name);
+                    return;
                 }
-            }
 
-            // Optimize image if enabled
-            const optimize = $('optimizeToggle').checked;
-            const convertToJpg = $('convertToggle').checked;
-            const maxWidth = parseInt($('maxWidthSelect').value) || 0;
-            const quality = parseFloat($('jpegQuality').value) || 0.82;
+                $('uploadStatus').textContent = `Processing ${uploadedCount + 1}/${totalFiles}: ${file.name}`;
+                
+                let blob = file;
 
-            if (optimize && (maxWidth > 0 || convertToJpg)) {
-                blob = await optimizeImage(blob, maxWidth, quality, convertToJpg);
-            }
+                // Decide conversion/optimization options
+                const optimize = $('optimizeToggle').checked;
+                const convertToJpg = true; // Hard-enforce JPEG uploads for backend compatibility
+                const maxWidth = parseInt($('maxWidthSelect').value) || 0;
+                const quality = parseFloat($('jpegQuality').value) || 0.85;
 
-            // Upload file
-            const uploadResponse = await fetch(uploadInfo.uploadURL, {
-                method: 'PUT',
-                body: blob,
-                headers: {
-                    'Content-Type': blob.type || 'image/jpeg'
+                // Always normalize to JPEG first (supports HEIC/HEIF/WEBP/PNG/BMP/TIFF etc.)
+                // This avoids:
+                // 1) Rekognition unsupported formats
+                // 2) Presigned Content-Type mismatches
+                blob = await convertToJpegIfNeeded(blob, file.name);
+
+                if (optimize && (maxWidth > 0 || convertToJpg)) {
+                    blob = await optimizeImage(blob, maxWidth, quality, convertToJpg);
                 }
-            });
 
-            if (!uploadResponse.ok) {
-                throw new Error(`Upload failed for ${file.name}`);
-            }
+                // Ensure final mime is JPEG
+                if (!blob.type || blob.type !== BACKEND_UPLOAD_MIME) {
+                    try {
+                        blob = await convertToJpegIfNeeded(blob, file.name);
+                    } catch (e) {
+                        console.warn('Final JPEG normalization failed:', e);
+                    }
+                }
 
-            uploadedCount++;
-            $('progress-bar').style.width = `${((i + 1) / selectedFiles.length) * 100}%`;
+                // Upload file
+                const uploadResponse = await fetch(uploadInfo.uploadURL, {
+                    method: 'PUT',
+                    body: blob,
+                    headers: {
+                        'Content-Type': BACKEND_UPLOAD_MIME
+                    }
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error(`Upload failed for ${file.name}`);
+                }
+
+                uploadedCount++;
+                $('progress-bar').style.width = `${(uploadedCount / totalFiles) * 100}%`;
+            }));
         }
 
-        $('uploadStatus').textContent = `Successfully uploaded ${uploadedCount}/${selectedFiles.length} files`;
+        $('uploadStatus').textContent = `✅ Successfully uploaded ${uploadedCount}/${totalFiles} files`;
         $('uploadStatus').style.color = 'var(--success)';
         
         showToast('Upload completed successfully');
@@ -2080,6 +2231,7 @@ async function startUpload() {
             $('fileInput').value = '';
             
             loadPhotos();
+            loadFaceGroups();
             init(); // Reload stats
         }, 2000);
 
@@ -2122,80 +2274,250 @@ async function optimizeImage(blob, maxWidth, quality, convertToJpg) {
     });
 }
 
-// ======================= LINKS MANAGEMENT =======================
-async function generateLink() {
-    const selectedEvents = Array.from(document.querySelectorAll('.link-check:checked')).map(cb => cb.value);
-    if (selectedEvents.length === 0) {
-        showToast('Please select at least one event', 'error');
-        return;
-    }
-
-    const expiryHours = parseInt($('expiryHours').value) || 0;
-    const password = $('linkPassword').value || null;
-
-    const btn = $('genLinkBtn');
-    btn.disabled = true;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-
+// ======================= PHOTO MANAGEMENT =======================
+async function loadPhotos() {
     try {
-        const response = await fetch(GENERATE_LINK_API, {
+        const response = await fetch(GET_PHOTOS_API, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${idToken}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                collection_id: collectionId,
-                event_ids: selectedEvents,
-                expiry_hours: expiryHours,
-                password: password
-            })
+            body: JSON.stringify({ collection_id: collectionId })
         });
 
-        if (!response.ok) throw new Error('Failed to generate link');
+        if (!response.ok) throw new Error('Failed to load photos');
 
         const data = await response.json();
-        const searchUrl = data.searchUrl || data.link;
-
-        if (searchUrl) {
-            $('generatedLink').href = searchUrl;
-            $('generatedLink').textContent = searchUrl;
-            $('linkResult').style.display = 'block';
-            showToast('Link generated successfully');
-        } else {
-            throw new Error('No link received from server');
-        }
+        allPhotos = data.photos || [];
+        filteredPhotos = [...allPhotos];
+        
+        extractAITags();
+        renderPhotos();
 
     } catch (error) {
-        console.error('Generate link error:', error);
-        showToast('Failed to generate link: ' + error.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        console.error('Load photos error:', error);
+        $('galleryContainer').innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Failed to load photos</h3>
+                <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="loadPhotos()" style="margin-top: 16px;">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </div>
+        `;
     }
 }
 
-function copyLink() {
-    const link = $('generatedLink').href;
-    navigator.clipboard.writeText(link).then(() => {
-        showToast('Link copied to clipboard');
-    }).catch(err => {
-        console.error('Copy failed:', err);
-        showToast('Failed to copy link', 'error');
+function renderPhotos() {
+    const container = $('galleryContainer');
+    
+    if (filteredPhotos.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-images"></i>
+                <h3>No photos found</h3>
+                <p>${currentSelectedFaceId ? 'No photos for this person' : 'Upload photos to get started'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '';
+    
+    // Group photos by date
+    const photosByDate = {};
+    filteredPhotos.forEach(photo => {
+        const date = new Date(photo.created_at).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+        if (!photosByDate[date]) photosByDate[date] = [];
+        photosByDate[date].push(photo);
+    });
+
+    // Render photos by date
+    Object.keys(photosByDate).forEach(date => {
+        const dateHeader = document.createElement('h3');
+        dateHeader.textContent = date;
+        dateHeader.style.cssText = 'margin: 24px 0 16px 0; color: var(--text-secondary); font-size: 16px; font-weight: 600;';
+        container.appendChild(dateHeader);
+
+        const grid = document.createElement('div');
+        grid.className = 'gallery-grid';
+        
+        photosByDate[date].forEach(photo => {
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.onclick = () => showPhotoDetails(photo);
+            
+            const img = document.createElement('img');
+            img.src = photo.thumbnail_url || photo.url;
+            img.alt = photo.filename || 'Photo';
+            img.loading = 'lazy';
+            
+            // Show format badge
+            const formatBadge = document.createElement('div');
+            formatBadge.className = 'upload-format-badge';
+            const format = photo.format || 'JPG';
+            formatBadge.textContent = format;
+            
+            // Show face count if available
+            if (photo.face_ids && photo.face_ids.length > 0) {
+                const faceBadge = document.createElement('div');
+                faceBadge.style.cssText = 'position: absolute; top: 10px; left: 10px; background: var(--success); color: white; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;';
+                faceBadge.innerHTML = `<i class="fas fa-user"></i> ${photo.face_ids.length}`;
+                card.appendChild(faceBadge);
+            }
+            
+            card.appendChild(img);
+            card.appendChild(formatBadge);
+            grid.appendChild(card);
+        });
+        
+        container.appendChild(grid);
     });
 }
 
-// ======================= VIEWER FUNCTIONS =======================
-function openViewer(imgSrc) {
-    $('viewerImg').src = imgSrc;
-    $('viewer').classList.add('open');
+// ======================= PHOTO DETAILS MODAL =======================
+let currentPhotoDetails = null;
+
+function showPhotoDetails(photo) {
+    currentPhotoDetails = photo;
+    
+    // Set main image
+    $('#detailPhotoImg').src = photo.url || photo.thumbnail_url;
+    $('#detailFilename').textContent = photo.filename || 'Unknown';
+    $('#detailFileSize').textContent = formatBytes(photo.file_size || 0);
+    $('#detailFileFormat').textContent = photo.format || 'JPG';
+    $('#detailUploadDate').textContent = new Date(photo.created_at).toLocaleString();
+    $('#detailEventName').textContent = photo.event_name || 'No event';
+    
+    // Set people
+    const peopleContainer = $('#detailPeople');
+    peopleContainer.innerHTML = '';
+    
+    if (photo.faces && photo.faces.length > 0) {
+        photo.faces.forEach(face => {
+            const faceDiv = document.createElement('div');
+            faceDiv.className = 'face-detail-item';
+            faceDiv.innerHTML = `
+                <img src="${face.thumbnail || ''}" class="face-detail-img" alt="${face.name || 'Unknown'}">
+                <div class="face-detail-name">${face.name || 'Unknown'}</div>
+            `;
+            faceDiv.onclick = () => {
+                closePhotoDetails();
+                toggleFaceSelection(face.FaceId);
+            };
+            peopleContainer.appendChild(faceDiv);
+        });
+    } else {
+        peopleContainer.innerHTML = '<p style="color: var(--text-muted);">No people detected</p>';
+    }
+    
+    // Set AI tags
+    const tagsContainer = $('#detailTags');
+    tagsContainer.innerHTML = '';
+    
+    if (photo.ai_tags && photo.ai_tags.length > 0) {
+        photo.ai_tags.forEach(tag => {
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'tag ai-tag';
+            tagSpan.innerHTML = `<i class="fas fa-robot"></i> ${tag}`;
+            tagsContainer.appendChild(tagSpan);
+        });
+    } else {
+        tagsContainer.innerHTML = '<p style="color: var(--text-muted);">No AI tags</p>';
+    }
+    
+    // Show modal
+    $('#photoDetailsModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
 
-function closeViewer() {
-    $('viewer').classList.remove('open');
+function closePhotoDetails() {
+    $('#photoDetailsModal').classList.remove('active');
     document.body.style.overflow = 'auto';
+    currentPhotoDetails = null;
+}
+
+async function downloadSinglePhoto() {
+    if (!currentPhotoDetails) return;
+    
+    try {
+        const response = await fetch(currentPhotoDetails.url);
+        const blob = await response.blob();
+        const filename = currentPhotoDetails.filename || `photo_${Date.now()}.jpg`;
+        
+        saveAs(blob, filename);
+        showToast('Photo downloaded successfully');
+    } catch (error) {
+        showToast('Failed to download photo', 'error');
+    }
+}
+
+// ======================= FILTER FUNCTIONS =======================
+function applyFilters() {
+    const type = $('filterType').value;
+    const search = $('tagSearch').value.toLowerCase();
+    const aiSearch = $('aiTagSearch').value.toLowerCase();
+    
+    filteredPhotos = allPhotos.filter(photo => {
+        // Face filter (if a face is selected)
+        if (currentSelectedFaceId) {
+            if (!photo.face_ids || !photo.face_ids.includes(currentSelectedFaceId)) {
+                return false;
+            }
+        }
+        
+        // Type filter
+        if (type !== 'ALL') {
+            const faceCount = photo.face_ids ? photo.face_ids.length : 0;
+            
+            if (type === 'BEST' && faceCount < 3) return false;
+            if (type === 'GROUP' && faceCount < 2) return false;
+            if (type === 'HAPPY') {
+                const hasHappy = photo.faces?.some(f => 
+                    f.Emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 50)
+                );
+                if (!hasHappy) return false;
+            }
+        }
+        
+        // Tag search filter
+        if (search) {
+            const tags = photo.tags || [];
+            const hasTag = tags.some(tag => 
+                tag.toLowerCase().includes(search)
+            );
+            if (!hasTag) return false;
+        }
+        
+        // AI tag search filter
+        if (aiSearch) {
+            const aiTags = photo.ai_tags || [];
+            const hasAITag = aiTags.some(tag => 
+                tag.toLowerCase().includes(aiSearch)
+            );
+            if (!hasAITag) return false;
+        }
+        
+        return true;
+    });
+    
+    renderPhotos();
+}
+
+function clearFilters() {
+    $('filterType').value = 'ALL';
+    $('tagSearch').value = '';
+    $('aiTagSearch').value = '';
+    currentSelectedFaceId = null;
+    filteredPhotos = [...allPhotos];
+    renderPhotos();
+    renderFaceIcons();
 }
 
 // ======================= UTILITY FUNCTIONS =======================
@@ -2230,17 +2552,6 @@ function switchTab(tabId) {
     }
 }
 
-async function loadLeads() {
-    // This is a placeholder - replace with actual leads API when available
-    $('leadsGrid').innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-users"></i>
-            <h3>Guest Leads Coming Soon</h3>
-            <p>This feature will be available soon</p>
-        </div>
-    `;
-}
-
 // ======================= EVENT LISTENERS =======================
 function setupEventListeners() {
     // Tabs
@@ -2252,11 +2563,30 @@ function setupEventListeners() {
     });
     
     // Refresh button
-    $('refreshBtn').addEventListener('click', init);
+    $('refreshBtn').addEventListener('click', () => {
+        $('refreshBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        Promise.all([
+            loadPhotos(),
+            loadEvents(),
+            loadFaceGroups()
+        ]).then(() => {
+            $('refreshBtn').innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+            showToast('Data refreshed');
+        });
+    });
     
     // Gallery filters
     $('filterType').addEventListener('change', applyFilters);
     $('tagSearch').addEventListener('input', applyFilters);
+    $('aiTagSearch').addEventListener('input', function() {
+        applyFilters();
+        if (this.value.length > 0 && uniqueAITags.length > 0) {
+            $('aiTagSuggestions').style.display = 'block';
+        } else {
+            $('aiTagSuggestions').style.display = 'none';
+        }
+    });
+    
     $('clearFiltersBtn').addEventListener('click', clearFilters);
     
     // Download ZIP
@@ -2265,12 +2595,13 @@ function setupEventListeners() {
     // Face naming
     $('saveFaceBtn').addEventListener('click', saveFaceName);
     $('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
+    $('closeFaceNamingBtn').addEventListener('click', cancelFaceNaming);
     
     // Events
     $('newEvtBtn').addEventListener('click', () => {
         $('eventForm').style.display = 'block';
         $('eventName').value = '';
-        $('eventDate').value = '';
+        $('eventDate').value = new Date().toISOString().split('T')[0];
         $('saveEventBtn').onclick = createEvent;
     });
     
@@ -2318,101 +2649,86 @@ function setupEventListeners() {
             closeViewer();
         }
     });
-}
-
-// ======================= FILTER FUNCTIONS =======================
-function applyFilters() {
-    const type = $('filterType').value;
-    const search = $('tagSearch').value.toLowerCase();
     
-    filteredPhotos = allPhotos.filter(photo => {
-        // Type filter
-        if (type !== 'ALL') {
-            const faceCount = photo.face_ids ? photo.face_ids.length : 0;
-            
-            if (type === 'BEST' && faceCount < 3) return false;
-            if (type === 'GROUP' && faceCount < 2) return false;
-            if (type === 'HAPPY') {
-                const hasHappy = photo.faces?.some(f => 
-                    f.Emotions?.some(e => e.Type === 'HAPPY' && e.Confidence > 50)
-                );
-                if (!hasHappy) return false;
-            }
+    // Photo details modal
+    $('closePhotoDetailsBtn').addEventListener('click', closePhotoDetails);
+    $('#photoDetailsModal').addEventListener('click', (e) => {
+        if (e.target === $('#photoDetailsModal')) {
+            closePhotoDetails();
         }
-        
-        // Search filter
-        if (search) {
-            const tags = photo.tags || [];
-            const hasTag = tags.some(tag => 
-                tag.toLowerCase().includes(search)
-            );
-            if (!hasTag) return false;
-        }
-        
-        return true;
     });
     
-    renderPhotos();
-}
-
-function clearFilters() {
-    $('filterType').value = 'ALL';
-    $('tagSearch').value = '';
-    filteredPhotos = [...allPhotos];
-    renderPhotos();
-}
-
-async function downloadZip() {
-    if (filteredPhotos.length === 0) {
-        showToast('No photos to download', 'error');
-        return;
-    }
-
-    const btn = $('downloadZipBtn');
-    btn.disabled = true;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating ZIP...';
-
-    try {
-        const zip = new JSZip();
-        const collectionName = $('collectionName').textContent.replace(/[^a-z0-9]/gi, '_');
-        
-        // Download each photo and add to zip
-        for (let i = 0; i < filteredPhotos.length; i++) {
-            const photo = filteredPhotos[i];
-            try {
-                const response = await fetch(photo.url);
-                const blob = await response.blob();
-                const filename = photo.filename || `photo_${i + 1}.jpg`;
-                zip.file(filename, blob);
-            } catch (e) {
-                console.error('Failed to download photo:', e);
-            }
+    // Close AI suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#aiTagSearch') && !e.target.closest('#aiTagSuggestions')) {
+            $('aiTagSuggestions').style.display = 'none';
         }
-        
-        // Generate and download zip
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `${collectionName}_photos.zip`);
-        
-        showToast('Download started');
-        
-    } catch (error) {
-        console.error('Download error:', error);
-        showToast('Failed to create ZIP file', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
+    });
 }
 
 // ======================= INITIALIZE APP =======================
 document.addEventListener('DOMContentLoaded', () => {
+    if (!collectionId) {
+        showToast('Collection ID not found in URL', 'error');
+        return;
+    }
+
+    if (!idToken) {
+        showToast('Please login first', 'error');
+        setTimeout(() => window.location.href = 'login.html', 2000);
+        return;
+    }
+
     setupEventListeners();
     init();
     
     // Initialize quality slider display
     $('jpegQualityVal').textContent = $('jpegQuality').value;
 });
+
+async function init() {
+    try {
+        // Fetch collection data
+        const response = await fetch(GET_EVENTS_API, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
+
+        if (!response.ok) throw new Error('Failed to load collection');
+
+        const data = await response.json();
+        const summary = data.collection_summary || {};
+
+        // Update UI
+        $('collectionName').textContent = summary.name || collectionNameParam || "Collection";
+        $('totalPhotos').textContent = summary.photo_count || 0;
+        $('totalLeads').textContent = summary.leads_count || 0;
+        $('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
+
+        // Load events
+        loadEvents();
+        
+        // Load photos
+        loadPhotos();
+        
+        // Load face groups
+        loadFaceGroups();
+
+        // Setup staff upload link
+        $('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent($('collectionName').textContent)}`;
+
+    } catch (error) {
+        console.error('Init error:', error);
+        showToast('Failed to initialize: ' + error.message, 'error');
+    }
+}
+
+// Keep your existing functions for events, links, etc. (they remain the same)
+// ... [rest of your existing functions remain unchanged]
 </script>
 </body>
 </html>
