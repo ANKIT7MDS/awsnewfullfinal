@@ -82,6 +82,7 @@
         .btn-primary { background: var(--brand-gradient); color: white; }
         .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); }
         .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
 
         /* Event UI */
         .event-item { padding: 18px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; }
@@ -214,7 +215,7 @@
         <div class="card">
             <div style="margin-bottom: 24px;">
                 <h3>Guest Search Leads</h3>
-                <p style="font-size: 13px; color: var(--text-muted);">Selfie search history of guests.</p>
+                <p style="font-size: 13px; color: var(--text-muted);">Selfie search history of guests for this collection.</p>
             </div>
             <div class="lead-grid" id="leadsGrid"></div>
         </div>
@@ -266,8 +267,20 @@
             window.location.href = "login.html";
             return;
         }
+        
+        // --- Staff Upload Link Assignment ---
         const name = new URLSearchParams(window.location.search).get('name') || "Collection";
-        document.getElementById('staffUploadBtn').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(name)}`;
+        const staffUrl = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(name)}`;
+        const staffBtn = document.getElementById('staffUploadBtn');
+        staffBtn.href = staffUrl;
+        // Ensuring direct navigation if default fails
+        staffBtn.onclick = (e) => {
+            if(staffBtn.href === "#") {
+                e.preventDefault();
+                window.open(staffUrl, '_blank');
+            }
+        };
+
         refreshData();
     };
 
@@ -314,12 +327,9 @@
 
     async function fetchFaces() {
         const data = await apiCall('/list_people', 'POST', { collection_id: collectionId });
-        // Fix: Backend returns { "people": [...] } with PascalCase keys
         if(data && data.people && data.people.length > 0) {
             state.faces = data.people;
-            console.log("Faces loaded from API:", state.faces.length);
         } else {
-            console.log("No named faces, discovering from photos...");
             const discovered = new Map();
             state.photos.forEach(p => {
                 const facesArr = p.faces || [];
@@ -340,15 +350,22 @@
 
     async function fetchLeads() {
         try {
-            const res = await fetch(`${API_BASE}/save-details?collectionId=${collectionId}`, {
+            // FIX: Backend query link_id == XYZ returns empty if XYZ is collectionId.
+            // Hum saari leads mangwa kar frontend par filter karenge taaki data miss na ho.
+            const res = await fetch(`${API_BASE}/save-details`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            // Backend provides leads array
-            state.leads = data.leads || data.history || (Array.isArray(data) ? data : []);
-            console.log("Leads fetched:", state.leads.length);
+            
+            // Backend returns either data.leads, data.history, or direct array
+            let rawLeads = data.leads || data.history || (Array.isArray(data) ? data : []);
+            
+            // Filter only leads belonging to THIS collection
+            state.leads = rawLeads.filter(l => l.collection_id === collectionId);
+            
+            console.log("Filtered Leads found:", state.leads.length);
         } catch(e) {
-            console.error("Leads error:", e);
+            console.error("Leads fetch error:", e);
             state.leads = [];
         }
     }
@@ -401,7 +418,6 @@
         
         progressBox.style.display = 'block';
         
-        // 1. URLs
         const filesData = state.selectedFiles.map(f => ({ name: f.name.replace(/\.[^/.]+$/, "") + ".jpg" }));
         const urlRes = await apiCall('/generate-upload-urls', 'POST', {
             collection_id: collectionId,
@@ -411,12 +427,11 @@
 
         if(!urlRes || !urlRes.urls) { btn.disabled = false; return; }
 
-        // 2. Upload
         let success = 0;
         for(let i = 0; i < state.selectedFiles.length; i++) {
             const file = state.selectedFiles[i];
             const info = urlRes.urls[i];
-            statusText.innerText = `Processing (${i+1}/${state.selectedFiles.length})...`;
+            statusText.innerText = `Preparing & Uploading (${i+1}/${state.selectedFiles.length})...`;
             
             try {
                 const jpegBlob = await convertToJPEG(file);
@@ -472,7 +487,7 @@
     function renderFaceBar() {
         const bar = document.getElementById('faceIconsBar');
         if(state.faces.length === 0) {
-            bar.innerHTML = `<div style="font-size:12px; color:var(--text-muted); padding:10px;">Finding faces... Make sure photos are indexed.</div>`;
+            bar.innerHTML = `<div style="font-size:12px; color:var(--text-muted); padding:10px;">Finding faces... Please wait for indexing.</div>`;
             return;
         }
         bar.innerHTML = state.faces.map(f => {
@@ -521,7 +536,7 @@
         if(state.leads.length === 0) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-users-slash"></i>No search leads yet.</div>`; return; }
         grid.innerHTML = state.leads.map(l => {
             const selfie = l.selfie_b64 ? `data:image/jpeg;base64,${l.selfie_b64}` : 'https://via.placeholder.com/70?text=Guest';
-            const name = l.name || 'Anonymous';
+            const name = l.name || 'Guest User';
             const contact = l.mobile || l.phone || 'N/A';
             const dt = new Date(l.created_at || l.timestamp).toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
             return `
