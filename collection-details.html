@@ -83,8 +83,6 @@
         .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); }
         .btn-danger { background: var(--danger); color: white; }
         .btn-success { background: var(--success); color: white; }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Event UI */
         .event-item { padding: 18px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; }
@@ -101,7 +99,7 @@
 
         /* Leads Grid */
         .lead-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-        .lead-card { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 16px; display: flex; gap: 18px; align-items: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; }
+        .lead-card { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 16px; display: flex; gap: 18px; align-items: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; cursor: pointer; }
         .lead-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.12); }
         .lead-img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid var(--brand); background: #222; }
 
@@ -144,7 +142,8 @@
         </div>
         <div style="display: flex; gap: 12px;">
             <button class="btn btn-secondary" onclick="refreshData()"><i class="fas fa-sync-alt"></i> Refresh</button>
-            <button class="btn btn-primary" onclick="switchTab('upload')"><i class="fas fa-plus"></i> Upload</button>
+            <!-- Staff Upload Link connecting to quick-upload -->
+            <a href="#" id="staffUploadBtn" target="_blank" class="btn btn-primary"><i class="fas fa-bolt"></i> Staff Upload</a>
         </div>
     </div>
 
@@ -182,8 +181,8 @@
     <!-- UPLOAD -->
     <div id="uploadTab" class="tab-content">
         <div class="card">
-            <h3>Upload New Photos</h3>
-            <p style="margin-bottom: 24px; font-size: 14px; color: var(--text-muted);">Choose an event and drop your files to start indexing.</p>
+            <h3>Upload Photos (Photographer Panel)</h3>
+            <p style="margin-bottom: 24px; font-size: 14px; color: var(--text-muted);">Photos will be auto-converted to JPEG for backend indexing.</p>
             
             <div style="margin-bottom: 25px;">
                 <label style="font-size: 13px; color: var(--text-secondary);">Target Event:</label>
@@ -193,7 +192,7 @@
             <div id="dropZone" onclick="document.getElementById('fileInput').click()">
                 <i class="fas fa-cloud-upload-alt" style="font-size: 45px; color: var(--brand); margin-bottom: 15px;"></i>
                 <h3>Click or Drag Photos Here</h3>
-                <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Supports JPEG, PNG, HEIC (Auto-converted to JPEG)</p>
+                <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">JPEG, PNG, HEIC are converted automatically.</p>
                 <input type="file" id="fileInput" multiple hidden accept="image/*,.heic">
             </div>
 
@@ -201,7 +200,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 600;"><i class="fas fa-file-image"></i> <span id="fileCountDisplay">0</span> files selected</span>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-secondary btn-sm" onclick="clearSelectedFiles()">Clear</button>
+                        <button class="btn btn-secondary" onclick="clearSelectedFiles()">Clear</button>
                         <button class="btn btn-primary" onclick="startBatchUpload()">Start Upload</button>
                     </div>
                 </div>
@@ -218,7 +217,7 @@
     <div id="guestsTab" class="tab-content">
         <div class="card">
             <div style="margin-bottom: 24px;">
-                <h3>Guest Search History</h3>
+                <h3>Guest Search Leads</h3>
                 <p style="font-size: 13px; color: var(--text-muted);">Manage leads generated from guest face-searches.</p>
             </div>
             <div class="lead-grid" id="leadsGrid"></div>
@@ -231,19 +230,9 @@
     <div class="modal-content">
         <div class="modal-close" onclick="closeModal('eventModal')"><i class="fas fa-times"></i></div>
         <h3 id="eventModalTitle">Create New Event</h3>
-        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Provide a name and date for the event folder.</p>
-        
-        <div style="margin-bottom: 15px;">
-            <label style="font-size: 13px; color: var(--text-secondary);">Event Name:</label>
-            <input type="text" id="mEventName" placeholder="e.g. Wedding Reception, Birthday Party">
-        </div>
-        
-        <div style="margin-bottom: 25px;">
-            <label style="font-size: 13px; color: var(--text-secondary);">Event Date:</label>
-            <input type="date" id="mEventDate">
-        </div>
-        
-        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <input type="text" id="mEventName" placeholder="Event Name">
+        <input type="date" id="mEventDate">
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
             <button class="btn btn-secondary" onclick="closeModal('eventModal')">Cancel</button>
             <button class="btn btn-primary" id="saveEventBtn" onclick="saveEvent()">Create Event</button>
         </div>
@@ -253,13 +242,10 @@
 <div class="modal" id="linkModal">
     <div class="modal-content">
         <div class="modal-close" onclick="closeModal('linkModal')"><i class="fas fa-times"></i></div>
-        <h3>Event Search Link</h3>
-        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Send this link to guests so they can find their photos.</p>
-        
-        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; word-break: break-all; font-family: monospace; font-size: 13px; color: var(--brand);" id="generatedLinkText">
+        <h3>Search Link</h3>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin: 20px 0; word-break: break-all; font-family: monospace; font-size: 13px; color: var(--brand);" id="generatedLinkText">
             Generating...
         </div>
-        
         <div style="display: flex; gap: 12px; justify-content: flex-end;">
             <button class="btn btn-secondary" onclick="closeModal('linkModal')">Close</button>
             <button class="btn btn-primary" onclick="copyLink()">Copy Link</button>
@@ -279,8 +265,7 @@
         faces: [],
         leads: [],
         selectedFiles: [],
-        activeFaceFilter: null,
-        lastGeneratedLink: ""
+        activeFaceFilter: null
     };
 
     // --- INITIALIZATION ---
@@ -289,11 +274,16 @@
             window.location.href = "login.html";
             return;
         }
+        
+        // Connect Staff Upload Button
+        const name = new URLSearchParams(window.location.search).get('name') || "Collection";
+        document.getElementById('staffUploadBtn').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(name)}`;
+        
         refreshData();
     };
 
     async function refreshData() {
-        showToast("Fetching data...", "info");
+        showToast("Refreshing collection data...", "info");
         await Promise.all([
             fetchEvents(),
             fetchPhotos(),
@@ -337,17 +327,39 @@
 
     async function fetchFaces() {
         const data = await apiCall('/list_people', 'POST', { collection_id: collectionId });
-        // Backend keys are PascalCase: FaceId, FaceName, photo_url
-        if(data) state.faces = data.people || [];
+        // Backend keys PascalCase: FaceId, FaceName, photo_url
+        if(data && data.people) {
+            state.faces = data.people;
+        } else {
+            // Fallback: discover from photos if list_people is empty
+            const uniqueFaceIds = new Set();
+            const discovery = [];
+            state.photos.forEach(p => {
+                if(p.faces) {
+                    p.faces.forEach(f => {
+                        if(!uniqueFaceIds.has(f.FaceId)) {
+                            uniqueFaceIds.add(f.FaceId);
+                            discovery.push({ 
+                                FaceId: f.FaceId, 
+                                FaceName: f.FaceName || "Unknown", 
+                                photo_url: p.thumbnail_url || p.url 
+                            });
+                        }
+                    });
+                }
+            });
+            state.faces = discovery;
+        }
     }
 
     async function fetchLeads() {
         try {
-            // Updated lead fetching with better fallback handling
+            // Logic for guest lead as per provided old code
             const res = await fetch(`${API_BASE}/save-details?collectionId=${collectionId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
+            // Backend provides 'leads' key for unique entries
             state.leads = data.leads || data.history || (Array.isArray(data) ? data : []);
         } catch(e) {
             console.warn("Lead fetch failed", e);
@@ -355,18 +367,18 @@
         }
     }
 
-    // --- PHOTO CONVERSION UTILITY ---
-    // Converts any image file to JPEG Blob for backend compatibility
+    // --- CONVERSION UTILITY ---
+    // Backend only likes JPEGs. PNG/HEIC ko convert karte hain.
     async function convertToJPEG(file) {
         return new Promise(async (resolve) => {
-            let processedFile = file;
+            let workingFile = file;
             
-            // Handle HEIC
+            // HEIC handling
             if (file.name.toLowerCase().endsWith('.heic')) {
                 try {
-                    const convertedBlob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
-                    processedFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-                } catch (e) { console.error("HEIC conversion failed", e); }
+                    const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
+                    workingFile = Array.isArray(converted) ? converted[0] : converted;
+                } catch (e) { console.error("HEIC conv error", e); }
             }
 
             const img = new Image();
@@ -378,31 +390,26 @@
                 ctx.drawImage(img, 0, 0);
                 canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
             };
-            img.src = URL.createObjectURL(processedFile);
+            img.src = URL.createObjectURL(workingFile);
         });
     }
 
     // --- UPLOAD LOGIC ---
     document.getElementById('fileInput').onchange = (e) => {
-        const newFiles = Array.from(e.target.files);
-        state.selectedFiles = [...state.selectedFiles, ...newFiles];
-        updateUploadUI();
-    };
-
-    function updateUploadUI() {
+        state.selectedFiles = Array.from(e.target.files);
         document.getElementById('fileCountDisplay').innerText = state.selectedFiles.length;
         document.getElementById('selectedFilesInfo').style.display = state.selectedFiles.length ? 'block' : 'none';
-    }
+    };
 
     function clearSelectedFiles() {
         state.selectedFiles = [];
         document.getElementById('fileInput').value = "";
-        updateUploadUI();
+        document.getElementById('selectedFilesInfo').style.display = 'none';
     }
 
     async function startBatchUpload() {
         const eventId = document.getElementById('uploadEventSelect').value;
-        if(!eventId) return showToast("Please select an event folder", "danger");
+        if(!eventId) return showToast("Select an event folder first", "danger");
 
         const btn = document.querySelector('[onclick="startBatchUpload()"]');
         btn.disabled = true;
@@ -414,7 +421,10 @@
         progressBox.style.display = 'block';
         
         // 1. Get Presigned URLs
-        const filesMetadata = state.selectedFiles.map(f => ({ name: f.name.replace(/\.[^/.]+$/, "") + ".jpg" }));
+        const filesMetadata = state.selectedFiles.map(f => ({ 
+            name: f.name.replace(/\.[^/.]+$/, "") + ".jpg" 
+        }));
+        
         const urlData = await apiCall('/generate-upload-urls', 'POST', {
             collection_id: collectionId,
             event_id: eventId,
@@ -426,16 +436,16 @@
             return;
         }
 
-        // 2. Convert and Upload to S3
+        // 2. Process and Upload
         let successCount = 0;
         for(let i = 0; i < state.selectedFiles.length; i++) {
             const file = state.selectedFiles[i];
             const uploadInfo = urlData.urls[i];
             
-            statusText.innerText = `Converting and Uploading (${i+1}/${state.selectedFiles.length}): ${file.name}`;
+            statusText.innerText = `Optimizing and Uploading (${i+1}/${state.selectedFiles.length})...`;
             
             try {
-                // Pre-process image to JPEG
+                // Ensure JPEG format for Rekognition
                 const jpegBlob = await convertToJPEG(file);
                 
                 const s3Res = await fetch(uploadInfo.uploadURL, {
@@ -446,15 +456,15 @@
                 
                 if(s3Res.ok) successCount++;
             } catch (err) {
-                console.error(`S3 Upload Failed for ${file.name}:`, err);
+                console.error(`Upload error: ${file.name}`, err);
             }
 
             const progress = ((i + 1) / state.selectedFiles.length) * 100;
             progressBar.style.width = `${progress}%`;
         }
 
-        showToast(`${successCount} photos uploaded! Indexing started.`, "success");
-        statusText.innerHTML = "<i class='fas fa-sync fa-spin'></i> Indexing started. Faces will appear as they are processed.";
+        showToast(`${successCount} uploaded successfully! Indexing started.`, "success");
+        statusText.innerHTML = "<b>✅ Upload Complete.</b> Indexing photos now... Faces will appear soon.";
         
         setTimeout(() => {
             refreshData();
@@ -467,16 +477,11 @@
     // --- LINK GENERATION ---
     async function getShareLink(eventId = null) {
         showToast("Generating link...", "info");
-        const body = {
-            collection_id: collectionId,
-            expiry_hours: 168 // 7 days
-        };
-        
+        const body = { collection_id: collectionId, expiry_hours: 72 };
         if(eventId) body.event_ids = [eventId];
 
         const res = await apiCall('/generate-search-link', 'POST', body);
         if(res && res.searchUrl) {
-            state.lastGeneratedLink = res.searchUrl;
             document.getElementById('generatedLinkText').innerText = res.searchUrl;
             document.getElementById('linkModal').classList.add('active');
         }
@@ -485,13 +490,15 @@
     function copyLink() {
         const text = document.getElementById('generatedLinkText').innerText;
         navigator.clipboard.writeText(text).then(() => {
-            showToast("Link copied to clipboard!", "success");
+            showToast("Link copied!", "success");
             closeModal('linkModal');
         });
     }
 
     // --- RENDER FUNCTIONS ---
     function renderAll() {
+        const urlName = new URLSearchParams(window.location.search).get('name');
+        document.getElementById('collectionName').innerText = urlName || "Collection Manager";
         document.getElementById('photoCount').innerText = state.photos.length;
         document.getElementById('leadCount').innerText = state.leads.length;
 
@@ -502,7 +509,7 @@
         
         const sel = document.getElementById('uploadEventSelect');
         sel.innerHTML = state.events.map(e => `<option value="${e.event_id}">${e.name} (${e.event_date})</option>`).join('') 
-                     || '<option value="">No Events Available</option>';
+                     || '<option value="">No Events Found</option>';
     }
 
     function renderGallery() {
@@ -510,11 +517,11 @@
         let photosToDisplay = state.photos;
         
         if(state.activeFaceFilter) {
-            photosToDisplay = state.photos.filter(p => p.face_ids && p.face_ids.includes(state.activeFaceFilter));
+            photosToDisplay = state.photos.filter(p => (p.face_ids || []).includes(state.activeFaceFilter));
         }
 
         if(photosToDisplay.length === 0) {
-            grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><i class="fas fa-images"></i>No photos found.</div>`;
+            grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><i class="fas fa-images"></i>No photos found. Try uploading.</div>`;
             return;
         }
 
@@ -528,24 +535,18 @@
     function renderFaceBar() {
         const bar = document.getElementById('faceIconsBar');
         if(state.faces.length === 0) {
-            bar.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); padding: 10px;">Finding faces... Make sure photos are indexed.</div>`;
+            bar.innerHTML = `<div style="font-size: 12px; color: var(--text-muted);">Finding faces... Make sure photos are uploaded and indexed.</div>`;
             return;
         }
 
-        bar.innerHTML = state.faces.map(f => {
-            const faceId = f.FaceId;
-            const faceName = f.FaceName || "Person";
-            const photoUrl = f.photo_url || 'https://via.placeholder.com/70?text=Face';
-
-            return `
-                <div class="face-item" onclick="toggleFaceFilter('${faceId}')">
-                    <div class="face-wrapper ${state.activeFaceFilter === faceId ? 'selected' : ''}">
-                        <img src="${photoUrl}" onerror="this.src='https://via.placeholder.com/70'">
-                    </div>
-                    <div class="face-name">${faceName}</div>
+        bar.innerHTML = state.faces.map(f => `
+            <div class="face-item" onclick="toggleFaceFilter('${f.FaceId}')">
+                <div class="face-wrapper ${state.activeFaceFilter === f.FaceId ? 'selected' : ''}">
+                    <img src="${f.photo_url || 'https://via.placeholder.com/70?text=Face'}">
                 </div>
-            `;
-        }).join('');
+                <div class="face-name">${f.FaceName || "Person"}</div>
+            </div>
+        `).join('');
     }
 
     function toggleFaceFilter(id) {
@@ -557,7 +558,7 @@
     function renderEvents() {
         const container = document.getElementById('eventList');
         if(state.events.length === 0) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i>No events yet. Create one to start uploading.</div>`;
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i>No events yet. Create one to organize your photos.</div>`;
             return;
         }
 
@@ -571,12 +572,8 @@
                     </div>
                 </div>
                 <div class="event-actions">
-                    <button class="btn btn-secondary btn-sm" title="Share Event Link" onclick="getShareLink('${e.event_id}')">
-                        <i class="fas fa-share-alt"></i> Share
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.event_id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="getShareLink('${e.event_id}')"><i class="fas fa-share-alt"></i> Link</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.event_id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `).join('');
@@ -585,25 +582,24 @@
     function renderLeads() {
         const grid = document.getElementById('leadsGrid');
         if(state.leads.length === 0) {
-            grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><i class="fas fa-users-slash"></i>No guest leads found yet.</div>`;
+            grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><i class="fas fa-users-slash"></i>No search leads found yet.</div>`;
             return;
         }
 
         grid.innerHTML = state.leads.map(l => {
-            const selfie = l.selfie_b64 ? `data:image/jpeg;base64,${l.selfie_b64}` : 'https://via.placeholder.com/70?text=No+Face';
-            const name = l.name || 'Guest';
+            const selfie = l.selfie_b64 ? `data:image/jpeg;base64,${l.selfie_b64}` : 'https://via.placeholder.com/70?text=Guest';
+            const name = l.name || 'Anonymous';
             const mobile = l.mobile || l.phone || 'N/A';
-            const dateStr = l.timestamp || l.created_at;
-            const date = dateStr ? new Date(dateStr).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'Unknown';
+            const date = new Date(l.created_at || l.timestamp).toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
 
             return `
                 <div class="lead-card">
                     <img src="${selfie}" class="lead-img" onerror="this.src='https://via.placeholder.com/70?text=Error'">
                     <div style="flex: 1; overflow: hidden;">
                         <div style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</div>
-                        <div style="color: var(--brand); font-size: 13px; margin: 4px 0;">${mobile}</div>
+                        <div style="color: var(--brand); font-size: 13px; margin: 2px 0;">${mobile}</div>
                         <div style="font-size: 11px; color: var(--text-muted);">
-                            <i class="fas fa-images"></i> ${l.match_count || 0} Matches • ${date}
+                            <i class="fas fa-image"></i> ${l.match_count || 0} Matches • ${date}
                         </div>
                     </div>
                 </div>
@@ -611,29 +607,23 @@
         }).join('');
     }
 
-    // --- UI ACTIONS ---
+    // --- MODAL UTILS ---
     function showEventForm() { document.getElementById('eventModal').classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
     async function saveEvent() {
         const name = document.getElementById('mEventName').value.trim();
         const date = document.getElementById('mEventDate').value;
-        if(!name || !date) return showToast("Please provide name and date", "danger");
+        if(!name || !date) return showToast("Missing name or date", "danger");
 
         const btn = document.getElementById('saveEventBtn');
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-        const res = await apiCall('/upsert-event', 'POST', {
-            collection_id: collectionId,
-            name: name,
-            event_date: date
-        });
-
+        const res = await apiCall('/upsert-event', 'POST', { collection_id: collectionId, name, event_date: date });
         if(res) {
-            showToast("Event created successfully!", "success");
+            showToast("Event created!", "success");
             closeModal('eventModal');
-            document.getElementById('mEventName').value = "";
             refreshData();
         }
         btn.disabled = false;
@@ -641,7 +631,7 @@
     }
 
     async function deleteEvent(eid) {
-        if(!confirm("Are you sure? This will delete all photos within this event permanently.")) return;
+        if(!confirm("Delete event? All photos will be lost.")) return;
         const res = await apiCall('/delete-event', 'POST', { collection_id: collectionId, event_id: eid });
         if(res) {
             showToast("Event deleted", "success");
@@ -656,8 +646,8 @@
         const activeTab = Array.from(document.querySelectorAll('.tab')).find(t => t.innerText.toLowerCase().includes(name));
         if(activeTab) activeTab.classList.add('active');
         
-        const targetContent = document.getElementById(name + 'Tab');
-        if(targetContent) targetContent.classList.add('active');
+        const content = document.getElementById(name + 'Tab');
+        if(content) content.classList.add('active');
     }
 
     function showToast(msg, type = "success") {
