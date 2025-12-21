@@ -1655,17 +1655,18 @@
 <script>
 // ======================= API CONFIGURATION =======================
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+
+// ✅ Use existing Lambda functions ONLY
+const GET_COLLECTIONS_API = `${API_BASE}/get-collections`;
 const GET_EVENTS_API = `${API_BASE}/get-events`;
-// 🔥 Performance: use paginated QUERY-based API (no DynamoDB Scan)
-// This endpoint should be backed by collection_id GSI query (get-photos-for-gallery lambda).
-const GET_PHOTOS_API = `${API_BASE}/get-photos-for-gallery`;
+const GET_PHOTOS_API = `${API_BASE}/get-photos`;
 const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
 const DELETE_EVENT_API = `${API_BASE}/delete-event`;
 const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
 const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
 const LIST_PEOPLE_API = `${API_BASE}/list_people`;
-const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
-const GET_LEADS_API = `${API_BASE}/get-leads`;
+const SAVE_FACE_NAME_API = `${API_BASE}/save_face_name`;
+const GET_LEADS_API = `${API_BASE}/selfie-search-save-details`;
 
 // Backend compatibility: we always upload JPEG so Rekognition + indexing stays consistent.
 const BACKEND_UPLOAD_MIME = 'image/jpeg';
@@ -1696,6 +1697,18 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 // ======================= GLOBAL STATE =======================
 let allPhotos = [];
 let filteredPhotos = [];
@@ -1707,6 +1720,96 @@ let faceGroups = {};
 let currentNamingFaceId = null;
 let currentSelectedFaceId = null;
 let uniqueAITags = [];
+let currentCollection = null;
+let currentEvents = [];
+
+// ======================= COMPOSITE FUNCTION: GET COLLECTION DETAILS =======================
+async function getCollectionDetails(collectionId) {
+    try {
+        // Step 1: Get all collections and filter by collection_id
+        const collectionsResponse = await fetch(GET_COLLECTIONS_API, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!collectionsResponse.ok) throw new Error('Failed to load collections');
+        
+        const collectionsData = await collectionsResponse.json();
+        const collections = collectionsData.collections || collectionsData.Items || [];
+        const collection = collections.find(c => c.collection_id === collectionId);
+        
+        if (!collection) throw new Error('Collection not found');
+        
+        // Step 2: Get events for this collection
+        let events = [];
+        try {
+            const eventsResponse = await fetch(GET_EVENTS_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ collection_id: collectionId })
+            });
+            
+            if (eventsResponse.ok) {
+                const eventsData = await eventsResponse.json();
+                events = eventsData.events || [];
+            }
+        } catch (eventsError) {
+            console.warn('Could not load events:', eventsError);
+        }
+        
+        // Step 3: Get photos for this collection
+        let photos = [];
+        let totalStorage = 0;
+        try {
+            const photosResponse = await fetch(GET_PHOTOS_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ collection_id: collectionId })
+            });
+            
+            if (photosResponse.ok) {
+                const photosData = await photosResponse.json();
+                photos = photosData.photos || [];
+                
+                // Calculate total storage from photos
+                photos.forEach(photo => {
+                    totalStorage += photo.size || 0;
+                });
+            }
+        } catch (photosError) {
+            console.warn('Could not load photos:', photosError);
+        }
+        
+        // Step 4: Prepare response
+        return {
+            collection: {
+                ...collection,
+                total_photo_count: photos.length,
+                event_count: events.length,
+                storage_bytes: totalStorage
+            },
+            events: events,
+            stats: {
+                total_events: events.length,
+                total_photos: photos.length,
+                total_storage: totalStorage
+            }
+        };
+        
+    } catch (error) {
+        console.error('Error getting collection details:', error);
+        throw error;
+    }
+}
 
 // ======================= FORMAT SUPPORT FUNCTIONS =======================
 const SUPPORTED_FORMATS = {
@@ -1809,8 +1912,7 @@ async function loadFaceGroups() {
         const data = await response.json();
         faceGroups = data.people || [];
 
-        // ✅ Fallback: if people API returns empty (because names not assigned yet),
-        // build a quick face list from already-loaded photos so icons still show.
+        // ✅ Fallback: if people API returns empty, build face list from photos
         if ((!faceGroups || faceGroups.length === 0) && Array.isArray(allPhotos) && allPhotos.length > 0) {
             const seen = new Set();
             const derived = [];
@@ -1874,7 +1976,6 @@ function renderFaceIcons() {
         if (!isFinite(left) || !isFinite(top) || !isFinite(width) || !isFinite(height) || width <= 0 || height <= 0) return;
 
         // CSS crop trick:
-        // scale image so that the face box fills the icon, then translate so the face box aligns.
         const scaleX = 1 / width;
         const scaleY = 1 / height;
         imgEl.style.transformOrigin = 'top left';
@@ -1903,7 +2004,7 @@ function renderFaceIcons() {
         img.alt = face.FaceName || 'Unknown';
         img.loading = 'lazy';
 
-        // If we have a representative photo + bounding box, crop it to make a real face icon.
+        // If we have a representative photo + bounding box, crop it
         img.onload = () => {
             if (!face.thumbnail && face.photo_url && face.BoundingBox) {
                 applyBBoxCrop(img, face.BoundingBox);
@@ -2050,7 +2151,7 @@ function renderAITagSuggestions() {
     });
 }
 
-// ======================= UPLOAD MANAGEMENT (Batch Upload like Quick Upload) =======================
+// ======================= UPLOAD MANAGEMENT =======================
 function setupUpload() {
     const dropZone = $('dropZone');
     const fileInput = $('fileInput');
@@ -2164,8 +2265,6 @@ async function startUpload() {
 
     try {
         // Step 1: Get upload URLs for all files (BATCH)
-        // IMPORTANT: Backend (Rekognition indexing) is JPEG-centric.
-        // We request presigned URLs as JPEG and we will upload JPEG bytes.
         const filesPayload = selectedFiles.map(file => ({
             name: normalizeUploadFilename(file.name),
             type: BACKEND_UPLOAD_MIME
@@ -2184,13 +2283,13 @@ async function startUpload() {
             })
         });
 
-        if (!urlsResponse.ok) throw new Error('Failed to get upload URLs');
+        if (!urllsResponse.ok) throw new Error('Failed to get upload URLs');
 
         const urlsData = await urlsResponse.json();
         const uploadUrls = urlsData.urls || [];
 
-        // Step 2: Upload in batches (like quick upload)
-        const BATCH_SIZE = 5; // Smaller batches for better progress tracking
+        // Step 2: Upload in batches
+        const BATCH_SIZE = 5;
         let uploadedCount = 0;
         const totalFiles = selectedFiles.length;
         
@@ -2212,14 +2311,11 @@ async function startUpload() {
 
                 // Decide conversion/optimization options
                 const optimize = $('optimizeToggle').checked;
-                const convertToJpg = true; // Hard-enforce JPEG uploads for backend compatibility
+                const convertToJpg = true; // Hard-enforce JPEG uploads
                 const maxWidth = parseInt($('maxWidthSelect').value) || 0;
                 const quality = parseFloat($('jpegQuality').value) || 0.85;
 
-                // Always normalize to JPEG first (supports HEIC/HEIF/WEBP/PNG/BMP/TIFF etc.)
-                // This avoids:
-                // 1) Rekognition unsupported formats
-                // 2) Presigned Content-Type mismatches
+                // Always normalize to JPEG first
                 blob = await convertToJpegIfNeeded(blob, file.name);
 
                 if (optimize && (maxWidth > 0 || convertToJpg)) {
@@ -2268,7 +2364,7 @@ async function startUpload() {
             
             loadPhotos();
             loadFaceGroups();
-            init(); // Reload stats
+            loadEvents();
         }, 2000);
 
     } catch (error) {
@@ -2313,42 +2409,27 @@ async function optimizeImage(blob, maxWidth, quality, convertToJpg) {
 // ======================= PHOTO MANAGEMENT =======================
 async function loadPhotos() {
     try {
-        // Paginated loader (fast query-based API)
-        allPhotos = [];
-        let nextToken = null;
-        let guard = 0;
+        // Use get-photos API with collection_id
+        const response = await fetch(GET_PHOTOS_API, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ collection_id: collectionId })
+        });
 
-        do {
-            const response = await fetch(GET_PHOTOS_API, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ collection_id: collectionId, limit: 200, next_token: nextToken })
-            });
+        if (!response.ok) throw new Error('Failed to load photos');
 
-            if (!response.ok) throw new Error('Failed to load photos');
-
-            const data = await response.json();
-            const batch = data.photos || [];
-            allPhotos.push(...batch);
-            nextToken = data.next_token || null;
-            guard++;
-            // Safety: stop after 10 pages (2000 photos) to keep UI responsive
-            if (guard >= 10) break;
-        } while (nextToken);
-
+        const data = await response.json();
+        allPhotos = data.photos || [];
         filteredPhotos = [...allPhotos];
         
         extractAITags();
         renderPhotos();
 
-        // If people API returns empty, we can still render faces from loaded photos
-        // (prevents "no face icons" even before naming)
-        if (!faceGroups || faceGroups.length === 0) {
-            try { await loadFaceGroups(); } catch(e) {}
-        }
+        // Load face groups after photos are loaded
+        await loadFaceGroups();
 
     } catch (error) {
         console.error('Load photos error:', error);
@@ -2488,12 +2569,12 @@ function showPhotoDetails(photo) {
     }
     
     // Show modal
-    $('photoDetailsModal').classList.add('active');
+    $('#photoDetailsModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
 
 function closePhotoDetails() {
-    $('photoDetailsModal').classList.remove('active');
+    $('#photoDetailsModal').classList.remove('active');
     document.body.style.overflow = 'auto';
     currentPhotoDetails = null;
 }
@@ -2575,15 +2656,335 @@ function clearFilters() {
     renderFaceIcons();
 }
 
-// ======================= UTILITY FUNCTIONS =======================
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+// ======================= EVENTS MANAGEMENT =======================
+async function loadEvents() {
+    try {
+        // If we already have events from init, use them
+        if (!currentEvents || currentEvents.length === 0) {
+            const response = await fetch(GET_EVENTS_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ collection_id: collectionId })
+            });
+
+            if (!response.ok) throw new Error('Failed to load events');
+            
+            const data = await response.json();
+            currentEvents = data.events || [];
+        }
+
+        // Populate events table
+        const tbody = $('#eventsTbody');
+        tbody.innerHTML = '';
+        
+        currentEvents.forEach(event => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${event.name || 'Unnamed'}</td>
+                <td>${event.event_date || 'N/A'}</td>
+                <td>${event.photo_count || 0} photos</td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editEvent('${event.event_id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteEvent('${event.event_id}', '${event.collection_id || collectionId}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        // Populate upload event select
+        const select = $('#uploadEventSelect');
+        select.innerHTML = '<option value="">Select Event</option>';
+        currentEvents.forEach(event => {
+            const option = document.createElement('option');
+            option.value = event.event_id;
+            option.textContent = `${event.name} (${event.event_date || 'No date'})`;
+            select.appendChild(option);
+        });
+        
+        // Populate link event list
+        const linkList = $('#linkEventList');
+        linkList.innerHTML = '';
+        currentEvents.forEach(event => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 8px;';
+            div.innerHTML = `
+                <input type="checkbox" id="event_${event.event_id}" value="${event.event_id}">
+                <label for="event_${event.event_id}">
+                    ${event.name} (${event.photo_count || 0} photos)
+                </label>
+            `;
+            linkList.appendChild(div);
+        });
+
+    } catch (error) {
+        console.error('Load events error:', error);
+        showToast('Failed to load events', 'error');
+    }
 }
 
+async function createEvent() {
+    const name = $('#eventName').value.trim();
+    const date = $('#eventDate').value;
+    
+    if (!name || !date) {
+        showToast('Event name and date are required', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(UPSERT_EVENT_API, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                collection_id: collectionId,
+                name: name,
+                event_date: date
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to create event');
+        
+        showToast('Event created successfully');
+        $('#eventForm').style.display = 'none';
+        loadEvents();
+        
+    } catch (error) {
+        console.error('Create event error:', error);
+        showToast('Failed to create event', 'error');
+    }
+}
+
+async function editEvent(eventId) {
+    const event = currentEvents.find(e => e.event_id === eventId);
+    if (!event) {
+        showToast('Event not found', 'error');
+        return;
+    }
+    
+    // Show edit form
+    $('eventForm').style.display = 'block';
+    $('eventName').value = event.name || '';
+    $('eventDate').value = event.event_date || new Date().toISOString().split('T')[0];
+    
+    // Update save button
+    $('saveEventBtn').onclick = async () => {
+        const newName = $('eventName').value.trim();
+        const newDate = $('eventDate').value;
+        
+        if (!newName || !newDate) {
+            showToast('Event name and date are required', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch(UPSERT_EVENT_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    collection_id: collectionId,
+                    event_id: eventId,
+                    name: newName,
+                    event_date: newDate
+                })
+            });
+            
+            if (!response.ok) throw new Error('Failed to update event');
+            
+            showToast('Event updated successfully');
+            $('eventForm').style.display = 'none';
+            loadEvents();
+            
+        } catch (error) {
+            console.error('Edit event error:', error);
+            showToast('Failed to update event', 'error');
+        }
+    };
+}
+
+async function deleteEvent(eventId, collectionIdParam) {
+    if (!confirm('Are you sure you want to delete this event? All photos in this event will be deleted.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(DELETE_EVENT_API, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                collection_id: collectionIdParam || collectionId,
+                event_id: eventId
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to delete event');
+        
+        showToast('Event deleted successfully');
+        loadEvents();
+        loadPhotos(); // Reload photos since some were deleted
+        
+    } catch (error) {
+        console.error('Delete event error:', error);
+        showToast('Failed to delete event', 'error');
+    }
+}
+
+// ======================= LEADS MANAGEMENT =======================
+async function loadLeads() {
+    try {
+        // Use selfie-search-save-details API to get leads for this collection
+        const response = await fetch(`${GET_LEADS_API}?collectionId=${collectionId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load leads');
+
+        const data = await response.json();
+        
+        // Handle different response formats
+        let leads = [];
+        if (Array.isArray(data)) {
+            leads = data;
+        } else if (data.leads) {
+            leads = data.leads;
+        } else if (data.Items) {
+            leads = data.Items;
+        }
+        
+        allLeads = leads;
+        renderLeads();
+
+    } catch (error) {
+        console.error('Load leads error:', error);
+        showToast('Failed to load guest leads', 'error');
+    }
+}
+
+function renderLeads() {
+    const container = $('#leadsGrid');
+    const noLeadsMsg = $('#noLeadsMessage');
+    
+    if (!allLeads || allLeads.length === 0) {
+        container.innerHTML = '';
+        noLeadsMsg.style.display = 'block';
+        return;
+    }
+    
+    noLeadsMsg.style.display = 'none';
+    container.innerHTML = '';
+    
+    allLeads.forEach(lead => {
+        const card = document.createElement('div');
+        card.className = 'lead-card';
+        
+        // Extract data with fallbacks
+        const name = lead.name || lead.Name || 'Unknown Guest';
+        const mobile = lead.mobile || lead.phone || lead.Mobile || 'N/A';
+        const matchCount = lead.match_count || lead.photo_count || 0;
+        const selfieImage = lead.selfie_b64 || lead.selfieImage;
+        const createdAt = lead.created_at || lead.timestamp || '';
+        
+        card.innerHTML = `
+            <img src="${selfieImage ? `data:image/jpeg;base64,${selfieImage.substring(0, 100)}...` : 'https://placehold.co/70x70/333/fff?text=Guest'}" 
+                 class="selfie-img" alt="${name}">
+            <div class="lead-info">
+                <div class="lead-name">${name}</div>
+                <div class="lead-mobile">
+                    <i class="fas fa-phone"></i> ${mobile}
+                </div>
+                <div class="lead-meta">
+                    <span><i class="fas fa-calendar"></i> ${createdAt ? new Date(createdAt).toLocaleDateString() : 'N/A'}</span>
+                    <span class="match-count">
+                        <i class="fas fa-camera"></i> ${matchCount} matches
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+// ======================= LINK GENERATION =======================
+async function generateLink() {
+    try {
+        // Get selected events
+        const selectedEvents = [];
+        document.querySelectorAll('#linkEventList input[type="checkbox"]:checked').forEach(cb => {
+            selectedEvents.push(cb.value);
+        });
+        
+        const expiryHours = $('#expiryHours').value || 24;
+        const password = $('#linkPassword').value || '';
+        
+        const response = await fetch(GENERATE_LINK_API, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                collection_id: collectionId,
+                event_ids: selectedEvents,
+                expiry_hours: parseInt(expiryHours),
+                password: password
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to generate link');
+        
+        const data = await response.json();
+        const link = data.searchUrl;
+        
+        $('#generatedLink').href = link;
+        $('#generatedLink').textContent = link;
+        $('#linkResult').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Generate link error:', error);
+        showToast('Failed to generate link', 'error');
+    }
+}
+
+function copyLink() {
+    const link = $('#generatedLink').textContent;
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('Link copied to clipboard');
+    });
+}
+
+// ======================= VIEWER FUNCTIONS =======================
+function showViewer(imgSrc) {
+    $('#viewerImg').src = imgSrc;
+    $('#viewer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeViewer() {
+    $('#viewer').classList.remove('open');
+    document.body.style.overflow = 'auto';
+}
+
+// ======================= TAB MANAGEMENT =======================
 function switchTab(tabId) {
     // Hide all tab contents
     document.querySelectorAll('.tab-content').forEach(tab => {
@@ -2607,386 +3008,6 @@ function switchTab(tabId) {
     }
 }
 
-
-// ======================= SAFE EVENT BINDING =======================
-function safeOn(id, evt, handler) {
-    const el = $(id);
-    if (!el) return;
-    el.addEventListener(evt, handler);
-}
-function safeSetText(id, text) {
-    const el = $(id);
-    if (el) el.textContent = text;
-}
-function authHeaders(extra = {}) {
-    const h = { 'Content-Type': 'application/json', ...extra };
-    if (idToken) h['Authorization'] = `Bearer ${idToken}`;
-    return h;
-}
-async function postJson(url, payload, opts = {}) {
-    const res = await fetch(url, {
-        method: opts.method || 'POST',
-        headers: authHeaders(opts.headers || {}),
-        body: payload !== undefined ? JSON.stringify(payload) : undefined
-    });
-    const text = await res.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
-    if (!res.ok) {
-        const msg = (data && (data.message || data.error)) ? (data.message || data.error) : `HTTP ${res.status}`;
-        const err = new Error(msg);
-        err.status = res.status;
-        err.data = data;
-        throw err;
-    }
-    return data;
-}
-async function tryPostJson(urls, payload) {
-    let lastErr = null;
-    for (const u of urls) {
-        try { return await postJson(u, payload); } catch (e) { lastErr = e; }
-    }
-    throw lastErr || new Error('All endpoints failed');
-}
-
-// ======================= MISSING FEATURES (FIXED) =======================
-// NOTE: These were causing "is not defined" crashes and stopping the whole page.
-
-// ---------- EVENTS ----------
-let eventsCache = [];
-function renderEvents() {
-    // Events tab list
-    const list = $('eventsList');
-    if (list) list.innerHTML = '';
-    // Upload dropdown
-    const sel = $('eventSelect');
-    if (sel) {
-        sel.innerHTML = '';
-        const opt0 = document.createElement('option');
-        opt0.value = '';
-        opt0.textContent = 'Select Event (optional)';
-        sel.appendChild(opt0);
-    }
-    // Link checkbox list
-    const linkList = $('linkEventList');
-    if (linkList) linkList.innerHTML = '';
-
-    if (!eventsCache || eventsCache.length === 0) {
-        if (list) {
-            list.innerHTML = `
-                <div class="empty-state" style="margin-top: 10px;">
-                    <i class="fas fa-calendar-times"></i>
-                    <h3>No events</h3>
-                    <p>Create an event or upload without selecting an event.</p>
-                </div>`;
-        }
-        if (linkList) {
-            linkList.innerHTML = `<div style="color: var(--text-secondary);">No events found.</div>`;
-        }
-        return;
-    }
-
-    // Populate dropdown + link checkboxes
-    eventsCache.forEach(ev => {
-        const eid = ev.event_id || ev.id || ev.eventId;
-        const name = ev.name || ev.event_name || ev.title || 'Event';
-        const date = ev.date || ev.event_date || ev.created_at;
-
-        if (sel) {
-            const o = document.createElement('option');
-            o.value = eid;
-            o.textContent = date ? `${name} • ${new Date(date).toLocaleDateString('en-GB')}` : name;
-            sel.appendChild(o);
-        }
-
-        if (linkList) {
-            const row = document.createElement('div');
-            row.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border);";
-            row.innerHTML = `
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;width:100%;">
-                    <input type="checkbox" class="linkEventCheck" value="${eid}" style="transform:scale(1.2);" checked>
-                    <div style="flex:1;">
-                        <div style="font-weight:600;color:var(--text-primary);">${name}</div>
-                        <div style="font-size:12px;color:var(--text-secondary);">${date ? new Date(date).toLocaleString('en-GB') : ''}</div>
-                    </div>
-                </label>
-            `;
-            linkList.appendChild(row);
-        }
-
-        if (list) {
-            const card = document.createElement('div');
-            card.className = 'event-card';
-            card.innerHTML = `
-                <div class="event-info">
-                    <div class="event-name">${name}</div>
-                    <div class="event-date">${date ? new Date(date).toLocaleString('en-GB') : ''}</div>
-                </div>
-                <div class="event-actions">
-                    <button class="btn btn-secondary btn-sm" data-action="edit" data-eid="${eid}">
-                        <i class="fas fa-pen"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm" data-action="delete" data-eid="${eid}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            list.appendChild(card);
-        }
-    });
-
-    if (list) {
-        list.querySelectorAll('button[data-action]').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const action = btn.getAttribute('data-action');
-                const eid = btn.getAttribute('data-eid');
-                const ev = eventsCache.find(x => (x.event_id||x.id||x.eventId) === eid);
-                if (action === 'edit') openEditEvent(ev);
-                if (action === 'delete') await deleteEvent(eid);
-            });
-        });
-    }
-}
-
-async function loadEvents() {
-    try {
-        const data = await postJson(GET_EVENTS_API, { collection_id: collectionId });
-        eventsCache = data.events || data.items || data.data || [];
-        renderEvents();
-        // Also refresh link list
-    } catch (e) {
-        console.error('loadEvents failed:', e);
-        showToast(`Events load failed: ${e.message}`, 'error');
-        // Keep dropdown usable
-        eventsCache = [];
-        renderEvents();
-    }
-}
-
-function openEditEvent(ev) {
-    if (!$('eventForm')) return;
-    $('eventForm').style.display = 'block';
-    $('eventName').value = ev.name || ev.event_name || '';
-    const d = ev.date || ev.event_date || '';
-    $('eventDate').value = d ? new Date(d).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-    $('saveEventBtn').onclick = () => updateEvent(ev.event_id || ev.id || ev.eventId);
-}
-
-async function createEvent() {
-    const name = ($('eventName')?.value || '').trim();
-    const date = ($('eventDate')?.value || '').trim();
-    if (!name) return showToast('Event name required', 'error');
-    try {
-        await postJson(UPSERT_EVENT_API, { collection_id: collectionId, name, date });
-        $('eventForm').style.display = 'none';
-        showToast('Event created');
-        await loadEvents();
-    } catch (e) {
-        console.error('createEvent failed:', e);
-        showToast(`Create event failed: ${e.message}`, 'error');
-    }
-}
-
-async function updateEvent(event_id) {
-    const name = ($('eventName')?.value || '').trim();
-    const date = ($('eventDate')?.value || '').trim();
-    if (!name) return showToast('Event name required', 'error');
-    try {
-        await postJson(UPSERT_EVENT_API, { collection_id: collectionId, event_id, name, date });
-        $('eventForm').style.display = 'none';
-        showToast('Event updated');
-        await loadEvents();
-    } catch (e) {
-        console.error('updateEvent failed:', e);
-        showToast(`Update event failed: ${e.message}`, 'error');
-    }
-}
-
-async function deleteEvent(event_id) {
-    if (!confirm('Delete this event?')) return;
-    try {
-        await postJson(DELETE_EVENT_API, { collection_id: collectionId, event_id });
-        showToast('Event deleted');
-        await loadEvents();
-    } catch (e) {
-        console.error('deleteEvent failed:', e);
-        showToast(`Delete failed: ${e.message}`, 'error');
-    }
-}
-
-// ---------- LINKS ----------
-async function generateLink() {
-    try {
-        const checks = Array.from(document.querySelectorAll('.linkEventCheck'));
-        const selectedEventIds = checks.filter(c => c.checked).map(c => c.value);
-
-        const expiryHours = parseInt($('expiryHours')?.value || '0', 10) || 0;
-        const password = ($('linkPassword')?.value || '').trim();
-
-        const payload = {
-            collection_id: collectionId,
-            event_ids: selectedEventIds,
-            expiry_hours: expiryHours,
-            password: password || null
-        };
-
-        const data = await postJson(GENERATE_LINK_API, payload);
-        const link = data.link || data.url || data.search_link || data.generatedLink;
-        if (!link) throw new Error('Link not returned by API');
-
-        $('linkResult').style.display = 'block';
-        $('generatedLink').href = link;
-        $('generatedLink').textContent = link;
-        showToast('Link generated');
-    } catch (e) {
-        console.error('generateLink failed:', e);
-        showToast(`Link generate failed: ${e.message}`, 'error');
-    }
-}
-
-function copyLink() {
-    const a = $('generatedLink');
-    const link = a?.textContent || '';
-    if (!link) return showToast('No link to copy', 'error');
-    navigator.clipboard.writeText(link).then(() => showToast('Copied')).catch(() => showToast('Copy failed', 'error'));
-}
-
-// ---------- LEADS / GUESTS ----------
-function renderLeads() {
-    const container = $('leadsContainer');
-    if (!container) return;
-    if (!allLeads || allLeads.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-user-slash"></i>
-                <h3>No guest leads</h3>
-                <p>When guests search, their details will appear here.</p>
-            </div>`;
-        return;
-    }
-
-    const dateFilter = $('dateFilter')?.value || '';
-    const mobileFilter = ($('mobileFilter')?.value || '').trim();
-
-    let leads = [...allLeads];
-    if (dateFilter) {
-        leads = leads.filter(l => {
-            const t = l.created_at || l.timestamp || l.createdAt;
-            if (!t) return false;
-            const d = new Date(t);
-            const iso = d.toISOString().slice(0,10);
-            return iso === dateFilter;
-        });
-    }
-    if (mobileFilter) {
-        leads = leads.filter(l => String(l.mobile || l.phone || '').includes(mobileFilter));
-    }
-
-    container.innerHTML = `
-        <div style="overflow:auto;">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Date/Time</th>
-                        <th>Name</th>
-                        <th>Mobile</th>
-                        <th>Event</th>
-                        <th>Source</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${leads.map(l => {
-                        const t = l.created_at || l.timestamp || l.createdAt || '';
-                        const dt = t ? new Date(t).toLocaleString('en-GB') : '';
-                        return `
-                        <tr>
-                            <td>${dt}</td>
-                            <td>${(l.name || l.full_name || '').toString()}</td>
-                            <td>${(l.mobile || l.phone || '').toString()}</td>
-                            <td>${(l.event_name || l.event || l.event_id || '').toString()}</td>
-                            <td>${(l.source || l.platform || '').toString()}</td>
-                        </tr>`;
-                    }).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-}
-
-async function loadLeads() {
-    const urlsToTry = [
-        GET_LEADS_API,
-        `${API_BASE}/save-details`,
-        `${API_BASE}/selfie-search-save-details`,
-        `${API_BASE}/guest-leads`,
-        `${API_BASE}/guest-history`
-    ];
-
-    try {
-        // Try POST first (most APIs are POST)
-        let data = null;
-        try {
-            data = await tryPostJson(urlsToTry, { collection_id: collectionId });
-        } catch (e1) {
-            // fallback GET for endpoints that are GET
-            let last = e1;
-            for (const u of urlsToTry) {
-                try {
-                    const res = await fetch(`${u}?collection_id=${encodeURIComponent(collectionId)}`, { headers: authHeaders() });
-                    const txt = await res.text();
-                    const j = txt ? JSON.parse(txt) : {};
-                    if (!res.ok) throw new Error(j.message || j.error || `HTTP ${res.status}`);
-                    data = j;
-                    last = null;
-                    break;
-                } catch (e2) {
-                    last = e2;
-                }
-            }
-            if (!data) throw last;
-        }
-
-        allLeads = data.leads || data.items || data.data || [];
-        safeSetText('totalLeads', allLeads.length);
-        renderLeads();
-    } catch (e) {
-        console.error('loadLeads failed:', e);
-        allLeads = [];
-        renderLeads();
-        showToast(`Leads load failed: ${e.message}`, 'error');
-    }
-}
-
-// ---------- DOWNLOAD ZIP ----------
-async function downloadZip() {
-    try {
-        if (!filteredPhotos || filteredPhotos.length === 0) {
-            return showToast('No photos to download', 'error');
-        }
-        const limit = Math.min(filteredPhotos.length, 200); // safety
-        const zip = new JSZip();
-        showToast(`Preparing ZIP (${limit} photos)...`);
-
-        for (let i = 0; i < limit; i++) {
-            const p = filteredPhotos[i];
-            const url = p.url || p.thumbnail_url;
-            const name = (p.filename || `photo_${i+1}.jpg`).replace(/[\\/:*?"<>|]/g, '_');
-            const r = await fetch(url);
-            const blob = await r.blob();
-            zip.file(name, blob);
-            safeSetText('uploadStatus', `Zipping ${i+1}/${limit}...`);
-        }
-
-        const content = await zip.generateAsync({ type: 'blob' });
-        saveAs(content, `collection_${collectionId}_photos.zip`);
-        showToast('ZIP downloaded');
-        safeSetText('uploadStatus', '');
-    } catch (e) {
-        console.error('downloadZip failed:', e);
-        showToast(`ZIP failed: ${e.message}`, 'error');
-    }
-}
-
 // ======================= EVENT LISTENERS =======================
 function setupEventListeners() {
     // Tabs
@@ -2998,9 +3019,10 @@ function setupEventListeners() {
     });
     
     // Refresh button
-    safeOn('refreshBtn','click', () => {
+    $('refreshBtn').addEventListener('click', () => {
         $('refreshBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         Promise.all([
+            init(),
             loadPhotos(),
             loadEvents(),
             loadFaceGroups()
@@ -3011,9 +3033,9 @@ function setupEventListeners() {
     });
     
     // Gallery filters
-    safeOn('filterType','change', applyFilters);
-    safeOn('tagSearch','input', applyFilters);
-    safeOn('aiTagSearch','input', function() {
+    $('filterType').addEventListener('change', applyFilters);
+    $('tagSearch').addEventListener('input', applyFilters);
+    $('aiTagSearch').addEventListener('input', function() {
         applyFilters();
         if (this.value.length > 0 && uniqueAITags.length > 0) {
             $('aiTagSuggestions').style.display = 'block';
@@ -3022,14 +3044,12 @@ function setupEventListeners() {
         }
     });
     
-    safeOn('clearFiltersBtn','click', clearFilters);
+    $('clearFiltersBtn').addEventListener('click', clearFilters);
     
-    // Download ZIP
-    // ✅ Guard: page should never break if downloadZip isn't included
+    // Download ZIP (if function exists)
     if (typeof downloadZip === 'function') {
-        safeOn('downloadZipBtn','click', downloadZip);
+        $('downloadZipBtn').addEventListener('click', downloadZip);
     } else {
-        // Disable button to avoid "downloadZip is not defined" crash
         const btn = $('downloadZipBtn');
         if (btn) {
             btn.disabled = true;
@@ -3040,23 +3060,23 @@ function setupEventListeners() {
     }
     
     // Face naming
-    safeOn('saveFaceBtn','click', saveFaceName);
-    safeOn('cancelFaceBtn','click', cancelFaceNaming);
-    safeOn('closeFaceNamingBtn','click', cancelFaceNaming);
+    $('saveFaceBtn').addEventListener('click', saveFaceName);
+    $('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
+    $('closeFaceNamingBtn').addEventListener('click', cancelFaceNaming);
     
     // Events
-    safeOn('newEvtBtn','click', () => {
+    $('newEvtBtn').addEventListener('click', () => {
         $('eventForm').style.display = 'block';
         $('eventName').value = '';
         $('eventDate').value = new Date().toISOString().split('T')[0];
         $('saveEventBtn').onclick = createEvent;
     });
     
-    safeOn('cancelEventBtn','click', () => {
+    $('cancelEventBtn').addEventListener('click', () => {
         $('eventForm').style.display = 'none';
     });
     
-    safeOn('saveEventBtn','click', () => {
+    $('saveEventBtn').addEventListener('click', () => {
         if ($('saveEventBtn').onclick) {
             $('saveEventBtn').onclick();
         }
@@ -3064,46 +3084,43 @@ function setupEventListeners() {
     
     // Upload
     setupUpload();
-    safeOn('clearFilesBtn','click', () => {
+    $('clearFilesBtn').addEventListener('click', () => {
         selectedFiles = [];
         $('fileList').innerHTML = '';
         $('uploadControls').style.display = 'none';
         $('fileInput').value = '';
     });
     
-    safeOn('startUploadBtn','click', startUpload);
+    $('startUploadBtn').addEventListener('click', startUpload);
     
     // Quality slider
-    safeOn('jpegQuality','input', (e) => {
+    $('jpegQuality').addEventListener('input', (e) => {
         $('jpegQualityVal').textContent = e.target.value;
     });
     
     // Links
-    safeOn('genLinkBtn','click', generateLink);
-    safeOn('copyLinkBtn','click', copyLink);
+    $('genLinkBtn').addEventListener('click', generateLink);
+    $('copyLinkBtn').addEventListener('click', copyLink);
     
     // Analytics
-    safeOn('dateFilter','change', renderLeads);
-    safeOn('mobileFilter','input', renderLeads);
-
-    safeOn('clearLeadsFiltersBtn','click', () => {
+    $('clearLeadsFiltersBtn').addEventListener('click', () => {
         $('dateFilter').value = '';
         $('mobileFilter').value = '';
         loadLeads();
     });
     
     // Viewer
-    safeOn('viewerCloseBtn','click', closeViewer);
-    safeOn('viewer','click', (e) => {
+    $('viewerCloseBtn').addEventListener('click', closeViewer);
+    $('viewer').addEventListener('click', (e) => {
         if (e.target === $('viewer')) {
             closeViewer();
         }
     });
     
     // Photo details modal
-    safeOn('closePhotoDetailsBtn','click', closePhotoDetails);
-    safeOn('photoDetailsModal','click', (e) => {
-        if (e.target === $('photoDetailsModal')) {
+    $('closePhotoDetailsBtn').addEventListener('click', closePhotoDetails);
+    $('#photoDetailsModal').addEventListener('click', (e) => {
+        if (e.target === $('#photoDetailsModal')) {
             closePhotoDetails();
         }
     });
@@ -3117,9 +3134,73 @@ function setupEventListeners() {
 }
 
 // ======================= INITIALIZE APP =======================
+async function init() {
+    try {
+        // Use the composite function to get collection details
+        const collectionDetails = await getCollectionDetails(collectionId);
+        
+        // Get leads count
+        let leadsCount = 0;
+        try {
+            const leadsResponse = await fetch(`${GET_LEADS_API}?collectionId=${collectionId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (leadsResponse.ok) {
+                const leadsData = await leadsResponse.json();
+                if (Array.isArray(leadsData)) {
+                    leadsCount = leadsData.length;
+                } else if (leadsData.leads) {
+                    leadsCount = leadsData.leads.length;
+                } else if (leadsData.Items) {
+                    leadsCount = leadsData.Items.length;
+                }
+            }
+        } catch (leadsError) {
+            console.warn('Could not load leads count:', leadsError);
+        }
+        
+        // Update UI
+        $('collectionName').textContent = collectionDetails.collection.name || collectionNameParam || "Collection";
+        $('totalPhotos').textContent = collectionDetails.stats.total_photos || 0;
+        $('totalLeads').textContent = leadsCount;
+        $('storageUsed').textContent = formatBytes(collectionDetails.stats.total_storage || 0);
+        
+        // Store data globally
+        currentCollection = collectionDetails.collection;
+        currentEvents = collectionDetails.events || [];
+        
+        // Load photos separately (they might be paginated)
+        loadPhotos();
+        
+        // Load face groups
+        loadFaceGroups();
+        
+        // Load leads
+        loadLeads();
+        
+        // Setup staff upload link
+        $('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent($('collectionName').textContent)}`;
+        
+        // Now load events in the UI
+        loadEvents();
+
+    } catch (error) {
+        console.error('Init error:', error);
+        showToast('Failed to initialize: ' + error.message, 'error');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     if (!collectionId) {
-        showToast('Collection ID not found in URL', 'error');
+        showToast('Collection ID not found. Redirecting to dashboard...', 'error');
+        setTimeout(() => {
+            window.location.href = 'dashboard.html';
+        }, 2000);
         return;
     }
 
@@ -3136,49 +3217,9 @@ document.addEventListener('DOMContentLoaded', () => {
     $('jpegQualityVal').textContent = $('jpegQuality').value;
 });
 
-async function init() {
-    try {
-        // Fetch collection data
-        const response = await fetch(GET_EVENTS_API, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
-
-        if (!response.ok) throw new Error('Failed to load collection');
-
-        const data = await response.json();
-        const summary = data.collection_summary || {};
-
-        // Update UI
-        $('collectionName').textContent = summary.name || collectionNameParam || "Collection";
-        $('totalPhotos').textContent = summary.photo_count || 0;
-        $('totalLeads').textContent = summary.leads_count || 0;
-        $('storageUsed').textContent = formatBytes(summary.storage_bytes || 0);
-
-        // Load events
-        loadEvents();
-        
-        // Load photos
-        loadPhotos();
-        
-        // Load face groups
-        loadFaceGroups();
-
-        // Setup staff upload link
-        $('assistantLink').href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent($('collectionName').textContent)}`;
-
-    } catch (error) {
-        console.error('Init error:', error);
-        showToast('Failed to initialize: ' + error.message, 'error');
-    }
-}
-
-// Keep your existing functions for events, links, etc. (they remain the same)
-// ... [rest of your existing functions remain unchanged]
+// Make functions available globally
+window.showToast = showToast;
+window.formatBytes = formatBytes;
 </script>
 </body>
 </html>
