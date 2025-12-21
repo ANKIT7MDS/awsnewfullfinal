@@ -2488,12 +2488,12 @@ function showPhotoDetails(photo) {
     }
     
     // Show modal
-    $('#photoDetailsModal').classList.add('active');
+    $('photoDetailsModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
 
 function closePhotoDetails() {
-    $('#photoDetailsModal').classList.remove('active');
+    $('photoDetailsModal').classList.remove('active');
     document.body.style.overflow = 'auto';
     currentPhotoDetails = null;
 }
@@ -2607,6 +2607,386 @@ function switchTab(tabId) {
     }
 }
 
+
+// ======================= SAFE EVENT BINDING =======================
+function safeOn(id, evt, handler) {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener(evt, handler);
+}
+function safeSetText(id, text) {
+    const el = $(id);
+    if (el) el.textContent = text;
+}
+function authHeaders(extra = {}) {
+    const h = { 'Content-Type': 'application/json', ...extra };
+    if (idToken) h['Authorization'] = `Bearer ${idToken}`;
+    return h;
+}
+async function postJson(url, payload, opts = {}) {
+    const res = await fetch(url, {
+        method: opts.method || 'POST',
+        headers: authHeaders(opts.headers || {}),
+        body: payload !== undefined ? JSON.stringify(payload) : undefined
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
+    if (!res.ok) {
+        const msg = (data && (data.message || data.error)) ? (data.message || data.error) : `HTTP ${res.status}`;
+        const err = new Error(msg);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+async function tryPostJson(urls, payload) {
+    let lastErr = null;
+    for (const u of urls) {
+        try { return await postJson(u, payload); } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('All endpoints failed');
+}
+
+// ======================= MISSING FEATURES (FIXED) =======================
+// NOTE: These were causing "is not defined" crashes and stopping the whole page.
+
+// ---------- EVENTS ----------
+let eventsCache = [];
+function renderEvents() {
+    // Events tab list
+    const list = $('eventsList');
+    if (list) list.innerHTML = '';
+    // Upload dropdown
+    const sel = $('eventSelect');
+    if (sel) {
+        sel.innerHTML = '';
+        const opt0 = document.createElement('option');
+        opt0.value = '';
+        opt0.textContent = 'Select Event (optional)';
+        sel.appendChild(opt0);
+    }
+    // Link checkbox list
+    const linkList = $('linkEventList');
+    if (linkList) linkList.innerHTML = '';
+
+    if (!eventsCache || eventsCache.length === 0) {
+        if (list) {
+            list.innerHTML = `
+                <div class="empty-state" style="margin-top: 10px;">
+                    <i class="fas fa-calendar-times"></i>
+                    <h3>No events</h3>
+                    <p>Create an event or upload without selecting an event.</p>
+                </div>`;
+        }
+        if (linkList) {
+            linkList.innerHTML = `<div style="color: var(--text-secondary);">No events found.</div>`;
+        }
+        return;
+    }
+
+    // Populate dropdown + link checkboxes
+    eventsCache.forEach(ev => {
+        const eid = ev.event_id || ev.id || ev.eventId;
+        const name = ev.name || ev.event_name || ev.title || 'Event';
+        const date = ev.date || ev.event_date || ev.created_at;
+
+        if (sel) {
+            const o = document.createElement('option');
+            o.value = eid;
+            o.textContent = date ? `${name} • ${new Date(date).toLocaleDateString('en-GB')}` : name;
+            sel.appendChild(o);
+        }
+
+        if (linkList) {
+            const row = document.createElement('div');
+            row.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border);";
+            row.innerHTML = `
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;width:100%;">
+                    <input type="checkbox" class="linkEventCheck" value="${eid}" style="transform:scale(1.2);" checked>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;color:var(--text-primary);">${name}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);">${date ? new Date(date).toLocaleString('en-GB') : ''}</div>
+                    </div>
+                </label>
+            `;
+            linkList.appendChild(row);
+        }
+
+        if (list) {
+            const card = document.createElement('div');
+            card.className = 'event-card';
+            card.innerHTML = `
+                <div class="event-info">
+                    <div class="event-name">${name}</div>
+                    <div class="event-date">${date ? new Date(date).toLocaleString('en-GB') : ''}</div>
+                </div>
+                <div class="event-actions">
+                    <button class="btn btn-secondary btn-sm" data-action="edit" data-eid="${eid}">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" data-action="delete" data-eid="${eid}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            list.appendChild(card);
+        }
+    });
+
+    if (list) {
+        list.querySelectorAll('button[data-action]').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const action = btn.getAttribute('data-action');
+                const eid = btn.getAttribute('data-eid');
+                const ev = eventsCache.find(x => (x.event_id||x.id||x.eventId) === eid);
+                if (action === 'edit') openEditEvent(ev);
+                if (action === 'delete') await deleteEvent(eid);
+            });
+        });
+    }
+}
+
+async function loadEvents() {
+    try {
+        const data = await postJson(GET_EVENTS_API, { collection_id: collectionId });
+        eventsCache = data.events || data.items || data.data || [];
+        renderEvents();
+        // Also refresh link list
+    } catch (e) {
+        console.error('loadEvents failed:', e);
+        showToast(`Events load failed: ${e.message}`, 'error');
+        // Keep dropdown usable
+        eventsCache = [];
+        renderEvents();
+    }
+}
+
+function openEditEvent(ev) {
+    if (!$('eventForm')) return;
+    $('eventForm').style.display = 'block';
+    $('eventName').value = ev.name || ev.event_name || '';
+    const d = ev.date || ev.event_date || '';
+    $('eventDate').value = d ? new Date(d).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    $('saveEventBtn').onclick = () => updateEvent(ev.event_id || ev.id || ev.eventId);
+}
+
+async function createEvent() {
+    const name = ($('eventName')?.value || '').trim();
+    const date = ($('eventDate')?.value || '').trim();
+    if (!name) return showToast('Event name required', 'error');
+    try {
+        await postJson(UPSERT_EVENT_API, { collection_id: collectionId, name, date });
+        $('eventForm').style.display = 'none';
+        showToast('Event created');
+        await loadEvents();
+    } catch (e) {
+        console.error('createEvent failed:', e);
+        showToast(`Create event failed: ${e.message}`, 'error');
+    }
+}
+
+async function updateEvent(event_id) {
+    const name = ($('eventName')?.value || '').trim();
+    const date = ($('eventDate')?.value || '').trim();
+    if (!name) return showToast('Event name required', 'error');
+    try {
+        await postJson(UPSERT_EVENT_API, { collection_id: collectionId, event_id, name, date });
+        $('eventForm').style.display = 'none';
+        showToast('Event updated');
+        await loadEvents();
+    } catch (e) {
+        console.error('updateEvent failed:', e);
+        showToast(`Update event failed: ${e.message}`, 'error');
+    }
+}
+
+async function deleteEvent(event_id) {
+    if (!confirm('Delete this event?')) return;
+    try {
+        await postJson(DELETE_EVENT_API, { collection_id: collectionId, event_id });
+        showToast('Event deleted');
+        await loadEvents();
+    } catch (e) {
+        console.error('deleteEvent failed:', e);
+        showToast(`Delete failed: ${e.message}`, 'error');
+    }
+}
+
+// ---------- LINKS ----------
+async function generateLink() {
+    try {
+        const checks = Array.from(document.querySelectorAll('.linkEventCheck'));
+        const selectedEventIds = checks.filter(c => c.checked).map(c => c.value);
+
+        const expiryHours = parseInt($('expiryHours')?.value || '0', 10) || 0;
+        const password = ($('linkPassword')?.value || '').trim();
+
+        const payload = {
+            collection_id: collectionId,
+            event_ids: selectedEventIds,
+            expiry_hours: expiryHours,
+            password: password || null
+        };
+
+        const data = await postJson(GENERATE_LINK_API, payload);
+        const link = data.link || data.url || data.search_link || data.generatedLink;
+        if (!link) throw new Error('Link not returned by API');
+
+        $('linkResult').style.display = 'block';
+        $('generatedLink').href = link;
+        $('generatedLink').textContent = link;
+        showToast('Link generated');
+    } catch (e) {
+        console.error('generateLink failed:', e);
+        showToast(`Link generate failed: ${e.message}`, 'error');
+    }
+}
+
+function copyLink() {
+    const a = $('generatedLink');
+    const link = a?.textContent || '';
+    if (!link) return showToast('No link to copy', 'error');
+    navigator.clipboard.writeText(link).then(() => showToast('Copied')).catch(() => showToast('Copy failed', 'error'));
+}
+
+// ---------- LEADS / GUESTS ----------
+function renderLeads() {
+    const container = $('leadsContainer');
+    if (!container) return;
+    if (!allLeads || allLeads.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-user-slash"></i>
+                <h3>No guest leads</h3>
+                <p>When guests search, their details will appear here.</p>
+            </div>`;
+        return;
+    }
+
+    const dateFilter = $('dateFilter')?.value || '';
+    const mobileFilter = ($('mobileFilter')?.value || '').trim();
+
+    let leads = [...allLeads];
+    if (dateFilter) {
+        leads = leads.filter(l => {
+            const t = l.created_at || l.timestamp || l.createdAt;
+            if (!t) return false;
+            const d = new Date(t);
+            const iso = d.toISOString().slice(0,10);
+            return iso === dateFilter;
+        });
+    }
+    if (mobileFilter) {
+        leads = leads.filter(l => String(l.mobile || l.phone || '').includes(mobileFilter));
+    }
+
+    container.innerHTML = `
+        <div style="overflow:auto;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Name</th>
+                        <th>Mobile</th>
+                        <th>Event</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${leads.map(l => {
+                        const t = l.created_at || l.timestamp || l.createdAt || '';
+                        const dt = t ? new Date(t).toLocaleString('en-GB') : '';
+                        return `
+                        <tr>
+                            <td>${dt}</td>
+                            <td>${(l.name || l.full_name || '').toString()}</td>
+                            <td>${(l.mobile || l.phone || '').toString()}</td>
+                            <td>${(l.event_name || l.event || l.event_id || '').toString()}</td>
+                            <td>${(l.source || l.platform || '').toString()}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function loadLeads() {
+    const urlsToTry = [
+        GET_LEADS_API,
+        `${API_BASE}/save-details`,
+        `${API_BASE}/selfie-search-save-details`,
+        `${API_BASE}/guest-leads`,
+        `${API_BASE}/guest-history`
+    ];
+
+    try {
+        // Try POST first (most APIs are POST)
+        let data = null;
+        try {
+            data = await tryPostJson(urlsToTry, { collection_id: collectionId });
+        } catch (e1) {
+            // fallback GET for endpoints that are GET
+            let last = e1;
+            for (const u of urlsToTry) {
+                try {
+                    const res = await fetch(`${u}?collection_id=${encodeURIComponent(collectionId)}`, { headers: authHeaders() });
+                    const txt = await res.text();
+                    const j = txt ? JSON.parse(txt) : {};
+                    if (!res.ok) throw new Error(j.message || j.error || `HTTP ${res.status}`);
+                    data = j;
+                    last = null;
+                    break;
+                } catch (e2) {
+                    last = e2;
+                }
+            }
+            if (!data) throw last;
+        }
+
+        allLeads = data.leads || data.items || data.data || [];
+        safeSetText('totalLeads', allLeads.length);
+        renderLeads();
+    } catch (e) {
+        console.error('loadLeads failed:', e);
+        allLeads = [];
+        renderLeads();
+        showToast(`Leads load failed: ${e.message}`, 'error');
+    }
+}
+
+// ---------- DOWNLOAD ZIP ----------
+async function downloadZip() {
+    try {
+        if (!filteredPhotos || filteredPhotos.length === 0) {
+            return showToast('No photos to download', 'error');
+        }
+        const limit = Math.min(filteredPhotos.length, 200); // safety
+        const zip = new JSZip();
+        showToast(`Preparing ZIP (${limit} photos)...`);
+
+        for (let i = 0; i < limit; i++) {
+            const p = filteredPhotos[i];
+            const url = p.url || p.thumbnail_url;
+            const name = (p.filename || `photo_${i+1}.jpg`).replace(/[\\/:*?"<>|]/g, '_');
+            const r = await fetch(url);
+            const blob = await r.blob();
+            zip.file(name, blob);
+            safeSetText('uploadStatus', `Zipping ${i+1}/${limit}...`);
+        }
+
+        const content = await zip.generateAsync({ type: 'blob' });
+        saveAs(content, `collection_${collectionId}_photos.zip`);
+        showToast('ZIP downloaded');
+        safeSetText('uploadStatus', '');
+    } catch (e) {
+        console.error('downloadZip failed:', e);
+        showToast(`ZIP failed: ${e.message}`, 'error');
+    }
+}
+
 // ======================= EVENT LISTENERS =======================
 function setupEventListeners() {
     // Tabs
@@ -2618,7 +2998,7 @@ function setupEventListeners() {
     });
     
     // Refresh button
-    $('refreshBtn').addEventListener('click', () => {
+    safeOn('refreshBtn','click', () => {
         $('refreshBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         Promise.all([
             loadPhotos(),
@@ -2631,9 +3011,9 @@ function setupEventListeners() {
     });
     
     // Gallery filters
-    $('filterType').addEventListener('change', applyFilters);
-    $('tagSearch').addEventListener('input', applyFilters);
-    $('aiTagSearch').addEventListener('input', function() {
+    safeOn('filterType','change', applyFilters);
+    safeOn('tagSearch','input', applyFilters);
+    safeOn('aiTagSearch','input', function() {
         applyFilters();
         if (this.value.length > 0 && uniqueAITags.length > 0) {
             $('aiTagSuggestions').style.display = 'block';
@@ -2642,12 +3022,12 @@ function setupEventListeners() {
         }
     });
     
-    $('clearFiltersBtn').addEventListener('click', clearFilters);
+    safeOn('clearFiltersBtn','click', clearFilters);
     
     // Download ZIP
     // ✅ Guard: page should never break if downloadZip isn't included
     if (typeof downloadZip === 'function') {
-        $('downloadZipBtn').addEventListener('click', downloadZip);
+        safeOn('downloadZipBtn','click', downloadZip);
     } else {
         // Disable button to avoid "downloadZip is not defined" crash
         const btn = $('downloadZipBtn');
@@ -2660,23 +3040,23 @@ function setupEventListeners() {
     }
     
     // Face naming
-    $('saveFaceBtn').addEventListener('click', saveFaceName);
-    $('cancelFaceBtn').addEventListener('click', cancelFaceNaming);
-    $('closeFaceNamingBtn').addEventListener('click', cancelFaceNaming);
+    safeOn('saveFaceBtn','click', saveFaceName);
+    safeOn('cancelFaceBtn','click', cancelFaceNaming);
+    safeOn('closeFaceNamingBtn','click', cancelFaceNaming);
     
     // Events
-    $('newEvtBtn').addEventListener('click', () => {
+    safeOn('newEvtBtn','click', () => {
         $('eventForm').style.display = 'block';
         $('eventName').value = '';
         $('eventDate').value = new Date().toISOString().split('T')[0];
         $('saveEventBtn').onclick = createEvent;
     });
     
-    $('cancelEventBtn').addEventListener('click', () => {
+    safeOn('cancelEventBtn','click', () => {
         $('eventForm').style.display = 'none';
     });
     
-    $('saveEventBtn').addEventListener('click', () => {
+    safeOn('saveEventBtn','click', () => {
         if ($('saveEventBtn').onclick) {
             $('saveEventBtn').onclick();
         }
@@ -2684,43 +3064,46 @@ function setupEventListeners() {
     
     // Upload
     setupUpload();
-    $('clearFilesBtn').addEventListener('click', () => {
+    safeOn('clearFilesBtn','click', () => {
         selectedFiles = [];
         $('fileList').innerHTML = '';
         $('uploadControls').style.display = 'none';
         $('fileInput').value = '';
     });
     
-    $('startUploadBtn').addEventListener('click', startUpload);
+    safeOn('startUploadBtn','click', startUpload);
     
     // Quality slider
-    $('jpegQuality').addEventListener('input', (e) => {
+    safeOn('jpegQuality','input', (e) => {
         $('jpegQualityVal').textContent = e.target.value;
     });
     
     // Links
-    $('genLinkBtn').addEventListener('click', generateLink);
-    $('copyLinkBtn').addEventListener('click', copyLink);
+    safeOn('genLinkBtn','click', generateLink);
+    safeOn('copyLinkBtn','click', copyLink);
     
     // Analytics
-    $('clearLeadsFiltersBtn').addEventListener('click', () => {
+    safeOn('dateFilter','change', renderLeads);
+    safeOn('mobileFilter','input', renderLeads);
+
+    safeOn('clearLeadsFiltersBtn','click', () => {
         $('dateFilter').value = '';
         $('mobileFilter').value = '';
         loadLeads();
     });
     
     // Viewer
-    $('viewerCloseBtn').addEventListener('click', closeViewer);
-    $('viewer').addEventListener('click', (e) => {
+    safeOn('viewerCloseBtn','click', closeViewer);
+    safeOn('viewer','click', (e) => {
         if (e.target === $('viewer')) {
             closeViewer();
         }
     });
     
     // Photo details modal
-    $('closePhotoDetailsBtn').addEventListener('click', closePhotoDetails);
-    $('#photoDetailsModal').addEventListener('click', (e) => {
-        if (e.target === $('#photoDetailsModal')) {
+    safeOn('closePhotoDetailsBtn','click', closePhotoDetails);
+    safeOn('photoDetailsModal','click', (e) => {
+        if (e.target === $('photoDetailsModal')) {
             closePhotoDetails();
         }
     });
