@@ -1656,7 +1656,9 @@
 // ======================= API CONFIGURATION =======================
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const GET_EVENTS_API = `${API_BASE}/get-events`;
-const GET_PHOTOS_API = `${API_BASE}/get-photos`;
+// 🔥 Performance: use paginated QUERY-based API (no DynamoDB Scan)
+// This endpoint should be backed by collection_id GSI query (get-photos-for-gallery lambda).
+const GET_PHOTOS_API = `${API_BASE}/get-photos-for-gallery`;
 const UPSERT_EVENT_API = `${API_BASE}/upsert-event`;
 const DELETE_EVENT_API = `${API_BASE}/delete-event`;
 const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
@@ -1806,6 +1808,40 @@ async function loadFaceGroups() {
 
         const data = await response.json();
         faceGroups = data.people || [];
+
+        // ✅ Fallback: if people API returns empty (because names not assigned yet),
+        // build a quick face list from already-loaded photos so icons still show.
+        if ((!faceGroups || faceGroups.length === 0) && Array.isArray(allPhotos) && allPhotos.length > 0) {
+            const seen = new Set();
+            const derived = [];
+
+            for (const p of allPhotos) {
+                const pUrl = p.thumbnail_url || p.url;
+                const faces = Array.isArray(p.faces) ? p.faces : [];
+                // Try rich faces first (with bbox)
+                for (const f of faces) {
+                    const fid = f.FaceId || f.face_id;
+                    if (!fid || seen.has(fid)) continue;
+                    seen.add(fid);
+                    derived.push({
+                        FaceId: fid,
+                        FaceName: 'Unknown',
+                        photo_url: pUrl,
+                        BoundingBox: f.BoundingBox || f.boundingBox || null
+                    });
+                }
+                // If only face_ids exist
+                const ids = Array.isArray(p.face_ids) ? p.face_ids : [];
+                for (const fid of ids) {
+                    if (!fid || seen.has(fid)) continue;
+                    seen.add(fid);
+                    derived.push({ FaceId: fid, FaceName: 'Unknown', photo_url: pUrl });
+                }
+                if (derived.length >= 200) break; // keep bar light
+            }
+
+            faceGroups = derived;
+        }
         
         renderFaceIcons();
 
@@ -2277,23 +2313,42 @@ async function optimizeImage(blob, maxWidth, quality, convertToJpg) {
 // ======================= PHOTO MANAGEMENT =======================
 async function loadPhotos() {
     try {
-        const response = await fetch(GET_PHOTOS_API, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ collection_id: collectionId })
-        });
+        // Paginated loader (fast query-based API)
+        allPhotos = [];
+        let nextToken = null;
+        let guard = 0;
 
-        if (!response.ok) throw new Error('Failed to load photos');
+        do {
+            const response = await fetch(GET_PHOTOS_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ collection_id: collectionId, limit: 200, next_token: nextToken })
+            });
 
-        const data = await response.json();
-        allPhotos = data.photos || [];
+            if (!response.ok) throw new Error('Failed to load photos');
+
+            const data = await response.json();
+            const batch = data.photos || [];
+            allPhotos.push(...batch);
+            nextToken = data.next_token || null;
+            guard++;
+            // Safety: stop after 10 pages (2000 photos) to keep UI responsive
+            if (guard >= 10) break;
+        } while (nextToken);
+
         filteredPhotos = [...allPhotos];
         
         extractAITags();
         renderPhotos();
+
+        // If people API returns empty, we can still render faces from loaded photos
+        // (prevents "no face icons" even before naming)
+        if (!faceGroups || faceGroups.length === 0) {
+            try { await loadFaceGroups(); } catch(e) {}
+        }
 
     } catch (error) {
         console.error('Load photos error:', error);
@@ -2590,7 +2645,19 @@ function setupEventListeners() {
     $('clearFiltersBtn').addEventListener('click', clearFilters);
     
     // Download ZIP
-    $('downloadZipBtn').addEventListener('click', downloadZip);
+    // ✅ Guard: page should never break if downloadZip isn't included
+    if (typeof downloadZip === 'function') {
+        $('downloadZipBtn').addEventListener('click', downloadZip);
+    } else {
+        // Disable button to avoid "downloadZip is not defined" crash
+        const btn = $('downloadZipBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.title = 'ZIP download module not loaded';
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+        }
+    }
     
     // Face naming
     $('saveFaceBtn').addEventListener('click', saveFaceName);
