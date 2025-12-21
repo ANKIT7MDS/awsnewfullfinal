@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Collection Manager • Premium</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: linear-gradient(145deg, #1a1a25, #232331);
+            --brand: #6366f1;
+            --brand-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass: rgba(20, 20, 30, 0.7);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+        /* Header & Top Bar */
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; background: var(--glass); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg);
+            margin-bottom: 32px;
+        }
+
+        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .back-link:hover { color: var(--brand); }
+
+        .stats-line { display: flex; gap: 20px; font-size: 14px; color: var(--text-secondary); margin-top: 10px; }
+        .stat-item { background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; display: flex; align-items: center; gap: 8px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 8px; background: var(--bg-secondary); padding: 6px; border-radius: var(--radius-md); margin-bottom: 24px; overflow-x: auto; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 8px; color: var(--text-secondary); font-weight: 600; white-space: nowrap; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .tab.active { background: var(--brand-gradient); color: white; }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards & Grids */
+        .card { background: #1a1a25; border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+        .photo-card { aspect-ratio: 1; border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .photo-card:hover img { transform: scale(1.05); }
+
+        /* People Icons Bar */
+        #faceIconsBar { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 20px; scrollbar-width: thin; }
+        .face-item { min-width: 85px; text-align: center; cursor: pointer; }
+        .face-wrapper { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; border: 3px solid transparent; transition: 0.2s; margin: 0 auto; background: #222; }
+        .face-wrapper.selected { border-color: var(--brand); transform: scale(1.1); box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+        .face-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .face-name { font-size: 11px; color: var(--text-secondary); margin-top: 8px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Buttons */
+        .btn { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; font-size: 14px; }
+        .btn-primary { background: var(--brand-gradient); color: white; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+
+        /* Event UI */
+        .event-item { padding: 18px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; }
+        .event-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+        .event-info { display: flex; align-items: center; gap: 15px; }
+        .event-icon { width: 45px; height: 45px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; color: var(--brand); font-size: 18px; }
+        .event-details strong { display: block; font-size: 16px; margin-bottom: 2px; }
+        .event-details span { font-size: 12px; color: var(--text-muted); }
+        .event-actions { display: flex; gap: 10px; }
+
+        /* Upload Zone */
+        #dropZone { border: 2px dashed rgba(255,255,255,0.1); padding: 50px; text-align: center; border-radius: 20px; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.01); }
+        #dropZone:hover { border-color: var(--brand); background: rgba(99,102,241,0.05); }
+
+        /* Leads Grid */
+        .lead-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .lead-card { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 16px; display: flex; gap: 18px; align-items: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; cursor: pointer; }
+        .lead-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.12); }
+        .lead-img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid var(--brand); background: #222; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
+        .modal.active { display: flex; }
+        .modal-content { background: #1a1a25; padding: 32px; border-radius: 20px; max-width: 550px; width: 100%; position: relative; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .modal-close { position: absolute; top: 20px; right: 20px; color: var(--text-muted); cursor: pointer; font-size: 20px; }
+
+        /* Progress Bar */
+        .progress-box { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 20px; overflow: hidden; display: none; }
+        .progress-fill { height: 100%; background: var(--brand-gradient); width: 0%; transition: 0.3s; }
+
+        input, select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px 15px; border-radius: 10px; width: 100%; margin-top: 8px; font-family: inherit; font-size: 14px; }
+        input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+
+        /* Toast */
+        #toast { position: fixed; top: 25px; right: 25px; padding: 14px 28px; border-radius: 12px; color: white; z-index: 9999; display: none; animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-weight: 600; box-shadow: 0 15px 30px rgba(0,0,0,0.3); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Empty States */
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div class="wrap">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div>
+            <a href="dashboard.html" class="back-link"><i class="fas fa-chevron-left"></i> Dashboard</a>
+            <h1 id="collectionName" class="text-gradient">Loading...</h1>
+            <div class="stats-line">
+                <span class="stat-item"><i class="fas fa-camera"></i> <span id="photoCount">0</span> Photos</span>
+                <span class="stat-item"><i class="fas fa-users"></i> <span id="leadCount">0</span> Guests</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button class="btn btn-secondary" onclick="refreshData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <a href="#" id="staffUploadBtn" target="_blank" class="btn btn-primary"><i class="fas fa-bolt"></i> Staff Upload</a>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('gallery')"><i class="fas fa-images"></i> Gallery</div>
+        <div class="tab" onclick="switchTab('events')"><i class="fas fa-calendar-alt"></i> Events</div>
+        <div class="tab" onclick="switchTab('upload')"><i class="fas fa-cloud-upload-alt"></i> Upload</div>
+        <div class="tab" onclick="switchTab('guests')"><i class="fas fa-user-friends"></i> Guest Leads</div>
+    </div>
+
+    <!-- GALLERY -->
+    <div id="galleryTab" class="tab-content active">
+        <div class="card">
+            <h4 style="margin-bottom: 20px;"><i class="fas fa-user-circle"></i> People in this Collection</h4>
+            <div id="faceIconsBar"></div>
+        </div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+
+    <!-- EVENTS -->
+    <div id="eventsTab" class="tab-content">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div>
+                    <h3>Event Management</h3>
+                    <p style="font-size: 13px; color: var(--text-muted);">Organize photos into specific event folders.</p>
+                </div>
+                <button class="btn btn-primary" onclick="showEventForm()"><i class="fas fa-plus"></i> New Event</button>
+            </div>
+            <div id="eventList"></div>
+        </div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div id="uploadTab" class="tab-content">
+        <div class="card">
+            <h3>Upload New Photos</h3>
+            <p style="margin-bottom: 24px; font-size: 14px; color: var(--text-muted);">Photos are auto-converted to JPEG for backend Rekognition.</p>
+            
+            <div style="margin-bottom: 25px;">
+                <label style="font-size: 13px; color: var(--text-secondary);">Target Event:</label>
+                <select id="uploadEventSelect"><option value="">Loading events...</option></select>
+            </div>
+            
+            <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 45px; color: var(--brand); margin-bottom: 15px;"></i>
+                <h3>Click or Drag Photos Here</h3>
+                <input type="file" id="fileInput" multiple hidden accept="image/*,.heic">
+            </div>
+
+            <div id="selectedFilesInfo" style="margin-top: 25px; display: none; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600;"><span id="fileCountDisplay">0</span> files selected</span>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="clearSelectedFiles()">Clear</button>
+                        <button class="btn btn-primary" onclick="startBatchUpload()">Start Upload</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-box" id="uploadProgressBox">
+                <div class="progress-fill" id="uploadProgressBar"></div>
+            </div>
+            <p id="uploadStatusText" style="margin-top: 15px; font-size: 13px; text-align: center; color: var(--text-secondary);"></p>
+        </div>
+    </div>
+
+    <!-- GUESTS / LEADS -->
+    <div id="guestsTab" class="tab-content">
+        <div class="card">
+            <div style="margin-bottom: 24px;">
+                <h3>Guest Search Leads</h3>
+                <p style="font-size: 13px; color: var(--text-muted);">Guest details who searched their photos via selfie.</p>
+            </div>
+            <div class="lead-grid" id="leadsGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="eventModal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="closeModal('eventModal')"><i class="fas fa-times"></i></div>
+        <h3>New Event</h3>
+        <input type="text" id="mEventName" placeholder="Event Name">
+        <input type="date" id="mEventDate">
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="closeModal('eventModal')">Cancel</button>
+            <button class="btn btn-primary" id="saveEventBtn" onclick="saveEvent()">Create</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="linkModal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="closeModal('linkModal')"><i class="fas fa-times"></i></div>
+        <h3>Search Link Generated</h3>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin: 20px 0; word-break: break-all; font-family: monospace; color: var(--brand);" id="generatedLinkText"></div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="copyLink()">Copy Link</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CONFIG & STATE ---
+    const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+    const collectionId = new URLSearchParams(window.location.search).get('id');
+    const token = localStorage.getItem('idToken');
+
+    let state = {
+        photos: [],
+        events: [],
+        faces: [],
+        leads: [],
+        selectedFiles: [],
+        activeFaceFilter: null
+    };
+
+    window.onload = () => {
+        if(!collectionId || !token) {
+            window.location.href = "login.html";
+            return;
+        }
+        
+        // --- Staff Upload Link Assignment ---
+        const name = new URLSearchParams(window.location.search).get('name') || "Collection";
+        const staffUrl = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(name)}`;
+        document.getElementById('staffUploadBtn').href = staffUrl;
+
+        refreshData();
+    };
+
+    async function refreshData() {
+        showToast("Fetching collection data...", "info");
+        
+        // Face discovery dependent on Photos, so we fetch Photos first or ensure they are done before Face render
+        await fetchEvents();
+        await fetchPhotos(); // Ensures photos are in state for discovery fallback
+        await fetchFaces();
+        await fetchLeads();
+        
+        renderAll();
+    }
+
+    async function apiCall(endpoint, method = 'POST', body = null) {
+        try {
+            const options = {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+            if(body) options.body = JSON.stringify(body);
+            const res = await fetch(`${API_BASE}${endpoint}`, options);
+            if(!res.ok) throw new Error(await res.text());
+            return await res.json();
+        } catch (e) {
+            console.error("API ERROR:", e);
+            showToast(e.message, "danger");
+            return null;
+        }
+    }
+
+    async function fetchEvents() {
+        const data = await apiCall('/get-events', 'POST', { collection_id: collectionId });
+        if(data) state.events = data.events || [];
+    }
+
+    async function fetchPhotos() {
+        const data = await apiCall('/get-photos', 'POST', { collection_id: collectionId, limit: 150 });
+        if(data) state.photos = data.photos || [];
+    }
+
+    async function fetchFaces() {
+        const data = await apiCall('/list_people', 'POST', { collection_id: collectionId });
+        
+        // Fix: Backend keys are PascalCase: FaceId, FaceName, photo_url
+        if(data && data.people && data.people.length > 0) {
+            state.faces = data.people;
+        } else {
+            // Discovery Fallback from photos metadata
+            console.log("No named faces yet, discovering from photos...");
+            const discovered = new Map();
+            state.photos.forEach(p => {
+                const facesArr = p.faces || [];
+                facesArr.forEach(f => {
+                    const fid = f.FaceId || f.face_id;
+                    if(fid && !discovered.has(fid)) {
+                        discovered.set(fid, {
+                            FaceId: fid,
+                            FaceName: f.FaceName || "Unknown",
+                            photo_url: p.thumbnail_url || p.url
+                        });
+                    }
+                });
+            });
+            state.faces = Array.from(discovered.values());
+        }
+    }
+
+    async function fetchLeads() {
+        try {
+            // Fix: Backend filtering link_id == collection_id in Lambda can return empty.
+            // Hum saari leads fetch karenge aur frontend par is collection ke liye filter karenge.
+            const res = await fetch(`${API_BASE}/save-details`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            
+            // Lambda returns "leads" for unique list or direct array
+            let rawLeads = data.leads || data.history || (Array.isArray(data) ? data : []);
+            
+            // Robust filtering for collection ID
+            state.leads = rawLeads.filter(l => {
+                const cid = l.collection_id || l.CollectionId;
+                return cid === collectionId;
+            });
+            
+            console.log("Found leads for collection:", state.leads.length);
+        } catch(e) {
+            console.error("Leads error:", e);
+            state.leads = [];
+        }
+    }
+
+    // --- PHOTO PROCESSING ---
+    async function convertToJPEG(file) {
+        return new Promise(async (resolve) => {
+            let src = file;
+            if (file.name.toLowerCase().endsWith('.heic')) {
+                try {
+                    const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
+                    src = Array.isArray(blob) ? blob[0] : blob;
+                } catch (e) { console.error("HEIC conversion failed", e); }
+            }
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
+            };
+            img.src = URL.createObjectURL(src);
+        });
+    }
+
+    // --- UPLOAD ---
+    document.getElementById('fileInput').onchange = (e) => {
+        state.selectedFiles = Array.from(e.target.files);
+        document.getElementById('fileCountDisplay').innerText = state.selectedFiles.length;
+        document.getElementById('selectedFilesInfo').style.display = state.selectedFiles.length ? 'block' : 'none';
+    };
+
+    function clearSelectedFiles() {
+        state.selectedFiles = [];
+        document.getElementById('fileInput').value = "";
+        document.getElementById('selectedFilesInfo').style.display = 'none';
+    }
+
+    async function startBatchUpload() {
+        const eventId = document.getElementById('uploadEventSelect').value;
+        if(!eventId) return showToast("Select an event first", "danger");
+
+        const btn = document.querySelector('[onclick="startBatchUpload()"]');
+        btn.disabled = true;
+        
+        const progressBox = document.getElementById('uploadProgressBox');
+        const progressBar = document.getElementById('uploadProgressBar');
+        const statusText = document.getElementById('uploadStatusText');
+        
+        progressBox.style.display = 'block';
+        
+        const filesData = state.selectedFiles.map(f => ({ name: f.name.replace(/\.[^/.]+$/, "") + ".jpg" }));
+        const urlRes = await apiCall('/generate-upload-urls', 'POST', {
+            collection_id: collectionId,
+            event_id: eventId,
+            files: filesData
+        });
+
+        if(!urlRes || !urlRes.urls) { btn.disabled = false; return; }
+
+        let success = 0;
+        for(let i = 0; i < state.selectedFiles.length; i++) {
+            const file = state.selectedFiles[i];
+            const info = urlRes.urls[i];
+            statusText.innerText = `Optimizing and Uploading (${i+1}/${state.selectedFiles.length})...`;
+            
+            try {
+                const jpegBlob = await convertToJPEG(file);
+                const s3Res = await fetch(info.uploadURL, {
+                    method: 'PUT',
+                    body: jpegBlob,
+                    headers: { 'Content-Type': 'image/jpeg' }
+                });
+                if(s3Res.ok) success++;
+            } catch (err) { console.error("Upload error", err); }
+
+            progressBar.style.width = `${((i + 1) / state.selectedFiles.length) * 100}%`;
+        }
+
+        showToast(`${success} uploaded! Indexing started.`, "success");
+        statusText.innerHTML = "<b>✅ Success.</b> Indexing photos now... Faces will appear in gallery soon.";
+        
+        setTimeout(() => { refreshData(); btn.disabled = false; progressBox.style.display = 'none'; clearSelectedFiles(); }, 4000);
+    }
+
+    // --- RENDER ---
+    function renderAll() {
+        const urlName = new URLSearchParams(window.location.search).get('name') || "Collection Manager";
+        document.getElementById('collectionName').innerText = urlName;
+        document.getElementById('photoCount').innerText = state.photos.length;
+        document.getElementById('leadCount').innerText = state.leads.length;
+
+        renderGallery();
+        renderFaceBar();
+        renderEvents();
+        renderLeads();
+        
+        const sel = document.getElementById('uploadEventSelect');
+        sel.innerHTML = state.events.map(e => `<option value="${e.event_id}">${e.name} (${e.event_date})</option>`).join('') || '<option value="">No Events Available</option>';
+    }
+
+    function renderGallery() {
+        const grid = document.getElementById('galleryGrid');
+        let photos = state.photos;
+        if(state.activeFaceFilter) {
+            photos = state.photos.filter(p => {
+                const fids = p.face_ids || (p.faces ? p.faces.map(f => f.FaceId || f.face_id) : []);
+                return fids.includes(state.activeFaceFilter);
+            });
+        }
+        if(photos.length === 0) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-images"></i>No photos found.</div>`; return; }
+        grid.innerHTML = photos.map(p => `
+            <div class="photo-card" onclick="window.open('${p.url}', '_blank')">
+                <img src="${p.thumbnail_url || p.url}" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=Error'">
+            </div>
+        `).join('');
+    }
+
+    function renderFaceBar() {
+        const bar = document.getElementById('faceIconsBar');
+        if(state.faces.length === 0) {
+            bar.innerHTML = `<div style="font-size:12px; color:var(--text-muted); padding:10px;">No faces detected yet. Ensure photos are uploaded.</div>`;
+            return;
+        }
+        bar.innerHTML = state.faces.map(f => {
+            const id = f.FaceId;
+            const name = f.FaceName || "Person";
+            const url = f.photo_url || 'https://via.placeholder.com/70?text=Face';
+            return `
+                <div class="face-item" onclick="toggleFaceFilter('${id}')">
+                    <div class="face-wrapper ${state.activeFaceFilter === id ? 'selected' : ''}">
+                        <img src="${url}" onerror="this.src='https://via.placeholder.com/70'">
+                    </div>
+                    <div class="face-name">${name}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleFaceFilter(id) {
+        state.activeFaceFilter = (state.activeFaceFilter === id) ? null : id;
+        renderFaceBar();
+        renderGallery();
+    }
+
+    function renderEvents() {
+        const list = document.getElementById('eventList');
+        if(state.events.length === 0) { list.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i>No events created yet.</div>`; return; }
+        list.innerHTML = state.events.map(e => `
+            <div class="event-item">
+                <div class="event-info">
+                    <div class="event-icon"><i class="fas fa-calendar-day"></i></div>
+                    <div class="event-details">
+                        <strong>${e.name}</strong>
+                        <span>${e.event_date} • ${e.photo_count || 0} Photos</span>
+                    </div>
+                </div>
+                <div class="event-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="getShareLink('${e.event_id}')"><i class="fas fa-share-alt"></i> Link</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.event_id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderLeads() {
+        const grid = document.getElementById('leadsGrid');
+        if(state.leads.length === 0) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-users-slash"></i>No search leads found.</div>`; return; }
+        grid.innerHTML = state.leads.map(l => {
+            const selfie = l.selfie_b64 ? `data:image/jpeg;base64,${l.selfie_b64}` : 'https://via.placeholder.com/70?text=Guest';
+            const name = l.name || 'Guest User';
+            const contact = l.mobile || l.phone || 'N/A';
+            const date = new Date(l.created_at || l.timestamp).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            return `
+                <div class="lead-card">
+                    <img src="${selfie}" class="lead-img" onerror="this.src='https://via.placeholder.com/70?text=Error'">
+                    <div style="flex:1; overflow:hidden;">
+                        <div style="font-weight:700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</div>
+                        <div style="color:var(--brand); font-size:13px; margin:4px 0;">${contact}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">
+                            <i class="fas fa-image"></i> ${l.match_count || 0} Matches • ${date}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // --- ACTIONS ---
+    function showEventForm() { document.getElementById('eventModal').classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    async function saveEvent() {
+        const name = document.getElementById('mEventName').value.trim();
+        const date = document.getElementById('mEventDate').value;
+        if(!name || !date) return showToast("Provide name and date", "danger");
+        const btn = document.getElementById('saveEventBtn');
+        btn.disabled = true;
+        const res = await apiCall('/upsert-event', 'POST', { collection_id: collectionId, name, event_date: date });
+        if(res) { showToast("Event created!", "success"); closeModal('eventModal'); refreshData(); }
+        btn.disabled = false;
+    }
+
+    async function deleteEvent(eid) {
+        if(!confirm("Are you sure? Photos will be deleted too.")) return;
+        const res = await apiCall('/delete-event', 'POST', { collection_id: collectionId, event_id: eid });
+        if(res) { showToast("Event deleted", "success"); refreshData(); }
+    }
+
+    async function getShareLink(eid = null) {
+        const res = await apiCall('/generate-search-link', 'POST', { collection_id: collectionId, event_ids: eid ? [eid] : null, expiry_hours: 168 });
+        if(res && res.searchUrl) {
+            document.getElementById('generatedLinkText').innerText = res.searchUrl;
+            document.getElementById('linkModal').classList.add('active');
+        }
+    }
+
+    function copyLink() {
+        navigator.clipboard.writeText(document.getElementById('generatedLinkText').innerText);
+        showToast("Copied!", "success");
+        closeModal('linkModal');
+    }
+
+    function switchTab(name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        const activeTab = Array.from(document.querySelectorAll('.tab')).find(t => t.innerText.toLowerCase().includes(name));
+        if(activeTab) activeTab.classList.add('active');
+        const content = document.getElementById(name + 'Tab');
+        if(content) content.classList.add('active');
+    }
+
+    function showToast(msg, type = "success") {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.background = type === "success" ? "var(--success)" : (type === "info" ? "var(--info)" : "var(--danger)");
+        t.style.display = "block";
+        setTimeout(() => { t.style.display = "none"; }, 3000);
+    }
+</script>
+</body>
+</html>
