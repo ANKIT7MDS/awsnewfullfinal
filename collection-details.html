@@ -2808,5 +2808,96 @@ window.loadLeads ||= async function loadLeads() {
 };
 
 </script>
+
+<!-- ======================= FULL PATCH BLOCK (AUTO-GENERATED) ======================= -->
+<script>
+function safeOn(id, evt, handler){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener(evt, handler);
+}
+
+function copyLink() {
+  const linkEl = document.getElementById('generatedLink');
+  if (!linkEl || !linkEl.textContent) return;
+  navigator.clipboard.writeText(linkEl.textContent);
+}
+
+function closeViewer() {
+  const v = document.getElementById('viewer');
+  if (v) v.style.display = 'none';
+}
+
+function renderEvents() {
+  const tbody = document.getElementById('eventsTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!window.eventsCache || window.eventsCache.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">No events found</td></tr>';
+    return;
+  }
+  window.eventsCache.forEach(evt => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${evt.name || evt.event_name || 'Event'}</td>
+      <td>${evt.date || evt.event_date || '-'}</td>
+      <td>${evt.photo_count || 0}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteEvent('${evt.event_id}')">Delete</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadEvents() {
+  try {
+    if (!window.GET_EVENTS_API) return;
+    const res = await fetch(GET_EVENTS_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(window.idToken ? { Authorization: `Bearer ${idToken}` } : {})
+      },
+      body: JSON.stringify({ collection_id: window.collectionId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Event load failed');
+    window.eventsCache = data.events || [];
+    renderEvents();
+  } catch (e) {
+    console.warn('Events load skipped:', e.message);
+  }
+}
+
+function normalizeFaces(apiResponse){
+  const people = apiResponse.people || [];
+  return people.map(p => ({
+    FaceId: p.face_id,
+    FaceName: p.name || 'Unknown',
+    thumbnail: p.thumbnail_url
+  }));
+}
+
+async function loadFaceGroups() {
+  try {
+    if (!window.LIST_PEOPLE_API) return;
+    const res = await fetch(LIST_PEOPLE_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(window.idToken ? { Authorization: `Bearer ${idToken}` } : {})
+      },
+      body: JSON.stringify({ collection_id: window.collectionId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Face load failed');
+    window.faceGroups = normalizeFaces(data);
+    if (typeof renderFaceBar === 'function') renderFaceBar();
+  } catch (e) {
+    console.warn('Faces skipped:', e.message);
+  }
+}
+</script>
+<!-- ======================= END PATCH BLOCK ======================= -->
+
 </body>
 </html>
