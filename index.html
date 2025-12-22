@@ -91,13 +91,20 @@
       letter-spacing: 1.2px;
     }
 
+    /* IMPROVED: Selfie Upload UI */
+    .upload-instructions {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      text-align: left;
+    }
     .camera-btn {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       width: 100%;
-      padding: 35px;
+      padding: 40px; /* Larger padding */
       background: linear-gradient(135deg, #1a1a1a, #252525);
       border: 2px dashed var(--accent);
       border-radius: 20px;
@@ -116,12 +123,12 @@
       transform: scale(0.98);
     }
     .camera-icon {
-      font-size: 40px;
-      margin-bottom: 10px;
+      font-size: 50px; /* Even larger icon */
+      margin-bottom: 12px;
       transition: transform 0.3s ease;
     }
     .camera-btn:hover .camera-icon {
-      transform: rotate(10deg);
+      transform: rotate(10deg) scale(1.1);
     }
 
     .gallery-link {
@@ -203,18 +210,18 @@
     }
 
     #previewImg {
-      width: 160px;
-      height: 160px;
+      width: 180px; /* Larger */
+      height: 180px;
       border-radius: 50%;
       object-fit: cover;
       margin: 25px auto;
       display: block;
-      border: 5px solid var(--accent);
-      box-shadow: 0 0 25px rgba(0, 230, 118, 0.4);
+      border: 6px solid var(--accent); /* Thicker border */
+      box-shadow: 0 0 30px rgba(0, 230, 118, 0.5); /* Stronger glow */
       transition: all 0.3s ease;
     }
     #previewImg:hover {
-      transform: scale(1.08) rotate(5deg);
+      transform: scale(1.1) rotate(5deg);
     }
 
     .loading-text {
@@ -417,7 +424,6 @@
       margin-bottom: 20px;
     }
 
-    /* NEW: Faces Section like Google Photos */
     .faces-row {
       display: flex;
       overflow-x: auto;
@@ -499,21 +505,22 @@
     <p id="passwordError" class="error-message" style="display:none;">Incorrect password. Try again.</p>
   </div>
 
-  <!-- STEP 1: UPLOAD -->
+  <!-- STEP 1: UPLOAD - Improved UI -->
   <div id="step1" class="card" style="text-align:center;">
     <div class="step-title" style="text-align:left;">1. Upload Your Selfie</div>
+    <p class="upload-instructions">Take a clear selfie or upload a photo to find all your event pictures instantly with AI!</p>
     
     <input type="file" id="cameraInput" accept="image/*" capture="user" style="display:none">
     <input type="file" id="galleryInput" accept="image/*" style="display:none">
 
     <label for="cameraInput" class="camera-btn">
       <div class="camera-icon">📸</div>
-      Take Selfie
+      Take Selfie Now
     </label>
 
     <div style="margin-top:8px;">
       <span style="color:#555; font-size:14px;">or</span><br>
-      <label for="galleryInput" class="gallery-link">Upload from Gallery</label>
+      <label for="galleryInput" class="gallery-link">Choose from Gallery</label>
     </div>
 
     <div id="previewContainer" style="display:none;">
@@ -543,7 +550,7 @@
     
     <!-- NEW: Faces Row like Google Photos -->
     <div class="step-title">People</div>
-    <div id="facesRow" class="faces-row"></div>
+    <div id="facesRow" class="faces-row" style="display:none;"></div> <!-- Hidden if no people -->
 
     <!-- SEARCH & FILTER -->
     <div class="search-wrapper">
@@ -605,12 +612,17 @@
   let currentViewerIndex = 0;
   let currentMatchCount = 0; 
   let linkDetails = null;
-  let people = []; // NEW: List of people/faces
-  let selectedFaceId = null; // NEW: Currently selected face for filtering
+  let people = [];
+  let selectedFaceId = null;
 
+  // FIXED: Use POST for fetchLinkDetails
   async function fetchLinkDetails(linkId) {
     try {
-      const res = await fetch(`${GET_LINKS_API}?linkId=${linkId}`);
+      const res = await fetch(GET_LINKS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkId: linkId })
+      });
       if (!res.ok) throw new Error('Failed to fetch link details');
       linkDetails = await res.json();
       
@@ -762,8 +774,8 @@
         console.log("DEBUG: Confetti triggered for matches");
       }
 
-      // NEW: After search, fetch people/faces
-      await fetchPeople(linkId);
+      // FIXED: Fetch people using collection_id from linkDetails
+      await fetchPeople(linkDetails.collection_id);
 
     } catch(err) {
       console.error("ERROR: API call failed:", err);
@@ -828,7 +840,7 @@
       return tags.includes(q) || ocr.includes(q) || evt.includes(q);
     });
     
-    applyFaceFilter(); // NEW: Reapply face filter if active
+    applyFaceFilter();
     renderGrid();
     resetChips();
   });
@@ -860,7 +872,7 @@
       filteredPhotos = allPhotos.filter(p => (p.detected_text || []).length > 0);
     }
 
-    applyFaceFilter(); // NEW
+    applyFaceFilter();
     renderGrid();
   };
 
@@ -875,7 +887,7 @@
 
     filteredPhotos.forEach((photo, index) => {
       const isSelected = selectedUrls.has(photo.url);
-      const isHighlighted = selectedFaceId && photo.face_ids.includes(selectedFaceId); // NEW: Highlight if contains selected face
+      const isHighlighted = selectedFaceId && photo.face_ids.includes(selectedFaceId);
       
       const div = document.createElement('div');
       div.className = `photo-item ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`;
@@ -902,7 +914,6 @@
     console.log("DEBUG: Toggling select for URL:", url);
     if(selectedUrls.has(url)) selectedUrls.delete(url);
     else selectedUrls.add(url);
-    // Update local photo items without full re-render
     document.querySelectorAll('.photo-item').forEach(item => {
       if (item.querySelector('img').src === url) {
         item.classList.toggle('selected');
@@ -983,7 +994,7 @@
     toggleSelect(url);
   }
 
-  // NEW: Fetch People/Faces
+  // FIXED: Fetch People using collection_id
   async function fetchPeople(collectionId) {
     try {
       const res = await fetch(LIST_PEOPLE_API, {
@@ -994,25 +1005,28 @@
       if (!res.ok) throw new Error('Failed to fetch people');
       const data = await res.json();
       people = data.people || [];
-      // Extract face_ids from allPhotos for filtering
       allPhotos.forEach(photo => {
-        photo.face_ids = photo.face_ids || []; // Ensure array
+        photo.face_ids = photo.face_ids || [];
       });
     } catch (err) {
       console.error('Error fetching people:', err);
     }
   }
 
-  // NEW: Render Faces Row
+  // Render Faces - Show only if people exist
   function renderFaces() {
     const facesRow = document.getElementById('facesRow');
     facesRow.innerHTML = '';
+    if (people.length === 0) {
+      facesRow.style.display = 'none';
+      return;
+    }
+    facesRow.style.display = 'flex';
     people.forEach(person => {
       const faceItem = document.createElement('div');
       faceItem.className = 'face-item';
       faceItem.dataset.faceId = person.FaceId;
 
-      // Crop thumbnail using bounding box
       const thumbnail = createFaceThumbnail(person.photo_url, person.BoundingBox);
 
       const nameSpan = document.createElement('span');
@@ -1024,7 +1038,6 @@
       nameInput.value = person.FaceName || '';
       nameInput.placeholder = 'Name';
 
-      // Click to select/filter
       faceItem.addEventListener('click', () => {
         if (faceItem.classList.contains('editing')) return;
         selectedFaceId = selectedFaceId === person.FaceId ? null : person.FaceId;
@@ -1034,13 +1047,11 @@
         renderGrid();
       });
 
-      // Double click to edit name
       nameSpan.addEventListener('dblclick', () => {
         faceItem.classList.add('editing');
         nameInput.focus();
       });
 
-      // Save name on enter or blur
       nameInput.addEventListener('blur', saveFaceName);
       nameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') saveFaceName(e);
@@ -1057,7 +1068,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              collection_id: linkDetails.collection_id, // Assume from linkDetails
+              collection_id: linkDetails.collection_id,
               face_id: person.FaceId,
               face_name: newName
             })
@@ -1077,7 +1088,6 @@
     });
   }
 
-  // NEW: Create Cropped Face Thumbnail
   function createFaceThumbnail(photoUrl, bbox) {
     const img = new Image();
     img.src = photoUrl;
@@ -1096,13 +1106,12 @@
         0, 0, 60, 60
       );
       const thumbnailUrl = canvas.toDataURL('image/jpeg');
-      img.src = thumbnailUrl; // Replace original img with cropped
+      img.src = thumbnailUrl;
       img.className = 'face-thumbnail';
     };
     return img;
   }
 
-  // NEW: Apply Face Filter
   function applyFaceFilter() {
     if (!selectedFaceId) return;
     filteredPhotos = filteredPhotos.filter(photo => photo.face_ids.includes(selectedFaceId));
