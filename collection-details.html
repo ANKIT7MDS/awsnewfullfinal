@@ -38,7 +38,6 @@
             overflow-x: hidden;
         }
 
-        /* Ambient Background Shadows */
         body::before {
             content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
@@ -76,51 +75,49 @@
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .card-title { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
 
-        /* GALLERY & FACES */
-        #faceIconsBar { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        /* FACE ICONS - UNIQUE & ZOOMED */
+        #faceIconsBar { display: flex; gap: 22px; overflow-x: auto; padding: 10px 5px 20px; scrollbar-width: none; }
         #faceIconsBar::-webkit-scrollbar { display: none; }
-        .face-item { text-align: center; min-width: 85px; cursor: pointer; transition: 0.3s; }
-        .face-item:hover { transform: scale(1.05); }
+        .face-item { text-align: center; min-width: 90px; cursor: pointer; transition: 0.3s; position: relative; }
+        .face-item:hover { transform: scale(1.08); }
+        
         .face-img-wrap { 
-            width: 75px; height: 75px; border-radius: 50%; border: 2px solid var(--border); 
+            width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--border); 
             overflow: hidden; margin: 0 auto 10px; transition: 0.3s; background: #000;
+            display: flex; align-items: center; justify-content: center;
         }
-        .face-img-wrap.selected { border-color: var(--brand); box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); border-width: 3px; }
-        .face-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-        .face-name { font-size: 12px; color: var(--text-secondary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .face-img-wrap.selected { border-color: var(--brand); box-shadow: 0 0 15px rgba(99, 102, 241, 0.6); }
+        
+        /* Closeup zoom logic */
+        .face-img-wrap img { 
+            width: 100%; height: 100%; object-fit: cover; 
+            transform: scale(1.6); /* High zoom for closeup */
+        }
 
-        .date-header { margin: 30px 0 15px; color: var(--text-secondary); font-size: 14px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        .face-name { font-size: 11px; color: var(--text-secondary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+        .name-badge { position: absolute; top: -5px; right: 5px; background: var(--brand); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 5; }
+
+        /* GALLERY GRID */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
         .photo-card { 
             aspect-ratio: 1; border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; 
-            border: 1px solid var(--border); background: #0a0a0f; transition: transform 0.3s ease;
+            border: 1px solid var(--border); background: #0a0a0f; transition: 0.3s;
         }
-        .photo-card:hover { transform: translateY(-5px); }
-        .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        .photo-card:hover img { transform: scale(1.1); }
-        .photo-overlay { 
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; 
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); 
-            opacity: 0; transition: 0.3s; display: flex; align-items: flex-end; padding: 12px;
-        }
-        .photo-card:hover .photo-overlay { opacity: 1; }
+        .photo-card:hover { transform: translateY(-5px); border-color: var(--brand); }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .photo-card:hover img { transform: scale(1.05); }
 
         /* BUTTONS */
         .btn { padding: 12px 24px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-        .btn-primary { background: var(--brand-gradient); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); }
+        .btn-primary { background: var(--brand-gradient); color: white; }
         .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
         .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* UPLOAD ZONE */
-        .upload-zone { 
-            border: 2px dashed var(--border); border-radius: 20px; padding: 80px 40px; 
-            text-align: center; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.01);
-        }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 20px; padding: 60px 40px; text-align: center; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.01); }
         .upload-zone:hover { border-color: var(--brand); background: rgba(99, 102, 241, 0.05); }
-        .upload-zone i { font-size: 48px; color: var(--brand); margin-bottom: 20px; display: block; }
-        
         .progress-bar-wrap { background: rgba(255,255,255,0.05); border-radius: 10px; height: 10px; overflow: hidden; margin: 20px 0; display: none; }
         .progress-bar { height: 100%; background: var(--brand-gradient); width: 0%; transition: 0.3s; }
 
@@ -128,37 +125,18 @@
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 16px; color: var(--text-secondary); font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--border); }
         td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        tr:hover td { background: rgba(255,255,255,0.02); }
 
-        /* MODALS */
-        .modal { 
-            position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); 
-            display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(10px);
-        }
-        .modal-content { background: var(--bg-secondary); border-radius: 24px; padding: 32px; width: 90%; max-width: 500px; border: 1px solid var(--border); }
-
-        /* LIGHTBOX */
-        #lightbox {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
-            display: none; z-index: 2000; justify-content: center; align-items: center;
-        }
-        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        #lightbox-close { position: absolute; top: 30px; right: 30px; color: white; font-size: 30px; cursor: pointer; }
+        /* MODALS & LIGHTBOX */
+        .modal { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(10px); }
+        .modal-content { background: var(--bg-secondary); border-radius: 24px; padding: 32px; width: 90%; max-width: 450px; border: 1px solid var(--border); }
+        #lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; z-index: 2000; justify-content: center; align-items: center; }
+        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
 
         /* TOAST */
-        .toast { 
-            position: fixed; top: 24px; right: 24px; padding: 16px 28px; border-radius: 12px; color: white; 
-            z-index: 9999; animation: slideIn 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: 500;
-        }
+        .toast { position: fixed; top: 24px; right: 24px; padding: 16px 28px; border-radius: 12px; color: white; z-index: 9999; animation: slideIn 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: 500; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .wrap { padding: 15px; }
-            .top-bar { flex-direction: column; gap: 20px; text-align: center; }
-            .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-            .tab { font-size: 12px; padding: 10px; }
-        }
+        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); border-radius: 10px; color: white; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -167,8 +145,38 @@
 
 <!-- LIGHTBOX -->
 <div id="lightbox" onclick="this.style.display='none'">
-    <i class="fas fa-times" id="lightbox-close"></i>
     <img id="lightbox-img" src="" alt="Full View">
+</div>
+
+<!-- FACE NAMING MODAL -->
+<div class="modal" id="namingModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0">Name this person</h3>
+        <div style="display:flex; justify-content:center; margin: 20px 0;">
+            <div class="face-img-wrap" style="width: 100px; height: 100px; border-color: var(--brand)">
+                <img id="naming-preview-img" src="" style="transform: scale(1.6);">
+            </div>
+        </div>
+        <label style="font-size:12px; color: var(--text-secondary)">Enter Name</label>
+        <input type="text" id="faceNameInput" placeholder="Ex: Rahul Kumar">
+        <div style="display:flex; gap: 10px; margin-top: 25px;">
+            <button class="btn btn-secondary" style="flex:1" onclick="closeNamingModal()">Cancel</button>
+            <button class="btn btn-primary" style="flex:1" onclick="savePersonName()">Save Name</button>
+        </div>
+    </div>
+</div>
+
+<!-- NEW EVENT MODAL -->
+<div class="modal" id="eventModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0">Create New Event</h3>
+        <input type="text" id="newEvtName" placeholder="Event Name (e.g. Haldi Ceremony)">
+        <input type="date" id="newEvtDate" style="margin-top:15px">
+        <div style="display:flex; gap: 10px; margin-top: 25px;">
+            <button class="btn btn-secondary" style="flex:1" onclick="hideEventModal()">Cancel</button>
+            <button class="btn btn-primary" style="flex:1" onclick="createNewEvent()">Create</button>
+        </div>
+    </div>
 </div>
 
 <div class="wrap">
@@ -184,7 +192,7 @@
             </div>
         </div>
         <div class="header-actions">
-            <button class="btn btn-secondary" onclick="refreshAll()"><i class="fas fa-sync"></i> Refresh Data</button>
+            <button class="btn btn-secondary" onclick="refreshAll()"><i class="fas fa-sync"></i> Refresh</button>
             <button class="btn btn-primary" onclick="downloadAllZip()"><i class="fas fa-download"></i> Download ZIP</button>
         </div>
     </div>
@@ -194,7 +202,6 @@
         <div class="tab active" data-tab="galleryTab"><i class="fas fa-images"></i> Photos</div>
         <div class="tab" data-tab="eventsTab"><i class="fas fa-calendar-alt"></i> Events</div>
         <div class="tab" data-tab="uploadTab"><i class="fas fa-cloud-upload-alt"></i> Upload</div>
-        <div class="tab" data-tab="linksTab"><i class="fas fa-link"></i> Link Generator</div>
         <div class="tab" data-tab="analyticsTab"><i class="fas fa-chart-line"></i> Guest Leads</div>
     </div>
 
@@ -202,17 +209,14 @@
     <div id="galleryTab" class="tab-content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-users"></i> People Detected</h3>
+                <h3 class="card-title"><i class="fas fa-users"></i> People (Unique Detected)</h3>
                 <div id="faceFilters" style="font-size: 12px; color: var(--brand); cursor: pointer; display:none" onclick="clearFaceFilter()">Clear Filter</div>
             </div>
             <div id="faceIconsBar">
                 <!-- Faces injected here -->
             </div>
         </div>
-
-        <div id="galleryContainer">
-            <!-- Grouped Photos injected here -->
-        </div>
+        <div id="galleryContainer" class="gallery-grid"></div>
     </div>
 
     <!-- EVENTS TAB -->
@@ -223,17 +227,8 @@
                 <button class="btn btn-primary btn-sm" onclick="showEventModal()"><i class="fas fa-plus"></i> New Event</button>
             </div>
             <table>
-                <thead>
-                    <tr>
-                        <th>Event Name</th>
-                        <th>Event Date</th>
-                        <th>Photos</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="eventsTbody">
-                    <!-- Events injected here -->
-                </tbody>
+                <thead><tr><th>Event Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+                <tbody id="eventsTbody"></tbody>
             </table>
         </div>
     </div>
@@ -241,70 +236,23 @@
     <!-- UPLOAD TAB -->
     <div id="uploadTab" class="tab-content" style="display:none">
         <div class="card" style="max-width: 800px; margin: 0 auto;">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-cloud-upload-alt"></i> Batch Upload</h3>
-            </div>
-            
-            <div style="margin-bottom: 25px;">
-                <label style="display:block; margin-bottom: 8px; color: var(--text-secondary); font-size: 13px;">Select Event Destination</label>
-                <select id="uploadEventSelect" style="width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); border-radius: 10px; color: white;">
-                    <!-- Events injected here -->
-                </select>
-            </div>
-
-            <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <h3 class="card-title" style="margin-bottom:20px"><i class="fas fa-cloud-upload-alt"></i> Batch Upload</h3>
+            <label style="color:var(--text-secondary); font-size:12px">Upload To Event:</label>
+            <select id="uploadEventSelect"></select>
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" style="margin-top:15px">
                 <i class="fas fa-images"></i>
-                <h3 style="margin-bottom: 10px;">Click to Browse or Drag Photos Here</h3>
-                <p style="color: var(--text-secondary);">Supports JPG, PNG, HEIC up to 20MB per file</p>
+                <h3 style="margin-bottom:10px">Click or Drag Photos</h3>
+                <p style="color:var(--text-secondary); font-size:12px">JPEG, PNG, HEIC (Max 20MB)</p>
                 <input type="file" id="fileInput" multiple style="display:none" onchange="handleFileSelection(this.files)">
             </div>
-
             <div id="uploadPreview" style="margin-top: 25px; display:none;">
-                <div class="progress-bar-wrap" id="pbWrap">
-                    <div class="progress-bar" id="pb"></div>
-                </div>
-                <p id="uploadStatus" style="text-align: center; font-size: 13px; margin-bottom: 20px;"></p>
-                <div id="fileList" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px;"></div>
+                <div class="progress-bar-wrap" id="pbWrap" style="display:block"><div class="progress-bar" id="pb"></div></div>
+                <p id="uploadStatus" style="text-align: center; font-size: 13px; margin-bottom:15px;"></p>
+                <div id="fileList" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); padding:10px; border-radius:10px;"></div>
                 <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-primary" id="startUploadBtn" onclick="startBatchUpload()">Start Upload Process</button>
+                    <button class="btn btn-primary" id="startUploadBtn" onclick="startBatchUpload()">Start Batch Upload</button>
                     <button class="btn btn-secondary" onclick="resetUpload()">Cancel</button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- LINKS TAB -->
-    <div id="linksTab" class="tab-content" style="display:none">
-        <div class="card" style="max-width: 600px; margin: 0 auto;">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-magic"></i> Link Generator</h3>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 25px;">Generate a secure search link for your guests to find their photos using selfies.</p>
-            
-            <div style="margin-bottom: 20px;">
-                <label style="display:block; margin-bottom: 10px; font-weight: 500;">Select Events to Include</label>
-                <div id="linkEventList" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: rgba(0,0,0,0.2);">
-                    <!-- Checkboxes injected here -->
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-                <div>
-                    <label style="display:block; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);">Expiry (Hours)</label>
-                    <input type="number" id="expiryHours" value="48" style="width:100%; padding:12px; background:#000; border:1px solid var(--border); border-radius:10px; color:white;">
-                </div>
-                <div>
-                    <label style="display:block; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);">Pin Protection (Optional)</label>
-                    <input type="password" id="linkPass" placeholder="None" style="width:100%; padding:12px; background:#000; border:1px solid var(--border); border-radius:10px; color:white;">
-                </div>
-            </div>
-
-            <button class="btn btn-primary" style="width:100%" onclick="generateSearchLink()">Generate Secure Link</button>
-
-            <div id="linkResult" style="margin-top: 30px; display:none; padding: 20px; background: rgba(99, 102, 241, 0.1); border: 1px dashed var(--brand); border-radius: 15px; text-align: center;">
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">Link Ready for Sharing:</p>
-                <div id="generatedUrl" style="font-weight: 700; color: var(--brand); word-break: break-all; margin-bottom: 20px; font-size: 14px;"></div>
-                <button class="btn btn-secondary btn-sm" onclick="copyGeneratedLink()"><i class="fas fa-copy"></i> Copy Link</button>
             </div>
         </div>
     </div>
@@ -313,45 +261,21 @@
     <div id="analyticsTab" class="tab-content" style="display:none">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-users-cog"></i> Guest Leads & History</h3>
-                <button class="btn btn-secondary btn-sm" onclick="loadLeads()"><i class="fas fa-redo"></i> Refresh Leads</button>
+                <h3 class="card-title"><i class="fas fa-users-cog"></i> Guest Leads (History)</h3>
+                <button class="btn btn-secondary btn-sm" onclick="loadLeads()"><i class="fas fa-sync"></i></button>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>Guest Name</th>
-                        <th>Mobile Number</th>
+                        <th>Mobile</th>
                         <th>Matches Found</th>
-                        <th>Time & Date</th>
-                        <th>Link ID</th>
+                        <th>Search Time</th>
                     </tr>
                 </thead>
-                <tbody id="leadsTbody">
-                    <!-- Leads injected here -->
-                </tbody>
+                <tbody id="leadsTbody"></tbody>
             </table>
-            <div id="leadsLoader" style="text-align: center; padding: 40px; display:none;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--brand);"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- EVENT MODAL -->
-<div class="modal" id="eventModal">
-    <div class="modal-content">
-        <h3 style="margin-top:0">Create New Event</h3>
-        <div style="margin-bottom: 20px;">
-            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Event Name</label>
-            <input type="text" id="newEvtName" placeholder="e.g. Wedding Ceremony" style="width:100%; padding:12px; background:#000; border:1px solid var(--border); border-radius:10px; color:white;">
-        </div>
-        <div style="margin-bottom: 25px;">
-            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Event Date</label>
-            <input type="date" id="newEvtDate" style="width:100%; padding:12px; background:#000; border:1px solid var(--border); border-radius:10px; color:white;">
-        </div>
-        <div style="display:flex; gap: 10px; justify-content: flex-end;">
-            <button class="btn btn-secondary" onclick="hideEventModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="createNewEvent()">Save Event</button>
+            <div id="leadsLoader" style="text-align: center; padding: 40px; display:none;"><i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--brand);"></i></div>
         </div>
     </div>
 </div>
@@ -367,9 +291,9 @@ const collectionId = urlParams.get("id");
 const collectionNameFromUrl = urlParams.get("name");
 
 let allPhotos = [];
-let events = [];
 let faceGroups = [];
 let currentFaceFilter = null;
+let currentNamingFaceId = null;
 let selectedUploadFiles = [];
 
 // ====================================================================
@@ -381,10 +305,7 @@ function showToast(msg, type = 'success') {
     toast.style.background = type === 'success' ? 'var(--success)' : 'var(--danger)';
     toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> ${msg}`;
     document.getElementById('toast-container').appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
 }
 
 function formatBytes(bytes) {
@@ -393,29 +314,14 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function openLightbox(src) {
-    document.getElementById('lightbox-img').src = src;
-    document.getElementById('lightbox').style.display = 'flex';
-}
-
-// ====================================================================
-// INITIALIZATION
-// ====================================================================
 window.onload = async () => {
-    if (!collectionId || !idToken) {
-        showToast("Invalid Session. Redirecting...", "error");
-        setTimeout(() => window.location.href = "index.html", 2000);
-        return;
-    }
-    
-    document.getElementById('collectionName').innerText = collectionNameFromUrl || "Collection Manager";
-    
-    // Initial Load sequence
+    if (!collectionId || !idToken) return window.location.href = "login.html";
+    document.getElementById('collectionName').innerText = collectionNameFromUrl || "Collection Details";
     refreshAll();
 };
 
 // ====================================================================
-// PHOTO & GALLERY LOGIC
+// 1. LOAD PHOTOS
 // ====================================================================
 async function loadPhotos() {
     try {
@@ -426,65 +332,30 @@ async function loadPhotos() {
         });
         const data = await res.json();
         allPhotos = data.photos || [];
-        
-        // Update Stats
         document.getElementById('totalPhotos').innerText = allPhotos.length;
+        
         let size = allPhotos.reduce((acc, p) => acc + (p.file_size || 0), 0);
         document.getElementById('storageUsed').innerText = formatBytes(size);
 
         renderGallery(allPhotos);
-    } catch (e) {
-        showToast("Error loading photos", "error");
-        console.error("loadPhotos Error:", e);
-    }
+    } catch (e) { showToast("Error loading photos", "error"); }
 }
 
 function renderGallery(photos) {
     const container = document.getElementById('galleryContainer');
-    container.innerHTML = '';
-
-    if (photos.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-secondary);"><i class="fas fa-images" style="font-size:40px; margin-bottom:15px; display:block"></i>No photos found in this collection</div>`;
-        return;
-    }
-
-    // Sort and Group by Date
-    photos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    container.innerHTML = photos.length === 0 ? `<div style="text-align:center; width:100%; padding: 40px; color: var(--text-secondary);">No photos found</div>` : '';
     
-    const groups = photos.reduce((acc, photo) => {
-        const date = new Date(photo.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(photo);
-        return acc;
-    }, {});
-
-    Object.keys(groups).forEach(date => {
-        const header = document.createElement('div');
-        header.className = 'date-header';
-        header.innerText = date;
-        container.appendChild(header);
-
-        const grid = document.createElement('div');
-        grid.className = 'gallery-grid';
-        
-        groups[date].forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'photo-card';
-            card.onclick = () => openLightbox(p.url);
-            card.innerHTML = `
-                <img src="${p.thumbnail_url || p.url}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=Error'">
-                <div class="photo-overlay">
-                    <div style="font-size:11px; color: white;"><i class="fas fa-clock"></i> ${new Date(p.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-        container.appendChild(grid);
+    photos.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.onclick = () => { document.getElementById('lightbox-img').src = p.url; document.getElementById('lightbox').style.display = 'flex'; };
+        card.innerHTML = `<img src="${p.thumbnail_url || p.url}" loading="lazy">`;
+        container.appendChild(card);
     });
 }
 
 // ====================================================================
-// FACE DETECTION UI (FIXED WITH AUTO-DISCOVERY FALLBACK)
+// 2. UNIQUE FACES & NAMING (ZOOMED)
 // ====================================================================
 async function loadFaces() {
     try {
@@ -494,99 +365,134 @@ async function loadFaces() {
             body: JSON.stringify({ collection_id: collectionId })
         });
         const data = await res.json();
-        let apiPeople = data.people || [];
+        const apiPeople = data.people || [];
         
-        // --- FALLBACK LOGIC: Discovery from Photos ---
-        // If API returns nothing, manually scan allPhotos to build the face bar
-        if (apiPeople.length === 0 && allPhotos.length > 0) {
-            console.log("No people from API, starting local discovery...");
-            const faceMap = new Map();
-            allPhotos.forEach(photo => {
-                const ids = photo.face_ids || (photo.faces ? photo.faces.map(f => f.FaceId) : []);
-                ids.forEach(fid => {
-                    if (fid && !faceMap.has(fid)) {
-                        faceMap.set(fid, {
-                            FaceId: fid,
-                            FaceName: "Unknown",
-                            photo_url: photo.thumbnail_url || photo.url
-                        });
-                    }
-                });
-            });
-            faceGroups = Array.from(faceMap.values());
-        } else {
-            faceGroups = apiPeople;
-        }
-        
-        renderFaceBar();
-    } catch (e) {
-        console.warn("Faces failed to load via API, trying local discovery...", e);
-        // Direct local discovery if API fails
         const faceMap = new Map();
+        
+        // Step 1: Add from API (Existing Names)
+        apiPeople.forEach(p => {
+            if (p.FaceId && !faceMap.has(p.FaceId)) {
+                faceMap.set(p.FaceId, {
+                    FaceId: p.FaceId,
+                    FaceName: p.FaceName && p.FaceName !== "Unknown" ? p.FaceName : null,
+                    photo_url: p.photo_url || null
+                });
+            }
+        });
+
+        // Step 2: Fallback from Photo IDs (New unique discoveries)
         allPhotos.forEach(photo => {
             const ids = photo.face_ids || (photo.faces ? photo.faces.map(f => f.FaceId) : []);
             ids.forEach(fid => {
                 if (fid && !faceMap.has(fid)) {
-                    faceMap.set(fid, {
-                        FaceId: fid,
-                        FaceName: "Unknown",
-                        photo_url: photo.thumbnail_url || photo.url
-                    });
+                    faceMap.set(fid, { FaceId: fid, FaceName: null, photo_url: photo.thumbnail_url || photo.url });
                 }
             });
         });
+
         faceGroups = Array.from(faceMap.values());
         renderFaceBar();
-    }
+    } catch (e) { console.error("Face Load Error:", e); }
 }
 
 function renderFaceBar() {
     const bar = document.getElementById('faceIconsBar');
-    bar.innerHTML = '';
-
-    if (faceGroups.length === 0) {
-        bar.innerHTML = `<p style="font-size:12px; color:var(--text-secondary); padding: 10px;">Scanning for faces in photos... please wait or upload photos.</p>`;
-        return;
-    }
+    bar.innerHTML = faceGroups.length === 0 ? `<p style="font-size:12px; color:var(--text-secondary); padding: 10px;">Finding people...</p>` : '';
 
     faceGroups.forEach(face => {
         const item = document.createElement('div');
         item.className = 'face-item';
-        item.onclick = () => filterPhotosByFace(face.FaceId);
+        item.onclick = (e) => { if(!e.target.closest('.name-badge')) filterPhotosByFace(face.FaceId); };
 
-        const imgSrc = face.photo_url || face.thumbnail || 'https://via.placeholder.com/70x70?text=Face';
+        const imgSrc = face.photo_url || 'https://via.placeholder.com/80x80?text=?';
+        const isNamed = face.FaceName && face.FaceName !== "Unknown";
         
         item.innerHTML = `
             <div class="face-img-wrap ${currentFaceFilter === face.FaceId ? 'selected' : ''}">
-                <img src="${imgSrc}" loading="lazy" onerror="this.src='https://via.placeholder.com/70x70?text=?'">
+                <img src="${imgSrc}" loading="lazy">
             </div>
-            <div class="face-name">${face.FaceName || 'Unknown'}</div>
+            <div class="face-name">${isNamed ? face.FaceName : 'Unnamed'}</div>
+            <div class="name-badge" onclick="openNamingModal('${face.FaceId}', '${imgSrc}')">
+                <i class="fas ${isNamed ? 'fa-user-check' : 'fa-pen'}"></i>
+            </div>
         `;
         bar.appendChild(item);
     });
 }
 
+function openNamingModal(fid, img) {
+    currentNamingFaceId = fid;
+    document.getElementById('naming-preview-img').src = img;
+    document.getElementById('namingModal').style.display = 'flex';
+    document.getElementById('faceNameInput').value = faceGroups.find(f => f.FaceId === fid)?.FaceName || "";
+}
+
+function closeNamingModal() { document.getElementById('namingModal').style.display = 'none'; }
+
+async function savePersonName() {
+    const name = document.getElementById('faceNameInput').value.trim();
+    if (!name) return showToast("Enter name", "error");
+
+    try {
+        const res = await fetch(`${API_BASE}/save-face-name`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name: name })
+        });
+        if (res.ok) {
+            showToast("Name Saved!");
+            closeNamingModal();
+            loadFaces();
+        }
+    } catch (e) { showToast("Save failed", "error"); }
+}
+
 function filterPhotosByFace(fid) {
-    if (currentFaceFilter === fid) {
-        clearFaceFilter();
-        return;
-    }
-    currentFaceFilter = fid;
-    document.getElementById('faceFilters').style.display = 'block';
-    const filtered = allPhotos.filter(p => (p.face_ids && p.face_ids.includes(fid)) || (p.faces && p.faces.some(f => f.FaceId === fid)));
+    currentFaceFilter = (currentFaceFilter === fid) ? null : fid;
+    document.getElementById('faceFilters').style.display = currentFaceFilter ? 'block' : 'none';
+    const filtered = currentFaceFilter ? allPhotos.filter(p => (p.face_ids && p.face_ids.includes(fid)) || (p.faces && p.faces.some(f => f.FaceId === fid))) : allPhotos;
     renderGallery(filtered);
     renderFaceBar();
 }
 
-function clearFaceFilter() {
-    currentFaceFilter = null;
-    document.getElementById('faceFilters').style.display = 'none';
-    renderGallery(allPhotos);
-    renderFaceBar();
+function clearFaceFilter() { currentFaceFilter = null; document.getElementById('faceFilters').style.display = 'none'; renderGallery(allPhotos); renderFaceBar(); }
+
+// ====================================================================
+// 3. GUEST LEADS (FIXED)
+// ====================================================================
+async function loadLeads() {
+    const tbody = document.getElementById('leadsTbody');
+    const loader = document.getElementById('leadsLoader');
+    tbody.innerHTML = ''; loader.style.display = 'block';
+
+    try {
+        const res = await fetch(`${API_BASE}/save-details?collectionId=${collectionId}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
+        const data = await res.json();
+        const leads = data.leads || data.history || (Array.isArray(data) ? data : []);
+        loader.style.display = 'none';
+        
+        if (leads.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px; color: var(--text-secondary);">No leads found</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = leads.map(l => `
+            <tr>
+                <td style="font-weight:600">${l.name || 'Anonymous'}</td>
+                <td><i class="fas fa-phone-alt" style="color:var(--success); font-size:12px"></i> ${l.mobile || l.phone || 'N/A'}</td>
+                <td><b style="color:var(--brand)">${l.match_count || 0}</b></td>
+                <td style="color:var(--text-secondary); font-size:12px">${new Date(l.created_at || l.timestamp).toLocaleString()}</td>
+            </tr>
+        `).join('');
+        document.getElementById('totalLeads').innerText = leads.length;
+    } catch (e) { loader.style.display = 'none'; showToast("Leads load error", "error"); }
 }
 
 // ====================================================================
-// EVENT MANAGEMENT (FIXED DELETE/EDIT)
+// 4. EVENTS MANAGEMENT
 // ====================================================================
 async function loadEvents() {
     try {
@@ -596,70 +502,41 @@ async function loadEvents() {
             body: JSON.stringify({ collection_id: collectionId })
         });
         const data = await res.json();
-        events = data.events || [];
-        
-        // Populate Event Table
+        const eventsList = data.events || [];
         const tbody = document.getElementById('eventsTbody');
-        tbody.innerHTML = events.map(e => `
-            <tr id="event-row-${e.event_id}">
-                <td style="font-weight:600">${e.name}</td>
-                <td><i class="fas fa-calendar-day" style="color:var(--brand); margin-right:8px"></i> ${e.event_date || 'N/A'}</td>
+        tbody.innerHTML = eventsList.map(e => `
+            <tr>
+                <td><b>${e.name}</b></td>
+                <td>${e.event_date || 'N/A'}</td>
                 <td><span class="stat-badge">${e.photo_count || 0}</span></td>
-                <td>
-                    <button class="btn btn-secondary btn-sm" onclick="showToast('Feature Coming Soon')"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.event_id}')"><i class="fas fa-trash"></i></button>
-                </td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.event_id}')"><i class="fas fa-trash"></i></button></td>
             </tr>
         `).join('');
 
-        // Populate Upload Dropdown
         const select = document.getElementById('uploadEventSelect');
-        select.innerHTML = events.map(e => `<option value="${e.event_id}">${e.name}</option>`).join('');
-
-        // Populate Link Generator List
-        const linkList = document.getElementById('linkEventList');
-        linkList.innerHTML = events.map(e => `
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <input type="checkbox" class="link-evt-check" value="${e.event_id}" checked>
-                <span style="font-size:13px">${e.name}</span>
-            </div>
-        `).join('');
-
-    } catch (e) {
-        showToast("Error loading events", "error");
-    }
+        select.innerHTML = eventsList.map(e => `<option value="${e.event_id}">${e.name}</option>`).join('');
+    } catch (e) { console.error("Events error", e); }
 }
 
 async function deleteEvent(eventId) {
-    if(!confirm("Are you sure you want to delete this event and all its photos? This action cannot be undone.")) return;
-
+    if(!confirm("Delete this event and all its photos?")) return;
     try {
         const res = await fetch(`${API_BASE}/delete-event`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId, event_id: eventId })
         });
-
-        if (res.ok) {
-            showToast("Event deleted successfully");
-            refreshAll();
-        } else {
-            const err = await res.json();
-            showToast(err.message || "Delete failed", "error");
-        }
-    } catch (e) {
-        showToast("Failed to delete event", "error");
-    }
+        if(res.ok) { showToast("Event Deleted"); refreshAll(); }
+    } catch (e) { showToast("Delete failed", "error"); }
 }
 
-function showEventModal() { document.getElementById('eventModal').style.display = 'flex'; }
-function hideEventModal() { document.getElementById('eventModal').style.display = 'none'; }
+function showEventModal() { document.getElementById('eventModal').style.display='flex'; }
+function hideEventModal() { document.getElementById('eventModal').style.display='none'; }
 
 async function createNewEvent() {
     const name = document.getElementById('newEvtName').value.trim();
     const date = document.getElementById('newEvtDate').value;
-    
-    if (!name || !date) return showToast("Please fill all fields", "error");
+    if(!name || !date) return showToast("Fill all fields", "error");
 
     try {
         const res = await fetch(`${API_BASE}/upsert-event`, {
@@ -667,229 +544,92 @@ async function createNewEvent() {
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId, name: name, event_date: date })
         });
-        if (res.ok) {
-            showToast("Event created successfully");
-            hideEventModal();
-            loadEvents();
-        }
-    } catch (e) {
-        showToast("Failed to create event", "error");
-    }
+        if(res.ok) { showToast("Event Created"); hideEventModal(); loadEvents(); }
+    } catch (e) { showToast("Error", "error"); }
 }
 
 // ====================================================================
-// BATCH UPLOAD SYSTEM
+// 5. BATCH UPLOAD
 // ====================================================================
 function handleFileSelection(files) {
     selectedUploadFiles = Array.from(files);
     if (selectedUploadFiles.length === 0) return;
-
     document.getElementById('uploadPreview').style.display = 'block';
-    const list = document.getElementById('fileList');
-    list.innerHTML = selectedUploadFiles.map(f => `
-        <div style="font-size:12px; padding: 5px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between">
-            <span>${f.name}</span>
-            <span style="color:var(--text-secondary)">${formatBytes(f.size)}</span>
-        </div>
-    `).join('');
-    
-    document.getElementById('uploadStatus').innerText = `${selectedUploadFiles.length} files ready to process.`;
+    document.getElementById('fileList').innerHTML = selectedUploadFiles.map(f => `<div style="font-size:11px; padding:3px; border-bottom:1px solid var(--border)">${f.name} (${formatBytes(f.size)})</div>`).join('');
+    document.getElementById('uploadStatus').innerText = `${selectedUploadFiles.length} photos ready.`;
 }
 
 async function startBatchUpload() {
     const eventId = document.getElementById('uploadEventSelect').value;
-    if (!eventId) return showToast("Select an event destination", "error");
+    if (!eventId) return showToast("Select event", "error");
 
     const btn = document.getElementById('startUploadBtn');
     btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
-    
     document.getElementById('pbWrap').style.display = 'block';
     const pb = document.getElementById('pb');
     const status = document.getElementById('uploadStatus');
 
     try {
-        const filesPayload = selectedUploadFiles.map(f => ({ name: f.name, type: f.type || "image/jpeg" }));
+        const filesPayload = selectedUploadFiles.map(f => ({ name: f.name, type: "image/jpeg" }));
         const res = await fetch(`${API_BASE}/generate-upload-urls`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: filesPayload })
         });
-        
         const data = await res.json();
         const urls = data.urls;
-
-        if(!urls) throw new Error("Could not get upload URLs");
 
         let successCount = 0;
         for (let i = 0; i < selectedUploadFiles.length; i++) {
             const file = selectedUploadFiles[i];
-            const uploadInfo = urls[i];
-            
-            status.innerText = `Uploading: ${file.name} (${i + 1}/${selectedUploadFiles.length})`;
+            status.innerText = `Uploading: ${file.name}...`;
             
             let blob = file;
-            if (file.name.toLowerCase().endsWith('.heic') || file.type.includes('heic')) {
-                status.innerText = `Converting HEIC: ${file.name}...`;
-                try { blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 }); } catch(e) { console.error("HEIC Error", e); }
+            if (file.name.toLowerCase().endsWith('.heic')) {
+                blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
             }
 
-            const putRes = await fetch(uploadInfo.uploadURL, {
-                method: 'PUT',
-                body: blob,
-                headers: { 'Content-Type': 'image/jpeg' }
-            });
-
+            const putRes = await fetch(urls[i].uploadURL, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
             if (putRes.ok) {
                 successCount++;
-                const progress = (successCount / selectedUploadFiles.length) * 100;
-                pb.style.width = `${progress}%`;
+                pb.style.width = `${(successCount / selectedUploadFiles.length) * 100}%`;
             }
         }
-
-        showToast(`Successfully uploaded ${successCount} photos!`);
-        setTimeout(() => refreshAll(), 1500);
+        showToast("Upload Successful!");
+        setTimeout(() => refreshAll(), 1000);
         resetUpload();
-
-    } catch (e) {
-        showToast("Upload process failed", "error");
-        console.error("Upload Error:", e);
-        btn.disabled = false;
-        btn.innerHTML = `Retry Upload`;
-    }
+    } catch (e) { showToast("Upload failed", "error"); btn.disabled = false; }
 }
 
-function resetUpload() {
-    selectedUploadFiles = [];
-    document.getElementById('uploadPreview').style.display = 'none';
-    document.getElementById('pb').style.width = '0%';
-    document.getElementById('startUploadBtn').disabled = false;
-    document.getElementById('startUploadBtn').innerHTML = `Start Upload Process`;
-}
+function resetUpload() { selectedUploadFiles = []; document.getElementById('uploadPreview').style.display = 'none'; document.getElementById('startUploadBtn').disabled = false; }
 
 // ====================================================================
-// ANALYTICS & LEADS (FIXED FILTER)
-// ====================================================================
-async function loadLeads() {
-    const tbody = document.getElementById('leadsTbody');
-    const loader = document.getElementById('leadsLoader');
-    
-    tbody.innerHTML = '';
-    loader.style.display = 'block';
-
-    try {
-        const res = await fetch(`${API_BASE}/save-details?collectionId=${collectionId}`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-        
-        const data = await res.json();
-        const leads = data.leads || data.history || (Array.isArray(data) ? data : []);
-        
-        loader.style.display = 'none';
-        
-        if (leads.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-secondary);">No guests have searched this collection yet</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = leads.map(l => `
-            <tr>
-                <td style="font-weight:600">${l.name || 'Anonymous'}</td>
-                <td><i class="fas fa-phone-alt" style="color:var(--success); font-size:12px; margin-right:8px"></i> ${l.mobile || l.phone || 'N/A'}</td>
-                <td><b style="color:var(--brand)">${l.match_count || 0}</b> Photos</td>
-                <td style="color:var(--text-secondary)">${new Date(l.created_at || l.timestamp).toLocaleString()}</td>
-                <td style="font-family:monospace; font-size:11px">${(l.link_id || 'N/A').substring(0,8)}...</td>
-            </tr>
-        `).join('');
-
-        document.getElementById('totalLeads').innerText = leads.length;
-
-    } catch (e) {
-        loader.style.display = 'none';
-        showToast("Failed to fetch guest leads", "error");
-        console.error("loadLeads Error:", e);
-    }
-}
-
-// ====================================================================
-// LINK GENERATOR
-// ====================================================================
-async function generateSearchLink() {
-    const checks = document.querySelectorAll('.link-evt-check:checked');
-    const eventIds = Array.from(checks).map(c => c.value);
-    const expiry = document.getElementById('expiryHours').value;
-    const pass = document.getElementById('linkPass').value;
-
-    if (eventIds.length === 0) return showToast("Select at least one event", "error");
-
-    try {
-        const res = await fetch(`${API_BASE}/generate-search-link`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                collection_id: collectionId,
-                event_ids: eventIds,
-                expiry_hours: parseInt(expiry),
-                password: pass || null
-            })
-        });
-        const data = await res.json();
-        const url = data.searchUrl || data.link;
-
-        if (url) {
-            document.getElementById('linkResult').style.display = 'block';
-            document.getElementById('generatedUrl').innerText = url;
-            showToast("Link Generated!");
-        }
-    } catch (e) {
-        showToast("Failed to generate link", "error");
-    }
-}
-
-function copyGeneratedLink() {
-    const url = document.getElementById('generatedUrl').innerText;
-    navigator.clipboard.writeText(url).then(() => showToast("Copied to clipboard!"));
-}
-
-// ====================================================================
-// ZIP DOWNLOAD
+// 6. ZIP & TABS
 // ====================================================================
 async function downloadAllZip() {
-    if (allPhotos.length === 0) return showToast("No photos to download", "error");
-    
-    showToast("Preparing ZIP... this may take a moment", "success");
+    if (allPhotos.length === 0) return showToast("No photos", "error");
+    showToast("Zipping... Please wait");
     const zip = new JSZip();
-    const folder = zip.folder(collectionNameFromUrl || "Collection");
-
-    try {
-        const downloadLimit = Math.min(allPhotos.length, 50); // Limit to 50 for stability
-        for (let i = 0; i < downloadLimit; i++) {
-            const p = allPhotos[i];
-            const response = await fetch(p.url);
-            const blob = await response.blob();
-            const fileName = p.filename || `photo_${i+1}.jpg`;
-            folder.file(fileName, blob);
-        }
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `${collectionNameFromUrl || 'Photos'}.zip`);
-        showToast("Download Started!");
-    } catch (e) {
-        showToast("Error creating ZIP archive", "error");
+    const folder = zip.folder("Photos");
+    const limit = Math.min(allPhotos.length, 30); // Stability limit
+    for (let i = 0; i < limit; i++) {
+        const r = await fetch(allPhotos[i].url);
+        const b = await r.blob();
+        folder.file(`photo_${i+1}.jpg`, b);
     }
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, "Collection_Photos.zip");
 }
 
-// ====================================================================
-// TABS & REFRESH
-// ====================================================================
 document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
         t.classList.add('active');
-        document.getElementById(t.dataset.tab).style.display = 'block';
-        if (t.dataset.tab === 'analyticsTab') loadLeads();
-        if (t.dataset.tab === 'eventsTab') loadEvents();
+        const target = t.dataset.tab;
+        document.getElementById(target).style.display = 'block';
+        if (target === 'analyticsTab') loadLeads();
+        if (target === 'eventsTab') loadEvents();
     });
 });
 
@@ -897,11 +637,8 @@ async function refreshAll() {
     await loadEvents();
     await loadPhotos();
     await loadFaces();
-    showToast("Data Refreshed");
+    showToast("Data Synced");
 }
-
-function refreshData() { refreshAll(); }
 </script>
-
 </body>
 </html>
