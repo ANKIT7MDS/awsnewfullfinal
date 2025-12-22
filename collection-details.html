@@ -25,6 +25,7 @@
             --radius-lg: 16px;
             --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
             --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass: rgba(20, 20, 30, 0.7);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,74 +39,84 @@
 
         .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
 
-        /* --- Header --- */
+        /* --- Header & Top Bar --- */
         .top-bar {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 20px 24px; background: rgba(20, 20, 30, 0.7); backdrop-filter: blur(10px);
+            padding: 20px 24px; background: var(--glass); backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg);
             margin-bottom: 32px;
         }
 
-        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-        .back-link:hover { color: var(--brand); }
+        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.2s; }
+        .back-link:hover { color: var(--brand); transform: translateX(-3px); }
 
         .stats-line { display: flex; gap: 20px; font-size: 14px; color: var(--text-secondary); margin-top: 10px; }
         .stat-item { background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; display: flex; align-items: center; gap: 8px; }
 
         /* --- Tabs --- */
         .tabs { display: flex; gap: 8px; background: var(--bg-secondary); padding: 6px; border-radius: var(--radius-md); margin-bottom: 24px; overflow-x: auto; }
-        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 8px; color: var(--text-secondary); font-weight: 600; white-space: nowrap; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .tab.active { background: var(--brand-gradient); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 8px; color: var(--text-secondary); font-weight: 600; white-space: nowrap; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .tab.active { background: var(--brand-gradient); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
 
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- Gallery --- */
+        /* --- Gallery Grid --- */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
         .photo-card { aspect-ratio: 1; border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: #000; }
-        .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s ease; }
-        .photo-card:hover img { transform: scale(1.05); }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.4s ease; opacity: 0; }
+        .photo-card img.loaded { opacity: 1; }
+        .photo-card:hover img { transform: scale(1.08); }
 
-        /* --- Zoomed Face Icons --- */
+        /* --- Zoomed Premium Face Icons --- */
         #faceIconsBar { display: flex; gap: 20px; overflow-x: auto; padding: 10px 5px 25px 5px; scrollbar-width: none; }
-        .face-item { min-width: 90px; text-align: center; cursor: pointer; }
+        #faceIconsBar::-webkit-scrollbar { display: none; }
+        .face-item { min-width: 95px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .face-item:hover { transform: translateY(-5px); }
         .face-wrapper { 
-            width: 80px; height: 80px; border-radius: 50%; 
-            overflow: hidden; border: 3px solid rgba(255,255,255,0.1); 
-            transition: 0.3s; margin: 0 auto; background: #222;
+            width: 85px; height: 85px; border-radius: 50%; 
+            overflow: hidden; border: 3.5px solid rgba(255,255,255,0.1); 
+            transition: 0.3s; margin: 0 auto; background: #1a1a25;
             background-size: cover; background-repeat: no-repeat;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
         }
-        .face-wrapper.selected { border-color: var(--brand); box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); transform: scale(1.1); }
-        .face-name { font-size: 11px; color: var(--text-secondary); margin-top: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .face-wrapper.selected { border-color: var(--brand); box-shadow: 0 0 25px rgba(99, 102, 241, 0.6); transform: scale(1.1); }
+        .face-name { font-size: 11px; color: var(--text-secondary); margin-top: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* --- Buttons --- */
         .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; font-size: 14px; text-decoration: none; }
         .btn-primary { background: var(--brand-gradient); color: white; }
         .btn-secondary { background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.1); }
         .btn-danger { background: var(--danger); color: white; }
+        .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
 
-        /* --- Lead Card --- */
-        .lead-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .lead-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 18px; display: flex; gap: 15px; align-items: center; border: 1px solid rgba(255,255,255,0.06); transition: 0.2s; }
-        .lead-card:hover { border-color: var(--brand); background: rgba(99,102,241,0.04); }
-        .lead-img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid var(--brand); background: #222; }
+        /* --- Leads Card --- */
+        .lead-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 22px; }
+        .lead-card { background: rgba(255,255,255,0.03); padding: 22px; border-radius: 20px; display: flex; gap: 20px; align-items: center; border: 1px solid rgba(255,255,255,0.07); transition: 0.3s; }
+        .lead-card:hover { border-color: var(--brand); background: rgba(99,102,241,0.06); transform: scale(1.02); }
+        .lead-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--brand); background: #222; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 
-        /* --- Modals & Progress --- */
+        /* --- Form Elements --- */
         .card { background: #1a1a25; border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
-        .modal.active { display: flex; }
-        .modal-content { background: #1a1a25; padding: 30px; border-radius: 20px; max-width: 500px; width: 100%; position: relative; border: 1px solid rgba(255,255,255,0.1); }
-        .progress-box { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 20px; overflow: hidden; display: none; }
-        .progress-fill { height: 100%; background: var(--brand-gradient); width: 0%; transition: 0.3s; }
-
-        input, select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; width: 100%; margin-top: 8px; }
+        input, select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 14px; border-radius: 12px; width: 100%; margin-top: 8px; font-size: 14px; }
         
-        #toast { position: fixed; top: 30px; right: 30px; padding: 15px 30px; border-radius: 10px; color: white; z-index: 9999; display: none; animation: slideIn 0.4s ease; font-weight: 600; }
+        /* --- Event Item UI --- */
+        .event-item { padding: 20px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        .event-details strong { display: block; font-size: 17px; margin-bottom: 4px; }
+        .event-details span { font-size: 12px; color: var(--text-muted); }
+
+        /* --- Progress Bar --- */
+        .progress-box { height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 25px; overflow: hidden; display: none; }
+        .progress-fill { height: 100%; background: var(--brand-gradient); width: 0%; transition: 0.4s cubic-bezier(0.1, 0.7, 1.0, 0.1); }
+
+        #toast { position: fixed; top: 30px; right: 30px; padding: 15px 30px; border-radius: 12px; color: white; z-index: 9999; display: none; animation: slideIn 0.4s ease; font-weight: 600; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1/-1; }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); grid-column: 1/-1; }
+        .empty-state i { font-size: 50px; margin-bottom: 20px; display: block; opacity: 0.3; }
+        .text-gradient { background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
     </style>
 </head>
 <body>
@@ -117,14 +128,15 @@
     <div class="top-bar">
         <div>
             <a href="dashboard.html" class="back-link"><i class="fas fa-chevron-left"></i> Dashboard</a>
-            <h1 id="collectionName" class="text-gradient">Loading...</h1>
+            <h1 id="collectionName" class="text-gradient">Loading Collection...</h1>
             <div class="stats-line">
                 <span class="stat-item"><i class="fas fa-camera"></i> <span id="photoCount">0</span> Photos</span>
-                <span class="stat-item"><i class="fas fa-users"></i> <span id="leadCount">0</span> Guests</span>
+                <span class="stat-item"><i class="fas fa-user-friends"></i> <span id="leadCount">0</span> Guests</span>
             </div>
         </div>
         <div style="display: flex; gap: 12px;">
             <button class="btn btn-secondary" onclick="refreshData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <!-- Staff Upload Redirect Fix -->
             <a id="staffUploadBtn" target="_blank" class="btn btn-primary"><i class="fas fa-bolt"></i> Staff Upload</a>
         </div>
     </div>
@@ -134,13 +146,13 @@
         <div class="tab active" onclick="switchTab('gallery')"><i class="fas fa-images"></i> Photos</div>
         <div class="tab" onclick="switchTab('events')"><i class="fas fa-calendar-alt"></i> Events</div>
         <div class="tab" onclick="switchTab('upload')"><i class="fas fa-cloud-upload-alt"></i> Upload</div>
-        <div class="tab" onclick="switchTab('guests')"><i class="fas fa-user-friends"></i> Leads</div>
+        <div class="tab" onclick="switchTab('guests')"><i class="fas fa-user-friends"></i> Guest Leads</div>
     </div>
 
     <!-- GALLERY -->
     <div id="galleryTab" class="tab-content active">
         <div class="card" id="faceBarContainer" style="display:none;">
-            <h4 style="margin-bottom: 15px; font-size: 13px; color: var(--text-secondary); text-transform: uppercase;">Detected People (Click to filter)</h4>
+            <h4 style="margin-bottom: 20px; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;">Detected People (Click to see related photos)</h4>
             <div id="faceIconsBar"></div>
         </div>
         <div class="gallery-grid" id="galleryGrid"></div>
@@ -150,7 +162,7 @@
     <div id="eventsTab" class="tab-content">
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h3>Manage Events</h3>
+                <h3>Manage Event Folders</h3>
                 <button class="btn btn-primary" onclick="showEventForm()"><i class="fas fa-plus"></i> New Event</button>
             </div>
             <div id="eventList"></div>
@@ -160,25 +172,26 @@
     <!-- UPLOAD -->
     <div id="uploadTab" class="tab-content">
         <div class="card">
-            <h3>Upload Photos</h3>
-            <p style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">Auto-conversion to JPEG enabled for AI indexing.</p>
+            <h3>Direct Photographer Upload</h3>
+            <p style="margin-bottom: 25px; font-size: 14px; color: var(--text-muted);">Files are automatically optimized and converted for AI indexing.</p>
             
-            <div style="margin-bottom: 20px;">
-                <label style="font-size: 13px; color: var(--text-secondary);">Target Event:</label>
+            <div style="margin-bottom: 25px;">
+                <label style="font-size: 13px; color: var(--text-secondary);">Select Target Event:</label>
                 <select id="uploadEventSelect"><option value="">Loading events...</option></select>
             </div>
             
-            <div id="dropZone" onclick="document.getElementById('fileInput').click()" style="border: 2px dashed rgba(255,255,255,0.1); padding: 50px; text-align: center; border-radius: 20px; cursor: pointer;">
-                <i class="fas fa-cloud-upload-alt" style="font-size: 45px; color: var(--brand); margin-bottom: 15px;"></i>
+            <div id="dropZone" onclick="document.getElementById('fileInput').click()" style="border: 2px dashed rgba(255,255,255,0.15); padding: 60px; text-align: center; border-radius: 24px; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.01);">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 55px; color: var(--brand); margin-bottom: 20px;"></i>
                 <h3>Drop photos or click to browse</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-top: 10px;">Auto-converts JPEG, PNG, HEIC (Max 20MB per file)</p>
                 <input type="file" id="fileInput" multiple hidden accept="image/*,.heic">
             </div>
 
-            <div id="selectedFilesInfo" style="margin-top: 20px; display: none; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+            <div id="selectedFilesInfo" style="margin-top: 25px; display: none; padding: 25px; background: rgba(255,255,255,0.04); border-radius: 18px; border: 1px solid rgba(255,255,255,0.08);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600;"><span id="fileCountDisplay">0</span> files selected</span>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-secondary btn-sm" onclick="clearSelectedFiles()">Clear</button>
+                    <span style="font-weight: 700; font-size: 16px;"><i class="fas fa-check-circle" style="color:var(--success);"></i> <span id="fileCountDisplay">0</span> Photos Ready</span>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" onclick="clearSelectedFiles()">Clear</button>
                         <button class="btn btn-primary" onclick="startBatchUpload()">Start Upload</button>
                     </div>
                 </div>
@@ -194,7 +207,8 @@
     <!-- GUESTS -->
     <div id="guestsTab" class="tab-content">
         <div class="card">
-            <h3>Guest Leads (Selfie Searches)</h3>
+            <h3>Guest Search Leads</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 30px;">Real-time history of guests who used selfie search in this collection.</p>
             <div class="lead-grid" id="leadsGrid"></div>
         </div>
     </div>
@@ -204,12 +218,12 @@
 <div class="modal" id="eventModal">
     <div class="modal-content">
         <div class="modal-close" onclick="closeModal('eventModal')" style="position: absolute; top: 15px; right: 20px; cursor: pointer;"><i class="fas fa-times"></i></div>
-        <h3>Create Event</h3>
-        <input type="text" id="mEventName" placeholder="Event Name">
+        <h3>Create New Event Folder</h3>
+        <input type="text" id="mEventName" placeholder="e.g. Wedding Reception">
         <input type="date" id="mEventDate">
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px;">
             <button class="btn btn-secondary" onclick="closeModal('eventModal')">Cancel</button>
-            <button class="btn btn-primary" id="saveEventBtn" onclick="saveEvent()">Create</button>
+            <button class="btn btn-primary" id="saveEventBtn" onclick="saveEvent()">Create Event</button>
         </div>
     </div>
 </div>
@@ -217,17 +231,18 @@
 <div class="modal" id="linkModal">
     <div class="modal-content">
         <div class="modal-close" onclick="closeModal('linkModal')" style="position: absolute; top: 15px; right: 20px; cursor: pointer;"><i class="fas fa-times"></i></div>
-        <h3>Share Link</h3>
-        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin: 20px 0; word-break: break-all; font-family: monospace; color: var(--brand);" id="generatedLinkText"></div>
-        <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="copyLink()">Copy Link</button>
+        <h3>Collection Search Link Ready</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Share this link with guests to let them find their photos instantly.</p>
+        <div style="background: rgba(255,255,255,0.06); padding: 20px; border-radius: 14px; margin-bottom: 25px; word-break: break-all; font-family: monospace; color: var(--brand); border: 1px dashed var(--brand); line-height: 1.6;" id="generatedLinkText"></div>
+        <button class="btn btn-primary" style="width: 100%; justify-content: center; height: 50px;" onclick="copyLink()">Copy Link to Clipboard</button>
     </div>
 </div>
 
 <script>
-    // --- CONFIG ---
+    // --- CONFIG & STATE ---
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const collectionId = new URLSearchParams(window.location.search).get('id');
-    const collectionName = new URLSearchParams(window.location.search).get('name') || "Collection Manager";
+    const collectionNameParam = new URLSearchParams(window.location.search).get('name') || "Collection Manager";
     const token = localStorage.getItem('idToken');
 
     let state = {
@@ -245,24 +260,24 @@
             return;
         }
         
-        // --- Fix Staff Upload Button ---
-        const staffUrl = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionName)}`;
+        // --- Staff Upload Link Assignment ---
+        const staffUrl = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionNameParam)}`;
         document.getElementById('staffUploadBtn').setAttribute('href', staffUrl);
-        document.getElementById('collectionName').innerText = collectionName;
+        document.getElementById('collectionName').innerText = collectionNameParam;
 
         refreshData();
     };
 
     async function refreshData() {
-        showToast("Refreshing...", "info");
+        showToast("Refreshing Collection Data...", "info");
         await fetchEvents();
-        await fetchPhotos(); 
-        await fetchFaces(); // Dependent on photos for fallback discovery
-        await fetchLeads(); // Robust lead fetch logic
+        await fetchPhotos(); // Fetch photos first for face fallback logic
+        await fetchFaces();
+        await fetchLeads(); // Fetch leads with collection filter
         renderAll();
     }
 
-    // --- API LOGIC ---
+    // --- API HANDLERS ---
     async function apiCall(endpoint, method = 'POST', body = null) {
         try {
             const options = {
@@ -275,7 +290,7 @@
             return await res.json();
         } catch (e) {
             console.error("API Error:", e);
-            showToast("Server connection error", "danger");
+            showToast("Server Error: Check connection", "danger");
             return null;
         }
     }
@@ -286,7 +301,7 @@
     }
 
     async function fetchPhotos() {
-        const data = await apiCall('/get-photos', 'POST', { collection_id: collectionId, limit: 150 });
+        const data = await apiCall('/get-photos', 'POST', { collection_id: collectionId, limit: 250 });
         if(data) state.photos = data.photos || [];
     }
 
@@ -295,22 +310,20 @@
         if(data && data.people && data.people.length > 0) {
             state.faces = data.people;
         } else {
-            // FALLBACK DISCOVERY: Discover faces from indexed photo metadata
+            // DISCOVERY FALLBACK: If list_people is empty, get faces from photo metadata
             const discovered = new Map();
             state.photos.forEach(p => {
-                if(p.faces) {
-                    p.faces.forEach(f => {
-                        const fid = f.FaceId || f.face_id;
-                        if(fid && !discovered.has(fid)) {
-                            discovered.set(fid, {
-                                FaceId: fid, 
-                                FaceName: f.FaceName || "Unknown",
-                                photo_url: p.thumbnail_url || p.url,
-                                BoundingBox: f.BoundingBox || f.boundingBox
-                            });
-                        }
-                    });
-                }
+                const facesArr = p.faces || [];
+                facesArr.forEach(f => {
+                    const fid = f.FaceId || f.face_id;
+                    if(fid && !discovered.has(fid)) {
+                        discovered.set(fid, {
+                            FaceId: fid, FaceName: f.FaceName || "Unknown",
+                            photo_url: p.thumbnail_url || p.url,
+                            BoundingBox: f.BoundingBox || f.boundingBox
+                        });
+                    }
+                });
             });
             state.faces = Array.from(discovered.values());
         }
@@ -318,32 +331,37 @@
 
     async function fetchLeads() {
         try {
-            // FIX: Using POST to /save-details for leads, then filtering by collectionId
-            const res = await apiCall('/save-details', 'POST', { collection_id: collectionId });
-            // Handle different potential response structures (leads key, history key, or direct array)
-            let rawData = res.leads || res.history || (Array.isArray(res) ? res : []);
-            state.leads = rawData.filter(l => (l.collection_id === collectionId || l.CollectionId === collectionId));
-            console.log("Found leads:", state.leads.length);
+            // GUEST LEADS FETCH FIX:
+            // Fetching scoped leads using collectionId param as per audit logic
+            const res = await fetch(`${API_BASE}/save-details?collectionId=${collectionId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            // Handling robust data keys
+            let rawLeads = data.leads || data.history || (Array.isArray(data) ? data : []);
+            
+            // Ensuring strict filtering by collectionId on frontend too
+            state.leads = rawLeads.filter(l => (l.collection_id === collectionId || l.CollectionId === collectionId));
+            console.log("Filtered Leads Loaded:", state.leads.length);
         } catch(e) {
-            console.error("Leads fail:", e);
+            console.warn("Leads fetch failed:", e);
             state.leads = [];
         }
     }
 
-    // --- PREMIUM FACE ZOOM LOGIC ---
+    // --- PREMIUM FACE ZOOM LOGIC (ZOOM ON FRONT) ---
     function getFaceStyle(bbox) {
         if(!bbox) return "background-position: center; background-size: cover;";
-        // Center of the face based on Rekognition BoundingBox coordinates (0.0 - 1.0)
+        // Coordinates from Rekognition are 0.0 to 1.0
         const centerX = (bbox.Left + bbox.Width / 2) * 100;
         const centerY = (bbox.Top + bbox.Height / 2) * 100;
         
-        // Zoom calculation: Chehre ko bada dikhane ke liye frame scale badhate hain
-        // Max(Width, Height) ka 85% area center karte hain
+        // Zoom Logic: Center the face and scale up by 85% area focus
         const zoom = 1 / Math.max(bbox.Width, bbox.Height) * 0.85; 
         return `background-position: ${centerX}% ${centerY}%; background-size: ${zoom * 100}%;`;
     }
 
-    // --- RENDERING ---
+    // --- RENDER FUNCTIONS ---
     function renderAll() {
         document.getElementById('photoCount').innerText = state.photos.length;
         document.getElementById('leadCount').innerText = state.leads.length;
@@ -394,13 +412,13 @@
         }
 
         if(displayList.length === 0) {
-            grid.innerHTML = `<div class="empty-state"><i class="fas fa-images"></i>No photos found.</div>`;
+            grid.innerHTML = `<div class="empty-state"><i class="fas fa-images"></i>No matching photos found.</div>`;
             return;
         }
 
         grid.innerHTML = displayList.map(p => `
             <div class="photo-card" onclick="window.open('${p.url}', '_blank')">
-                <img src="${p.thumbnail_url || p.url}" onerror="this.src='https://via.placeholder.com/200?text=Error'">
+                <img src="${p.thumbnail_url || p.url}" onload="this.classList.add('loaded')" onerror="this.src='https://via.placeholder.com/200?text=Error'">
             </div>
         `).join('');
     }
@@ -408,17 +426,17 @@
     function renderEvents() {
         const list = document.getElementById('eventList');
         if(state.events.length === 0) {
-            list.innerHTML = `<div class="empty-state">No events yet. Create one to organize photos.</div>`;
+            list.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i>No events created yet. Create one to organize photos.</div>`;
             return;
         }
         list.innerHTML = state.events.map(e => `
             <div class="event-item">
                 <div class="event-details">
-                    <strong>${e.name}</strong>
+                    <strong class="text-gradient">${e.name}</strong>
                     <span>${e.event_date} • ${e.photo_count || 0} Photos indexed</span>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary btn-sm" onclick="getShareLink('${e.event_id}')"><i class="fas fa-share-alt"></i> Share Link</button>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-secondary btn-sm" onclick="getShareLink('${e.event_id}')"><i class="fas fa-share-alt"></i> Get Link</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.event_id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
@@ -428,20 +446,23 @@
     function renderLeads() {
         const grid = document.getElementById('leadsGrid');
         if(state.leads.length === 0) {
-            grid.innerHTML = `<div class="empty-state">No leads found for this collection yet.</div>`;
+            grid.innerHTML = `<div class="empty-state"><i class="fas fa-users-slash"></i>No search leads found for this collection yet.</div>`;
             return;
         }
         grid.innerHTML = state.leads.map(l => {
-            const selfie = l.selfie_b64 ? `data:image/jpeg;base64,${l.selfie_b64}` : 'https://via.placeholder.com/70?text=Guest';
-            const date = new Date(l.created_at || l.timestamp).toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
+            const selfie = l.selfie_b64 ? `data:image/jpeg;base64,${l.selfie_b64}` : 'https://via.placeholder.com/80?text=Guest';
+            const name = l.name || 'Guest User';
+            const contact = l.mobile || l.phone || 'N/A';
+            const dateStr = l.timestamp || l.created_at;
+            const date = dateStr ? new Date(dateStr).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : "Unknown Date";
             return `
                 <div class="lead-card">
-                    <img src="${selfie}" class="lead-img" onerror="this.src='https://via.placeholder.com/70?text=Error'">
+                    <img src="${selfie}" class="lead-img" onerror="this.src='https://via.placeholder.com/80?text=Error'">
                     <div style="flex:1;">
-                        <div style="font-weight:700;">${l.name || 'Guest User'}</div>
-                        <div style="color:var(--brand); font-size:13px; margin: 4px 0;">${l.mobile || l.phone || 'N/A'}</div>
-                        <div style="font-size: 11px; color: var(--text-muted);">
-                            Found: ${l.match_count || 0} photos • ${date}
+                        <div style="font-weight:800; font-size: 17px; margin-bottom: 3px;">${name}</div>
+                        <div style="color:var(--brand); font-size:14px; font-weight: 600;">${contact}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                            <i class="fas fa-search"></i> Matches: ${l.match_count || 0} • Date: ${date}
                         </div>
                     </div>
                 </div>
@@ -449,7 +470,7 @@
         }).join('');
     }
 
-    // --- UPLOAD ---
+    // --- AUTO JPEG CONVERSION & UPLOAD ---
     async function convertToJPEG(file) {
         return new Promise(async (resolve) => {
             let workingFile = file;
@@ -457,7 +478,7 @@
                 try {
                     const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
                     workingFile = Array.isArray(blob) ? blob[0] : blob;
-                } catch (e) { console.error("HEIC Error", e); }
+                } catch (e) { console.error("HEIC Optimization failed", e); }
             }
             const img = new Image();
             img.onload = () => {
@@ -485,7 +506,7 @@
 
     async function startBatchUpload() {
         const eventId = document.getElementById('uploadEventSelect').value;
-        if(!eventId) return showToast("Select an event first!", "danger");
+        if(!eventId) return showToast("Select an event folder first!", "danger");
 
         const btn = document.querySelector('[onclick="startBatchUpload()"]');
         btn.disabled = true;
@@ -500,7 +521,7 @@
 
         let success = 0;
         for(let i = 0; i < state.selectedFiles.length; i++) {
-            statusText.innerText = `Processing Photo ${i+1}...`;
+            statusText.innerText = `Processing Photo ${i+1} of ${state.selectedFiles.length}...`;
             try {
                 const jpegBlob = await convertToJPEG(state.selectedFiles[i]);
                 const s3Res = await fetch(urlRes.urls[i].uploadURL, {
@@ -511,27 +532,27 @@
             progressBar.style.width = `${((i + 1) / state.selectedFiles.length) * 100}%`;
         }
 
-        showToast(`${success} Uploaded! Indexing started.`, "success");
-        statusText.innerHTML = "<b>✅ Complete.</b> Indexing photos now... Faces will appear soon.";
+        showToast(`${success} Uploaded Successfully!`, "success");
+        statusText.innerHTML = "<b>✅ Complete!</b> AI is indexing faces. They will appear in a few moments.";
         setTimeout(() => { refreshData(); btn.disabled = false; document.getElementById('uploadProgressBox').style.display = 'none'; clearSelectedFiles(); }, 5000);
     }
 
-    // --- ACTIONS ---
+    // --- SYSTEM ACTIONS ---
     function showEventForm() { document.getElementById('eventModal').classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
     async function saveEvent() {
         const name = document.getElementById('mEventName').value.trim();
         const date = document.getElementById('mEventDate').value;
-        if(!name || !date) return showToast("Name and Date required", "danger");
+        if(!name || !date) return showToast("Name and Date are required", "danger");
         const res = await apiCall('/upsert-event', 'POST', { collection_id: collectionId, name, event_date: date });
         if(res) { showToast("Event created!", "success"); closeModal('eventModal'); refreshData(); }
     }
 
     async function deleteEvent(eid) {
-        if(!confirm("Are you sure? Photos in this event will be deleted too.")) return;
+        if(!confirm("Are you sure? This will delete the event and all associated photos permanently.")) return;
         const res = await apiCall('/delete-event', 'POST', { collection_id: collectionId, event_id: eid });
-        if(res) { showToast("Event deleted", "success"); refreshData(); }
+        if(res) { showToast("Event deleted successfully!", "success"); refreshData(); }
     }
 
     async function getShareLink(eid = null) {
@@ -544,7 +565,7 @@
 
     function copyLink() {
         navigator.clipboard.writeText(document.getElementById('generatedLinkText').innerText);
-        showToast("Link copied!", "success");
+        showToast("Link copied to clipboard!", "success");
         closeModal('linkModal');
     }
 
@@ -562,7 +583,7 @@
         t.innerText = msg;
         t.style.background = type === "success" ? "var(--success)" : (type === "info" ? "var(--info)" : "var(--danger)");
         t.style.display = "block";
-        setTimeout(() => { t.style.display = "none"; }, 3500);
+        setTimeout(() => { t.style.display = "none"; }, 4000);
     }
 </script>
 </body>
