@@ -72,7 +72,7 @@
         .tab.active { background: var(--brand-gradient); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
 
         /* CARDS */
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow); margin-bottom: 24px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow); margin-bottom: 24px; position: relative; overflow: hidden; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .card-title { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
 
@@ -93,8 +93,9 @@
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
         .photo-card { 
             aspect-ratio: 1; border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; 
-            border: 1px solid var(--border); background: #0a0a0f;
+            border: 1px solid var(--border); background: #0a0a0f; transition: transform 0.3s ease;
         }
+        .photo-card:hover { transform: translateY(-5px); }
         .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
         .photo-card:hover img { transform: scale(1.1); }
         .photo-overlay { 
@@ -109,7 +110,7 @@
         .btn-primary { background: var(--brand-gradient); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); }
         .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
-        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* UPLOAD ZONE */
@@ -136,6 +137,14 @@
         }
         .modal-content { background: var(--bg-secondary); border-radius: 24px; padding: 32px; width: 90%; max-width: 500px; border: 1px solid var(--border); }
 
+        /* LIGHTBOX */
+        #lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
+            display: none; z-index: 2000; justify-content: center; align-items: center;
+        }
+        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        #lightbox-close { position: absolute; top: 30px; right: 30px; color: white; font-size: 30px; cursor: pointer; }
+
         /* TOAST */
         .toast { 
             position: fixed; top: 24px; right: 24px; padding: 16px 28px; border-radius: 12px; color: white; 
@@ -155,6 +164,12 @@
 <body>
 
 <div id="toast-container"></div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="this.style.display='none'">
+    <i class="fas fa-times" id="lightbox-close"></i>
+    <img id="lightbox-img" src="" alt="Full View">
+</div>
 
 <div class="wrap">
     <!-- HEADER -->
@@ -378,6 +393,11 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
+}
+
 // ====================================================================
 // INITIALIZATION
 // ====================================================================
@@ -391,10 +411,7 @@ window.onload = async () => {
     document.getElementById('collectionName').innerText = collectionNameFromUrl || "Collection Manager";
     
     // Initial Load sequence
-    await loadEvents();
-    await loadPhotos();
-    await loadFaces();
-    // Leads are loaded when tab is clicked for performance
+    refreshAll();
 };
 
 // ====================================================================
@@ -418,6 +435,7 @@ async function loadPhotos() {
         renderGallery(allPhotos);
     } catch (e) {
         showToast("Error loading photos", "error");
+        console.error("loadPhotos Error:", e);
     }
 }
 
@@ -426,7 +444,7 @@ function renderGallery(photos) {
     container.innerHTML = '';
 
     if (photos.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-secondary);">No photos found in this collection</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-secondary);"><i class="fas fa-images" style="font-size:40px; margin-bottom:15px; display:block"></i>No photos found in this collection</div>`;
         return;
     }
 
@@ -452,9 +470,9 @@ function renderGallery(photos) {
         groups[date].forEach(p => {
             const card = document.createElement('div');
             card.className = 'photo-card';
-            card.onclick = () => window.open(p.url, '_blank');
+            card.onclick = () => openLightbox(p.url);
             card.innerHTML = `
-                <img src="${p.thumbnail_url || p.url}" loading="lazy">
+                <img src="${p.thumbnail_url || p.url}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=Error'">
                 <div class="photo-overlay">
                     <div style="font-size:11px; color: white;"><i class="fas fa-clock"></i> ${new Date(p.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                 </div>
@@ -498,7 +516,6 @@ function renderFaceBar() {
         item.className = 'face-item';
         item.onclick = () => filterPhotosByFace(face.FaceId);
 
-        // UI FIX: Using face.photo_url from backend response
         const imgSrc = face.photo_url || face.thumbnail || 'https://via.placeholder.com/70x70?text=Face';
         
         item.innerHTML = `
@@ -551,7 +568,7 @@ async function loadEvents() {
                 <td><i class="fas fa-calendar-day" style="color:var(--brand); margin-right:8px"></i> ${e.event_date || 'N/A'}</td>
                 <td><span class="stat-badge">${e.photo_count || 0}</span></td>
                 <td>
-                    <button class="btn btn-secondary btn-sm" onclick="showToast('Edit feature coming soon')"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-secondary btn-sm" onclick="showToast('Feature Coming Soon')"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.event_id}')"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
@@ -576,7 +593,7 @@ async function loadEvents() {
 }
 
 async function deleteEvent(eventId) {
-    if(!confirm("Are you sure you want to delete this event and all its photos?")) return;
+    if(!confirm("Are you sure you want to delete this event and all its photos? This action cannot be undone.")) return;
 
     try {
         const res = await fetch(`${API_BASE}/delete-event`, {
@@ -587,8 +604,7 @@ async function deleteEvent(eventId) {
 
         if (res.ok) {
             showToast("Event deleted successfully");
-            loadEvents();
-            loadPhotos();
+            refreshAll();
         } else {
             const err = await res.json();
             showToast(err.message || "Delete failed", "error");
@@ -661,7 +677,11 @@ async function startBatchUpload() {
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: filesPayload })
         });
-        const { urls } = await res.json();
+        
+        const data = await res.json();
+        const urls = data.urls;
+
+        if(!urls) throw new Error("Could not get upload URLs");
 
         let successCount = 0;
         for (let i = 0; i < selectedUploadFiles.length; i++) {
@@ -695,6 +715,7 @@ async function startBatchUpload() {
 
     } catch (e) {
         showToast("Upload process failed", "error");
+        console.error("Upload Error:", e);
         btn.disabled = false;
         btn.innerHTML = `Retry Upload`;
     }
@@ -719,18 +740,13 @@ async function loadLeads() {
     loader.style.display = 'block';
 
     try {
-        // UI FIX: The Lambda logic for specific collection filtering was broad.
-        // We fetch all and filter by current collectionId for accurate leads display.
-        const res = await fetch(`${API_BASE}/save-details`, {
+        const res = await fetch(`${API_BASE}/save-details?collectionId=${collectionId}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${idToken}` }
         });
         
         const data = await res.json();
-        const allLeadsRaw = data.leads || data.history || (Array.isArray(data) ? data : []);
-        
-        // Filter leads belonging to this photographer's collection
-        const leads = allLeadsRaw.filter(l => l.collection_id === collectionId);
+        const leads = data.leads || data.history || (Array.isArray(data) ? data : []);
         
         loader.style.display = 'none';
         
@@ -754,6 +770,7 @@ async function loadLeads() {
     } catch (e) {
         loader.style.display = 'none';
         showToast("Failed to fetch guest leads", "error");
+        console.error("loadLeads Error:", e);
     }
 }
 
@@ -808,7 +825,7 @@ async function downloadAllZip() {
     const folder = zip.folder(collectionNameFromUrl || "Collection");
 
     try {
-        const downloadLimit = Math.min(allPhotos.length, 100);
+        const downloadLimit = Math.min(allPhotos.length, 50); // Limit to 50 for stability
         for (let i = 0; i < downloadLimit; i++) {
             const p = allPhotos[i];
             const response = await fetch(p.url);
