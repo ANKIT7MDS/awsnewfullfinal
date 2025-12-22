@@ -484,7 +484,7 @@ function renderGallery(photos) {
 }
 
 // ====================================================================
-// FACE DETECTION UI (FIXED)
+// FACE DETECTION UI (FIXED WITH AUTO-DISCOVERY FALLBACK)
 // ====================================================================
 async function loadFaces() {
     try {
@@ -494,11 +494,49 @@ async function loadFaces() {
             body: JSON.stringify({ collection_id: collectionId })
         });
         const data = await res.json();
-        faceGroups = data.people || [];
+        let apiPeople = data.people || [];
+        
+        // --- FALLBACK LOGIC: Discovery from Photos ---
+        // If API returns nothing, manually scan allPhotos to build the face bar
+        if (apiPeople.length === 0 && allPhotos.length > 0) {
+            console.log("No people from API, starting local discovery...");
+            const faceMap = new Map();
+            allPhotos.forEach(photo => {
+                const ids = photo.face_ids || (photo.faces ? photo.faces.map(f => f.FaceId) : []);
+                ids.forEach(fid => {
+                    if (fid && !faceMap.has(fid)) {
+                        faceMap.set(fid, {
+                            FaceId: fid,
+                            FaceName: "Unknown",
+                            photo_url: photo.thumbnail_url || photo.url
+                        });
+                    }
+                });
+            });
+            faceGroups = Array.from(faceMap.values());
+        } else {
+            faceGroups = apiPeople;
+        }
         
         renderFaceBar();
     } catch (e) {
-        console.warn("Faces failed to load", e);
+        console.warn("Faces failed to load via API, trying local discovery...", e);
+        // Direct local discovery if API fails
+        const faceMap = new Map();
+        allPhotos.forEach(photo => {
+            const ids = photo.face_ids || (photo.faces ? photo.faces.map(f => f.FaceId) : []);
+            ids.forEach(fid => {
+                if (fid && !faceMap.has(fid)) {
+                    faceMap.set(fid, {
+                        FaceId: fid,
+                        FaceName: "Unknown",
+                        photo_url: photo.thumbnail_url || photo.url
+                    });
+                }
+            });
+        });
+        faceGroups = Array.from(faceMap.values());
+        renderFaceBar();
     }
 }
 
@@ -507,7 +545,7 @@ function renderFaceBar() {
     bar.innerHTML = '';
 
     if (faceGroups.length === 0) {
-        bar.innerHTML = `<p style="font-size:12px; color:var(--text-secondary); padding: 10px;">Scanning faces... try refreshing in a moment</p>`;
+        bar.innerHTML = `<p style="font-size:12px; color:var(--text-secondary); padding: 10px;">Scanning for faces in photos... please wait or upload photos.</p>`;
         return;
     }
 
@@ -855,10 +893,10 @@ document.querySelectorAll('.tab').forEach(t => {
     });
 });
 
-function refreshAll() {
-    loadEvents();
-    loadPhotos();
-    loadFaces();
+async function refreshAll() {
+    await loadEvents();
+    await loadPhotos();
+    await loadFaces();
     showToast("Data Refreshed");
 }
 
