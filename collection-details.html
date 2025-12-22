@@ -1663,7 +1663,7 @@ const UPLOAD_URLS_API = `${API_BASE}/generate-upload-urls`;
 const GENERATE_LINK_API = `${API_BASE}/generate-search-link`;
 const LIST_PEOPLE_API = `${API_BASE}/list_people`;
 const SAVE_FACE_NAME_API = `${API_BASE}/save-face-name`;
-const GET_LEADS_API = `${API_BASE}/save-details`; // GET/POST // backend: selfie-search-save-details (GET/POST)
+const GET_LEADS_API = `${API_BASE}/save-details`; // backend: selfie-search-save-details (GET/POST)
 // ======================= UTILITY FUNCTIONS =======================
 const $ = (id) => document.getElementById(id);
 const idToken = localStorage.getItem("idToken");
@@ -3198,162 +3198,81 @@ globalThis.loadLeads = window.loadLeads;
 <!-- ======================= END HOTFIX PATCH (v4) ======================= -->
 
 
+<!-- ======================= FINAL CRITICAL FIX ======================= -->
 <script>
-/* === FINAL WORKING PATCH v5 (do not remove) === */
-function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
-function _unwrapApiJson(data){
-  if (!data) return {};
-  if (typeof data === 'object' && data.body && typeof data.body === 'string'){ try{ return JSON.parse(data.body); }catch{ return {}; } }
-  return data;
-}
-async function apiJson(url, opts={}){
-  const headers = Object.assign({}, opts.headers||{});
-  if (opts.method && opts.method.toUpperCase() !== 'GET') headers['Content-Type'] ||= 'application/json';
-  if (window.idToken) headers['Authorization'] ||= `Bearer ${window.idToken}`;
-  const res = await fetch(url, Object.assign({}, opts, {headers}));
-  let raw={};
-  try{ raw = await res.json(); }catch{ raw={}; }
-  const data=_unwrapApiJson(raw);
-  if (!res.ok) throw new Error((data&& (data.message||data.error)) || (raw&&(raw.message||raw.error)) || `HTTP ${res.status}`);
-  return data;
-}
-function _qs(k){ const v=new URLSearchParams(location.search).get(k); return v?decodeURIComponent(v):''; }
-
-// EVENTS
-function _eventsTbody(){ return document.querySelector('#eventsTable tbody') || document.querySelector('#eventsTbody') || document.querySelector('.events-table tbody'); }
-function _eventsSelect(){ return document.getElementById('eventSelect') || document.getElementById('eventDropdown') || document.querySelector('select[name="event"]'); }
-
-window.loadEvents = async function(){ 
-  try{
-    const cid = window.collectionId || _qs('id');
-    if (!cid) return;
-    const data = await apiJson(GET_EVENTS_API, {method:'POST', body: JSON.stringify({collection_id: cid})});
-    window.eventsCache = Array.isArray(data.events)?data.events:(Array.isArray(data.items)?data.items:[]);
-    window.renderEvents();
-    window.populateEventDropdown();
-  }catch(e){ console.error('loadEvents failed', e); }
-};
-
-window.renderEvents = function(){
-  const tbody=_eventsTbody();
-  if(!tbody) return;
-  const rows=Array.isArray(window.eventsCache)?window.eventsCache:[];
-  tbody.innerHTML='';
-  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:18px;">No events found</td></tr>`; return; }
-  rows.forEach(evt=>{
-    const id = evt.event_id||evt.eventId||evt.id||'';
-    const name = evt.name||evt.event_name||'—';
-    const d = (evt.event_date||evt.date||evt.eventDate||'').toString();
-    const date = d?d.split('T')[0]:'—';
-    const photos = (evt.photo_count ?? evt.photos ?? 0);
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(name)}</td><td>${escapeHtml(date)}</td><td>${photos}</td><td>${id?`<button class="btn btn-danger btn-sm" data-eid="${id}"><i class="fas fa-trash"></i></button>`:''}</td>`;
-    if(id) tr.querySelector('button')?.addEventListener('click', ()=> window.deleteEvent(id));
-    tbody.appendChild(tr);
-  });
-};
-
-window.populateEventDropdown = function(){
-  const sel=_eventsSelect();
-  if(!sel) return;
-  const prev=sel.value;
-  sel.innerHTML='';
-  const o0=document.createElement('option'); o0.value=''; o0.textContent='Select Event'; sel.appendChild(o0);
-  (window.eventsCache||[]).forEach(evt=>{
-    const id=evt.event_id||evt.eventId||evt.id; if(!id) return;
-    const o=document.createElement('option'); o.value=id; o.textContent=evt.name||evt.event_name||'Event'; sel.appendChild(o);
-  });
-  if(prev) sel.value=prev;
-};
-
-window.deleteEvent = async function(eventId){
-  try{
-    const cid = window.collectionId || _qs('id');
-    if(!cid||!eventId) return;
-    if(!confirm('Delete this event? This will delete S3 photos for this event.')) return;
-    await apiJson(DELETE_EVENT_API, {method:'POST', body: JSON.stringify({collection_id: cid, event_id: eventId})});
-    await window.loadEvents();
-    await window.loadPhotos?.();
-    alert('Event deleted');
-  }catch(e){ alert('Delete failed: '+e.message); }
-};
-
-// LEADS
-function _leadsTbody(){ return document.querySelector('#leadsTable tbody') || document.querySelector('#guestLeadsTable tbody') || document.querySelector('.leads-table tbody'); }
-window.loadLeads = async function(){
-  try{
-    const cid = window.collectionId || _qs('id');
-    const data = await apiJson(GET_LEADS_API, {method:'GET'});
-    const leads = Array.isArray(data.leads)?data.leads:(Array.isArray(data.items)?data.items:[]);
-    window.allLeads = leads.filter(l=>!cid || l.collection_id===cid || l.collectionId===cid);
-    window.renderLeads();
-  }catch(e){
-    console.warn('loadLeads failed', e.message);
-    window.allLeads=[]; window.renderLeads();
+(function(){
+  function toArray(x){
+    if (Array.isArray(x)) return x;
+    if (!x) return [];
+    if (typeof x === 'object') return Object.values(x);
+    return [];
   }
-};
-window.renderLeads = function(){
-  const tbody=_leadsTbody(); if(!tbody) return;
-  const rows=Array.isArray(window.allLeads)?window.allLeads:[];
-  tbody.innerHTML='';
-  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:18px;">No leads found</td></tr>`; return; }
-  rows.forEach(l=>{
-    const name=l.name||l.full_name||'—';
-    const mob=l.mobile||l.phone||l.mobile_number||'—';
-    const created=(l.created_at||l.timestamp||'').toString();
-    const dt=created?created.replace('T',' ').split('.')[0]:'—';
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${escapeHtml(name)}</td><td>${escapeHtml(mob)}</td><td>${escapeHtml(dt)}</td><td>${escapeHtml(l.note||l.message||'')}</td><td></td>`;
-    tbody.appendChild(tr);
-  });
-};
 
-// FACES
-function _normalizeFaces(payload){
-  const arr = payload.people || payload.faces || payload.items || [];
-  if(!Array.isArray(arr)) return [];
-  return arr.map(p=>({
-    faceId: p.FaceId||p.face_id||p.faceId||p.person_id||p.PersonId||'',
-    name: p.name||p.person_name||p.face_name||'',
-    thumb: p.thumbnail||p.face_image_url||p.image_url||p.url||'',
-    count: p.photo_count ?? p.count ?? p.photos ?? 0
-  })).filter(x=>x.faceId);
-}
-window.loadFaceGroups = async function(){
-  try{
-    const cid = window.collectionId || _qs('id');
-    if(!cid) return;
-    const data = await apiJson(LIST_PEOPLE_API, {method:'POST', body: JSON.stringify({collection_id: cid})});
-    window.faceGroups = _normalizeFaces(data);
-    window.renderFaceIcons?.();
-  }catch(e){
-    console.warn('loadFaceGroups failed', e.message);
-    window.faceGroups=[]; window.renderFaceIcons?.();
+  window.renderFaceIcons = function(faceGroups){
+    const faces = toArray(faceGroups);
+    const bar = document.getElementById('faceIconsBar') || document.getElementById('faceBar');
+    if (!bar) return;
+    bar.innerHTML = '';
+    if (!faces.length) return;
+
+    faces.forEach(f=>{
+      const fid = f.FaceId || f.face_id || f.id;
+      if (!fid) return;
+      const img = f.thumbnail || f.thumbnail_url || f.url || '';
+      const btn = document.createElement('button');
+      btn.className = 'face-icon-btn';
+      btn.style.cssText = 'width:44px;height:44px;border-radius:50%;overflow:hidden;margin:6px;border:1px solid rgba(255,255,255,.15);background:#111;cursor:pointer;';
+      btn.innerHTML = img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;">` : '<span style="color:#aaa;font-size:11px;">Face</span>';
+      btn.onclick = ()=>{
+        if (typeof window.filterByFace === 'function') window.filterByFace(fid);
+      };
+      bar.appendChild(btn);
+    });
+  };
+
+  window.loadFaceGroups = async function(){
+    try{
+      if (window.LIST_PEOPLE_API){
+        const res = await fetch(window.LIST_PEOPLE_API,{
+          method:'POST',
+          headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${window.idToken}`}:{})},
+          body: JSON.stringify({collection_id: window.collectionId})
+        });
+        const data = await res.json();
+        const people = toArray(data.people || data.faces || data.items);
+        if (people.length){
+          window.faceGroups = people.map(p=>({
+            FaceId: p.face_id || p.FaceId,
+            thumbnail: p.thumbnail_url || p.thumbnail
+          }));
+          renderFaceIcons(window.faceGroups);
+          return;
+        }
+      }
+    }catch(e){ console.warn('list_people failed', e); }
+
+    const photos = toArray(window.allPhotos);
+    const map = new Map();
+    photos.forEach(p=>{
+      toArray(p.face_ids).forEach(fid=>{
+        if (!map.has(fid)) map.set(fid,{FaceId:fid, thumbnail:p.thumbnail_url||p.url});
+      });
+    });
+    window.faceGroups = Array.from(map.values());
+    renderFaceIcons(window.faceGroups);
+  };
+
+  const origLoadPhotos = window.loadPhotos;
+  if (typeof origLoadPhotos === 'function'){
+    window.loadPhotos = async function(){
+      const r = await origLoadPhotos.apply(this, arguments);
+      try{ await window.loadFaceGroups(); }catch{}
+      return r;
+    };
   }
-};
-
-window.toggleFaceSelection = function(faceId){
-  window.currentSelectedFaceId = (window.currentSelectedFaceId===faceId)?null:faceId;
-  window.renderFaceIcons?.();
-  window.loadPhotos?.();
-};
-
-// Hook tab switching if present
-document.addEventListener('click', (e)=>{
-  const tabBtn = e.target.closest('[data-tab]');
-  if(!tabBtn) return;
-  const tab = tabBtn.getAttribute('data-tab');
-  if(tab==='events') window.loadEvents();
-  if(tab==='guests') window.loadLeads();
-  if(tab==='photos') { window.loadFaceGroups(); window.loadPhotos?.(); }
-}, true);
-
-window.addEventListener('load', ()=>{ 
-  try{ window.loadEvents(); }catch{}
-  try{ window.loadLeads(); }catch{}
-  try{ window.loadFaceGroups(); }catch{}
-});
+})();
 </script>
+<!-- ===================== END FINAL CRITICAL FIX ===================== -->
 
 </body>
 </html>
