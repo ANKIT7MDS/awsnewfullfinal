@@ -1234,6 +1234,10 @@
             border: 1px solid var(--border);
         }
     </style>
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 </head>
 <body>
 <div class="wrap">
@@ -3222,118 +3226,326 @@ globalThis.loadLeads = window.loadLeads;
 <!-- ======================= END HOTFIX PATCH (v4) ======================= -->
 
 
-<!-- ================= FINAL NORMALIZER PATCH ================= -->
+<!-- =================== FINAL_V6_20251224_123518 (FORCE OVERRIDES) =================== -->
+<style>
+#__versionBadge {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 999999;
+  background: rgba(124,108,255,.95);
+  color: #fff;
+  font: 12px/1.2 Inter, system-ui, sans-serif;
+  padding: 8px 10px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+/* thumbnails smaller */
+.photo-card img, .gallery-grid img, .photo img {
+  height: 140px !important;
+  object-fit: cover !important;
+}
+/* face icons */
+#faceIconsBar .face-icon-btn {
+  width: 44px;height:44px;border-radius:50%;overflow:hidden;
+  border:1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.05);
+  margin:6px; cursor:pointer;
+}
+#faceIconsBar .face-icon-btn img {
+  width:100%;height:100%;object-fit:cover;
+}
+</style>
+
+<div id="__versionBadge">✅ FINAL_V6_20251224_123518</div>
+
 <script>
-// ---------- NORMALIZERS ----------
-function _arr(x){ if(Array.isArray(x)) return x; if(x && typeof x==='object') return Object.values(x); return []; }
-function normalizeEvents(d){ return _arr(d?.events || d?.ts || d?.items || d); }
-function normalizePhotos(d){ return _arr(d?.photos || d?.items || d); }
-function normalizeLeads(d){ return _arr(d?.leads || d?.items || d); }
+/**
+ * This block FORCE overrides buggy functions so changes actually apply.
+ * It also makes the page resilient to mixed backend response shapes.
+ */
+(function(){
+  console.log("FINAL_V6_20251224_123518 loaded");
 
-// ---------- EVENTS ----------
-window.loadEvents = async function(){
-  try{
-    const res = await fetch(GET_EVENTS_API,{
-      method:'POST',
-      headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
-      body: JSON.stringify({ collection_id: window.collectionId })
-    });
-    const data = await res.json();
-    window.eventsCache = normalizeEvents(data);
-    renderEvents();
-  }catch(e){ console.error('loadEvents',e); }
-};
+  // Helpers
+  function arr(x){ if(Array.isArray(x)) return x; if(x && typeof x==='object') return Object.values(x); return []; }
+  function jsonSafe(r){ return r.json().catch(()=>({})); }
 
-window.renderEvents = function(){
-  const tbody = document.getElementById('eventsTbody');
-  if(!tbody) return;
-  tbody.innerHTML='';
-  if(!window.eventsCache || !window.eventsCache.length){
-    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888">No events found</td></tr>';
-    return;
+  // Ensure ids/token/collectionId exist
+  const qs = new URLSearchParams(location.search);
+  window.collectionId = window.collectionId || qs.get('id') || qs.get('collection_id') || '';
+  window.idToken = window.idToken || localStorage.getItem('idToken') || localStorage.getItem('token') || '';
+
+  // Normalize API base vars (keep existing if already defined)
+  window.GET_EVENTS_API = window.GET_EVENTS_API || (window.API_BASE ? `${API_BASE}/get-events` : "");
+  window.DELETE_EVENT_API = window.DELETE_EVENT_API || (window.API_BASE ? `${API_BASE}/delete-event` : "");
+  window.LIST_PEOPLE_API = window.LIST_PEOPLE_API || (window.API_BASE ? `${API_BASE}/list_people` : `${window.LIST_PEOPLE_API||""}`);
+  window.GET_LEADS_API = window.GET_LEADS_API || (window.API_BASE ? `${API_BASE}/get-leads` : "");
+
+  // Photo count in top-left if element exists
+  function updatePhotoCount() {
+    const el = document.getElementById('photoCount') || document.querySelector('[data-photo-count]');
+    const total = (window.allPhotos && window.allPhotos.length) ? window.allPhotos.length
+                : (window.ALL_PHOTOS && window.ALL_PHOTOS.length) ? window.ALL_PHOTOS.length
+                : (window.filteredPhotos && window.filteredPhotos.length) ? window.filteredPhotos.length : null;
+    if (el && total !== null) el.textContent = total + " Photos";
   }
-  window.eventsCache.forEach(evt=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${evt.name||'-'}</td>
-      <td>${(evt.event_date||'').split('T')[0]}</td>
-      <td>${evt.photo_count||0}</td>
-      <td><button onclick="deleteEvent('${evt.event_id}')">Delete</button></td>`;
-    tbody.appendChild(tr);
+
+  // EVENTS: force load + render into #eventsTbody if present
+  function normalizeEvents(d){ return arr(d?.events || d?.items || d?.ts || d); }
+
+  window.renderEvents = function(){
+    const tbody = document.getElementById('eventsTbody');
+    if(!tbody) return;
+    const list = Array.isArray(window.eventsCache) ? window.eventsCache : [];
+    tbody.innerHTML = "";
+    if(!list.length){
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888">No events found</td></tr>';
+      return;
+    }
+    list.forEach(evt=>{
+      const id = evt.event_id || evt.id || evt.eventId || "";
+      const name = evt.name || evt.event_name || "-";
+      const date = (evt.event_date || evt.date || "").toString().split("T")[0] || "-";
+      const cnt = evt.photo_count ?? evt.photos ?? 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${name}</td><td>${date}</td><td>${cnt}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="deleteEvent('${id}')">Delete</button></td>`;
+      tbody.appendChild(tr);
+    });
+  };
+
+  window.loadEvents = async function(){
+    try {
+      if(!window.GET_EVENTS_API) return;
+      const res = await fetch(window.GET_EVENTS_API, {
+        method:'POST',
+        headers: {
+          'Content-Type':'application/json',
+          ...(window.idToken ? {Authorization:`Bearer ${window.idToken}`} : {})
+        },
+        body: JSON.stringify({ collection_id: window.collectionId })
+      });
+      const data = await jsonSafe(res);
+      if(!res.ok) throw new Error(data.message || data.error || ("HTTP "+res.status));
+      window.eventsCache = normalizeEvents(data);
+      window.renderEvents();
+      // also fill upload event dropdown if exists
+      const dd = document.getElementById('uploadEventSelect') || document.getElementById('eventSelect') || document.querySelector('select[name="event"]');
+      if(dd){
+        dd.innerHTML = '<option value="">Select Event</option>';
+        window.eventsCache.forEach(e=>{
+          const opt=document.createElement('option');
+          opt.value = e.event_id || e.id || '';
+          opt.textContent = e.name || 'Event';
+          dd.appendChild(opt);
+        });
+      }
+    } catch(e) {
+      console.warn("loadEvents failed:", e.message);
+    }
+  };
+
+  // DELETE EVENT: enforce payload + refresh
+  window.deleteEvent = async function(eventId){
+    if(!eventId) return;
+    if(!confirm("Delete event?")) return;
+    try {
+      const api = window.DELETE_EVENT_API || (window.API_BASE ? `${API_BASE}/delete-event` : "");
+      if(!api) throw new Error("DELETE_EVENT_API not set");
+      const res = await fetch(api, {
+        method:'POST',
+        headers: {
+          'Content-Type':'application/json',
+          ...(window.idToken ? {Authorization:`Bearer ${window.idToken}`} : {})
+        },
+        body: JSON.stringify({ collection_id: window.collectionId, event_id: eventId })
+      });
+      const data = await jsonSafe(res);
+      if(!res.ok) throw new Error(data.message || data.error || ("HTTP "+res.status));
+      await window.loadEvents();
+      // Optional: refresh photos
+      if(typeof window.loadPhotos === 'function') window.loadPhotos();
+    } catch(e) {
+      alert("Delete failed: " + e.message);
+    }
+  };
+
+  // FACES: try list_people; fallback from photos face_ids
+  function normalizePeople(d){ return arr(d?.people || d?.items || d?.faces || d); }
+
+  function renderFaceIcons(list){
+    const bar = document.getElementById('faceIconsBar') || document.getElementById('faceBar') || document.getElementById('facesContainer');
+    if(!bar) return;
+    bar.innerHTML = "";
+    arr(list).slice(0,80).forEach(p=>{
+      const fid = p.face_id || p.FaceId || p.faceId || p.id;
+      if(!fid) return;
+      const thumb = p.thumbnail_url || p.thumbnail || p.thumb || "";
+      const btn = document.createElement('button');
+      btn.className = "face-icon-btn";
+      btn.title = p.name || p.FaceName || "Unknown";
+      btn.innerHTML = thumb ? `<img src="${thumb}">` : `<span style="color:#bbb;font-size:11px">U</span>`;
+      btn.onclick = ()=> {
+        if(typeof window.filterByFace === 'function') window.filterByFace(fid);
+      };
+      bar.appendChild(btn);
+    });
+  }
+
+  window.loadPeopleFaces = async function(){
+    try {
+      if(!window.LIST_PEOPLE_API) throw new Error("LIST_PEOPLE_API not set");
+      const res = await fetch(window.LIST_PEOPLE_API, {
+        method:'POST',
+        headers: {
+          'Content-Type':'application/json',
+          ...(window.idToken ? {Authorization:`Bearer ${window.idToken}`} : {})
+        },
+        body: JSON.stringify({ collection_id: window.collectionId })
+      });
+      const data = await jsonSafe(res);
+      if(res.ok){
+        const people = normalizePeople(data);
+        if(people.length) {
+          renderFaceIcons(people);
+          return;
+        }
+      }
+    } catch(e) {
+      console.warn("list_people failed:", e.message);
+    }
+    // fallback from photos
+    const photos = arr(window.allPhotos || window.ALL_PHOTOS || []);
+    const m = new Map();
+    photos.forEach(p=> {
+      const fids = arr(p.face_ids || p.faceIds || []);
+      const thumb = p.thumbnail_url || p.url || "";
+      fids.forEach(fid=> {
+        if(fid && !m.has(fid)) m.set(fid, {face_id: fid, thumbnail_url: thumb});
+      });
+    });
+    renderFaceIcons(Array.from(m.values()));
+  };
+
+  // Guests/leads: non-blocking
+  window.loadLeads = async function(){
+    try {
+      if(!window.GET_LEADS_API) return;
+      const res = await fetch(window.GET_LEADS_API, {
+        method:'POST',
+        headers: {
+          'Content-Type':'application/json',
+          ...(window.idToken ? {Authorization:`Bearer ${window.idToken}`} : {})
+        },
+        body: JSON.stringify({ collection_id: window.collectionId })
+      });
+      const data = await jsonSafe(res);
+      const leads = arr(data?.leads || data?.items || []);
+      window.guestLeads = leads;
+      if(typeof window.renderLeads === 'function') window.renderLeads();
+    } catch(e) {
+      console.warn("loadLeads failed:", e.message);
+    }
+  };
+
+  // Hook after photos load to update count + faces
+  const origLoadPhotos = window.loadPhotos;
+  if(typeof origLoadPhotos === 'function'){
+    window.loadPhotos = async function(){
+      const r = await origLoadPhotos.apply(this, arguments);
+      try{ updatePhotoCount(); }catch{}
+      try{ await window.loadPeopleFaces(); }catch{}
+      return r;
+    };
+  }
+
+  // Kick off on load
+  document.addEventListener('DOMContentLoaded', ()=>{
+    try{ window.loadEvents(); }catch{}
+    setTimeout(()=>{ try{ window.loadPeopleFaces(); }catch{} }, 1200);
+    setTimeout(()=>{ try{ window.loadLeads(); }catch{} }, 1400);
+    setTimeout(()=>{ try{ updatePhotoCount(); }catch{} }, 1800);
   });
-};
-
-// ---------- GUESTS ----------
-window.loadGuests = async function(){
-  try{
-    const res=await fetch(GET_LEADS_API,{
-      method:'POST',
-      headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
-      body: JSON.stringify({ collection_id: window.collectionId })
-    });
-    const data=await res.json();
-    window.guestLeads = normalizeLeads(data);
-    if(window.renderLeads) renderLeads();
-  }catch(e){ console.warn('loadGuests',e); }
-};
+})();
 </script>
-<!-- =============== END FINAL NORMALIZER PATCH =============== -->
+<!-- ================= END FINAL_V6_20251224_123518 ================= -->
 
 
-<!-- ================= FINAL UI + LOGIC FIX ================= -->
+<!-- ================= HARD DISABLE OLD LOGIC ================= -->
 <script>
-/* ---------- FACE ICONS FROM list_people ---------- */
-window.loadPeopleFaces = async function(){
-  try{
-    if(!window.LIST_PEOPLE_API) return;
-    const res = await fetch(LIST_PEOPLE_API,{
-      method:'POST',
-      headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
-      body: JSON.stringify({ collection_id: window.collectionId })
+window.loadEvents = undefined;
+window.renderEvents = undefined;
+window.deleteEvent = undefined;
+window.loadPeopleFaces = undefined;
+window.loadLeads = undefined;
+</script>
+<!-- ================= END HARD DISABLE ================= -->
+
+<!-- ================= FINAL HARD LOGIC ================= -->
+<script>
+(function(){
+  console.log("FINAL HARD LOGIC ACTIVE");
+  function arr(x){ if(Array.isArray(x)) return x; if(x && typeof x==='object') return Object.values(x); return []; }
+
+  const qs=new URLSearchParams(location.search);
+  const collectionId=qs.get('id')||qs.get('collection_id')||'';
+  const token=localStorage.getItem('idToken')||'';
+
+  async function post(url,body){
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body)});
+    return r.json();
+  }
+
+  window.loadEvents=async function(){
+    const d=await post(GET_EVENTS_API,{collection_id:collectionId});
+    const list=arr(d.events||d.items||d.ts);
+    const tb=document.getElementById('eventsTbody');
+    if(!tb) return;
+    tb.innerHTML='';
+    list.forEach(e=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${e.name}</td><td>${(e.event_date||'').split('T')[0]}</td><td>${e.photo_count||0}</td>
+      <td><button onclick="deleteEvent('${e.event_id}')">Delete</button></td>`;
+      tb.appendChild(tr);
     });
-    const data = await res.json();
-    const people = (data.people || data.items || []);
-    const bar = document.getElementById('faceIconsBar');
+  };
+
+  window.deleteEvent=async function(id){
+    if(!confirm('Delete event?')) return;
+    await post(DELETE_EVENT_API,{collection_id:collectionId,event_id:id});
+    loadEvents();
+  };
+
+  window.loadPeopleFaces=async function(){
+    const bar=document.getElementById('faceIconsBar');
     if(!bar) return;
     bar.innerHTML='';
+    let people=[];
+    try{
+      const d=await post(LIST_PEOPLE_API,{collection_id:collectionId});
+      people=arr(d.people||d.items||[]);
+    }catch{}
+    if(!people.length && window.ALL_PHOTOS){
+      const m=new Map();
+      ALL_PHOTOS.forEach(p=>arr(p.face_ids).forEach(fid=>{if(!m.has(fid)) m.set(fid,p.thumbnail_url||p.url)}));
+      people=[...m.entries()].map(([fid,thumb])=>({face_id:fid,thumbnail_url:thumb}));
+    }
     people.forEach(p=>{
       const b=document.createElement('button');
-      b.className='face-icon';
-      b.innerHTML = `<img src="${p.thumbnail_url}" />`;
-      b.onclick=()=>filterByFace(p.face_id);
+      b.className='face-icon-btn';
+      b.innerHTML=p.thumbnail_url?`<img src="${p.thumbnail_url}">`:'';
       bar.appendChild(b);
     });
-  }catch(e){console.warn('faces',e);}
-};
+  };
 
-/* ---------- EVENT DELETE FIX ---------- */
-window.deleteEvent = async function(eventId){
-  if(!confirm('Delete event?')) return;
-  await fetch(DELETE_EVENT_API,{
-    method:'POST',
-    headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
-    body: JSON.stringify({ collection_id: window.collectionId, event_id: eventId })
+  document.addEventListener('DOMContentLoaded',()=>{
+    loadEvents();
+    setTimeout(loadPeopleFaces,1200);
   });
-  loadEvents();
-};
-
-/* ---------- PHOTO THUMB SIZE FIX ---------- */
-document.addEventListener('DOMContentLoaded',()=>{
-  const style=document.createElement('style');
-  style.innerHTML = `
-    .photo img{height:140px!important}
-    .face-icon img{width:40px;height:40px;border-radius:50%}
-  `;
-  document.head.appendChild(style);
-});
-
-/* ---------- PHOTO COUNT FIX ---------- */
-window.updatePhotoCount = function(){
-  const el=document.getElementById('photoCount');
-  if(el && window.ALL_PHOTOS) el.innerText = window.ALL_PHOTOS.length + ' Photos';
-};
+})();
 </script>
-<!-- ================= END FINAL UI + LOGIC FIX ================= -->
+<!-- ================= END FINAL HARD LOGIC ================= -->
 
 </body>
 </html>
