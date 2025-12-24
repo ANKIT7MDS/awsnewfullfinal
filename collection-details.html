@@ -3279,5 +3279,61 @@ window.loadGuests = async function(){
 </script>
 <!-- =============== END FINAL NORMALIZER PATCH =============== -->
 
+
+<!-- ================= FINAL UI + LOGIC FIX ================= -->
+<script>
+/* ---------- FACE ICONS FROM list_people ---------- */
+window.loadPeopleFaces = async function(){
+  try{
+    if(!window.LIST_PEOPLE_API) return;
+    const res = await fetch(LIST_PEOPLE_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
+      body: JSON.stringify({ collection_id: window.collectionId })
+    });
+    const data = await res.json();
+    const people = (data.people || data.items || []);
+    const bar = document.getElementById('faceIconsBar');
+    if(!bar) return;
+    bar.innerHTML='';
+    people.forEach(p=>{
+      const b=document.createElement('button');
+      b.className='face-icon';
+      b.innerHTML = `<img src="${p.thumbnail_url}" />`;
+      b.onclick=()=>filterByFace(p.face_id);
+      bar.appendChild(b);
+    });
+  }catch(e){console.warn('faces',e);}
+};
+
+/* ---------- EVENT DELETE FIX ---------- */
+window.deleteEvent = async function(eventId){
+  if(!confirm('Delete event?')) return;
+  await fetch(DELETE_EVENT_API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
+    body: JSON.stringify({ collection_id: window.collectionId, event_id: eventId })
+  });
+  loadEvents();
+};
+
+/* ---------- PHOTO THUMB SIZE FIX ---------- */
+document.addEventListener('DOMContentLoaded',()=>{
+  const style=document.createElement('style');
+  style.innerHTML = `
+    .photo img{height:140px!important}
+    .face-icon img{width:40px;height:40px;border-radius:50%}
+  `;
+  document.head.appendChild(style);
+});
+
+/* ---------- PHOTO COUNT FIX ---------- */
+window.updatePhotoCount = function(){
+  const el=document.getElementById('photoCount');
+  if(el && window.ALL_PHOTOS) el.innerText = window.ALL_PHOTOS.length + ' Photos';
+};
+</script>
+<!-- ================= END FINAL UI + LOGIC FIX ================= -->
+
 </body>
 </html>
