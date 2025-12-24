@@ -3221,5 +3221,63 @@ globalThis.loadLeads = window.loadLeads;
 </script>
 <!-- ======================= END HOTFIX PATCH (v4) ======================= -->
 
+
+<!-- ================= FINAL NORMALIZER PATCH ================= -->
+<script>
+// ---------- NORMALIZERS ----------
+function _arr(x){ if(Array.isArray(x)) return x; if(x && typeof x==='object') return Object.values(x); return []; }
+function normalizeEvents(d){ return _arr(d?.events || d?.ts || d?.items || d); }
+function normalizePhotos(d){ return _arr(d?.photos || d?.items || d); }
+function normalizeLeads(d){ return _arr(d?.leads || d?.items || d); }
+
+// ---------- EVENTS ----------
+window.loadEvents = async function(){
+  try{
+    const res = await fetch(GET_EVENTS_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
+      body: JSON.stringify({ collection_id: window.collectionId })
+    });
+    const data = await res.json();
+    window.eventsCache = normalizeEvents(data);
+    renderEvents();
+  }catch(e){ console.error('loadEvents',e); }
+};
+
+window.renderEvents = function(){
+  const tbody = document.getElementById('eventsTbody');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  if(!window.eventsCache || !window.eventsCache.length){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888">No events found</td></tr>';
+    return;
+  }
+  window.eventsCache.forEach(evt=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${evt.name||'-'}</td>
+      <td>${(evt.event_date||'').split('T')[0]}</td>
+      <td>${evt.photo_count||0}</td>
+      <td><button onclick="deleteEvent('${evt.event_id}')">Delete</button></td>`;
+    tbody.appendChild(tr);
+  });
+};
+
+// ---------- GUESTS ----------
+window.loadGuests = async function(){
+  try{
+    const res=await fetch(GET_LEADS_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json', ...(window.idToken?{Authorization:`Bearer ${idToken}`}:{})},
+      body: JSON.stringify({ collection_id: window.collectionId })
+    });
+    const data=await res.json();
+    window.guestLeads = normalizeLeads(data);
+    if(window.renderLeads) renderLeads();
+  }catch(e){ console.warn('loadGuests',e); }
+};
+</script>
+<!-- =============== END FINAL NORMALIZER PATCH =============== -->
+
 </body>
 </html>
