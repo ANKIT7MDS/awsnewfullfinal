@@ -1545,7 +1545,7 @@ function renderLeads(){
     
     groupCard.innerHTML = `
       <div class="lead-header" onclick="this.parentElement.classList.toggle('open')">
-        <img src="${getSelfie(latestEntry)}" class="group-selfie" onerror="this.src='https://via.placeholder.com/70?text=NA'">
+        <img src="${getSelfie(latestEntry)}" class="group-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/70?text=NA'">
         <div class="lead-info">
           <div class="lead-name">${escapeHtml(group.name)}</div>
           <div class="lead-mobile">${escapeHtml(phone)}</div>
@@ -1556,7 +1556,7 @@ function renderLeads(){
       <div class="lead-history">
         ${group.entries.map(entry => `
             <div class="history-item">
-              <img src="${getSelfie(entry)}" class="history-selfie" onerror="this.src='https://via.placeholder.com/50?text=NA'">
+              <img src="${getSelfie(entry)}" class="history-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/50?text=NA'">
               <div class="history-meta">
                 <div><b>Time:</b> ${new Date(entry.timestamp || entry.created_at).toLocaleString()}</div>
                 <div class="history-matches">${entry.match_count || entry.photo_count || 0} Matches</div>
