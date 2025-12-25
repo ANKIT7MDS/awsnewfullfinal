@@ -1405,6 +1405,7 @@ async function saveFaceName(){
 ========================================================= */
 async function loadLeads(){
   try{
+    console.log("Loading Leads for Collection:", collectionId);
     let res = await fetch(SAVE_DETAILS_API, {
       method:"POST",
       headers:{
@@ -1415,14 +1416,17 @@ async function loadLeads(){
     });
 
     let data = await res.json().catch(()=>null);
+    console.log("Leads API Response:", data);
 
     if(!res.ok){
+      console.warn("Leads API POST failed, trying GET fallback...");
       const url = `${SAVE_DETAILS_API}?collection_id=${encodeURIComponent(collectionId)}`;
       res = await fetch(url, {
         method:"GET",
         headers:{ "Authorization": `Bearer ${idToken}` }
       });
       data = await res.json().catch(()=>null);
+      console.log("Leads GET Response:", data);
     }
 
     if(!res.ok){
@@ -1432,20 +1436,28 @@ async function loadLeads(){
       return;
     }
 
-    console.log("Leads raw response:", data);
-
+    // ✅ Robust Parsing: Handle string body (Proxy Integration issue)
     let items = [];
-    if(Array.isArray(data)) items = data;
-    else if(data?.leads) items = data.leads;
-    else if(data?.items) items = data.items;
-    else if(data?.history) items = data.history;
-    else if(data?.data && Array.isArray(data.data)) items = data.data;
-    else items = [];
+    if(data.body && typeof data.body === 'string'){
+      try { items = JSON.parse(data.body); } catch(e){ console.error("Failed to parse data.body", e); }
+    } else if(Array.isArray(data)){
+      items = data;
+    } else if(data.leads){
+      items = data.leads;
+    } else if(data.items){
+      items = data.items;
+    } else if(data.history){
+      items = data.history;
+    } else if(data.data && Array.isArray(data.data)){
+      items = data.data;
+    }
 
-    items = items.filter(l=>{
-      const cid = l.collection_id || l.collectionId || l.cid;
-      return !cid || cid === collectionId;
-    });
+    console.log("Parsed Items:", items);
+
+    // ✅ REMOVED STRICT FILTER: Trust the backend data
+    // Only filter if absolutely necessary, but backend query handles ID filtering.
+    // We just filter out obviously wrong ones if any.
+    items = items.filter(l => l.phone || l.mobile); 
 
     const dateFilter = $("dateFilter").value;
     const mobileFilter = $("mobileFilter").value.trim();
