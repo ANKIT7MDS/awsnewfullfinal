@@ -1416,7 +1416,9 @@ async function loadLeads(){
     });
 
     let data = await res.json().catch(()=>null);
-    console.log("Leads API Response:", data);
+    
+    // DEBUG ALERT (Remove this later if needed)
+    // alert("API Response: " + JSON.stringify(data));
 
     if(!res.ok){
       console.warn("Leads API POST failed, trying GET fallback...");
@@ -1426,7 +1428,6 @@ async function loadLeads(){
         headers:{ "Authorization": `Bearer ${idToken}` }
       });
       data = await res.json().catch(()=>null);
-      console.log("Leads GET Response:", data);
     }
 
     if(!res.ok){
@@ -1436,27 +1437,30 @@ async function loadLeads(){
       return;
     }
 
-    // ✅ Robust Parsing: Handle string body (Proxy Integration issue)
+    // ✅ Robust Parsing: Handle all cases
     let items = [];
-    if(data.body && typeof data.body === 'string'){
-      try { items = JSON.parse(data.body); } catch(e){ console.error("Failed to parse data.body", e); }
-    } else if(Array.isArray(data)){
-      items = data;
-    } else if(data.leads){
-      items = data.leads;
-    } else if(data.items){
-      items = data.items;
-    } else if(data.history){
-      items = data.history;
-    } else if(data.data && Array.isArray(data.data)){
-      items = data.data;
+    
+    // Case 1: Wrapped in body (Proxy Integration)
+    if (data.body) {
+        if (typeof data.body === 'string') {
+             try { items = JSON.parse(data.body); } catch(e) { console.error("Parse error", e); }
+        } else {
+             items = data.body; // Already parsed
+        }
+    } 
+    // Case 2: Direct Array
+    else if (Array.isArray(data)) {
+        items = data;
     }
+    // Case 3: Dictionary keys
+    else if (data.leads) items = data.leads;
+    else if (data.items) items = data.items;
+    else if (data.history) items = data.history;
+    else if (data.data && Array.isArray(data.data)) items = data.data;
 
     console.log("Parsed Items:", items);
 
-    // ✅ REMOVED STRICT FILTER: Trust the backend data
-    // Only filter if absolutely necessary, but backend query handles ID filtering.
-    // We just filter out obviously wrong ones if any.
+    // Only basic filter to remove empty objects
     items = items.filter(l => l.phone || l.mobile); 
 
     const dateFilter = $("dateFilter").value;
