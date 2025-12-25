@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collection Manager • Premium Full Suite</title>
+  <title>Collection Manager • Premium (Final)</title>
 
-  <!-- External Libraries (Zaroori Libraries for ZIP, HEIC, and Icons) -->
+  <!-- libs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
@@ -13,7 +13,7 @@
 
   <style>
     /* =========================================================
-      THEME & PREMIUM UI DESIGN (Pura original look)
+      THEME
     ========================================================= */
     :root{
       --bg-primary:#0a0a0f;
@@ -39,7 +39,6 @@
       --glass:rgba(20,20,30,.7);
       --glass-border:rgba(255,255,255,.1);
     }
-
     *{box-sizing:border-box;margin:0;padding:0}
     body{
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
@@ -59,15 +58,18 @@
     ::-webkit-scrollbar{width:8px;height:8px}
     ::-webkit-scrollbar-track{background:var(--bg-secondary);border-radius:4px}
     ::-webkit-scrollbar-thumb{background:var(--brand);border-radius:4px}
+    ::-webkit-scrollbar-thumb:hover{background:var(--brand-hover)}
 
     .wrap{max-width:1600px;margin:0 auto;padding:24px}
 
-    /* TOP BAR STYLES */
+    /* =========================================================
+      HEADER
+    ========================================================= */
     .top-bar{
       display:flex;align-items:center;justify-content:space-between;
-      margin-bottom:20px;padding:20px 25px;
+      margin-bottom:18px;padding:18px 22px;
       background:var(--glass);
-      backdrop-filter:blur(12px);
+      backdrop-filter:blur(10px);
       border:1px solid var(--glass-border);
       border-radius:var(--radius-lg);
       box-shadow:var(--shadow);
@@ -75,339 +77,586 @@
     }
     .top-bar::before{content:'';position:absolute;left:0;top:0;height:100%;width:6px;background:var(--brand-gradient)}
     .header-left h1{
-      font-size:28px;font-weight:800;margin:10px 0 5px;
-      display:flex;align-items:center;gap:12px;
+      font-size:26px;font-weight:800;margin:10px 0 6px;
+      display:flex;align-items:center;gap:10px;
       background:linear-gradient(90deg,#f8fafc,#94a3b8);
       -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
     }
     .header-left h1 i{color:var(--brand);-webkit-text-fill-color:initial}
-    .stats-line{display:flex;gap:15px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);margin-top:5px;}
+    .stats-line{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary)}
     .stat-item{
-      display:flex;align-items:center;gap:8px;
-      padding:6px 12px;border-radius:var(--radius-sm);
+      display:flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:var(--radius-sm);
       background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)
     }
-    .stat-item i{color:var(--brand)}
+    .stat-item i{color:var(--brand);font-size:12px}
     .stat-value{color:var(--text-primary);font-weight:700}
 
-    /* TABS SYSTEM */
-    .tabs-container{margin-bottom:22px}
+    .header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .back-link{
+      display:inline-flex;align-items:center;gap:8px;
+      color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:600;
+      padding:8px 14px;border-radius:var(--radius-sm);
+      transition:var(--transition);
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .back-link:hover{color:var(--brand);background:rgba(99,102,241,.1);transform:translateX(-2px)}
+
+    /* =========================================================
+      TABS
+    ========================================================= */
+    .tabs-container{margin-bottom:18px}
     .tabs{
-      display:flex;gap:6px;background:var(--bg-secondary);
+      display:flex;gap:4px;background:var(--bg-secondary);
       border-radius:var(--radius-lg);padding:6px;
-      overflow-x:auto;box-shadow:0 4px 15px rgba(0,0,0,0.2);
+      box-shadow:0 5px 15px rgba(0,0,0,.2);
+      overflow-x:auto;
     }
     .tab{
-      flex:1;min-width:150px;
-      padding:15px 20px;text-align:center;cursor:pointer;
+      flex:1;min-width:140px;
+      padding:14px 18px;text-align:center;cursor:pointer;
       color:var(--text-secondary);font-size:14px;font-weight:700;
       border-radius:var(--radius-md);transition:var(--transition);
       display:flex;align-items:center;justify-content:center;gap:10px;
       white-space:nowrap;
     }
-    .tab:hover{background:rgba(255,255,255,0.05);color:#fff;}
-    .tab.active{color:#fff;background:var(--brand-gradient);box-shadow:0 4px 12px rgba(99,102,241,0.35)}
-    .tab-content{display:none;animation:fadeIn .4s ease}
+    .tab:hover{color:var(--text-primary);background:rgba(255,255,255,.05)}
+    .tab.active{color:#fff;background:var(--brand-gradient);box-shadow:0 4px 12px rgba(99,102,241,.3)}
+    .tab-content{display:none;animation:fadeIn .35s ease}
     .tab-content.active{display:block}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-    /* PHOTO GRID (Google Photos Style) */
+    /* =========================================================
+      CARDS & BUTTONS
+    ========================================================= */
+    .card{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:var(--radius-lg);
+      padding:22px;margin-bottom:18px;
+      box-shadow:var(--shadow-card);
+      transition:var(--transition);
+      position:relative;overflow:hidden;
+    }
+    .card:hover{border-color:var(--border-light);transform:translateY(-3px)}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+    .card-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}
+    .card-title i{color:var(--brand)}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      padding:10px 16px;font-size:13px;font-weight:800;
+      border-radius:var(--radius-md);border:none;cursor:pointer;
+      transition:var(--transition);text-decoration:none;user-select:none;
+      position:relative;overflow:hidden;
+    }
+    .btn-primary{background:var(--brand-gradient);color:#fff;box-shadow:0 4px 15px rgba(99,102,241,.3)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.4)}
+    .btn-secondary{background:rgba(255,255,255,.06);color:var(--text-primary);border:1px solid var(--border)}
+    .btn-secondary:hover{background:rgba(255,255,255,.10);border-color:var(--border-light);transform:translateY(-2px)}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-success{background:var(--success);color:#fff}
+    .btn-sm{padding:7px 12px;font-size:12px;border-radius:10px}
+
+    /* =========================================================
+      FILTERS
+    ========================================================= */
+    .filter-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+    .filter-group{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+    .filter-input,.filter-select{
+      flex:1;min-width:180px;
+      padding:10px 12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--border);
+      border-radius:var(--radius-md);
+      color:var(--text-primary);
+      font-size:13px;
+      transition:var(--transition);
+    }
+    .filter-input:focus,.filter-select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(99,102,241,.2)}
+    .filter-input::placeholder{color:var(--text-muted)}
+    .filter-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+
+    /* =========================================================
+      GOOGLE PHOTOS STYLE THUMBNAILS
+      - smaller tiles
+      - tighter gap
+    ========================================================= */
     .gallery-grid{
       display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
-      gap:12px;
+      grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 768px){
+      .gallery-grid{grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:8px;}
     }
     .photo-card{
       aspect-ratio:1/1;
       background:var(--bg-secondary);
-      border-radius:var(--radius-md);
+      border-radius:12px;
       overflow:hidden;
       position:relative;
       cursor:pointer;
       transition:var(--transition);
       border:1px solid var(--border);
     }
-    .photo-card:hover{transform:translateY(-5px);border-color:var(--brand);}
-    .photo-card img{width:100%;height:100%;object-fit:cover;transition:0.5s ease;}
-    .photo-card:hover img{transform:scale(1.05);}
+    .photo-card:hover{transform:translateY(-4px);border-color:rgba(99,102,241,.6)}
+    .photo-card img{width:100%;height:100%;object-fit:cover;display:block}
+    .photo-badges{
+      position:absolute;left:10px;top:10px;display:flex;gap:8px;z-index:2;
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 8px;border-radius:999px;
+      font-size:11px;font-weight:800;color:#fff;
+      background:rgba(0,0,0,.55);
+      backdrop-filter:blur(4px);
+      border:1px solid rgba(255,255,255,.14);
+    }
+    .badge i{font-size:11px}
     .photo-overlay{
-      position:absolute;inset:0;
-      background:linear-gradient(to top, rgba(0,0,0,0.85), transparent 60%);
-      opacity:0;transition:var(--transition);
-      display:flex;flex-direction:column;justify-content:flex-end;padding:12px;
+      position:absolute;left:0;right:0;bottom:0;
+      padding:10px;
+      background:linear-gradient(to top, rgba(0,0,0,.72), transparent);
+      transform:translateY(100%);
+      transition:var(--transition);
+      color:#fff;
+      font-size:11px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
     }
-    .photo-card:hover .photo-overlay{opacity:1}
+    .photo-card:hover .photo-overlay{transform:translateY(0)}
 
-    /* FACE ICONS BAR */
+    /* =========================================================
+      PEOPLE BAR (Face Icons) – FIXED (background-crop)
+    ========================================================= */
     #faceIconsBar{
-      display:flex;gap:18px;padding:10px 5px 20px;
-      overflow-x:auto;margin-bottom:15px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--brand) transparent;
+      display:flex;
+      gap:14px;
+      padding:8px 2px 16px;
+      margin-bottom:12px;
+      overflow-x:auto;
+      scrollbar-width:thin;
     }
-    .face-item{display:flex;flex-direction:column;align-items:center;min-width:90px;cursor:pointer;transition:0.3s;}
+    .face-item{display:flex;flex-direction:column;align-items:center;min-width:86px;cursor:pointer;transition:var(--transition)}
     .face-icon-wrapper{
-      width:75px;height:75px;border-radius:50%;
-      border:3px solid transparent;background-size:cover;
-      background-position:center;transition:var(--transition);
-      box-shadow:var(--shadow);position:relative;
+      width:66px;height:66px;border-radius:50%;
+      overflow:hidden;border:3px solid transparent;
+      background:rgba(255,255,255,.06);
+      transition:var(--transition);
+      position:relative;
+      box-shadow:0 10px 18px rgba(0,0,0,.25);
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
     }
-    .face-icon-wrapper.selected{border-color:var(--brand);transform:scale(1.15);box-shadow:0 0 15px rgba(99,102,241,0.4)}
-    .face-name-label{font-size:12px;font-weight:700;margin-top:10px;text-align:center;color:var(--text-secondary);max-width:90px;overflow:hidden;text-overflow:ellipsis;}
+    .face-icon-wrapper:hover{transform:scale(1.08);border-color:rgba(99,102,241,.85)}
+    .face-icon-wrapper.selected{border-color:var(--success);transform:scale(1.08);box-shadow:0 0 20px rgba(16,185,129,.35)}
+    /* keep img rule (harmless even if not used) */
+    .face-icon-wrapper img{
+      position:absolute;left:0;top:0;
+      width:100%;height:100%;
+      object-fit:cover;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+    .face-name-label{
+      margin-top:8px;
+      font-size:12px;font-weight:800;color:var(--text-secondary);
+      max-width:86px;text-align:center;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .face-count{
+      font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:700;
+    }
 
-    /* BUTTONS & CARDS */
-    .card{
+    /* =========================================================
+      Face Naming Panel
+    ========================================================= */
+    #faceNamingHeader{display:none;margin-top:12px}
+    #faceNamingHeader .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    #faceHeaderImg{width:82px;height:82px;border-radius:50%;border:3px solid var(--brand);object-fit:cover}
+    #faceNameInput{flex:1;min-width:180px}
+    #faceSuggestions{color:var(--text-muted);font-size:13px;margin-top:8px}
+
+    /* =========================================================
+      EVENTS TABLE
+    ========================================================= */
+    table{width:100%;border-collapse:collapse}
+    th{padding:14px;text-align:left;color:var(--text-secondary);font-size:13px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+    td{padding:14px;border-bottom:1px solid var(--border)}
+    tr:hover{background:rgba(255,255,255,.03)}
+
+    /* =========================================================
+      UPLOAD – better progress + logs
+    ========================================================= */
+    #dropZone{
+      border:2px dashed var(--border);
+      border-radius:var(--radius-lg);
+      padding:40px 24px;
+      text-align:center;
+      background:rgba(255,255,255,.02);
+      transition:var(--transition);
+      cursor:pointer;
+      position:relative;
+    }
+    #dropZone:hover,#dropZone.dragover{border-color:var(--brand);background:rgba(99,102,241,.05);transform:translateY(-2px)}
+    #dropZone i{font-size:42px;color:var(--brand);margin-bottom:12px;display:block}
+    .progress-container{margin-top:14px;background:rgba(255,255,255,.05);border-radius:var(--radius-md);overflow:hidden;height:10px}
+    #progress-bar{height:100%;background:var(--brand-gradient);width:0%;transition:width .2s ease}
+
+    .upload-log{
+      margin-top:14px;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius-md);
+      padding:12px;
+      max-height:180px;
+      overflow:auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12px;
+      color:#e2e8f0;
+      white-space:pre-wrap;
+    }
+
+    /* =========================================================
+      LEADS
+    ========================================================= */
+    .lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+    .lead-card{
       background:var(--bg-card);
       border:1px solid var(--border);
       border-radius:var(--radius-lg);
-      padding:25px;margin-bottom:20px;
-      box-shadow:var(--shadow-card);
+      padding:16px;
+      display:flex;gap:14px;align-items:center;
+      transition:var(--transition);
     }
-    .btn{
-      padding:12px 20px;border-radius:var(--radius-md);border:none;
-      font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;
-      transition:var(--transition);text-decoration:none;
-    }
-    .btn-primary{background:var(--brand-gradient);color:#fff;}
-    .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text-primary);border:1px solid var(--border)}
-    .btn-danger{background:var(--danger);color:#fff;}
-    .btn-sm{padding:7px 12px;font-size:12px;}
+    .lead-card:hover{border-color:rgba(99,102,241,.6);transform:translateY(-3px)}
+    .selfie-img{width:66px;height:66px;border-radius:50%;object-fit:cover;border:3px solid var(--brand)}
+    .lead-name{font-weight:900;font-size:16px}
+    .lead-mobile{color:var(--brand);font-weight:800;font-size:13px;margin-top:2px}
+    .lead-meta{margin-top:8px;font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px}
+    .empty-state{text-align:center;padding:44px 18px;color:var(--text-secondary)}
+    .empty-state i{font-size:44px;color:var(--brand);margin-bottom:12px;display:block}
 
-    /* UPLOAD INTERFACE */
-    #dropZone{
-      border:2px dashed var(--border);border-radius:var(--radius-lg);
-      padding:60px 20px;text-align:center;background:rgba(255,255,255,0.02);
-      transition:var(--transition);cursor:pointer;position:relative;
-    }
-    #dropZone:hover{border-color:var(--brand);background:rgba(99,102,241,0.05)}
-    .upload-progress-container{
-      margin-top:20px;background:rgba(0,0,0,0.3);padding:15px;border-radius:12px;
-      border:1px solid var(--border);
-    }
-    .progress-bar-bg{height:10px;background:rgba(255,255,255,0.05);border-radius:10px;overflow:hidden;margin-top:10px;}
-    .progress-bar-fill{height:100%;background:var(--brand-gradient);width:0%;transition:0.3s;}
-
-    /* LEAD CARDS */
-    .leads-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(350px, 1fr));gap:15px;}
-    .lead-card{
-      background:var(--bg-secondary);border:1px solid var(--border);
-      padding:18px;border-radius:var(--radius-lg);display:flex;gap:15px;align-items:center;
-      transition:0.3s;
-    }
-    .lead-card:hover{border-color:var(--brand);transform:translateX(5px);}
-    .lead-selfie{width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid var(--brand);}
-
-    /* MODAL STYLES */
+    /* =========================================================
+      MODALS
+    ========================================================= */
     .modal{
-      display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);
-      z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(10px);
+      display:none;
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.88);
+      z-index:1100;
+      align-items:center;
+      justify-content:center;
+      backdrop-filter:blur(10px);
     }
     .modal.active{display:flex}
     .modal-content{
-      background:var(--bg-secondary);padding:35px;border-radius:var(--radius-lg);
-      width:95%;max-width:1100px;max-height:92vh;overflow-y:auto;position:relative;
-      border:1px solid var(--glass-border);box-shadow:var(--shadow-card);
+      background:var(--bg-card);
+      border-radius:var(--radius-lg);
+      padding:24px;
+      width:min(900px, 92vw);
+      max-height:92vh;
+      overflow:auto;
+      border:1px solid var(--border);
+      box-shadow:var(--shadow);
+      position:relative;
     }
-    .modal-close{position:absolute;top:20px;right:20px;color:#fff;font-size:25px;cursor:pointer;background:none;border:none;}
-
-    @keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
-
-    /* EVENT SELECTION FOR LINKS */
-    .event-check-list{max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:10px;background:rgba(0,0,0,0.2);}
-    .event-check-item{display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid rgba(255,255,255,0.05);}
-    .event-check-item:last-child{border:none;}
-    input[type="checkbox"]{accent-color:var(--brand);width:18px;height:18px;cursor:pointer;}
+    .modal-close{
+      position:absolute;top:14px;right:14px;
+      background:none;border:none;color:var(--text-secondary);
+      font-size:22px;cursor:pointer;
+      transition:var(--transition);
+    }
+    .modal-close:hover{color:var(--danger);transform:rotate(90deg)}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media(max-width: 900px){.detail-grid{grid-template-columns:1fr}}
+    .tag{background:rgba(99,102,241,.15);color:var(--brand);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+    .tag.ai{background:rgba(16,185,129,.15);color:var(--success)}
+    .tag.face{background:rgba(245,158,11,.15);color:var(--warning)}
+    .tags-container{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
   </style>
 </head>
 
 <body>
 <div class="wrap">
   <!-- =========================
-      MAIN HEADER
+      HEADER
   ========================= -->
-  <div class="top-bar">
+  <div class="top-bar glass">
     <div class="header-left">
-      <a href="dashboard.html" style="color:var(--text-secondary);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Back to All Collections</a>
-      <h1 id="collectionNameDisplay"><i class="fas fa-layer-group"></i> Loading...</h1>
+      <a href="dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
+      <h1><i class="fas fa-images"></i> <span id="collectionName">Loading...</span></h1>
       <div class="stats-line">
-        <div class="stat-item"><i class="fas fa-calendar-check"></i> <span id="statEvents" class="stat-value">0</span> Events</div>
-        <div class="stat-item"><i class="fas fa-images"></i> <span id="statPhotos" class="stat-value">0</span> Photos</div>
-        <div class="stat-item"><i class="fas fa-user-friends"></i> <span id="statLeads" class="stat-value">0</span> Guest Leads</div>
+        <div class="stat-item"><i class="fas fa-calendar-alt"></i> <span id="totalEvents" class="stat-value">0</span> Events</div>
+        <div class="stat-item"><i class="fas fa-camera"></i> <span id="totalPhotos" class="stat-value">0</span> Photos</div>
+        <div class="stat-item"><i class="fas fa-users"></i> <span id="totalLeads" class="stat-value">0</span> Guests</div>
       </div>
     </div>
+
     <div class="header-actions">
-      <button class="btn btn-secondary" onclick="refreshData()"><i class="fas fa-sync"></i> Sync Data</button>
-      <button class="btn btn-primary" id="shareBtnTop"><i class="fas fa-paper-plane"></i> Share Live Gallery</button>
+      <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+      <a href="#" id="assistantLink" target="_blank" class="btn btn-primary"><i class="fas fa-bolt"></i> Staff Upload Link</a>
     </div>
   </div>
 
   <!-- =========================
-      NAVIGATION TABS
+      TABS
   ========================= -->
   <div class="tabs-container">
     <div class="tabs">
-      <div class="tab active" data-tab="tabPhotos"><i class="fas fa-camera-retro"></i> Gallery</div>
-      <div class="tab" data-tab="tabEvents"><i class="fas fa-calendar-day"></i> Manage Events</div>
-      <div class="tab" data-tab="tabUpload"><i class="fas fa-upload"></i> Upload Files</div>
-      <div class="tab" data-tab="tabGuests"><i class="fas fa-users"></i> Guest Activity</div>
-      <div class="tab" data-tab="tabLinks"><i class="fas fa-link"></i> Smart Sharing</div>
+      <div class="tab active" data-tab="galleryTab"><i class="fas fa-images"></i> Photos</div>
+      <div class="tab" data-tab="eventsTab"><i class="fas fa-calendar-alt"></i> Events</div>
+      <div class="tab" data-tab="uploadTab"><i class="fas fa-cloud-upload-alt"></i> Upload</div>
+      <div class="tab" data-tab="linksTab"><i class="fas fa-link"></i> Links</div>
+      <div class="tab" data-tab="analyticsTab"><i class="fas fa-users"></i> Guests</div>
     </div>
   </div>
 
   <!-- =========================
-      TAB: GALLERY (Photos & Faces)
+      PHOTOS TAB
   ========================= -->
-  <div id="tabPhotos" class="tab-content active">
-    <!-- Circle Icons for detected people -->
-    <div id="faceIconsBar"></div>
-
+  <div id="galleryTab" class="tab-content active">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;gap:15px;flex-wrap:wrap;">
-        <div style="display:flex;gap:12px;">
-          <select id="filterCategory" class="btn btn-secondary" style="background:var(--bg-primary);padding:10px;">
-            <option value="all">Every Shot</option>
-            <option value="group">Groups (2+ Faces)</option>
-            <option value="portrait">Solo Portraits</option>
+      <div class="filter-row">
+        <div class="filter-group">
+          <select id="filterType" class="filter-select">
+            <option value="ALL">All Photos</option>
+            <option value="BEST">⭐ Best Shots</option>
+            <option value="HAPPY">😊 Happy</option>
+            <option value="GROUP">👥 Groups</option>
           </select>
-          <input type="text" id="aiSearchField" placeholder="Search AI Tags (Wedding, Stage, Smile)..." style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:0 18px;color:#fff;width:300px;">
-        </div>
-        <button class="btn btn-primary" onclick="bulkDownload()"><i class="fas fa-cloud-download-alt"></i> Export View (ZIP)</button>
-      </div>
 
-      <!-- RENAMING INTERFACE (Pop-out) -->
-      <div id="namingPanel" style="display:none;background:rgba(99,102,241,0.1);padding:20px;border-radius:15px;margin-bottom:20px;border:1px solid var(--brand); animation:fadeIn 0.3s;">
-        <div style="display:flex;align-items:center;gap:20px;">
-           <img id="namingThumb" src="" style="width:65px;height:65px;border-radius:50%;border:3px solid var(--brand);">
-           <div style="flex:1">
-             <div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Identify Person</div>
-             <input type="text" id="nameInputField" placeholder="Enter Name..." style="width:100%;max-width:350px;background:#0a0a0f;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;font-weight:700;">
-           </div>
-           <div style="display:flex;gap:10px;">
-             <button class="btn btn-primary" onclick="saveFaceName()"><i class="fas fa-check"></i> Save</button>
-             <button class="btn btn-secondary" onclick="closeNaming()"><i class="fas fa-times"></i> Cancel</button>
-           </div>
+          <input type="text" id="tagSearch" class="filter-input" placeholder="Search tags (coming soon)..." disabled>
+          <input type="text" id="aiTagSearch" class="filter-input" placeholder="Search AI tags (e.g., Wedding, Stage)..." />
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-secondary" id="clearFiltersBtn"><i class="fas fa-times"></i> Clear</button>
+          <button class="btn btn-primary" id="downloadZipBtn"><i class="fas fa-download"></i> Download Zip</button>
         </div>
       </div>
 
-      <div id="galleryGrid" class="gallery-grid">
-        <!-- JS will inject photos here -->
+      <!-- =========================
+         PEOPLE BAR (Face Icons)
+      ========================= -->
+      <div id="faceIconsBar"></div>
+
+      <!-- =========================
+         FACE NAMING (double click)
+      ========================= -->
+      <div id="faceNamingHeader" class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-user-tag"></i> <span id="faceHeaderTitle">Who is this?</span></h3>
+          <button class="btn btn-secondary" id="closeFaceNamingBtn"><i class="fas fa-times"></i> Close</button>
+        </div>
+        <div class="row">
+          <img id="faceHeaderImg" src="" alt="face">
+          <div style="flex:1;min-width:240px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <input type="text" id="faceNameInput" placeholder="Enter name..." />
+              <button class="btn btn-primary" id="saveFaceBtn"><i class="fas fa-save"></i> Save</button>
+              <button class="btn btn-secondary" id="cancelFaceBtn"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+            <div id="faceSuggestions"></div>
+            <div style="margin-top:10px;color:var(--text-muted);font-size:12px">
+              Tip: Double click any face icon to rename (Google Photos style).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================
+         GALLERY CONTAINER
+      ========================= -->
+      <div id="galleryContainer">
+        <div class="empty-state">
+          <i class="fas fa-spinner fa-spin"></i>
+          <h3 style="margin-bottom:8px;">Loading photos...</h3>
+          <p style="color:var(--text-muted);">Please wait</p>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:18px;">
+        <button id="loadMoreBtn" class="btn btn-secondary" style="display:none;"><i class="fas fa-plus"></i> Load More</button>
       </div>
     </div>
   </div>
 
   <!-- =========================
-      TAB: MANAGE EVENTS
+      EVENTS TAB
   ========================= -->
-  <div id="tabEvents" class="tab-content">
+  <div id="eventsTab" class="tab-content">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;">
-        <h3>Event List</h3>
-        <button class="btn btn-primary" onclick="showEventForm()"><i class="fas fa-plus"></i> Create New Event</button>
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-calendar-alt"></i> Events</h3>
+        <button class="btn btn-primary" id="newEvtBtn"><i class="fas fa-plus"></i> New Event</button>
       </div>
 
-      <div id="eventFormBox" style="display:none;background:rgba(255,255,255,0.02);padding:25px;border-radius:15px;margin-bottom:25px;border:1px solid var(--border);">
-         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-           <div>
-             <label style="display:block;margin-bottom:8px;font-size:12px;color:var(--text-secondary);">Event Name (e.g. Mehndi, Sangeet)</label>
-             <input type="text" id="evNameInput" style="width:100%;padding:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:10px;color:#fff;">
-           </div>
-           <div>
-             <label style="display:block;margin-bottom:8px;font-size:12px;color:var(--text-secondary);">Event Date</label>
-             <input type="date" id="evDateInput" style="width:100%;padding:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:10px;color:#fff;">
-           </div>
-         </div>
-         <div style="margin-top:20px;display:flex;gap:12px;justify-content:flex-end;">
-           <button class="btn btn-secondary" onclick="hideEventForm()">Cancel</button>
-           <button class="btn btn-primary" onclick="submitEvent()">Confirm Creation</button>
-         </div>
+      <div id="eventForm" style="display:none;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <input type="text" id="eventName" placeholder="Event Name">
+          <input type="date" id="eventDate">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-secondary" id="cancelEventBtn"><i class="fas fa-times"></i> Cancel</button>
+          <button class="btn btn-primary" id="saveEventBtn"><i class="fas fa-save"></i> Save</button>
+        </div>
       </div>
 
-      <div id="eventsContainer">
-        <!-- Events rendered as full cards here -->
-      </div>
+      <table id="eventsTable">
+        <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
+        <tbody id="eventsTbody"></tbody>
+      </table>
     </div>
   </div>
 
   <!-- =========================
-      TAB: UPLOAD INTERFACE
+      UPLOAD TAB
   ========================= -->
-  <div id="tabUpload" class="tab-content">
+  <div id="uploadTab" class="tab-content">
     <div class="card" style="max-width:900px;margin:0 auto;">
-      <h3 style="margin-bottom:20px;"><i class="fas fa-cloud-upload-alt"></i> Batch Photo Uploader</h3>
-      
-      <div style="margin-bottom:25px;">
-        <label style="display:block;margin-bottom:8px;font-size:13px;color:var(--text-secondary);font-weight:700;">Select Target Event:</label>
-        <select id="uploadEventDropdown" style="width:100%;padding:15px;background:var(--bg-primary);border:1px solid var(--border);border-radius:12px;color:#fff;font-weight:700;"></select>
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-cloud-upload-alt"></i> Upload Photos</h3>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;margin-bottom:8px;color:var(--text-secondary);font-weight:700">
+          <i class="fas fa-calendar"></i> Select Event
+        </label>
+        <select id="uploadEventSelect">
+          <option value="">Loading events...</option>
+        </select>
       </div>
 
       <div id="dropZone">
-        <i class="fas fa-images" style="font-size:50px;color:var(--brand);margin-bottom:15px;"></i>
-        <h4 style="margin-bottom:10px;">Drag & Drop high-res photos here</h4>
-        <p style="color:var(--text-muted);font-size:13px;">Supports JPG, PNG, HEIC (Auto-converted), WEBP</p>
-        <input type="file" id="photoFileInput" multiple hidden accept="image/*,.heic">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <h3 style="margin-bottom:6px;">Drop photos here or click to browse</h3>
+        <p style="color:var(--text-secondary);">JPG / PNG / HEIC / WEBP etc. up to 20MB</p>
+        <input type="file" id="fileInput" multiple style="display:none" accept="image/*,.heic,.heif,.webp,.bmp,.tiff,.tif">
       </div>
 
-      <!-- Preview Queue -->
-      <div id="queuePreview" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:15px;margin-top:25px;"></div>
-
-      <!-- Progress Section -->
-      <div id="progressBox" style="display:none;" class="upload-progress-container">
-         <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;">
-           <span id="progressLabel">Initializing...</span>
-           <span id="progressPercent">0%</span>
-         </div>
-         <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
-         <div id="uploadStatusLog" style="margin-top:15px;font-family:monospace;font-size:11px;color:var(--text-muted);max-height:120px;overflow-y:auto;border-top:1px solid rgba(255,255,255,0.05);padding-top:10px;"></div>
-      </div>
-
-      <div style="display:flex;gap:15px;margin-top:25px;">
-        <button class="btn btn-primary" id="startBtn" style="flex:1" onclick="performBatchUpload()"><i class="fas fa-rocket"></i> Start Processing & Upload</button>
-        <button class="btn btn-secondary" onclick="resetQueue()">Clear Queue</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================
-      TAB: GUEST LEADS (The Business Side)
-  ========================= -->
-  <div id="tabGuests" class="tab-content">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;">
-        <h3>Live Guest Leads</h3>
-        <button class="btn btn-secondary" onclick="loadLeads()"><i class="fas fa-sync"></i> Refresh Leads</button>
-      </div>
-      
-      <div id="leadsContainer" class="leads-grid">
-        <!-- Guest activity injected here -->
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================
-      TAB: SMART LINKS (Generate & Manage)
-  ========================= -->
-  <div id="tabLinks" class="tab-content">
-    <div class="card" style="max-width:700px;margin:0 auto;">
-      <h3 style="margin-bottom:15px;"><i class="fas fa-magic"></i> Generate Searchable Link</h3>
-      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">Link generate karein jisme guests apni selfie khinch kar apni saari photos dhoondh sakein.</p>
-      
-      <div style="margin-bottom:20px;">
-        <label style="display:block;margin-bottom:10px;font-weight:700;font-size:13px;">Include these events in link:</label>
-        <div id="linkEventsChecklist" class="event-check-list">
-          <!-- Populated by JS -->
+      <div id="uploadControls" style="display:none;margin-top:14px;">
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-secondary" id="clearFilesBtn"><i class="fas fa-trash"></i> Clear Files</button>
+          <button class="btn btn-primary" id="startUploadBtn"><i class="fas fa-upload"></i> Start Upload (Batch)</button>
         </div>
       </div>
 
-      <div style="margin-bottom:25px;">
-        <label style="display:block;margin-bottom:10px;font-weight:700;font-size:13px;">Link Validity (Hours - 0 means Forever):</label>
-        <input type="number" id="expiryInput" value="0" style="width:100%;padding:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:10px;color:#fff;">
+      <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
+            <i class="fas fa-compress-alt"></i> Optimize images
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;color:var(--text-secondary);font-weight:700">
+            <input type="checkbox" id="optimizeToggle" checked> Enable
+          </label>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
+            <i class="fas fa-exchange-alt"></i> Convert to JPG
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;color:var(--text-secondary);font-weight:700">
+            <input type="checkbox" id="convertToggle" checked> Enable
+          </label>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
+            <i class="fas fa-ruler-horizontal"></i> Max Width
+          </label>
+          <select id="maxWidthSelect">
+            <option value="0">Original</option>
+            <option value="4096">4096px</option>
+            <option value="2048" selected>2048px</option>
+            <option value="1920">1920px</option>
+            <option value="1280">1280px</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
+            <i class="fas fa-tachometer-alt"></i> Quality (<span id="jpegQualityVal">0.85</span>)
+          </label>
+          <input id="jpegQuality" type="range" min="0.5" max="0.95" step="0.01" value="0.85">
+        </div>
       </div>
 
-      <button class="btn btn-primary" style="width:100%;" onclick="generateGuestLink()"><i class="fas fa-plus-circle"></i> Create New Live Link</button>
+      <div id="fileList" style="margin-top:14px;"></div>
 
-      <div id="linkResultBox" style="display:none;margin-top:30px;padding:25px;background:rgba(99,102,241,0.1);border:1px dashed var(--brand);border-radius:15px;text-align:center;">
-          <div style="color:var(--brand);font-weight:900;text-transform:uppercase;font-size:12px;margin-bottom:12px;">Shareable Guest URL</div>
-          <a id="finalUrlDisplay" href="#" target="_blank" style="display:block;color:#fff;text-decoration:none;word-break:break-all;font-weight:800;font-size:16px;margin-bottom:20px;padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;"></a>
-          <button class="btn btn-primary" onclick="copyResultLink()"><i class="fas fa-copy"></i> Copy Link to Clipboard</button>
+      <div id="progress-container" style="display:none;margin-top:14px;">
+        <div class="progress-container"><div id="progress-bar"></div></div>
+        <p id="uploadStatus" style="text-align:center;margin-top:10px;color:var(--text-secondary);font-weight:800;"></p>
+        <div class="upload-log" id="uploadLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+      LINKS TAB
+  ========================= -->
+  <div id="linksTab" class="tab-content">
+    <div class="card" style="max-width:700px;margin:0 auto;">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-link"></i> Generate Search Link</h3>
+      </div>
+      <p style="color:var(--text-secondary);margin-bottom:12px;">
+        Select events to include in guest search link.
+      </p>
+
+      <div id="linkEventList" style="max-height:220px;overflow:auto;padding:14px;background:rgba(255,255,255,.03);border-radius:var(--radius-md);border:1px solid var(--border);"></div>
+
+      <div style="display:grid;gap:12px;margin-top:12px;">
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
+            <i class="fas fa-clock"></i> Expiry (hours)
+          </label>
+          <input type="number" id="expiryHours" placeholder="0 for no expiry" min="0">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
+            <i class="fas fa-lock"></i> Optional Password
+          </label>
+          <input type="password" id="linkPassword" placeholder="Leave empty for no password">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="genLinkBtn" style="width:100%;margin-top:14px;">
+        <i class="fas fa-magic"></i> Generate Link
+      </button>
+
+      <div id="linkResult" style="display:none;margin-top:14px;padding:14px;background:rgba(99,102,241,.1);border:1px dashed var(--brand);border-radius:var(--radius-md);">
+        <h4 style="margin-bottom:8px;color:var(--brand);font-weight:900"><i class="fas fa-check-circle"></i> Link Generated</h4>
+        <a id="generatedLink" href="#" target="_blank" style="display:block;color:var(--brand);text-decoration:none;word-break:break-all;margin-bottom:10px;"></a>
+        <button class="btn btn-secondary" id="copyLinkBtn" style="width:100%;"><i class="fas fa-copy"></i> Copy Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+      GUEST LEADS TAB
+  ========================= -->
+  <div id="analyticsTab" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users"></i> Guest Leads</h3>
+        <button class="btn btn-secondary" id="reloadLeadsBtn"><i class="fas fa-sync-alt"></i> Reload</button>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <input type="date" id="dateFilter" class="filter-input" placeholder="Filter by Date">
+          <input type="tel" id="mobileFilter" class="filter-input" placeholder="Filter by Mobile">
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-secondary" id="clearLeadsFiltersBtn"><i class="fas fa-times"></i> Clear Filters</button>
+        </div>
+      </div>
+
+      <div id="leadsGrid" class="lead-grid"></div>
+      <div id="noLeadsMessage" class="empty-state" style="display:none;">
+        <i class="fas fa-users-slash"></i>
+        <h3 style="margin-bottom:8px;">No leads yet</h3>
+        <p style="color:var(--text-muted);">Guest leads will appear once guests search for their photos.</p>
       </div>
     </div>
   </div>
@@ -415,567 +664,1435 @@
 </div>
 
 <!-- =========================
-    DETAIL MODAL: PHOTO EXPLORER
+    PHOTO DETAILS MODAL
 ========================= -->
-<div class="modal" id="photoModal">
+<div class="modal" id="photoDetailsModal">
   <div class="modal-content">
-    <button class="modal-close" onclick="closeDetailModal()">&times;</button>
-    <div style="display:grid;grid-template-columns:1fr 380px;gap:30px;">
-       <div style="background:#000;border-radius:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:500px;border:1px solid var(--border);">
-          <img id="detailPreviewImage" src="" style="max-width:100%;max-height:85vh;object-fit:contain;">
-       </div>
-       <div style="display:flex;flex-direction:column;">
-          <h2 style="font-weight:900;margin-bottom:20px;display:flex;align-items:center;gap:10px;"><i class="fas fa-info-circle" style="color:var(--brand);"></i> Metadata</h2>
-          
-          <div style="margin-bottom:20px;padding:15px;background:rgba(255,255,255,0.03);border-radius:12px;">
-             <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:5px;">Capture Time</div>
-             <div id="detailCapturedTime" style="font-weight:700;">...</div>
-          </div>
+    <button class="modal-close" id="closePhotoDetailsBtn"><i class="fas fa-times"></i></button>
 
-          <div style="margin-bottom:20px;">
-             <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:10px;">Detected People</div>
-             <div id="detailFacesList" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
-          </div>
+    <h3 style="margin-bottom:14px;font-weight:900"><i class="fas fa-info-circle"></i> Photo Details</h3>
 
-          <div style="margin-bottom:30px;">
-             <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:10px;">AI Visual Tags</div>
-             <div id="detailTagsList" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    <div class="detail-grid">
+      <div>
+        <img id="detailPhotoImg" src="" style="width:100%;border-radius:14px;border:1px solid var(--border)" />
+      </div>
+      <div>
+        <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+          <div style="color:var(--text-secondary);font-weight:900;margin-bottom:8px;text-transform:uppercase;font-size:12px">File</div>
+          <div style="font-size:13px">
+            <div><b>Filename:</b> <span id="detailFilename"></span></div>
+            <div><b>Uploaded:</b> <span id="detailUploadDate"></span></div>
+            <div><b>Faces:</b> <span id="detailFaceCount"></span></div>
           </div>
+        </div>
 
-          <div style="margin-top:auto;">
-             <button class="btn btn-primary" style="width:100%;" onclick="downloadCurrent()"><i class="fas fa-download"></i> Download Full Resolution</button>
-             <button class="btn btn-secondary" style="width:100%;margin-top:10px;" onclick="deleteCurrentPhoto()"><i class="fas fa-trash-alt"></i> Delete Photo</button>
-          </div>
-       </div>
+        <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+          <div style="color:var(--text-secondary);font-weight:900;margin-bottom:8px;text-transform:uppercase;font-size:12px">People</div>
+          <div id="detailPeople" class="tags-container"></div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div style="color:var(--text-secondary);font-weight:900;margin-bottom:8px;text-transform:uppercase;font-size:12px">AI Tags</div>
+          <div id="detailTags" class="tags-container"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-secondary" id="closeDetailsBtn2"><i class="fas fa-times"></i> Close</button>
+          <button class="btn btn-primary" id="downloadSingleBtn"><i class="fas fa-download"></i> Download</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 /* =========================================================
-  BACKEND INTEGRATION CONFIG (Mapping Logic)
+  API CONFIG (IMPORTANT)
 ========================================================= */
-const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+const API_BASE = localStorage.getItem("API_BASE") || "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const idToken = localStorage.getItem("idToken");
+
+// URL params
 const urlParams = new URLSearchParams(window.location.search);
 const collectionId = urlParams.get("id");
-const collectionName = urlParams.get("name") || "Event Project";
+const collectionName = urlParams.get("name") || "Collection";
 
-// Central State
+// endpoints
+const GET_EVENTS_API      = `${API_BASE}/get-events`;            // POST
+const GET_PHOTOS_API      = `${API_BASE}/get-photos`;            // POST
+const UPSERT_EVENT_API    = `${API_BASE}/upsert-event`;          // POST
+const DELETE_EVENT_API    = `${API_BASE}/delete-event`;          // POST
+const UPLOAD_URLS_API     = `${API_BASE}/generate-upload-urls`;  // POST
+const GENERATE_LINK_API   = `${API_BASE}/generate-search-link`;  // POST
+const LIST_PEOPLE_API     = `${API_BASE}/list_people`;           // POST
+const LIST_PEOPLE_API_ALT = `${API_BASE}/list-people`;           // fallback
+const SAVE_FACE_NAME_API  = `${API_BASE}/save-face-name`;        // POST
+const SAVE_DETAILS_API    = `${API_BASE}/save-details`;          // GET/POST (leads)
+
+// utils
+const $ = (id) => document.getElementById(id);
+
+// Global State
 let allPhotos = [];
+let filteredPhotos = [];
 let allEvents = [];
-let faceGroups = [];
-let activeFaceId = null;
-let currentDetailPhoto = null;
-let uploadQueue = [];
-let activeNamingFaceId = null;
+let allLeads = [];
+
+// People (Face) state
+let faceGroups = [];              // [{FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount}]
+let currentSelectedFaceId = null;
+let currentNamingFaceId = null;
+
+// Upload state
+let selectedFiles = [];
+let lastUploadFinishedAt = null;  // for "indexing" UX
 
 /* =========================================================
-  INITIALIZATION & CORE FETCHING
+  HELPERS (FACE NORMALIZATION + CROP)
 ========================================================= */
-window.onload = async () => {
-  if(!collectionId || !idToken) { 
-    alert("Session error. Redirecting to dashboard.");
-    window.location.href = "dashboard.html";
+function getFaceId(faceObj){
+  return faceObj?.FaceId || faceObj?.face_id || faceObj?.faceId || null;
+}
+function getBBox(faceObj){
+  return faceObj?.BoundingBox || faceObj?.bounding_box || faceObj?.bbox || null;
+}
+function clamp01(x){
+  x = Number(x);
+  if(isNaN(x)) return 0;
+  return Math.max(0, Math.min(1, x));
+}
+function photoHasFace(photo, faceId){
+  if(!faceId) return true;
+  if(Array.isArray(photo.face_ids) && photo.face_ids.includes(faceId)) return true;
+  const faces = Array.isArray(photo.faces) ? photo.faces : [];
+  return faces.some(f => getFaceId(f) === faceId);
+}
+function setFaceBgCrop(wrapper, url, bbox){
+  wrapper.style.backgroundImage = url ? `url("${url}")` : "none";
+  wrapper.style.backgroundRepeat = "no-repeat";
+  wrapper.style.backgroundPosition = "center";
+  wrapper.style.backgroundSize = "cover";
+
+  if(!bbox || bbox.Left === undefined) return;
+
+  const L = clamp01(bbox.Left);
+  const T = clamp01(bbox.Top);
+  const W = clamp01(bbox.Width);
+  const H = clamp01(bbox.Height);
+
+  const zoom = 1 / Math.max(W, H, 0.0001);
+  const cx = (L + W/2) * 100;
+  const cy = (T + H/2) * 100;
+
+  wrapper.style.backgroundSize = `${zoom*100}% ${zoom*100}%`;
+  wrapper.style.backgroundPosition = `${cx}% ${cy}%`;
+}
+
+/* =========================================================
+  TOAST (simple)
+========================================================= */
+function showToast(message, type="success"){
+  const toast = document.createElement("div");
+  toast.style.cssText = `
+    position:fixed;top:18px;right:18px;z-index:99999;
+    padding:10px 14px;border-radius:12px;
+    background:${type==="success" ? "rgba(16,185,129,.95)" : "rgba(239,68,68,.95)"};
+    color:#fff;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.35);
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 2600);
+}
+
+function logUpload(line){
+  const el = $("uploadLog");
+  if(!el) return;
+  const ts = new Date().toLocaleTimeString();
+  el.textContent += `[${ts}] ${line}\n`;
+  el.scrollTop = el.scrollHeight;
+  console.log("[UPLOAD]", line);
+}
+
+function formatDate(dateString){
+  if(!dateString) return "Unknown";
+  const d = new Date(dateString);
+  if(isNaN(d)) return String(dateString);
+  return d.toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+
+function safeJsonParse(text){
+  try{return JSON.parse(text);}catch(e){return null;}
+}
+
+/* =========================================================
+  INIT
+========================================================= */
+document.addEventListener("DOMContentLoaded", async ()=>{
+  if(!collectionId){
+    showToast("Collection ID missing in URL", "error");
+    setTimeout(()=>window.location.href="dashboard.html", 1200);
     return;
   }
-  document.getElementById("collectionNameDisplay").innerHTML = `<i class="fas fa-layer-group"></i> ${collectionName}`;
+  if(!idToken){
+    showToast("Please login first", "error");
+    setTimeout(()=>window.location.href="login.html", 1200);
+    return;
+  }
 
-  // Tab switcher binding
-  document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-       document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-       tab.classList.add("active");
-       const activeTabId = tab.dataset.tab;
-       document.getElementById(activeTabId).classList.add("active");
-       
-       // Conditional fetching
-       if(activeTabId === "tabGuests") loadLeads();
-    });
-  });
+  $("collectionName").textContent = collectionName;
+  $("assistantLink").href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionName)}`;
 
-  // Setup Dropzone
-  const dz = document.getElementById("dropZone");
-  const input = document.getElementById("photoFileInput");
-  dz.onclick = () => input.click();
-  input.onchange = (e) => handleFiles(e.target.files);
-  dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = "var(--brand)"; };
-  dz.ondrop = (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); };
+  setupEventListeners();
 
-  await refreshData();
-};
+  // start
+  await initLoad();
+});
 
-async function refreshData() {
-  console.log("Syncing with backend...");
-  try {
-    await Promise.all([fetchEvents(), fetchPhotos()]);
-    processFaceGroups();
-    updateDashboardUI();
-  } catch (err) {
-    console.error("Refresh failed:", err);
+async function initLoad(){
+  try{
+    console.group("COLLECTION INIT");
+    console.log("API_BASE:", API_BASE);
+    console.log("collectionId:", collectionId);
+
+    await Promise.all([loadEvents(), loadPhotos()]);
+    await loadFaceGroups();   // depends on photos (fallback build)
+    await loadLeads();
+
+    showToast("Collection loaded");
+    console.groupEnd();
+  }catch(e){
+    console.error("Init error:", e);
+    showToast("Failed to load collection", "error");
   }
 }
 
-async function fetchEvents() {
-  const res = await fetch(`${API_BASE}/get-events`, {
-    method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ collection_id: collectionId })
-  });
-  const data = await res.json();
-  allEvents = data.events || [];
+/* =========================================================
+  EVENTS
+========================================================= */
+async function loadEvents(){
+  try{
+    const res = await fetch(GET_EVENTS_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+
+    allEvents = data.events || [];
+    $("totalEvents").textContent = allEvents.length;
+
+    renderEvents();
+    populateEventDropdowns();
+  }catch(e){
+    console.error("loadEvents error:", e);
+    $("eventsTbody").innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a0aec0;">Failed to load events</td></tr>`;
+  }
 }
 
-async function fetchPhotos() {
-  const res = await fetch(`${API_BASE}/get-photos`, {
-    method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ collection_id: collectionId })
+function renderEvents(){
+  const tbody = $("eventsTbody");
+  tbody.innerHTML = "";
+  if(allEvents.length === 0){
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a0aec0;">No events found</td></tr>`;
+    return;
+  }
+  allEvents.forEach(evt=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${evt.name || "Untitled"}</td>
+      <td>${evt.event_date || "No date"}</td>
+      <td>${evt.photo_count || 0}</td>
+      <td>
+        <button class="btn btn-sm btn-danger" onclick="deleteEvent('${evt.event_id}')">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
-  const data = await res.json();
-  allPhotos = data.photos || [];
 }
 
-/**
- * GUEST LEADS FETCHING (CRITICAL BACKEND FIX)
- * Aapke backup ke mutabik DynamoDB 'Items' key use karta hai.
- */
-async function loadLeads() {
-  const container = document.getElementById("leadsContainer");
-  container.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:50px;'><i class='fas fa-spinner fa-spin'></i> Syncing Guest Data...</div>";
-  
-  try {
-    // Lead fetching logic handles GET and POST Fallback
-    let res = await fetch(`${API_BASE}/save-details?collection_id=${collectionId}`, {
-      method: "GET", headers: { "Authorization": `Bearer ${idToken}` }
+function populateEventDropdowns(){
+  const uploadSelect = $("uploadEventSelect");
+  const linkList = $("linkEventList");
+
+  uploadSelect.innerHTML = `<option value="">Select an event</option>`;
+  (allEvents||[]).forEach(evt=>{
+    const op = document.createElement("option");
+    op.value = evt.event_id;
+    op.textContent = `${evt.name} (${evt.event_date || "No date"})`;
+    uploadSelect.appendChild(op);
+  });
+
+  linkList.innerHTML = "";
+  (allEvents||[]).forEach(evt=>{
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:8px";
+    row.innerHTML = `
+      <input type="checkbox" class="linkEventCheck" value="${evt.event_id}" id="evt_${evt.event_id}">
+      <label for="evt_${evt.event_id}" style="flex:1;color:var(--text-secondary);font-weight:700;">
+        ${evt.name} <span style="color:var(--text-muted)">(${evt.event_date || "No date"})</span>
+      </label>
+    `;
+    linkList.appendChild(row);
+  });
+}
+
+async function createEvent(){
+  const name = $("eventName").value.trim();
+  const date = $("eventDate").value;
+  if(!name || !date){
+    showToast("Event name and date required", "error");
+    return;
+  }
+  try{
+    const res = await fetch(UPSERT_EVENT_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+    showToast("Event created");
+    $("eventForm").style.display = "none";
+    await loadEvents();
+  }catch(e){
+    console.error("createEvent error:", e);
+    showToast("Failed to create event", "error");
+  }
+}
+
+async function deleteEvent(eventId){
+  if(!confirm("Delete this event? Photos inside will be deleted from backend.")) return;
+
+  try{
+    const res = await fetch(DELETE_EVENT_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId, event_id: eventId })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+
+    showToast("Event deleted");
+
+    // IMPORTANT: full refresh (events + photos + faces + leads)
+    currentSelectedFaceId = null;
+    filteredPhotos = [];
+    await Promise.all([loadEvents(), loadPhotos()]);
+    await loadFaceGroups();
+    await loadLeads();
+  }catch(e){
+    console.error("deleteEvent error:", e);
+    showToast("Failed to delete event", "error");
+  }
+}
+
+/* =========================================================
+  PHOTOS
+========================================================= */
+async function loadPhotos(){
+  try{
+    $("galleryContainer").innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-spinner fa-spin"></i>
+        <h3 style="margin-bottom:8px;">Loading photos...</h3>
+        <p style="color:var(--text-muted);">Please wait</p>
+      </div>
+    `;
+
+    const res = await fetch(GET_PHOTOS_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+
+    allPhotos = data.photos || [];
+    filteredPhotos = [...allPhotos];
+
+    $("totalPhotos").textContent = allPhotos.length;
+
+    renderPhotos();
+  }catch(e){
+    console.error("loadPhotos error:", e);
+    $("galleryContainer").innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>Failed to load photos</h3>
+        <p style="color:var(--text-muted);">${e.message || e}</p>
+      </div>
+    `;
+  }
+}
+
+function groupPhotosForRender(photos){
+  const byDate = {};
+  photos.forEach(p=>{
+    const dt = p.created_at ? new Date(p.created_at) : null;
+    const key = (dt && !isNaN(dt)) ? dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "Unknown Date";
+    if(!byDate[key]) byDate[key] = [];
+    byDate[key].push(p);
+  });
+  const keys = Object.keys(byDate).sort((a,b)=>{
+    const da = new Date(a); const db = new Date(b);
+    if(isNaN(da) || isNaN(db)) return 0;
+    return db-da;
+  });
+  return {byDate, keys};
+}
+
+function renderPhotos(){
+  const container = $("galleryContainer");
+
+  if(filteredPhotos.length === 0){
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-images"></i>
+        <h3 style="margin-bottom:8px;">No photos found</h3>
+        <p style="color:var(--text-muted);">${currentSelectedFaceId ? "No photos for selected person." : "Upload photos to get started."}</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = "";
+
+  const {byDate, keys} = groupPhotosForRender(filteredPhotos);
+
+  keys.forEach(dateKey=>{
+    const h = document.createElement("h3");
+    h.textContent = dateKey;
+    h.style.cssText = "margin:18px 0 10px;color:var(--text-secondary);font-size:14px;font-weight:900;";
+    container.appendChild(h);
+
+    const grid = document.createElement("div");
+    grid.className = "gallery-grid";
+
+    byDate[dateKey].forEach(photo=>{
+      const card = document.createElement("div");
+      card.className = "photo-card";
+      card.onclick = ()=> showPhotoDetails(photo);
+
+      const img = document.createElement("img");
+      img.src = photo.thumbnail_url || photo.url;
+      img.alt = "photo";
+      img.loading = "lazy";
+      img.onerror = ()=>{ if(photo.url && img.src !== photo.url) img.src = photo.url; };
+
+      const badges = document.createElement("div");
+      badges.className = "photo-badges";
+
+      const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
+      const tagCount = (photo.ai_tags && Array.isArray(photo.ai_tags)) ? photo.ai_tags.length : 0;
+
+      if(faceCount){
+        const b1 = document.createElement("div");
+        b1.className = "badge";
+        b1.innerHTML = `<i class="fas fa-user"></i> ${faceCount}`;
+        badges.appendChild(b1);
+      }
+      if(tagCount){
+        const b2 = document.createElement("div");
+        b2.className = "badge";
+        b2.innerHTML = `<i class="fas fa-robot"></i> ${tagCount}`;
+        badges.appendChild(b2);
+      }
+
+      const overlay = document.createElement("div");
+      overlay.className = "photo-overlay";
+      overlay.innerHTML = `
+        <span>${photo.event_id ? "Event: " + photo.event_id : ""}</span>
+        <span>${photo.created_at ? formatDate(photo.created_at) : ""}</span>
+      `;
+
+      card.appendChild(img);
+      card.appendChild(badges);
+      card.appendChild(overlay);
+      grid.appendChild(card);
     });
 
-    if(!res.ok) {
-       res = await fetch(`${API_BASE}/save-details`, {
-         method: "POST", 
-         headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-         body: JSON.stringify({ collection_id: collectionId, action: "list" })
-       });
+    container.appendChild(grid);
+  });
+
+  if(lastUploadFinishedAt){
+    console.log("UPLOAD finished at", lastUploadFinishedAt);
+  }
+}
+
+/* =========================================================
+  PEOPLE (Face Icons)
+========================================================= */
+async function loadFaceGroups(){
+  try{
+    const tryFetch = async (url)=>{
+      const res = await fetch(url, {
+        method:"POST",
+        headers:{
+          "Authorization": `Bearer ${idToken}`,
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({ collection_id: collectionId })
+      });
+      const data = await res.json().catch(()=>({}));
+      return {res, data};
+    };
+
+    let result = await tryFetch(LIST_PEOPLE_API);
+
+    if(!result.res.ok){
+      result = await tryFetch(LIST_PEOPLE_API_ALT);
     }
 
-    const data = await res.json();
-    // Check all possible keys from DynamoDB Scan/Query
-    const items = data.Items || data.items || data.leads || data.data || [];
-    
-    renderLeads(items);
-    document.getElementById("statLeads").textContent = items.length;
-  } catch (err) {
-    container.innerHTML = "<div style='grid-column:1/-1;text-align:center;color:var(--danger);'>Failed to load activity leads.</div>";
+    if(result.res.ok){
+      const data = result.data || {};
+      const people = data.people || data.items || data.faces || [];
+      if(Array.isArray(people) && people.length){
+        faceGroups = people.map(p=>{
+          const fid = p.FaceId || p.face_id || p.faceId;
+          return {
+            FaceId: fid,
+            FaceName: p.FaceName || p.name || "Unknown",
+            photoCount: p.photo_count || p.count || 0,
+            thumbnail: p.face_thumbnail_url || p.thumbnail || p.thumb || null,
+            sampleUrl: p.sample_url || p.sampleUrl || null,
+            BoundingBox: p.BoundingBox || p.bounding_box || null
+          };
+        }).filter(x=>x.FaceId);
+
+        if(faceGroups.every(x=>!x.thumbnail)){
+          faceGroups = buildFacesFromPhotos();
+        }
+      }else{
+        faceGroups = buildFacesFromPhotos();
+      }
+    }else{
+      faceGroups = buildFacesFromPhotos();
+    }
+
+    faceGroups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
+
+    renderFaceIcons();
+  }catch(e){
+    console.error("loadFaceGroups error:", e);
+    faceGroups = buildFacesFromPhotos();
+    renderFaceIcons();
   }
 }
 
-function renderLeads(leads) {
-  const container = document.getElementById("leadsContainer");
-  container.innerHTML = "";
-  if(!leads.length) {
-    container.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:50px;color:var(--text-muted);'><i class='fas fa-user-clock' style='font-size:40px;display:block;margin-bottom:10px;'></i>No guest searches yet.</div>";
-    return;
-  }
+function buildFacesFromPhotos(){
+  const map = new Map();
 
-  leads.forEach(l => {
-    const card = document.createElement("div");
-    card.className = "lead-card";
-    const selfie = l.selfie_url || l.selfie_image || l.SelfieUrl || 'https://via.placeholder.com/100';
-    const name = l.name || l.guest_name || 'Anonymous Guest';
-    const mobile = l.mobile || l.phone || 'N/A';
-    const time = l.created_at || l.timestamp || Date.now();
+  allPhotos.forEach(photo=>{
+    const sampleUrl = photo.thumbnail_url || photo.url;
+    const faces = Array.isArray(photo.faces) ? photo.faces : [];
 
-    card.innerHTML = `
-      <img src="${selfie}" class="lead-selfie" onerror="this.src='https://via.placeholder.com/70'">
-      <div style="flex:1">
-         <div style="font-weight:900;font-size:16px;">${name}</div>
-         <div style="color:var(--brand);font-weight:700;font-size:14px;margin-top:2px;">${mobile}</div>
-         <div style="font-size:11px;color:var(--text-muted);margin-top:6px;"><i class="fas fa-clock"></i> Searched: ${new Date(time).toLocaleString()}</div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
+    faces.forEach(f=>{
+      const fid = getFaceId(f);
+      if(!fid) return;
 
-/* =========================================================
-  AI FACE GROUPING LOGIC (Google Photos Feature)
-========================================================= */
-function processFaceGroups() {
-  const faceMap = new Map();
-  const nameMap = new Map(); // Merging logic by name
-
-  allPhotos.forEach(p => {
-    const faces = p.faces || [];
-    faces.forEach(f => {
-      const fid = f.FaceId || f.face_id;
-      if (!fid) return;
-
-      const name = (f.FaceName && f.FaceName !== "Unknown") ? f.FaceName : null;
-      let group = null;
-
-      if (name && nameMap.has(name)) {
-        group = faceMap.get(nameMap.get(name));
-      } else if (faceMap.has(fid)) {
-        group = faceMap.get(fid);
+      if(!map.has(fid)){
+        map.set(fid, {
+          FaceId: fid,
+          FaceName: "Unknown",
+          sampleUrl,
+          BoundingBox: getBBox(f) || null,
+          photoCount: 1
+        });
+      }else{
+        map.get(fid).photoCount++;
+        if(!map.get(fid).BoundingBox && getBBox(f)) map.get(fid).BoundingBox = getBBox(f);
       }
+    });
 
-      if (!group) {
-        group = {
-          id: fid,
-          name: name || "Unknown Person",
-          thumb: f.face_thumbnail_url || p.thumbnail_url || p.url,
-          count: 0,
-          photos: []
-        };
-        faceMap.set(fid, group);
-        if (name) nameMap.set(name, fid);
-      }
-
-      if (!group.photos.find(existing => existing.photo_id === p.photo_id)) {
-        group.count++;
-        group.photos.push(p);
+    const faceIds = Array.isArray(photo.face_ids) ? photo.face_ids : [];
+    faceIds.forEach(fid=>{
+      if(!fid) return;
+      if(!map.has(fid)){
+        map.set(fid,{
+          FaceId: fid,
+          FaceName:"Unknown",
+          sampleUrl,
+          BoundingBox: null,
+          photoCount:1
+        });
+      }else{
+        map.get(fid).photoCount++;
       }
     });
   });
 
-  faceGroups = Array.from(faceMap.values()).sort((a,b) => b.count - a.count);
+  return Array.from(map.values());
 }
 
-/* =========================================================
-  UI RENDERING (Full Dash Update)
-========================================================= */
-function updateDashboardUI() {
-  document.getElementById("statEvents").textContent = allEvents.length;
-  document.getElementById("statPhotos").textContent = allPhotos.length;
-
-  renderFaceBar();
-  renderPhotoGrid();
-  renderEventsManagement();
-  populateDropdowns();
-}
-
-function renderFaceBar() {
-  const bar = document.getElementById("faceIconsBar");
+function renderFaceIcons(){
+  const bar = $("faceIconsBar");
   bar.innerHTML = "";
 
-  // "Everyone" filter
-  const allChip = document.createElement("div");
-  allChip.className = "face-item";
-  allChip.innerHTML = `
-    <div class="face-icon-wrapper ${!activeFaceId?'selected':''}" style="display:flex;align-items:center;justify-content:center;background:var(--brand-gradient);">
-       <i class="fas fa-users" style="color:#fff;font-size:20px;"></i>
-    </div>
-    <div class="face-name-label">All People</div>
-  `;
-  allChip.onclick = () => { activeFaceId = null; renderFaceBar(); renderPhotoGrid(); };
-  bar.appendChild(allChip);
+  // "All" chip
+  const allItem = document.createElement("div");
+  allItem.className = "face-item";
 
-  faceGroups.forEach(g => {
-    const chip = document.createElement("div");
-    chip.className = "face-item";
-    const isSelected = activeFaceId === g.id;
-    chip.innerHTML = `
-      <div class="face-icon-wrapper ${isSelected?'selected':''}" style="background-image:url('${g.thumb}')"></div>
-      <div class="face-name-label">${g.name}</div>
+  const allWrap = document.createElement("div");
+  allWrap.className = "face-icon-wrapper";
+  if(!currentSelectedFaceId) allWrap.classList.add("selected");
+  allWrap.style.display = "flex";
+  allWrap.style.alignItems = "center";
+  allWrap.style.justifyContent = "center";
+  allWrap.style.background = "rgba(99,102,241,.18)";
+  allWrap.innerHTML = `<i class="fas fa-users" style="font-size:20px;color:#fff;"></i>`;
+  allWrap.onclick = (e)=>{ e.stopPropagation(); toggleFaceSelection(null); };
+
+  const allLabel = document.createElement("div");
+  allLabel.className = "face-name-label";
+  allLabel.textContent = "All";
+
+  const allCount = document.createElement("div");
+  allCount.className = "face-count";
+  allCount.textContent = `${allPhotos.length || 0} photos`;
+
+  allItem.appendChild(allWrap);
+  allItem.appendChild(allLabel);
+  allItem.appendChild(allCount);
+  bar.appendChild(allItem);
+
+  if(!faceGroups.length){
+    const empty = document.createElement("div");
+    empty.style.cssText = "text-align:center;width:100%;padding:16px;color:var(--text-muted);";
+    empty.innerHTML = `
+      <i class="fas fa-users" style="font-size:22px;margin-bottom:6px;display:block;"></i>
+      <p>No faces detected yet. Upload photos with faces.</p>
     `;
-    chip.onclick = () => {
-      activeFaceId = isSelected ? null : g.id;
-      renderFaceBar();
-      renderPhotoGrid();
-    };
-    // Double Click to Rename (Hidden Feature)
-    chip.ondblclick = () => openNaming(g);
-    bar.appendChild(chip);
-  });
-}
-
-function renderPhotoGrid() {
-  const grid = document.getElementById("galleryGrid");
-  grid.innerHTML = "";
-
-  let displayList = activeFaceId 
-      ? allPhotos.filter(p => (p.faces || []).some(f => (f.FaceId || f.face_id) === activeFaceId))
-      : allPhotos;
-
-  if(!displayList.length) {
-    grid.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:50px;color:var(--text-muted);'>No photos found matching filters.</div>";
+    bar.appendChild(empty);
     return;
   }
 
-  displayList.forEach(p => {
+  faceGroups.forEach(face=>{
+    const item = document.createElement("div");
+    item.className = "face-item";
+
+    const wrap = document.createElement("div");
+    wrap.className = "face-icon-wrapper";
+    if(currentSelectedFaceId === face.FaceId) wrap.classList.add("selected");
+
+    wrap.onclick = (e)=>{
+      e.stopPropagation();
+      toggleFaceSelection(face.FaceId);
+    };
+
+    wrap.ondblclick = (e)=>{
+      e.stopPropagation();
+      startFaceNaming(face.FaceId, face.FaceName || "Unknown");
+    };
+
+    const url = face.thumbnail || face.sampleUrl || face.sample_url || face.sample || "";
+    if(url){
+      setFaceBgCrop(wrap, url, face.thumbnail ? null : face.BoundingBox);
+    }else{
+      wrap.style.backgroundImage = "none";
+      wrap.style.background = "rgba(255,255,255,.06)";
+    }
+
+    const label = document.createElement("div");
+    label.className = "face-name-label";
+    label.textContent = face.FaceName || "Unknown";
+    label.title = face.FaceName || "Unknown";
+
+    const count = document.createElement("div");
+    count.className = "face-count";
+    count.textContent = `${face.photoCount || 0} photos`;
+
+    item.appendChild(wrap);
+    item.appendChild(label);
+    item.appendChild(count);
+    bar.appendChild(item);
+  });
+}
+
+function toggleFaceSelection(faceId){
+  if(!faceId){
+    currentSelectedFaceId = null;
+    filteredPhotos = [...allPhotos];
+  }else if(currentSelectedFaceId === faceId){
+    currentSelectedFaceId = null;
+    filteredPhotos = [...allPhotos];
+  }else{
+    currentSelectedFaceId = faceId;
+    filteredPhotos = allPhotos.filter(p => photoHasFace(p, faceId));
+  }
+  console.log("Face selected:", currentSelectedFaceId, "photos:", filteredPhotos.length);
+  renderFaceIcons();
+  renderPhotos();
+}
+
+/* =========================================================
+  FACE NAMING
+========================================================= */
+function startFaceNaming(faceId, currentName){
+  currentNamingFaceId = faceId;
+
+  const face = faceGroups.find(f=>f.FaceId === faceId);
+  const imgUrl = face?.thumbnail || face?.sampleUrl || "";
+
+  $("faceHeaderImg").src = imgUrl;
+  $("faceHeaderTitle").textContent = currentName && currentName !== "Unknown" ? `Edit name for ${currentName}` : "Who is this?";
+  $("faceNameInput").value = currentName && currentName !== "Unknown" ? currentName : "";
+  $("faceNamingHeader").style.display = "block";
+
+  const suggestions = faceGroups
+    .map(f=>f.FaceName)
+    .filter(n=>n && n !== "Unknown")
+    .filter((n,i,arr)=>arr.indexOf(n)===i)
+    .slice(0,6);
+
+  $("faceSuggestions").innerHTML = suggestions.length
+    ? `<b>Suggestions:</b> ${suggestions.join(", ")}`
+    : "";
+}
+
+function cancelFaceNaming(){
+  $("faceNamingHeader").style.display = "none";
+  currentNamingFaceId = null;
+}
+
+async function saveFaceName(){
+  const name = $("faceNameInput").value.trim();
+  if(!name || !currentNamingFaceId){
+    showToast("Enter a name", "error");
+    return;
+  }
+
+  try{
+    const res = await fetch(SAVE_FACE_NAME_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+
+    const idx = faceGroups.findIndex(f=>f.FaceId === currentNamingFaceId);
+    if(idx !== -1) faceGroups[idx].FaceName = name;
+
+    showToast("Face name saved");
+    cancelFaceNaming();
+    renderFaceIcons();
+  }catch(e){
+    console.error("saveFaceName error:", e);
+    showToast("Failed to save face name", "error");
+  }
+}
+
+/* =========================================================
+  LEADS (Guest)
+========================================================= */
+async function loadLeads(){
+  try{
+    let res = await fetch(SAVE_DETAILS_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId, action:"list" })
+    });
+
+    let data = await res.json().catch(()=>null);
+
+    if(!res.ok){
+      const url = `${SAVE_DETAILS_API}?collection_id=${encodeURIComponent(collectionId)}`;
+      res = await fetch(url, {
+        method:"GET",
+        headers:{ "Authorization": `Bearer ${idToken}` }
+      });
+      data = await res.json().catch(()=>null);
+    }
+
+    if(!res.ok){
+      console.warn("Leads API not ok:", res.status, data);
+      allLeads = [];
+      renderLeads();
+      return;
+    }
+
+    console.log("Leads raw response:", data);
+
+    let items = [];
+    if(Array.isArray(data)) items = data;
+    else if(data?.leads) items = data.leads;
+    else if(data?.items) items = data.items;
+    else if(data?.history) items = data.history;
+    else if(data?.data && Array.isArray(data.data)) items = data.data;
+    else items = [];
+
+    items = items.filter(l=>{
+      const cid = l.collection_id || l.collectionId || l.cid;
+      return !cid || cid === collectionId;
+    });
+
+    const dateFilter = $("dateFilter").value;
+    const mobileFilter = $("mobileFilter").value.trim();
+
+    if(dateFilter){
+      items = items.filter(l=>{
+        const t = l.created_at || l.timestamp || l.createdAt;
+        if(!t) return false;
+        const d = new Date(t);
+        if(isNaN(d)) return false;
+        const yyyy_mm_dd = d.toISOString().slice(0,10);
+        return yyyy_mm_dd === dateFilter;
+      });
+    }
+
+    if(mobileFilter){
+      items = items.filter(l=>{
+        const m = String(l.mobile || l.phone || l.number || "");
+        return m.includes(mobileFilter);
+      });
+    }
+
+    allLeads = items.sort((a,b)=>{
+      const da = new Date(a.created_at || a.timestamp || 0);
+      const db = new Date(b.created_at || b.timestamp || 0);
+      return db - da;
+    });
+
+    $("totalLeads").textContent = allLeads.length;
+    renderLeads();
+
+  }catch(e){
+    console.error("loadLeads error:", e);
+    allLeads = [];
+    renderLeads();
+  }
+}
+
+function renderLeads(){
+  const grid = $("leadsGrid");
+  const empty = $("noLeadsMessage");
+  grid.innerHTML = "";
+
+  if(!allLeads.length){
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  allLeads.forEach(lead=>{
     const card = document.createElement("div");
-    card.className = "photo-card";
+    card.className = "lead-card";
+
+    let selfie = "https://placehold.co/70x70/333/fff?text=No+Selfie";
+    if(lead.selfie_b64) selfie = `data:image/jpeg;base64,${lead.selfie_b64}`;
+    else if(lead.selfie_image) selfie = lead.selfie_image;
+    else if(lead.selfieUrl) selfie = lead.selfieUrl;
+
+    const name = lead.name || lead.guest_name || "Unknown Guest";
+    const mobile = lead.mobile || lead.phone || "No phone";
+    const created = formatDate(lead.created_at || lead.timestamp || lead.createdAt);
+    const matchCount = lead.match_count || lead.matches || lead.photos || 0;
+
     card.innerHTML = `
-      <img src="${p.thumbnail_url || p.url}" loading="lazy">
-      <div class="photo-overlay">
-         <div style="font-size:10px;font-weight:700;margin-bottom:4px;"><i class="fas fa-user-circle"></i> ${(p.faces||[]).length} Detected</div>
-         <div style="font-size:11px;font-weight:400;">Captured: ${new Date(p.created_at).toLocaleDateString()}</div>
+      <img class="selfie-img" src="${selfie}" alt="selfie">
+      <div style="flex:1">
+        <div class="lead-name">${escapeHtml(name)}</div>
+        <div class="lead-mobile">${escapeHtml(mobile)}</div>
+        <div class="lead-meta">
+          <span><i class="fas fa-calendar"></i> ${escapeHtml(created)}</span>
+          <span style="color:var(--success);font-weight:900"><i class="fas fa-images"></i> ${matchCount} photos</span>
+        </div>
       </div>
     `;
-    card.onclick = () => openDetailModal(p);
     grid.appendChild(card);
   });
 }
 
-function renderEventsManagement() {
-  const container = document.getElementById("eventsContainer");
-  container.innerHTML = "";
-  
-  allEvents.forEach(e => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.style.marginBottom = "15px";
-    div.style.display = "flex";
-    div.style.justifyContent = "space-between";
-    div.style.alignItems = "center";
-    div.innerHTML = `
-      <div>
-        <h4 style="font-size:18px;font-weight:800;">${e.name}</h4>
-        <p style="font-size:12px;color:var(--text-secondary);"><i class="fas fa-calendar-alt"></i> ${e.event_date} | ${e.photo_count || 0} Photos Linked</p>
-      </div>
-      <div style="display:flex;gap:12px;">
-         <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Feature Coming Soon')"><i class="fas fa-edit"></i></button>
-         <button class="btn btn-danger btn-sm" onclick="handleDeleteEvent('${e.event_id}')"><i class="fas fa-trash"></i></button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-}
-
-function populateDropdowns() {
-  const upDrop = document.getElementById("uploadEventDropdown");
-  const linkChecklist = document.getElementById("linkEventsChecklist");
-  
-  upDrop.innerHTML = "<option value=''>Choose target event...</option>";
-  linkChecklist.innerHTML = "";
-
-  allEvents.forEach(e => {
-    // For Upload
-    const opt = document.createElement("option");
-    opt.value = e.event_id; opt.textContent = e.name;
-    upDrop.appendChild(opt);
-
-    // For Links
-    const checkRow = document.createElement("div");
-    checkRow.className = "event-check-item";
-    checkRow.innerHTML = `<input type="checkbox" class="ev-link-cb" value="${e.event_id}" id="chk_${e.event_id}" checked> <label for="chk_${e.event_id}">${e.name}</label>`;
-    linkChecklist.appendChild(checkRow);
-  });
-}
-
-/* =========================================================
-  BATCH UPLOAD SYSTEM (The Complex Part)
-========================================================= */
-function handleFiles(files) {
-  for(let f of files) {
-    uploadQueue.push(f);
-    const div = document.createElement("div");
-    div.style.cssText = "width:100px;height:100px;background:#1a1a25;border-radius:10px;overflow:hidden;border:1px solid var(--border);";
-    div.innerHTML = `<img src="${URL.createObjectURL(f)}" style="width:100%;height:100%;object-fit:cover;opacity:0.6;">`;
-    document.getElementById("queuePreview").appendChild(div);
-  }
-}
-
-async function performBatchUpload() {
-  const eventId = document.getElementById("uploadTargetEventDropdown").value;
-  if(!eventId || !uploadQueue.length) { alert("Please select an event and add photos."); return; }
-
-  const startBtn = document.getElementById("startBtn");
-  startBtn.disabled = true;
-  document.getElementById("progressBox").style.display = "block";
-  const log = document.getElementById("uploadStatusLog");
-  
-  try {
-    // 1. Get Presigned URLs
-    log.innerHTML += `<div>> Fetching upload signatures for ${uploadQueue.length} files...</div>`;
-    const meta = uploadQueue.map(f => ({ name: f.name, type: "image/jpeg" })); // Force JPEG mapping
-    
-    const res = await fetch(`${API_BASE}/generate-upload-urls`, {
-      method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: meta })
-    });
-    const data = await res.json();
-    const urls = data.urls || [];
-
-    // 2. Sequential processing & upload
-    for(let i=0; i<uploadQueue.length; i++) {
-      let file = uploadQueue[i];
-      let finalBlob = file;
-      const url = urls[i].uploadURL;
-
-      log.innerHTML += `<div>> Processing ${file.name}...</div>`;
-
-      // HEIC to JPEG conversion
-      if(file.name.toLowerCase().endsWith(".heic")) {
-        log.innerHTML += `<div style="color:var(--warning);">[HEIC Detected] Converting...</div>`;
-        finalBlob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
-      }
-
-      // XHR for progress tracking
-      await new Promise((resolve, reject) => {
-         const xhr = new XMLHttpRequest();
-         xhr.open("PUT", url);
-         xhr.setRequestHeader("Content-Type", "image/jpeg");
-         xhr.upload.onprogress = (e) => {
-           if(e.lengthComputable) {
-              const currentStep = ((i / uploadQueue.length) * 100) + ((e.loaded / e.total) * (100 / uploadQueue.length));
-              document.getElementById("progressBarFill").style.width = currentStep + "%";
-              document.getElementById("progressPercent").textContent = Math.round(currentStep) + "%";
-              document.getElementById("progressLabel").textContent = `Uploading ${i+1}/${uploadQueue.length}`;
-           }
-         };
-         xhr.onload = () => xhr.status === 200 ? resolve() : reject();
-         xhr.onerror = reject;
-         xhr.send(finalBlob);
-      });
-      log.innerHTML += `<div style="color:var(--success);">> ${file.name} Success.</div>`;
-    }
-
-    log.innerHTML += `<div style="margin-top:10px;color:var(--brand);font-weight:900;">ALL FILES SENT. Backend AI is indexing. Refresh in 10s.</div>`;
-    showToast("Upload Finished Successfully!");
-    setTimeout(refreshData, 5000);
-    resetQueue();
-
-  } catch (err) {
-    alert("Upload Batch Failed. Check logs.");
-    log.innerHTML += `<div style="color:var(--danger);">> FATAL ERROR: ${err.message}</div>`;
-  } finally {
-    startBtn.disabled = false;
-  }
-}
-
-function resetQueue() {
-  uploadQueue = [];
-  document.getElementById("queuePreview").innerHTML = "";
-  document.getElementById("progressBox").style.display = "none";
-  document.getElementById("uploadStatusLog").innerHTML = "";
+function escapeHtml(str){
+  return String(str||"").replace(/[&<>"']/g, s=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[s]));
 }
 
 /* =========================================================
   LINK GENERATION
 ========================================================= */
-async function generateGuestLink() {
-  const expiry = document.getElementById("expiryInput").value;
-  const selectedEvents = Array.from(document.querySelectorAll(".ev-link-cb:checked")).map(cb => cb.value);
-
-  if(!selectedEvents.length) { alert("Pehle koi ek event select karein."); return; }
-
-  try {
-    const res = await fetch(`${API_BASE}/generate-search-link`, {
-      method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ collection_id: collectionId, event_ids: selectedEvents, expiry_hours: parseInt(expiry) || 0 })
-    });
-    const data = await res.json();
-    const link = data.searchUrl || data.link || data.url;
-    if(link) {
-       document.getElementById("finalUrlDisplay").textContent = link;
-       document.getElementById("finalUrlDisplay").href = link;
-       document.getElementById("linkResultBox").style.display = "block";
-       showToast("Smart Link Generated!");
+async function generateLink(){
+  try{
+    const checked = document.querySelectorAll(".linkEventCheck:checked");
+    const eventIds = Array.from(checked).map(x=>x.value);
+    if(!eventIds.length){
+      showToast("Select at least one event", "error");
+      return;
     }
-  } catch (err) {
-    alert("Backend error while generating link.");
+    const expiry = parseInt($("expiryHours").value || "0", 10) || 0;
+    const password = $("linkPassword").value.trim();
+
+    const res = await fetch(GENERATE_LINK_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({
+        collection_id: collectionId,
+        event_ids: eventIds,
+        expiry_hours: expiry,
+        password
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+
+    const link = data.searchUrl || data.link || data.url;
+    if(!link) throw new Error("No link returned");
+
+    $("generatedLink").href = link;
+    $("generatedLink").textContent = link;
+    $("linkResult").style.display = "block";
+    showToast("Link generated");
+  }catch(e){
+    console.error("generateLink error:", e);
+    showToast("Failed to generate link", "error");
   }
 }
 
-function copyResultLink() {
-  const txt = document.getElementById("finalUrlDisplay").textContent;
-  navigator.clipboard.writeText(txt);
-  showToast("URL Copied!");
+function copyLink(){
+  const link = $("generatedLink").textContent;
+  if(!link) return;
+  navigator.clipboard.writeText(link)
+    .then(()=>showToast("Copied"))
+    .catch(()=>showToast("Copy failed","error"));
 }
 
 /* =========================================================
-  FACE NAMING & ACTIONS
+  PHOTO DETAILS MODAL
 ========================================================= */
-function openNaming(group) {
-  activeNamingFaceId = group.id;
-  document.getElementById("namingThumb").src = group.thumb;
-  document.getElementById("nameInputField").value = group.name === "Unknown Person" ? "" : group.name;
-  document.getElementById("namingPanel").style.display = "block";
-  document.getElementById("nameInputField").focus();
-}
+let currentDetailPhoto = null;
 
-function closeNaming() {
-  document.getElementById("namingPanel").style.display = "none";
-  activeNamingFaceId = null;
-}
-
-async function saveFaceName() {
-  const newName = document.getElementById("nameInputField").value.trim();
-  if(!newName || !activeNamingFaceId) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/save-face-name`, {
-      method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ collection_id: collectionId, face_id: activeNamingFaceId, name: newName })
-    });
-    if(res.ok) {
-       showToast("Name Updated!");
-       closeNaming();
-       await refreshData();
-    }
-  } catch (err) { alert("Failed to save name."); }
-}
-
-/* =========================================================
-  DETAIL MODAL & EXTRAS
-========================================================= */
-function openDetailModal(photo) {
+function showPhotoDetails(photo){
   currentDetailPhoto = photo;
-  document.getElementById("detailPreviewImage").src = photo.url;
-  document.getElementById("detailCapturedTime").textContent = new Date(photo.created_at).toLocaleString();
-  
-  const facesList = document.getElementById("detailFacesList");
-  facesList.innerHTML = "";
-  (photo.faces || []).forEach(f => {
-     const faceObj = faceGroups.find(g => g.id === (f.FaceId || f.face_id));
-     const badge = document.createElement("span");
-     badge.style.cssText = "padding:6px 15px; background:var(--brand); border-radius:30px; font-size:12px; font-weight:700;";
-     badge.textContent = faceObj ? faceObj.name : "Unknown";
-     facesList.appendChild(badge);
-  });
 
-  const tagsList = document.getElementById("detailTagsList");
-  tagsList.innerHTML = "";
-  (photo.ai_tags || []).forEach(t => {
-     const badge = document.createElement("span");
-     badge.style.cssText = "padding:5px 12px; background:rgba(255,255,255,0.06); border-radius:20px; font-size:11px; border:1px solid var(--border);";
-     badge.textContent = t;
-     tagsList.appendChild(badge);
-  });
+  $("detailPhotoImg").src = photo.url || photo.thumbnail_url || "";
+  $("detailFilename").textContent = (photo.photo_id ? String(photo.photo_id).split("___").pop() : "Unknown");
+  $("detailUploadDate").textContent = formatDate(photo.created_at);
+  const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
+  $("detailFaceCount").textContent = faceCount;
 
-  document.getElementById("photoModal").classList.add("active");
+  const peopleBox = $("detailPeople");
+  peopleBox.innerHTML = "";
+  const faces = Array.isArray(photo.faces) ? photo.faces : [];
+  if(faces.length){
+    faces.forEach(f=>{
+      const fid = getFaceId(f);
+      if(!fid) return;
+      const name = faceGroups.find(x=>x.FaceId===fid)?.FaceName || "Unknown";
+      const chip = document.createElement("span");
+      chip.className = "tag face";
+      chip.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
+      chip.onclick = ()=>{
+        $("photoDetailsModal").classList.remove("active");
+        toggleFaceSelection(fid);
+      };
+      peopleBox.appendChild(chip);
+    });
+  }else{
+    // fallback: face_ids
+    const ids = Array.isArray(photo.face_ids) ? photo.face_ids : [];
+    if(ids.length){
+      ids.forEach(fid=>{
+        const name = faceGroups.find(x=>x.FaceId===fid)?.FaceName || "Unknown";
+        const chip = document.createElement("span");
+        chip.className = "tag face";
+        chip.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
+        chip.onclick = ()=>{
+          $("photoDetailsModal").classList.remove("active");
+          toggleFaceSelection(fid);
+        };
+        peopleBox.appendChild(chip);
+      });
+    }else{
+      peopleBox.innerHTML = `<span style="color:var(--text-muted);font-size:13px;">No people detected</span>`;
+    }
+  }
+
+  const tagBox = $("detailTags");
+  tagBox.innerHTML = "";
+  const tags = Array.isArray(photo.ai_tags) ? photo.ai_tags : [];
+  if(tags.length){
+    tags.slice(0,24).forEach(t=>{
+      const chip = document.createElement("span");
+      chip.className = "tag ai";
+      chip.innerHTML = `<i class="fas fa-robot"></i> ${escapeHtml(t)}`;
+      tagBox.appendChild(chip);
+    });
+  }else{
+    tagBox.innerHTML = `<span style="color:var(--text-muted);font-size:13px;">No AI tags</span>`;
+  }
+
+  $("photoDetailsModal").classList.add("active");
 }
 
-function closeDetailModal() { document.getElementById("photoModal").classList.remove("active"); }
-
-async function submitEvent() {
-  const name = document.getElementById("evNameInput").value.trim();
-  const date = document.getElementById("evDateInput").value;
-  if(!name || !date) return;
-  await fetch(`${API_BASE}/upsert-event`, {
-    method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-  });
-  hideEventForm();
-  await refreshData();
+function closePhotoDetails(){
+  $("photoDetailsModal").classList.remove("active");
 }
 
-async function handleDeleteEvent(id) {
-  if(!confirm("Are you sure? All photos inside this event will be unlinked/deleted.")) return;
-  await fetch(`${API_BASE}/delete-event`, {
-    method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ collection_id: collectionId, event_id: id })
-  });
-  await refreshData();
+async function downloadSinglePhoto(){
+  try{
+    const url = currentDetailPhoto?.url || currentDetailPhoto?.thumbnail_url;
+    if(!url) return;
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const filename = $("detailFilename").textContent || `photo_${Date.now()}.jpg`;
+    saveAs(blob, filename);
+    showToast("Downloaded");
+  }catch(e){
+    showToast("Download failed","error");
+  }
 }
 
-function showEventForm() { document.getElementById("eventFormBox").style.display = "block"; }
-function hideEventForm() { document.getElementById("eventFormBox").style.display = "none"; }
+/* =========================================================
+  FILTERS
+========================================================= */
+function applyFilters(){
+  const type = $("filterType").value;
+  const aiSearch = $("aiTagSearch").value.toLowerCase().trim();
 
-function showToast(msg) {
-  const t = document.createElement("div");
-  t.style.cssText = "position:fixed;bottom:30px;right:30px;background:var(--brand-gradient);color:#fff;padding:15px 30px;border-radius:12px;z-index:10000;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,0.5);animation:fadeIn 0.3s;";
-  t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+  filteredPhotos = allPhotos.filter(photo=>{
+    if(currentSelectedFaceId){
+      if(!photoHasFace(photo, currentSelectedFaceId)) return false;
+    }
+
+    const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
+    if(type !== "ALL"){
+      if(type === "BEST" && faceCount < 3) return false;
+      if(type === "GROUP" && faceCount < 2) return false;
+      if(type === "HAPPY"){
+        const hasHappy = (photo.faces||[]).some(f=>
+          (f.Emotions||[]).some(e=>e.Type==="HAPPY" && Number(e.Confidence||0) > 50)
+        );
+        if(!hasHappy) return false;
+      }
+    }
+
+    if(aiSearch){
+      const tags = Array.isArray(photo.ai_tags) ? photo.ai_tags : [];
+      const ok = tags.some(t=>String(t).toLowerCase().includes(aiSearch));
+      if(!ok) return false;
+    }
+    return true;
+  });
+
+  console.log("Filters applied:", {type, aiSearch, selectedFace: currentSelectedFaceId, result: filteredPhotos.length});
+  renderPhotos();
+}
+
+function clearFilters(){
+  $("filterType").value = "ALL";
+  $("aiTagSearch").value = "";
+  currentSelectedFaceId = null;
+  filteredPhotos = [...allPhotos];
+  renderFaceIcons();
+  renderPhotos();
+}
+
+/* =========================================================
+  ZIP DOWNLOAD
+========================================================= */
+async function downloadZip(){
+  try{
+    if(!window.JSZip || !window.saveAs) throw new Error("ZIP libs missing");
+    const photos = filteredPhotos.length ? filteredPhotos : allPhotos;
+    if(!photos.length){ showToast("No photos", "error"); return; }
+
+    showToast("Preparing ZIP...");
+    const zip = new JSZip();
+
+    const limit = Math.min(photos.length, 80);
+    for(let i=0;i<limit;i++){
+      const p = photos[i];
+      const url = p.url || p.thumbnail_url;
+      if(!url) continue;
+      try{
+        const res = await fetch(url);
+        const blob = await res.blob();
+        zip.file(`photo_${i+1}.jpg`, blob);
+      }catch(err){
+        console.warn("zip photo fail", i, err);
+      }
+    }
+
+    const blob = await zip.generateAsync({type:"blob"});
+    saveAs(blob, `collection_${collectionId}_photos.zip`);
+    showToast("ZIP ready");
+  }catch(e){
+    console.error("downloadZip error:", e);
+    showToast("ZIP failed","error");
+  }
+}
+
+/* =========================================================
+  UPLOAD
+========================================================= */
+function setupUpload(){
+  const dz = $("dropZone");
+  const input = $("fileInput");
+
+  dz.addEventListener("click", ()=> input.click());
+  dz.addEventListener("dragover", (e)=>{ e.preventDefault(); dz.classList.add("dragover"); });
+  dz.addEventListener("dragleave", ()=> dz.classList.remove("dragover"));
+  dz.addEventListener("drop", (e)=>{
+    e.preventDefault();
+    dz.classList.remove("dragover");
+    handleFiles(e.dataTransfer.files);
+  });
+
+  input.addEventListener("change",(e)=>handleFiles(e.target.files));
+}
+
+function handleFiles(files){
+  if(!files || !files.length) return;
+
+  const eventId = $("uploadEventSelect").value;
+  if(!eventId){
+    showToast("Select an event first","error");
+    return;
+  }
+
+  const valid = [];
+  Array.from(files).forEach(f=>{
+    if(f.size > 20*1024*1024){
+      showToast(`${f.name} too large (20MB max)`, "error");
+    }else if(!String(f.type||"").startsWith("image/") && !/\.(heic|heif|webp|bmp|tiff|tif)$/i.test(f.name)){
+      showToast(`${f.name} not supported`, "error");
+    }else{
+      valid.push(f);
+    }
+  });
+
+  selectedFiles = [...selectedFiles, ...valid];
+  renderFileList();
+  $("uploadControls").style.display = selectedFiles.length ? "block" : "none";
+}
+
+function formatBytes(bytes){
+  if(!bytes) return "0 B";
+  const k=1024,sizes=["B","KB","MB","GB"];
+  const i=Math.floor(Math.log(bytes)/Math.log(k));
+  return (bytes/Math.pow(k,i)).toFixed(2)+" "+sizes[i];
+}
+
+function getFileFormat(file){
+  const ext = (file.name.split(".").pop()||"").toLowerCase();
+  if(ext==="heic") return "HEIC";
+  if(ext==="heif") return "HEIF";
+  if(ext==="webp") return "WEBP";
+  if(ext==="png") return "PNG";
+  if(ext==="jpg"||ext==="jpeg") return "JPG";
+  if(ext==="gif") return "GIF";
+  if(ext==="bmp") return "BMP";
+  if(ext==="tiff"||ext==="tif") return "TIFF";
+  return ext.toUpperCase();
+}
+
+function renderFileList(){
+  const box = $("fileList");
+  box.innerHTML = "";
+  selectedFiles.forEach((f,idx)=>{
+    const div = document.createElement("div");
+    div.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:8px;border:1px solid rgba(255,255,255,.06)";
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <i class="fas fa-image" style="color:var(--brand)"></i>
+        <div>
+          <div style="font-weight:900">${escapeHtml(f.name)}</div>
+          <div style="color:var(--text-muted);font-size:12px;font-weight:700">${formatBytes(f.size)} • ${getFileFormat(f)}</div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="removeFile(${idx})"><i class="fas fa-times"></i></button>
+    `;
+    box.appendChild(div);
+  });
+}
+
+function removeFile(idx){
+  selectedFiles.splice(idx,1);
+  renderFileList();
+  $("uploadControls").style.display = selectedFiles.length ? "block" : "none";
+}
+
+async function startUpload(){
+  const eventId = $("uploadEventSelect").value;
+  if(!eventId){ showToast("Select event","error"); return; }
+  if(!selectedFiles.length){ showToast("Select files","error"); return; }
+
+  const btn = $("startUploadBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+  $("progress-container").style.display = "block";
+  $("progress-bar").style.width = "0%";
+  $("uploadStatus").style.color = "var(--text-secondary)";
+  $("uploadStatus").textContent = "Preparing upload...";
+  $("uploadLog").textContent = "";
+  logUpload(`Starting upload. Files: ${selectedFiles.length}`);
+
+  try{
+    const filesPayload = selectedFiles.map(f=>({ name:f.name, type:f.type || "image/jpeg" }));
+
+    const urlsRes = await fetch(UPLOAD_URLS_API, {
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: filesPayload })
+    });
+    const urlsData = await urlsRes.json().catch(()=>({}));
+    if(!urlsRes.ok) throw new Error(urlsData?.message || "Failed to get upload URLs");
+
+    const urls = urlsData.urls || urlsData.items || [];
+    logUpload(`Got presigned URLs: ${urls.length}`);
+
+    let uploaded = 0;
+    const total = selectedFiles.length;
+
+    for(let i=0;i<total;i++){
+      const file = selectedFiles[i];
+      const info = urls[i];
+      const putUrl = info?.uploadURL || info?.uploadUrl || info?.url;
+      if(!putUrl){ logUpload(`No upload URL for ${file.name} (skip)`); continue; }
+
+      $("uploadStatus").textContent = `Uploading ${i+1}/${total}: ${file.name}`;
+      logUpload(`Uploading ${file.name}`);
+
+      let blob = file;
+      const format = getFileFormat(file);
+
+      const quality = parseFloat($("jpegQuality").value || "0.85") || 0.85;
+      const convertToJpg = $("convertToggle").checked;
+      const optimize = $("optimizeToggle").checked;
+      const maxWidth = parseInt($("maxWidthSelect").value || "0", 10) || 0;
+
+      if(format==="HEIC" || format==="HEIF"){
+        try{
+          blob = await heic2any({ blob:file, toType:"image/jpeg", quality });
+          logUpload(`HEIC->JPG converted: ${file.name}`);
+        }catch(e){
+          logUpload(`HEIC convert failed (upload original): ${file.name}`);
+          blob = file;
+        }
+      }
+
+      if(convertToJpg && !String(blob.type||"").includes("jpeg")){
+        blob = await convertToJpeg(blob, quality);
+        logUpload(`Converted to JPG: ${file.name}`);
+      }
+
+      if(optimize && maxWidth>0){
+        blob = await optimizeImage(blob, maxWidth, quality);
+        logUpload(`Optimized: ${file.name} (maxWidth ${maxWidth})`);
+      }
+
+      await putWithProgress(putUrl, blob, (pct)=>{
+        const overall = ((uploaded + (pct/100)) / total) * 100;
+        $("progress-bar").style.width = `${overall.toFixed(2)}%`;
+      });
+
+      uploaded++;
+      $("progress-bar").style.width = `${(uploaded/total)*100}%`;
+      logUpload(`Done: ${file.name}`);
+    }
+
+    lastUploadFinishedAt = Date.now();
+    $("uploadStatus").style.color = "var(--success)";
+    $("uploadStatus").textContent = `✅ Upload finished (${uploaded}/${total}). Indexing will start now...`;
+    logUpload("Upload finished. Now indexing (S3 trigger Lambda).");
+
+    selectedFiles = [];
+    $("fileList").innerHTML = "";
+    $("uploadControls").style.display = "none";
+    $("fileInput").value = "";
+
+    setTimeout(async ()=>{
+      logUpload("Refreshing photos (after 5s)...");
+      await Promise.all([loadPhotos(), loadEvents()]);
+      await loadFaceGroups();
+      logUpload("Refresh done.");
+    }, 5000);
+
+    setTimeout(async ()=>{
+      logUpload("Refreshing photos again (after 12s)...");
+      await Promise.all([loadPhotos(), loadEvents()]);
+      await loadFaceGroups();
+      logUpload("Refresh done.");
+      showToast("Photos refreshed");
+    }, 12000);
+
+  }catch(e){
+    console.error("startUpload error:", e);
+    $("uploadStatus").style.color = "var(--danger)";
+    $("uploadStatus").textContent = `❌ Upload failed: ${e.message || e}`;
+    logUpload(`ERROR: ${e.message || e}`);
+    showToast("Upload failed", "error");
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-upload"></i> Start Upload (Batch)';
+  }
+}
+
+function putWithProgress(url, blob, onProgress){
+  return new Promise((resolve, reject)=>{
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url, true);
+    xhr.upload.onprogress = (e)=>{
+      if(e.lengthComputable){
+        const pct = (e.loaded / e.total) * 100;
+        onProgress?.(pct);
+      }
+    };
+    xhr.onload = ()=>{
+      if(xhr.status >=200 && xhr.status <300) resolve();
+      else reject(new Error(`PUT failed: HTTP ${xhr.status}`));
+    };
+    xhr.onerror = ()=> reject(new Error("PUT network error"));
+    xhr.setRequestHeader("Content-Type", "image/jpeg");
+    xhr.send(blob);
+  });
+}
+
+function convertToJpeg(blob, quality){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    img.onload = ()=>{
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img,0,0);
+      canvas.toBlob((b)=>resolve(b || blob), "image/jpeg", quality);
+    };
+    img.onerror = ()=> resolve(blob);
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+function optimizeImage(blob, maxWidth, quality){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      if(maxWidth>0 && w>maxWidth){
+        const r = maxWidth / w;
+        w = maxWidth;
+        h = Math.round(h * r);
+      }
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img,0,0,w,h);
+      canvas.toBlob((b)=>resolve(b || blob), "image/jpeg", quality);
+    };
+    img.onerror = ()=> resolve(blob);
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+/* =========================================================
+  EVENT LISTENERS & TAB SWITCH
+========================================================= */
+function switchTab(tabId){
+  document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+
+  $(tabId).classList.add("active");
+  document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add("active");
+
+  if(tabId === "analyticsTab"){
+    loadLeads();
+  }else if(tabId === "linksTab"){
+    if(!allEvents.length) loadEvents();
+  }
+}
+
+function setupEventListeners(){
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click", ()=> switchTab(t.getAttribute("data-tab")));
+  });
+
+  $("refreshBtn").addEventListener("click", async ()=>{
+    $("refreshBtn").innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refresh';
+    await initLoad();
+    $("refreshBtn").innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+  });
+
+  $("filterType").addEventListener("change", applyFilters);
+  $("aiTagSearch").addEventListener("input", applyFilters);
+  $("clearFiltersBtn").addEventListener("click", clearFilters);
+  $("downloadZipBtn").addEventListener("click", downloadZip);
+
+  $("saveFaceBtn").addEventListener("click", saveFaceName);
+  $("cancelFaceBtn").addEventListener("click", cancelFaceNaming);
+  $("closeFaceNamingBtn").addEventListener("click", cancelFaceNaming);
+
+  $("newEvtBtn").addEventListener("click", ()=>{
+    $("eventForm").style.display = "block";
+    $("eventName").value = "";
+    $("eventDate").value = new Date().toISOString().slice(0,10);
+  });
+  $("cancelEventBtn").addEventListener("click", ()=> $("eventForm").style.display = "none");
+  $("saveEventBtn").addEventListener("click", createEvent);
+
+  setupUpload();
+  $("clearFilesBtn").addEventListener("click", ()=>{
+    selectedFiles = [];
+    $("fileList").innerHTML = "";
+    $("uploadControls").style.display = "none";
+    $("fileInput").value = "";
+  });
+  $("startUploadBtn").addEventListener("click", startUpload);
+  $("jpegQuality").addEventListener("input",(e)=> $("jpegQualityVal").textContent = e.target.value);
+
+  $("genLinkBtn").addEventListener("click", generateLink);
+  $("copyLinkBtn").addEventListener("click", copyLink);
+
+  $("reloadLeadsBtn").addEventListener("click", loadLeads);
+  $("dateFilter").addEventListener("change", loadLeads);
+  $("mobileFilter").addEventListener("input", debounce(loadLeads, 500));
+  $("clearLeadsFiltersBtn").addEventListener("click", ()=>{
+    $("dateFilter").value = "";
+    $("mobileFilter").value = "";
+    loadLeads();
+  });
+
+  $("closePhotoDetailsBtn").addEventListener("click", closePhotoDetails);
+  $("closeDetailsBtn2").addEventListener("click", closePhotoDetails);
+  $("photoDetailsModal").addEventListener("click", (e)=>{ if(e.target === $("photoDetailsModal")) closePhotoDetails(); });
+  $("downloadSingleBtn").addEventListener("click", downloadSinglePhoto);
+}
+
+function debounce(fn, wait){
+  let t;
+  return (...args)=>{
+    clearTimeout(t);
+    t = setTimeout(()=>fn(...args), wait);
+  };
 }
 </script>
 </body>
