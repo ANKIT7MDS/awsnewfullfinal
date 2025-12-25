@@ -596,7 +596,7 @@
     }
   });
 
-  // --- 3. SHOW GALLERY (UNCHANGED) - Yeh gallery show karta hai aur lead save karta hai.
+  // --- 3. SHOW GALLERY (FIXED) - Yeh gallery show karta hai aur lead save karta hai (Updated Logic).
   document.getElementById('showGalleryBtn').addEventListener('click', () => {
     console.log("DEBUG: Show gallery button clicked"); // Debugging: Gallery start.
     const name = document.getElementById('guestName').value;
@@ -604,14 +604,25 @@
     
     if(!name || mobile.length < 10) return alert("Please enter valid details.");
 
-    // Save Data in background
+    // --- CRITICAL FIX: IDs ko alag handle karna ---
     const params = new URLSearchParams(window.location.search);
+    
+    // Parent Collection ID (Default from logs, or from URL)
+    const COLLECTION_ID = params.get('cid') || "e06c902e-63e5-4572-9d65-924bbe56d9fb";
+    const LINK_ID = params.get('linkId'); // Event ID
+
+    // Save Data in background
     fetch(SAVE_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        linkId: params.get('linkId'),
-        collection_id: params.get('linkId'), // ✅ Added collection_id here
+        // Updated Fields:
+        collection_id: COLLECTION_ID, // Sahi collection ID
+        link_id: LINK_ID,             // Sahi event ID
+        
+        // Legacy fields (backup):
+        linkId: LINK_ID,
+        
         name: name, 
         mobile: mobile, 
         selfie_image: selfieBase64, // Base64 data to save
@@ -619,7 +630,7 @@
       })
     }).then(res => {
         if (!res.ok) console.error("Background lead save failed.");
-        console.log("DEBUG: Lead saved successfully"); // Debugging: Save done.
+        console.log("DEBUG: Lead saved successfully with Fixed IDs"); // Debugging: Save done.
     }).catch(err => {
         console.error("Background lead save failed:", err);
     });
