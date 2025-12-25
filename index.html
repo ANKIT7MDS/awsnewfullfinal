@@ -3,169 +3,339 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EventLens - Your Photos, Instantly</title>
+  <title>EventLens PRO - AI Photo Finder</title>
 
   <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
-  <!-- Zip download -->
+  <!-- Zip download libs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
-    /* ===== RESET ===== */
+    /* ===== GLOBAL VARIABLES ===== */
+    :root {
+      --bg: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      --card-bg: rgba(16, 16, 24, 0.85);
+      --glass: rgba(255, 255, 255, 0.08);
+      --accent: #00ff9d;
+      --accent-glow: rgba(0, 255, 157, 0.25);
+      --accent-blue: #00b8ff;
+      --accent-purple: #9d4edd;
+      --text: #ffffff;
+      --muted: #b0b0b0;
+      --border: rgba(255, 255, 255, 0.15);
+      --shadow: rgba(0, 0, 0, 0.4);
+    }
+
+    /* ===== RESET & BASE ===== */
     * { 
+      box-sizing: border-box; 
       margin: 0; 
       padding: 0; 
-      box-sizing: border-box; 
     }
 
-    /* ===== BASE STYLES ===== */
     body {
-      background: #0a0a0a;
-      color: white;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
+      line-height: 1.6;
     }
 
-    /* ===== GRADIENT BACKGROUND ===== */
-    .gradient-bg {
+    /* Parallax Background */
+    body::before {
+      content: '';
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background: 
-        radial-gradient(circle at 15% 50%, rgba(0, 230, 118, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 85% 30%, rgba(37, 211, 102, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 50% 80%, rgba(255, 107, 107, 0.05) 0%, transparent 50%);
+        radial-gradient(circle at 20% 80%, rgba(0, 255, 157, 0.07) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 184, 255, 0.07) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(157, 78, 221, 0.05) 0%, transparent 50%);
       z-index: -2;
     }
 
-    /* ===== CONTAINER ===== */
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(to bottom, var(--accent), var(--accent-blue));
+      border-radius: 10px;
+    }
+
+    /* ===== LAYOUT ===== */
     .container {
       max-width: 100%;
       margin: 0 auto;
       padding: 20px;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        max-width: 700px;
+      }
     }
 
     /* ===== HEADER ===== */
     header {
       text-align: center;
-      padding: 40px 20px 20px;
+      margin-bottom: 40px;
+      padding-top: 20px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 12px;
       position: relative;
     }
 
-    .logo {
-      font-size: 48px;
+    .logo-sparkle {
+      font-size: 22px;
+      animation: sparkle 2s infinite;
+      opacity: 0.8;
+    }
+
+    @keyframes sparkle {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    h1 {
+      font-size: 42px;
       font-weight: 800;
-      background: linear-gradient(90deg, #00e676, #00bcd4);
+      background: linear-gradient(90deg, var(--accent), var(--accent-blue), var(--accent-purple));
+      background-size: 200% 200%;
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
+      animation: gradient-shift 3s ease infinite;
       letter-spacing: 1px;
-      margin-bottom: 10px;
+      text-shadow: 0 0 30px rgba(0, 255, 157, 0.3);
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
     }
 
     .tagline {
-      color: #888;
       font-size: 14px;
-      letter-spacing: 2px;
+      color: var(--muted);
+      letter-spacing: 3px;
       text-transform: uppercase;
-      margin-top: 5px;
+      font-weight: 500;
+      margin-top: 8px;
     }
 
-    /* ===== UPLOAD CARD ===== */
-    .upload-card {
-      background: rgba(20, 20, 20, 0.8);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      padding: 30px;
-      margin: 20px auto;
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-      transition: transform 0.3s ease;
+    /* ===== PROGRESS STEPS ===== */
+    .progress-steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 30px auto 40px;
+      max-width: 500px;
     }
 
-    .upload-card:hover {
-      transform: translateY(-5px);
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      flex: 1;
     }
 
-    .card-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #00e676;
-      margin-bottom: 25px;
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .step.active .step-number {
+      background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+      color: #000;
+      border-color: transparent;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .step-label {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
       letter-spacing: 1px;
+      transition: color 0.3s;
     }
 
-    /* ===== UPLOAD BUTTONS ===== */
-    .upload-zone {
-      border: 2px dashed rgba(0, 230, 118, 0.3);
+    .step.active .step-label {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .step-line {
+      height: 2px;
+      background: var(--border);
+      flex: 1;
+      margin: 0 10px;
+      position: relative;
+      top: -18px;
+    }
+
+    .step.active ~ .step-line {
+      background: linear-gradient(to right, var(--accent), transparent);
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 40px 20px;
-      margin: 20px 0;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: 
+        0 15px 35px var(--shadow),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-title::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: block;
+    }
+
+    /* ===== UPLOAD SECTION ===== */
+    .upload-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 480px) {
+      .upload-options {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .upload-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 25px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
       cursor: pointer;
       transition: all 0.3s ease;
+      text-align: center;
     }
 
-    .upload-zone:hover {
-      border-color: #00e676;
-      background: rgba(0, 230, 118, 0.05);
+    .upload-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent);
+      transform: translateY(-3px);
     }
 
-    .upload-icon {
-      font-size: 48px;
-      margin-bottom: 15px;
-      color: #00e676;
+    .upload-btn .icon {
+      font-size: 36px;
+      color: var(--accent);
+      margin-bottom: 5px;
     }
 
-    .upload-text {
-      font-size: 16px;
+    .upload-btn .label {
       font-weight: 600;
-      margin-bottom: 8px;
+      font-size: 16px;
+      margin-bottom: 5px;
     }
 
-    .upload-subtext {
-      color: #888;
-      font-size: 14px;
+    .upload-btn .subtext {
+      font-size: 12px;
+      color: var(--muted);
     }
 
-    .or-text {
-      color: #666;
-      font-size: 13px;
+    .or-divider {
+      text-align: center;
       margin: 15px 0;
       position: relative;
+      color: var(--muted);
+      font-size: 13px;
     }
 
-    .or-text::before,
-    .or-text::after {
+    .or-divider::before,
+    .or-divider::after {
       content: '';
       position: absolute;
       top: 50%;
-      width: 40%;
+      width: 45%;
       height: 1px;
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--border);
     }
 
-    .or-text::before {
+    .or-divider::before {
       left: 0;
     }
 
-    .or-text::after {
+    .or-divider::after {
       right: 0;
     }
 
     /* ===== PREVIEW ===== */
-    .preview-container {
-      display: none;
+    #previewContainer {
+      text-align: center;
       margin-top: 30px;
       animation: fadeIn 0.5s ease;
     }
@@ -175,75 +345,106 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .preview-image {
-      width: 140px;
-      height: 140px;
+    #previewImg {
+      width: 160px;
+      height: 160px;
       border-radius: 50%;
       object-fit: cover;
-      margin: 0 auto 20px;
+      margin: 0 auto 25px;
+      display: block;
       border: 4px solid transparent;
       background: linear-gradient(white, white) padding-box,
-                  linear-gradient(45deg, #00e676, #00bcd4) border-box;
-      box-shadow: 0 0 30px rgba(0, 230, 118, 0.3);
-      animation: pulse 2s infinite;
+                  linear-gradient(135deg, var(--accent), var(--accent-blue)) border-box;
+      box-shadow: 0 0 30px var(--accent-glow);
+      transition: transform 0.5s ease;
     }
 
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 30px rgba(0, 230, 118, 0.3); }
-      50% { box-shadow: 0 0 40px rgba(0, 230, 118, 0.5); }
+    #previewImg:hover {
+      transform: scale(1.05) rotate(5deg);
     }
 
-    /* ===== LOADING ===== */
-    .loading {
-      text-align: center;
-      margin: 30px 0;
+    .preview-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
     }
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(0, 230, 118, 0.2);
-      border-top-color: #00e676;
-      border-radius: 50%;
-      margin: 0 auto 15px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .loading-text {
-      color: #00e676;
-      font-size: 15px;
-      font-weight: 500;
-    }
-
-    /* ===== DETAILS CARD ===== */
-    .details-card {
-      background: rgba(20, 20, 20, 0.8);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      padding: 30px;
-      margin: 20px auto;
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-      display: none;
-    }
-
-    .photos-count {
-      background: linear-gradient(45deg, #00e676, #00bcd4);
-      color: black;
-      padding: 8px 20px;
-      border-radius: 50px;
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 15px 25px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
       font-weight: 700;
-      font-size: 14px;
-      display: inline-block;
-      margin-bottom: 20px;
-      box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.5px;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        to right,
+        transparent 20%,
+        rgba(255, 255, 255, 0.2) 50%,
+        transparent 80%
+      );
+      transform: rotate(30deg);
+      transition: transform 0.6s;
+    }
+
+    .btn:hover::after {
+      transform: rotate(30deg) translateX(100%);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+      color: #000;
+      box-shadow: 0 5px 20px rgba(0, 255, 157, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 255, 157, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .btn-whatsapp {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: white !important;
+      box-shadow: 0 5px 20px rgba(37, 211, 102, 0.3);
+    }
+
+    .btn-whatsapp:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
     }
 
     /* ===== INPUTS ===== */
@@ -251,11 +452,12 @@
       margin-bottom: 20px;
     }
 
-    .input-group input {
+    input[type="text"],
+    input[type="tel"] {
       width: 100%;
       padding: 16px 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
       border-radius: 12px;
       color: white;
       font-size: 16px;
@@ -263,54 +465,132 @@
       transition: all 0.3s ease;
     }
 
-    .input-group input:focus {
-      border-color: #00e676;
-      background: rgba(0, 230, 118, 0.05);
-      box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+    input[type="text"]:focus,
+    input[type="tel"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      background: rgba(0, 0, 0, 0.4);
     }
 
-    .input-group input::placeholder {
-      color: #666;
+    /* ===== SEARCH BAR ===== */
+    .search-wrapper {
+      position: relative;
+      margin-bottom: 25px;
     }
 
-    /* ===== GALLERY ===== */
-    .gallery-container {
+    .search-wrapper input {
+      width: 100%;
+      padding: 16px 20px 16px 50px;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: white;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .search-wrapper input:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    /* ===== FILTER CHIPS ===== */
+    .filter-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      scrollbar-width: none;
+    }
+
+    .filter-row::-webkit-scrollbar {
       display: none;
-      margin-top: 20px;
-      animation: fadeIn 0.5s ease;
     }
 
+    .chip {
+      white-space: nowrap;
+      padding: 10px 20px;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .chip.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+      border-color: transparent;
+      color: #000;
+      font-weight: 700;
+      box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+    }
+
+    /* ===== GALLERY HEADER ===== */
     .gallery-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-      padding: 0 10px;
+      margin-bottom: 25px;
+      padding: 0 5px;
     }
 
     .selection-info {
-      font-size: 14px;
-      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 15px;
     }
 
-    .selection-count {
-      color: #00e676;
+    .match-badge {
+      background: linear-gradient(135deg, var(--accent-purple), #c77dff);
+      color: white;
+      padding: 5px 15px;
+      border-radius: 50px;
+      font-size: 14px;
       font-weight: 700;
-      font-size: 18px;
+      box-shadow: 0 5px 15px rgba(157, 78, 221, 0.3);
     }
 
     /* ===== PHOTO GRID ===== */
-    .photo-grid {
+    .grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 20px;
+      gap: 10px;
     }
 
     @media (min-width: 640px) {
-      .photo-grid {
+      .grid {
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
+        gap: 12px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
       }
     }
 
@@ -321,22 +601,50 @@
       border-radius: 12px;
       overflow: hidden;
       cursor: pointer;
-      transition: transform 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .photo-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, transparent, rgba(0, 255, 157, 0.1));
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1;
+    }
+
+    .photo-item:hover::before {
+      opacity: 1;
     }
 
     .photo-item:hover {
-      transform: scale(1.02);
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 
+        0 15px 30px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
     }
 
     .photo-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: opacity 0.3s ease;
+      transition: transform 0.5s ease;
+    }
+
+    .photo-item:hover img {
+      transform: scale(1.05);
+    }
+
+    .photo-item.selected {
+      border: 2px solid var(--accent);
     }
 
     .photo-item.selected img {
-      opacity: 0.3;
+      opacity: 0.7;
     }
 
     .check-mark {
@@ -345,498 +653,875 @@
       right: 8px;
       width: 24px;
       height: 24px;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
       border: 2px solid rgba(255, 255, 255, 0.3);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       color: transparent;
+      font-size: 12px;
+      font-weight: bold;
       transition: all 0.3s ease;
+      z-index: 2;
     }
 
     .photo-item.selected .check-mark {
-      background: #00e676;
-      border-color: #00e676;
-      color: black;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      box-shadow: 0 0 10px var(--accent-glow);
     }
 
-    /* ===== ACTION BUTTONS ===== */
-    .action-buttons {
-      display: flex;
-      gap: 12px;
+    /* ===== LOADING STATES ===== */
+    .loading-text {
+      text-align: center;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 600;
       margin-top: 20px;
     }
 
-    .btn {
-      flex: 1;
-      padding: 16px 20px;
+    .dots {
+      display: inline-block;
+      animation: loading-dots 1.5s infinite;
+    }
+
+    @keyframes loading-dots {
+      0%, 20% { content: ' .'; }
+      40% { content: ' ..'; }
+      60% { content: ' ...'; }
+      80%, 100% { content: ' ....'; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.05) 25%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        rgba(255, 255, 255, 0.05) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
       border-radius: 12px;
-      border: none;
-      font-size: 16px;
-      font-weight: 600;
+    }
+
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ===== VIEWER ===== */
+    .viewer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .viewer.open {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .viewer img {
+      max-width: 90%;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    .close-viewer {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
       cursor: pointer;
       transition: all 0.3s ease;
-      text-align: center;
     }
 
-    .btn-primary {
-      background: linear-gradient(45deg, #00e676, #00bcd4);
-      color: black;
+    .close-viewer:hover {
+      background: var(--accent);
+      color: #000;
+      transform: rotate(90deg);
     }
 
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 230, 118, 0.3);
+    .viewer-controls {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      gap: 20px;
     }
 
-    .btn-secondary {
+    /* ===== FLOATING ACTION BUTTONS ===== */
+    .fab-container {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .fab {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+      border: none;
+      color: #000;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 255, 157, 0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fab:hover {
+      transform: scale(1.1) rotate(10deg);
+      box-shadow: 0 12px 25px rgba(0, 255, 157, 0.4);
+    }
+
+    .fab.secondary {
       background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
       color: white;
-      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    .btn-whatsapp {
-      background: linear-gradient(45deg, #25D366, #128C7E);
+    /* ===== AI BADGE ===== */
+    .ai-badge {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
       color: white;
-      margin-top: 10px;
-    }
-
-    .btn-whatsapp:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
+      padding: 5px 15px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+      z-index: 10;
     }
 
     /* ===== FOOTER ===== */
     footer {
       text-align: center;
-      margin-top: auto;
-      padding: 30px 20px 20px;
-      color: #666;
+      margin-top: 40px;
+      padding: 20px;
+      color: var(--muted);
       font-size: 13px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid var(--border);
     }
 
-    /* ===== HIDDEN INPUTS ===== */
-    #cameraInput,
-    #galleryInput {
-      display: none;
-    }
-
-    /* ===== UTILITY ===== */
-    .hidden {
-      display: none;
-    }
-
-    .show {
-      display: block;
-    }
-
-    .fade-in {
-      animation: fadeIn 0.5s ease;
-    }
+    /* ===== UTILITY CLASSES ===== */
+    .text-center { text-align: center; }
+    .mt-20 { margin-top: 20px; }
+    .mb-20 { margin-bottom: 20px; }
+    .hidden { display: none; }
+    .fade-in { animation: fadeIn 0.5s ease; }
   </style>
 </head>
 <body>
-  <!-- Background -->
-  <div class="gradient-bg"></div>
 
-  <div class="container">
-    <!-- Header -->
-    <header>
-      <div class="logo">EventLens</div>
-      <div class="tagline">Find Your Photos in Seconds</div>
-    </header>
+<!-- AI Badge -->
+<div class="ai-badge">
+  <i class="fas fa-bolt"></i>
+  AI POWERED
+</div>
 
-    <!-- STEP 1: UPLOAD SELFIE -->
-    <div id="step1" class="upload-card fade-in">
-      <div class="card-title">TAKE A SELFIE</div>
-      
-      <!-- Upload Zone -->
-      <label for="cameraInput" class="upload-zone">
-        <div class="upload-icon">📸</div>
-        <div class="upload-text">Tap to take selfie</div>
-        <div class="upload-subtext">Or upload from gallery</div>
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-sparkle">✨</div>
+      <h1>EventLens</h1>
+      <div class="logo-sparkle">✨</div>
+    </div>
+    <p class="tagline">AI Photo Discovery Platform</p>
+    
+    <!-- Progress Steps -->
+    <div class="progress-steps">
+      <div class="step active" id="step1-indicator">
+        <div class="step-number">1</div>
+        <div class="step-line"></div>
+        <div class="step-label">Upload</div>
+      </div>
+      <div class="step" id="step2-indicator">
+        <div class="step-number">2</div>
+        <div class="step-line"></div>
+        <div class="step-label">Details</div>
+      </div>
+      <div class="step" id="step3-indicator">
+        <div class="step-number">3</div>
+        <div class="step-label">Gallery</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STEP 1: UPLOAD -->
+  <div id="step1" class="card fade-in">
+    <div class="step-title">
+      <i class="fas fa-cloud-upload-alt"></i>
+      UPLOAD YOUR SELFIE
+    </div>
+    
+    <!-- Hidden Inputs -->
+    <input type="file" id="cameraInput" accept="image/*" capture="user" class="hidden">
+    <input type="file" id="galleryInput" accept="image/*" class="hidden">
+    
+    <!-- Upload Options -->
+    <div class="upload-options">
+      <label for="cameraInput" class="upload-btn">
+        <div class="icon">📸</div>
+        <div class="label">Take Selfie</div>
+        <div class="subtext">Use camera</div>
       </label>
-
-      <!-- Hidden Inputs -->
-      <input type="file" id="cameraInput" accept="image/*" capture="user">
-      <input type="file" id="galleryInput" accept="image/*">
-
-      <!-- Preview -->
-      <div id="previewContainer" class="preview-container">
-        <img id="previewImg" class="preview-image" alt="Your selfie">
-        
-        <div id="loading" class="loading hidden">
-          <div class="spinner"></div>
-          <div class="loading-text">Finding your photos...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 2: DETAILS -->
-    <div id="step2" class="details-card hidden">
-      <div class="photos-count" id="matchCount">0 Photos Found</div>
-      <div class="card-title">ALMOST THERE!</div>
       
-      <div class="input-group">
-        <input type="text" id="guestName" placeholder="Your Name" autocomplete="off">
-      </div>
-      
-      <div class="input-group">
-        <input type="tel" id="guestMobile" placeholder="Mobile Number" maxlength="10" autocomplete="off">
-      </div>
-
-      <div id="detailsLoading" class="loading hidden">
-        <div class="spinner"></div>
-        <div class="loading-text">Preparing your gallery...</div>
+      <label for="galleryInput" class="upload-btn">
+        <div class="icon">🖼️</div>
+        <div class="label">From Gallery</div>
+        <div class="subtext">Choose existing</div>
+      </label>
+    </div>
+    
+    <div class="or-divider">OR</div>
+    
+    <div class="text-center">
+      <p style="color: var(--muted); margin-bottom: 15px;">
+        Upload a clear selfie for best AI matching results
+      </p>
+    </div>
+    
+    <!-- Preview -->
+    <div id="previewContainer" class="hidden">
+      <img id="previewImg" alt="Preview">
+      <div class="preview-actions">
+        <button id="retakeBtn" class="btn btn-secondary">
+          <i class="fas fa-redo"></i> Retake
+        </button>
+        <button id="searchBtn" class="btn btn-primary">
+          <i class="fas fa-search"></i> Find My Photos
+        </button>
       </div>
     </div>
-
-    <!-- STEP 3: GALLERY -->
-    <div id="step3" class="hidden">
-      <div class="gallery-header">
-        <div class="selection-info">
-          Selected: <span class="selection-count" id="selCount">0</span>
-        </div>
-        <div>
-          <button class="btn btn-secondary" onclick="selectAll()">Select All</button>
-        </div>
-      </div>
-
-      <div id="photoGrid" class="photo-grid"></div>
-
-      <div class="action-buttons">
-        <button class="btn btn-secondary" onclick="showUploadCard()">Upload New</button>
-        <button class="btn btn-primary" onclick="downloadZip()">Download</button>
-      </div>
-
-      <button class="btn btn-whatsapp" onclick="shareOnWhatsApp()">
-        Share on WhatsApp
-      </button>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-      <p>© 2023 EventLens | AI-Powered Photo Finder</p>
-    </footer>
+    
+    <p id="loadingText" class="loading-text"></p>
   </div>
 
-  <script>
-    // ===== CONFIG =====
-    const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
-    const SAVE_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
-
-    // ===== STATE =====
-    let allPhotos = [];
-    let filteredPhotos = [];
-    let selectedUrls = new Set();
-    let selfieBase64 = null;
-    let currentMatchCount = 0;
-
-    // ===== STEP 1: UPLOAD SELFIE =====
-    function handleFileSelect(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const MAX_SIZE = 800;
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height = (height * MAX_SIZE) / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width = (width * MAX_SIZE) / height;
-              height = MAX_SIZE;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          selfieBase64 = canvas.toDataURL('image/jpeg', 0.8);
-          
-          // Show preview
-          document.getElementById('previewImg').src = selfieBase64;
-          document.getElementById('previewContainer').classList.remove('hidden');
-          
-          // Auto-search after 1 second
-          setTimeout(searchPhotos, 1000);
-        };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // Bind inputs
-    document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
-    document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
-
-    // Gallery upload option
-    document.querySelector('.upload-zone').addEventListener('click', function(e) {
-      if (e.target === this) {
-        document.getElementById('galleryInput').click();
-      }
-    });
-
-    // ===== AUTO SEARCH =====
-    async function searchPhotos() {
-      if (!selfieBase64) return;
-      
-      const params = new URLSearchParams(window.location.search);
-      const linkId = params.get('linkId');
-      
-      if (!linkId) {
-        alert("Please use the correct event link.");
-        return;
-      }
-
-      // Show loading
-      document.getElementById('loading').classList.remove('hidden');
-
-      try {
-        const res = await fetch(SEARCH_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ linkId: linkId, selfie_image: selfieBase64 })
-        });
-
-        if (!res.ok) throw new Error("Search failed");
-
-        const data = await res.json();
-        
-        if (data.error) throw new Error(data.error);
-
-        allPhotos = data.matches || [];
-        filteredPhotos = [...allPhotos];
-        currentMatchCount = allPhotos.length;
-
-        // Hide step1, show step2
-        document.getElementById('step1').classList.add('hidden');
-        document.getElementById('step2').classList.remove('hidden');
-        document.getElementById('matchCount').textContent = `${currentMatchCount} Photos Found`;
-
-        // Confetti if photos found
-        if (currentMatchCount > 0) {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        }
-
-      } catch (err) {
-        alert("Error: " + err.message);
-        document.getElementById('loading').classList.add('hidden');
-      }
-    }
-
-    // ===== AUTO PROCEED TO GALLERY =====
-    let detailsTimeout;
+  <!-- STEP 2: LEAD GEN -->
+  <div id="step2" class="card hidden">
+    <div class="step-title">
+      <i class="fas fa-user-circle"></i>
+      YOUR DETAILS
+    </div>
     
-    document.getElementById('guestName').addEventListener('input', checkDetails);
-    document.getElementById('guestMobile').addEventListener('input', checkDetails);
+    <div class="text-center mb-20">
+      <div class="match-badge">
+        <i class="fas fa-images"></i>
+        <span id="matchCount">0</span> Photos Found
+      </div>
+      <p style="margin-top: 15px; color: var(--muted);">
+        We found your photos! Enter details to access gallery
+      </p>
+    </div>
+    
+    <div class="input-group">
+      <input type="text" id="guestName" placeholder="Full Name">
+    </div>
+    
+    <div class="input-group">
+      <input type="tel" id="guestMobile" placeholder="Mobile Number" maxlength="10">
+    </div>
+    
+    <button id="showGalleryBtn" class="btn btn-primary">
+      <i class="fas fa-arrow-right"></i> View Gallery
+    </button>
+  </div>
 
-    function checkDetails() {
-      const name = document.getElementById('guestName').value.trim();
-      const mobile = document.getElementById('guestMobile').value.trim();
+  <!-- STEP 3: SMART GALLERY -->
+  <div id="step3" class="hidden">
+    <div class="card">
+      <!-- Search & Filter -->
+      <div class="search-wrapper">
+        <div class="search-icon">
+          <i class="fas fa-search"></i>
+        </div>
+        <input type="text" id="searchInput" placeholder="Search photos by content, expression, text...">
+      </div>
+      
+      <div class="filter-row">
+        <div class="chip active" onclick="filterPhotos('ALL', this)">
+          <i class="fas fa-layer-group"></i> All
+        </div>
+        <div class="chip" onclick="filterPhotos('BEST', this)">
+          <i class="fas fa-star"></i> Best
+        </div>
+        <div class="chip" onclick="filterPhotos('HAPPY', this)">
+          <i class="fas fa-smile"></i> Happy
+        </div>
+        <div class="chip" onclick="filterPhotos('GROUP', this)">
+          <i class="fas fa-users"></i> Group
+        </div>
+        <div class="chip" onclick="filterPhotos('TEXT', this)">
+          <i class="fas fa-font"></i> With Text
+        </div>
+      </div>
+      
+      <!-- Gallery Header -->
+      <div class="gallery-header">
+        <div class="selection-info">
+          <span style="color: var(--muted);">
+            Selected: <b id="selCount" style="color: var(--accent);">0</b>
+          </span>
+        </div>
+        <div>
+          <button class="btn btn-secondary" onclick="selectAll()">
+            <i class="fas fa-check-double"></i> Select All
+          </button>
+        </div>
+      </div>
+      
+      <!-- Photo Grid -->
+      <div id="photoGrid" class="grid"></div>
+      
+      <!-- Actions -->
+      <div class="preview-actions mt-20">
+        <button class="btn btn-primary" onclick="downloadZip()">
+          <i class="fas fa-download"></i> Download ZIP
+        </button>
+        <button id="whatsappBtn" class="btn btn-whatsapp" onclick="shareOnWhatsApp()" style="display: none;">
+          <i class="fab fa-whatsapp"></i> Share on WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
-      // Clear previous timeout
-      clearTimeout(detailsTimeout);
+<!-- FAB Container -->
+<div class="fab-container">
+  <button class="fab secondary" onclick="scrollToTop()" id="scrollTopBtn">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+  <button class="fab" onclick="downloadZip()">
+    <i class="fas fa-download"></i>
+  </button>
+</div>
 
-      // If both fields are valid, proceed after 1 second
-      if (name && mobile.length === 10) {
-        detailsTimeout = setTimeout(proceedToGallery, 1000);
-        document.getElementById('detailsLoading').classList.remove('hidden');
-      } else {
-        document.getElementById('detailsLoading').classList.add('hidden');
-      }
+<!-- Viewer -->
+<div id="viewer" class="viewer">
+  <div class="close-viewer" onclick="closeViewer()">
+    <i class="fas fa-times"></i>
+  </div>
+  <img id="viewerImage" alt="Fullscreen view">
+  <div class="viewer-controls">
+    <button class="btn btn-secondary" onclick="prevImage()">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <button class="btn btn-primary" onclick="toggleViewerSelect()">
+      <i class="fas fa-check"></i> Select
+    </button>
+    <button class="btn btn-secondary" onclick="nextImage()">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <p>© 2023 EventLens PRO | AI-Powered Photo Discovery</p>
+  <p style="margin-top: 5px; font-size: 12px;">Powered by Advanced Face Recognition & Computer Vision</p>
+</footer>
+
+<script>
+  // ===== CONFIGURATION =====
+  const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
+  const SAVE_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
+
+  // ===== STATE MANAGEMENT =====
+  let allPhotos = [];
+  let filteredPhotos = [];
+  let selectedUrls = new Set();
+  let selfieBase64 = null;
+  let currentViewerIndex = 0;
+  let currentMatchCount = 0;
+
+  // ===== DOM ELEMENTS =====
+  const step1El = document.getElementById('step1');
+  const step2El = document.getElementById('step2');
+  const step3El = document.getElementById('step3');
+  const step1Indicator = document.getElementById('step1-indicator');
+  const step2Indicator = document.getElementById('step2-indicator');
+  const step3Indicator = document.getElementById('step3-indicator');
+
+  // ===== STEP 1: UPLOAD HANDLING =====
+  function handleFileSelect(e) {
+    console.log("File selected");
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Compress image
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+        
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = (height * MAX_SIZE) / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = (width * MAX_SIZE) / height;
+            height = MAX_SIZE;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw image with quality settings
+        ctx.drawImage(img, 0, 0, width, height);
+        selfieBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Show preview
+        document.getElementById('previewImg').src = selfieBase64;
+        document.getElementById('previewContainer').classList.remove('hidden');
+        
+        // Scroll to preview
+        document.getElementById('previewContainer').scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'center'
+        });
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Bind file inputs
+  document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
+  document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
+
+  // Retake functionality
+  document.getElementById('retakeBtn').addEventListener('click', function() {
+    selfieBase64 = null;
+    document.getElementById('previewContainer').classList.add('hidden');
+    document.getElementById('cameraInput').value = '';
+    document.getElementById('galleryInput').value = '';
+  });
+
+  // ===== STEP 2: SEARCH PHOTOS =====
+  document.getElementById('searchBtn').addEventListener('click', async () => {
+    // Validation
+    if (!selfieBase64) {
+      alert("Please upload a selfie first.");
+      return;
     }
 
-    async function proceedToGallery() {
-      const name = document.getElementById('guestName').value.trim();
-      const mobile = document.getElementById('guestMobile').value.trim();
-      
-      if (!name || mobile.length !== 10) return;
+    const params = new URLSearchParams(window.location.search);
+    const linkId = params.get('linkId');
+    if (!linkId) {
+      alert("Error: Missing link ID. Please use the correct URL.");
+      return;
+    }
 
-      // Save lead in background
-      const params = new URLSearchParams(window.location.search);
-      const leadData = {
-        linkId: params.get('linkId'),
-        name: name,
-        mobile: mobile,
-        selfie_image: selfieBase64,
-        photo_count: currentMatchCount
-      };
+    // UI Loading State
+    const loadingText = document.getElementById('loadingText');
+    const btn = document.getElementById('searchBtn');
+    const originalText = btn.innerHTML;
+    
+    loadingText.innerHTML = "Scanning faces with AI<span class='dots'></span>";
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
 
-      fetch(SAVE_API, {
+    try {
+      // API Call
+      const res = await fetch(SEARCH_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadData)
-      }).catch(err => console.error("Lead save failed:", err));
-
-      // Show gallery
-      document.getElementById('step2').classList.add('hidden');
-      document.getElementById('step3').classList.remove('hidden');
-      
-      renderGrid();
-    }
-
-    // ===== GALLERY FUNCTIONS =====
-    function renderGrid() {
-      const grid = document.getElementById('photoGrid');
-      grid.innerHTML = '';
-
-      if (filteredPhotos.length === 0) {
-        grid.innerHTML = `
-          <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">
-            <div style="font-size: 48px; margin-bottom: 15px;">📸</div>
-            <p>No photos found.</p>
-          </div>
-        `;
-        return;
-      }
-
-      filteredPhotos.forEach((photo, index) => {
-        const isSelected = selectedUrls.has(photo.url);
-        
-        const div = document.createElement('div');
-        div.className = `photo-item ${isSelected ? 'selected' : ''}`;
-        
-        div.onclick = (e) => {
-          if (e.target.closest('.check-mark')) {
-            toggleSelect(photo.url);
-          } else {
-            // Simple click to select
-            toggleSelect(photo.url);
-          }
-        };
-
-        div.innerHTML = `
-          <img src="${photo.url}" loading="lazy" alt="Photo">
-          <div class="check-mark">✓</div>
-        `;
-        
-        grid.appendChild(div);
+        body: JSON.stringify({ 
+          linkId: linkId, 
+          selfie_image: selfieBase64 
+        })
       });
 
-      document.getElementById('selCount').textContent = selectedUrls.size;
-    }
-
-    function toggleSelect(url) {
-      if (selectedUrls.has(url)) {
-        selectedUrls.delete(url);
-      } else {
-        selectedUrls.add(url);
-      }
-      renderGrid();
-    }
-
-    function selectAll() {
-      if (selectedUrls.size === filteredPhotos.length) {
-        selectedUrls.clear();
-      } else {
-        filteredPhotos.forEach(p => selectedUrls.add(p.url));
-      }
-      renderGrid();
-    }
-
-    async function downloadZip() {
-      if (selectedUrls.size === 0) {
-        alert("Select photos first!");
-        return;
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Server error");
       }
 
-      const zip = new JSZip();
-      const folder = zip.folder("Event_Photos");
-      const urls = Array.from(selectedUrls);
+      const data = await res.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-      const btn = document.querySelector(".btn-primary");
-      const originalText = btn.textContent;
-      btn.textContent = "Zipping...";
-      btn.disabled = true;
+      // Process response
+      allPhotos = data.matches || [];
+      filteredPhotos = [...allPhotos];
+      currentMatchCount = allPhotos.length;
 
-      try {
-        for (let i = 0; i < urls.length; i++) {
-          const response = await fetch(urls[i]);
-          const blob = await response.blob();
-          folder.file(`photo_${i+1}.jpg`, blob);
-        }
-
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `My_Event_Photos.zip`);
-
-        // Success confetti
+      // Update UI
+      document.getElementById('matchCount').innerText = currentMatchCount;
+      
+      // Progress steps
+      step1El.classList.add('hidden');
+      step2El.classList.remove('hidden');
+      step1Indicator.classList.remove('active');
+      step2Indicator.classList.add('active');
+      
+      // Confetti celebration
+      if (currentMatchCount > 0) {
         confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.8 }
+          particleCount: 150,
+          spread: 100,
+          origin: { y: 0.6 }
         });
-
-      } catch (error) {
-        alert("Download failed. Try again.");
-      } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
+        
+        // Success sound effect (optional)
+        playSound('success');
       }
+
+    } catch (err) {
+      console.error("Search error:", err);
+      alert("Failed to find photos: " + err.message);
+    } finally {
+      // Reset UI
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      loadingText.innerHTML = "";
+    }
+  });
+
+  // ===== STEP 3: SHOW GALLERY =====
+  document.getElementById('showGalleryBtn').addEventListener('click', () => {
+    const name = document.getElementById('guestName').value.trim();
+    const mobile = document.getElementById('guestMobile').value.trim();
+
+    if (!name || mobile.length < 10) {
+      alert("Please enter valid name and 10-digit mobile number.");
+      return;
     }
 
-    function shareOnWhatsApp() {
-      const params = new URLSearchParams(window.location.search);
-      const linkId = params.get('linkId');
-      const text = `🎉 I found ${currentMatchCount} photos of me using EventLens! ${window.location.origin}${window.location.pathname}?linkId=${linkId}`;
-      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank');
-    }
+    // Save lead data in background
+    const params = new URLSearchParams(window.location.search);
+    const leadData = {
+      linkId: params.get('linkId'),
+      name: name,
+      mobile: mobile,
+      selfie_image: selfieBase64,
+      photo_count: currentMatchCount
+    };
 
-    function showUploadCard() {
-      // Reset everything
-      selfieBase64 = null;
-      selectedUrls.clear();
-      allPhotos = [];
-      filteredPhotos = [];
-      
-      document.getElementById('guestName').value = '';
-      document.getElementById('guestMobile').value = '';
-      document.getElementById('previewContainer').classList.add('hidden');
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('detailsLoading').classList.add('hidden');
-      
-      document.getElementById('step3').classList.add('hidden');
-      document.getElementById('step2').classList.add('hidden');
-      document.getElementById('step1').classList.remove('hidden');
-    }
-
-    // ===== INIT =====
-    document.addEventListener('DOMContentLoaded', function() {
-      const params = new URLSearchParams(window.location.search);
-      if (!params.get('linkId')) {
-        alert("Please use a valid event link.");
-      }
-      
-      // Auto-focus camera input on page load
-      setTimeout(() => {
-        document.querySelector('.upload-zone').style.transform = 'scale(1.02)';
-        setTimeout(() => {
-          document.querySelector('.upload-zone').style.transform = 'scale(1)';
-        }, 200);
-      }, 500);
+    fetch(SAVE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leadData)
+    }).catch(err => {
+      console.error("Lead save failed:", err);
     });
-  </script>
+
+    // Show gallery
+    step2El.classList.add('hidden');
+    step3El.classList.remove('hidden');
+    step2Indicator.classList.remove('active');
+    step3Indicator.classList.add('active');
+    
+    renderGrid();
+    
+    // Show WhatsApp button after delay
+    setTimeout(() => {
+      document.getElementById('whatsappBtn').style.display = 'flex';
+    }, 1000);
+  });
+
+  // ===== WHATSAPP SHARE =====
+  function shareOnWhatsApp() {
+    const params = new URLSearchParams(window.location.search);
+    const linkId = params.get('linkId');
+    const text = `🎉 I found ${currentMatchCount} amazing photos of me using EventLens AI! Try it now: ${window.location.origin}${window.location.pathname}?linkId=${linkId}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+  }
+
+  // ===== PHOTO FILTERING & SEARCH =====
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    
+    filteredPhotos = allPhotos.filter(photo => {
+      const tags = (photo.ai_tags || []).join(' ').toLowerCase();
+      const text = (photo.detected_text || []).join(' ').toLowerCase();
+      const event = (photo.eventName || "").toLowerCase();
+      const emotions = (photo.emotions || []).map(e => e.Type).join(' ').toLowerCase();
+      
+      return tags.includes(query) || 
+             text.includes(query) || 
+             event.includes(query) ||
+             emotions.includes(query);
+    });
+    
+    renderGrid();
+    resetChips();
+  });
+
+  window.filterPhotos = function(type, el) {
+    // Update search input
+    document.getElementById('searchInput').value = "";
+    
+    // Update chip states
+    resetChips();
+    el.classList.add('active');
+    
+    // Apply filter
+    if (type === 'ALL') {
+      filteredPhotos = [...allPhotos];
+    } 
+    else if (type === 'BEST') {
+      filteredPhotos = allPhotos.filter(p => {
+        const happy = (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 85);
+        return (p.quality_score > 0.9) || happy;
+      });
+    }
+    else if (type === 'HAPPY') {
+      filteredPhotos = allPhotos.filter(p => {
+        return (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 70);
+      });
+    }
+    else if (type === 'GROUP') {
+      filteredPhotos = allPhotos.filter(p => p.face_count >= 3);
+    }
+    else if (type === 'TEXT') {
+      filteredPhotos = allPhotos.filter(p => (p.detected_text || []).length > 0);
+    }
+    
+    renderGrid();
+  };
+
+  function resetChips() {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  }
+
+  // ===== RENDER PHOTO GRID =====
+  function renderGrid() {
+    const grid = document.getElementById('photoGrid');
+    grid.innerHTML = "";
+
+    if (filteredPhotos.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--muted);">
+          <i class="fas fa-images" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+          <p>No photos found. Try a different search or filter.</p>
+        </div>
+      `;
+      return;
+    }
+
+    filteredPhotos.forEach((photo, index) => {
+      const isSelected = selectedUrls.has(photo.url);
+      
+      const div = document.createElement('div');
+      div.className = `photo-item ${isSelected ? 'selected' : ''}`;
+      
+      div.onclick = (e) => {
+        if (e.target.closest('.check-mark')) {
+          toggleSelect(photo.url);
+        } else {
+          openViewer(index);
+        }
+      };
+
+      div.innerHTML = `
+        <img src="${photo.url}" loading="lazy" alt="Event photo">
+        <div class="check-mark">
+          <i class="fas fa-check"></i>
+        </div>
+      `;
+      
+      grid.appendChild(div);
+    });
+
+    document.getElementById('selCount').innerText = selectedUrls.size;
+  }
+
+  // ===== SELECTION FUNCTIONS =====
+  function toggleSelect(url) {
+    if (selectedUrls.has(url)) {
+      selectedUrls.delete(url);
+    } else {
+      selectedUrls.add(url);
+    }
+    renderGrid();
+    playSound('click');
+  }
+
+  window.selectAll = function() {
+    if (selectedUrls.size === filteredPhotos.length) {
+      selectedUrls.clear();
+    } else {
+      filteredPhotos.forEach(p => selectedUrls.add(p.url));
+    }
+    renderGrid();
+    playSound('click');
+  }
+
+  // ===== DOWNLOAD ZIP =====
+  window.downloadZip = async function() {
+    if (selectedUrls.size === 0) {
+      alert("Please select at least one photo to download.");
+      return;
+    }
+
+    const zip = new JSZip();
+    const folder = zip.folder("EventLens_Photos");
+    const urls = Array.from(selectedUrls);
+    const total = urls.length;
+
+    // Update UI
+    const btn = document.querySelector("button[onclick='downloadZip()']");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Zipping...';
+    btn.disabled = true;
+
+    try {
+      // Download each image
+      for (let i = 0; i < urls.length; i++) {
+        const response = await fetch(urls[i]);
+        const blob = await response.blob();
+        folder.file(`photo_${i+1}.jpg`, blob);
+      }
+
+      // Generate and download ZIP
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `EventLens_Photos_${new Date().getTime()}.zip`);
+      
+      // Success animation
+      playSound('success');
+      
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Download failed. Please try again.");
+    } finally {
+      // Reset UI
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  };
+
+  // ===== VIEWER FUNCTIONS =====
+  function openViewer(index) {
+    currentViewerIndex = index;
+    updateViewer();
+    document.getElementById('viewer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  window.closeViewer = function() {
+    document.getElementById('viewer').classList.remove('open');
+    document.body.style.overflow = 'auto';
+  }
+
+  function updateViewer() {
+    const photo = filteredPhotos[currentViewerIndex];
+    document.getElementById('viewerImage').src = photo.url;
+  }
+
+  window.nextImage = function() {
+    currentViewerIndex = (currentViewerIndex + 1) % filteredPhotos.length;
+    updateViewer();
+  }
+
+  window.prevImage = function() {
+    currentViewerIndex = (currentViewerIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+    updateViewer();
+  }
+
+  window.toggleViewerSelect = function() {
+    const url = filteredPhotos[currentViewerIndex].url;
+    toggleSelect(url);
+    updateViewer();
+  }
+
+  // ===== UTILITY FUNCTIONS =====
+  function playSound(type) {
+    // Simple beep sounds using Web Audio API
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      if (type === 'click') {
+        oscillator.frequency.value = 800;
+        gainNode.gain.value = 0.1;
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.05);
+      } else if (type === 'success') {
+        oscillator.frequency.value = 1200;
+        gainNode.gain.value = 0.1;
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+      }
+    } catch (e) {
+      console.log("Audio not supported");
+    }
+  }
+
+  function scrollToTop() {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+
+  // Show/hide scroll to top button
+  window.addEventListener('scroll', function() {
+    const scrollBtn = document.getElementById('scrollTopBtn');
+    if (window.scrollY > 300) {
+      scrollBtn.style.display = 'flex';
+    } else {
+      scrollBtn.style.display = 'none';
+    }
+  });
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("EventLens PRO initialized");
+    
+    // Check for linkId parameter
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('linkId')) {
+      alert("Please use a valid event link with linkId parameter");
+    }
+  });
+</script>
 </body>
 </html>
