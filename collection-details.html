@@ -440,9 +440,8 @@ async function fetchPhotos() {
 
 async function loadLeads() {
   const container = document.getElementById("leadsContainer");
-  container.innerHTML = "Loading leads...";
+  container.innerHTML = "<div style='text-align:center;padding:20px;color:var(--text-secondary);'><i class='fas fa-spinner fa-spin'></i> Loading leads...</div>";
   try {
-    // Lead fetch logic with fallback
     let res = await fetch(`${API_BASE}/save-details`, {
       method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ collection_id: collectionId, action: "list" })
@@ -453,30 +452,54 @@ async function loadLeads() {
        });
     }
     const data = await res.json();
-    const leads = data.items || data.leads || data.data || [];
+    const leads = data.items || data.leads || data.data || data.history || [];
     renderLeads(leads);
     document.getElementById("statLeads").textContent = leads.length;
-  } catch (err) { container.innerHTML = "Failed to load leads."; }
+  } catch (err) { 
+    container.innerHTML = "<div style='text-align:center;padding:20px;color:var(--danger);'>Failed to load leads data.</div>"; 
+  }
 }
 
+/**
+ * processFaces handles merging of faces by ID and Name to ensure unique icons per person.
+ */
 function processFaces() {
   const faceMap = new Map();
+  const nameMap = new Map(); // For merging known faces by name
+
   allPhotos.forEach(p => {
     const faces = p.faces || [];
     faces.forEach(f => {
       const fid = f.FaceId || f.face_id;
       if (!fid) return;
-      if (!faceMap.has(fid)) {
-        faceMap.set(fid, {
-          FaceId: fid, FaceName: f.FaceName || "Unknown",
-          thumbnail: f.face_thumbnail_url || p.thumbnail_url || p.url,
-          count: 0, photos: []
-        });
+      
+      const name = (f.FaceName && f.FaceName !== "Unknown") ? f.FaceName : null;
+      
+      // If we have a name, try to find an existing group by that name first
+      let group = null;
+      if (name && nameMap.has(name)) {
+        group = faceMap.get(nameMap.get(name));
+      } else if (faceMap.has(fid)) {
+        group = faceMap.get(fid);
       }
-      const group = faceMap.get(fid);
-      group.count++;
-      group.photos.push(p);
-      if(f.FaceName && f.FaceName !== "Unknown") group.FaceName = f.FaceName;
+
+      if (!group) {
+        group = {
+          FaceId: fid, 
+          FaceName: name || "Unknown",
+          thumbnail: f.face_thumbnail_url || p.thumbnail_url || p.url,
+          count: 0, 
+          photos: []
+        };
+        faceMap.set(fid, group);
+        if (name) nameMap.set(name, fid);
+      }
+      
+      // Only add photo if not already counted for this person
+      if (!group.photos.find(photo => photo.photo_id === p.photo_id)) {
+        group.count++;
+        group.photos.push(p);
+      }
     });
   });
   allFaceGroups = Array.from(faceMap.values()).sort((a,b) => b.count - a.count);
@@ -536,11 +559,11 @@ function renderEventsList() {
 function renderLeads(leads) {
   const container = document.getElementById("leadsContainer");
   container.innerHTML = "";
-  if(!leads.length) { container.innerHTML = "No leads found."; return; }
+  if(!leads.length) { container.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted);'>No leads found.</div>"; return; }
   leads.forEach(l => {
     const card = document.createElement("div");
     card.className = "card"; card.style.display = "flex"; card.style.gap = "15px";
-    card.innerHTML = `<img src="${l.selfie_url||l.selfie_image||'https://via.placeholder.com/60'}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid var(--brand);"><div><div style="font-weight:800;">${l.name||'Guest'}</div><div style="color:var(--brand);">${l.mobile||l.phone||'N/A'}</div></div>`;
+    card.innerHTML = `<img src="${l.selfie_url||l.selfie_image||'https://via.placeholder.com/60'}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid var(--brand);"><div><div style="font-weight:800;color:var(--text-primary);">${l.name||l.guest_name||'Guest'}</div><div style="color:var(--brand);font-weight:700;">${l.mobile||l.phone||'N/A'}</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${new Date(l.created_at || l.timestamp).toLocaleString()}</div></div>`;
     container.appendChild(card);
   });
 }
@@ -562,6 +585,9 @@ function renderUploadPreview(file) {
   container.appendChild(div);
 }
 
+/**
+ * startBatchUpload forces image/jpeg content-type to avoid mismatch with presigned URL signing.
+ */
 async function startBatchUpload() {
   const eventId = document.getElementById("uploadTargetEvent").value;
   if(!eventId || !uploadQueue.length) { alert("Select event and photos."); return; }
@@ -571,7 +597,8 @@ async function startBatchUpload() {
   progressCont.style.display = "block";
   
   try {
-    const fileMeta = uploadQueue.map(f => ({ name: f.name, type: f.type || "image/jpeg" }));
+    // Force image/jpeg meta for presigned URL request
+    const fileMeta = uploadQueue.map(f => ({ name: f.name, type: "image/jpeg" }));
     const res = await fetch(`${API_BASE}/generate-upload-urls`, {
       method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileMeta })
@@ -583,13 +610,22 @@ async function startBatchUpload() {
        const file = uploadQueue[i];
        const putUrl = uploadUrls[i].uploadURL;
        let blob = file;
-       if(file.name.toLowerCase().endsWith(".heic")) {
-          blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
+
+       // Always convert HEIC or other formats to JPEG as requested by the uploadURL signing
+       if(file.name.toLowerCase().endsWith(".heic") || file.type !== "image/jpeg") {
+          try {
+            blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
+          } catch (e) {
+            console.warn("HEIC conversion failed, trying standard canvas conversion", e);
+            blob = await convertToJpeg(file);
+          }
        }
+
        await new Promise((res, rej) => {
          const xhr = new XMLHttpRequest();
          xhr.open("PUT", putUrl);
-         xhr.setRequestHeader("Content-Type", blob.type || "image/jpeg");
+         // Crucial: Must match the Content-Type used in generate-upload-urls payload
+         xhr.setRequestHeader("Content-Type", "image/jpeg"); 
          xhr.upload.onprogress = (e) => {
             if(e.lengthComputable) {
               const overall = ((i / uploadQueue.length) * 100) + ((e.loaded/e.total) * (100 / uploadQueue.length));
@@ -603,9 +639,30 @@ async function startBatchUpload() {
        });
     }
     showToast("Upload Successful!");
-    setTimeout(refreshData, 5000);
+    setTimeout(refreshData, 3000);
     clearUploadQueue();
-  } catch (err) { alert("Upload failed."); } finally { btn.disabled = false; }
+  } catch (err) { 
+    alert("Upload failed. Please check your internet connection or try again."); 
+    console.error(err);
+  } finally { btn.disabled = false; }
+}
+
+function convertToJpeg(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function clearUploadQueue() { uploadQueue = []; document.getElementById("uploadPreview").innerHTML = ""; document.getElementById("uploadProgressContainer").style.display = "none"; }
@@ -613,6 +670,8 @@ function clearUploadQueue() { uploadQueue = []; document.getElementById("uploadP
 function updateEventControls() {
   const upSel = document.getElementById("uploadTargetEvent");
   const linkList = document.getElementById("linkEventSelection");
+  if (!upSel || !linkList) return;
+
   upSel.innerHTML = `<option value="">Select an Event...</option>`;
   linkList.innerHTML = "";
   
@@ -632,7 +691,7 @@ async function createNewSmartLink() {
   const expiry = document.getElementById("linkExpiry").value;
   const selectedEvents = Array.from(document.querySelectorAll(".link-event-cb:checked")).map(cb => cb.value);
   
-  if(!selectedEvents.length) { alert("Select at least one event."); return; }
+  if(!selectedEvents.length) { alert("Select at least one event to include in the search."); return; }
   
   try {
     const res = await fetch(`${API_BASE}/generate-search-link`, {
@@ -640,16 +699,20 @@ async function createNewSmartLink() {
       body: JSON.stringify({ collection_id: collectionId, event_ids: selectedEvents, expiry_hours: parseInt(expiry) || 0 })
     });
     const data = await res.json();
-    const link = data.searchUrl || data.link;
+    const link = data.searchUrl || data.link || data.url;
     if(link) {
       document.getElementById("smartLinkAnchor").href = link;
       document.getElementById("smartLinkAnchor").textContent = link;
       document.getElementById("generatedLinkResult").style.display = "block";
+      showToast("Link Generated!");
     }
-  } catch (err) { console.error(err); }
+  } catch (err) { 
+    console.error(err);
+    alert("Failed to generate link.");
+  }
 }
 
-function copySmartLink() { navigator.clipboard.writeText(document.getElementById("smartLinkAnchor").textContent); showToast("Copied!"); }
+function copySmartLink() { navigator.clipboard.writeText(document.getElementById("smartLinkAnchor").textContent); showToast("Copied to clipboard!"); }
 
 function openPhotoDetails(photo) {
   currentDetailPhoto = photo;
@@ -658,14 +721,23 @@ function openPhotoDetails(photo) {
   facesDiv.innerHTML = "";
   (photo.faces || []).forEach(f => {
      const name = allFaceGroups.find(g => g.FaceId === (f.FaceId || f.face_id))?.FaceName || "Unknown";
-     facesDiv.innerHTML += `<span style="padding:4px 10px;background:var(--brand);border-radius:20px;font-size:11px;">${name}</span>`;
+     facesDiv.innerHTML += `<span style="padding:4px 10px;background:var(--brand);border-radius:20px;font-size:11px;margin-right:5px;margin-bottom:5px;display:inline-block;">${name}</span>`;
   });
+  
+  const tagsDiv = document.getElementById("detailTags");
+  tagsDiv.innerHTML = "";
+  (photo.ai_tags || []).forEach(t => {
+     tagsDiv.innerHTML += `<span style="padding:4px 10px;background:rgba(255,255,255,0.05);border-radius:20px;font-size:11px;margin-right:5px;margin-bottom:5px;display:inline-block;">${t}</span>`;
+  });
+
   document.getElementById("modalPhotoDetails").classList.add("active");
 }
+
 function closePhotoDetails() { document.getElementById("modalPhotoDetails").classList.remove("active"); }
+
 function showToast(msg) {
   const t = document.createElement("div");
-  t.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--brand-gradient);padding:10px 20px;border-radius:8px;z-index:9999;";
+  t.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--brand-gradient);padding:10px 20px;border-radius:8px;z-index:9999;box-shadow:var(--shadow);font-weight:700;";
   t.textContent = msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
 }
 </script>
