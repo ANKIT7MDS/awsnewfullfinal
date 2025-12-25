@@ -739,752 +739,464 @@ let allEvents = [];
 let allLeads = [];
 
 // People (Face) state
-let faceGroups = [];              // [{FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount}]
-let currentSelectedFaceId = null;
-let currentNamingFaceId = null;
+  // =========================================================
+  // 👥 PEOPLE / FACES ROW (अब FaceId नहीं, person_id से grouping)
+  // =========================================================
+  // नोट:
+  // - Rekognition एक ही फोटो में 50 चेहरे detect कर सकता है, हर face का FaceId अलग होता है
+  // - लेकिन हमारी UI में हमें "Person" के हिसाब से grouping चाहिए (Google Photos style)
+  // - इसलिए यहाँ selection + filter "person_id" पर होगा
+  // - Rename के लिए हम representative FaceId (FaceId) use करते हैं
 
-// Upload state
-let selectedFiles = [];
-let lastUploadFinishedAt = null;  // for "indexing" UX
+  let faceGroups = []; 
+  // faceGroups item:
+  // { person_id, FaceId (rep), FaceName, photoCount, sample_url, BoundingBox }
 
-/* =========================================================
-  HELPERS (FACE NORMALIZATION + CROP)
-========================================================= */
-function getFaceId(faceObj){
-  return faceObj?.FaceId || faceObj?.face_id || faceObj?.faceId || null;
-}
-function getBBox(faceObj){
-  return faceObj?.BoundingBox || faceObj?.bounding_box || faceObj?.bbox || null;
-}
-function clamp01(x){
-  x = Number(x);
-  if(isNaN(x)) return 0;
-  return Math.max(0, Math.min(1, x));
-}
-function photoHasFace(photo, faceId){
-  if(!faceId) return true;
-  if(Array.isArray(photo.face_ids) && photo.face_ids.includes(faceId)) return true;
-  const faces = Array.isArray(photo.faces) ? photo.faces : [];
-  return faces.some(f => getFaceId(f) === faceId);
-}
-function setFaceBgCrop(wrapper, url, bbox){
-  wrapper.style.backgroundImage = url ? `url("${url}")` : "none";
-  wrapper.style.backgroundRepeat = "no-repeat";
-  wrapper.style.backgroundPosition = "center";
-  wrapper.style.backgroundSize = "cover";
+  let currentSelectedPersonId = null;
 
-  if(!bbox || bbox.Left === undefined) return;
+  let currentNamingPersonId = null;
+  let currentNamingFaceId = null;
+  let currentNamingOldName = null;
 
-  const L = clamp01(bbox.Left);
-  const T = clamp01(bbox.Top);
-  const W = clamp01(bbox.Width);
-  const H = clamp01(bbox.Height);
-
-  const zoom = 1 / Math.max(W, H, 0.0001);
-  const cx = (L + W/2) * 100;
-  const cy = (T + H/2) * 100;
-
-  wrapper.style.backgroundSize = `${zoom*100}% ${zoom*100}%`;
-  wrapper.style.backgroundPosition = `${cx}% ${cy}%`;
-}
-
-/* =========================================================
-  TOAST (simple)
-========================================================= */
-function showToast(message, type="success"){
-  const toast = document.createElement("div");
-  toast.style.cssText = `
-    position:fixed;top:18px;right:18px;z-index:99999;
-    padding:10px 14px;border-radius:12px;
-    background:${type==="success" ? "rgba(16,185,129,.95)" : "rgba(239,68,68,.95)"};
-    color:#fff;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.35);
-  `;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(), 2600);
-}
-
-function logUpload(line){
-  const el = $("uploadLog");
-  if(!el) return;
-  const ts = new Date().toLocaleTimeString();
-  el.textContent += `[${ts}] ${line}\n`;
-  el.scrollTop = el.scrollHeight;
-  console.log("[UPLOAD]", line);
-}
-
-function formatDate(dateString){
-  if(!dateString) return "Unknown";
-  const d = new Date(dateString);
-  if(isNaN(d)) return String(dateString);
-  return d.toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
-}
-
-function safeJsonParse(text){
-  try{return JSON.parse(text);}catch(e){return null;}
-}
-
-/* =========================================================
-  INIT
-========================================================= */
-document.addEventListener("DOMContentLoaded", async ()=>{
-  if(!collectionId){
-    showToast("Collection ID missing in URL", "error");
-    setTimeout(()=>window.location.href="dashboard.html", 1200);
-    return;
-  }
-  if(!idToken){
-    showToast("Please login first", "error");
-    setTimeout(()=>window.location.href="login.html", 1200);
-    return;
+  function normalizeFaceName(name) {
+    const v = (name || "").toString().trim();
+    return v || "Unknown";
   }
 
-  $("collectionName").textContent = collectionName;
-  $("assistantLink").href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionName)}`;
-
-  setupEventListeners();
-
-  // start
-  await initLoad();
-});
-
-async function initLoad(){
-  try{
-    console.group("COLLECTION INIT");
-    console.log("API_BASE:", API_BASE);
-    console.log("collectionId:", collectionId);
-
-    await Promise.all([loadEvents(), loadPhotos()]);
-    await loadFaceGroups();   // depends on photos (fallback build)
-    await loadLeads();
-
-    showToast("Collection loaded");
-    console.groupEnd();
-  }catch(e){
-    console.error("Init error:", e);
-    showToast("Failed to load collection", "error");
-  }
-}
-
-/* =========================================================
-  EVENTS
-========================================================= */
-async function loadEvents(){
-  try{
-    const res = await fetch(GET_EVENTS_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-
-    allEvents = data.events || [];
-    $("totalEvents").textContent = allEvents.length;
-
-    renderEvents();
-    populateEventDropdowns();
-  }catch(e){
-    console.error("loadEvents error:", e);
-    $("eventsTbody").innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a0aec0;">Failed to load events</td></tr>`;
-  }
-}
-
-function renderEvents(){
-  const tbody = $("eventsTbody");
-  tbody.innerHTML = "";
-  if(allEvents.length === 0){
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a0aec0;">No events found</td></tr>`;
-    return;
-  }
-  allEvents.forEach(evt=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${evt.name || "Untitled"}</td>
-      <td>${evt.event_date || "No date"}</td>
-      <td>${evt.photo_count || 0}</td>
-      <td>
-        <button class="btn btn-sm btn-danger" onclick="deleteEvent('${evt.event_id}')">
-          <i class="fas fa-trash"></i> Delete
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function populateEventDropdowns(){
-  const uploadSelect = $("uploadEventSelect");
-  const linkList = $("linkEventList");
-
-  uploadSelect.innerHTML = `<option value="">Select an event</option>`;
-  (allEvents||[]).forEach(evt=>{
-    const op = document.createElement("option");
-    op.value = evt.event_id;
-    op.textContent = `${evt.name} (${evt.event_date || "No date"})`;
-    uploadSelect.appendChild(op);
-  });
-
-  linkList.innerHTML = "";
-  (allEvents||[]).forEach(evt=>{
-    const row = document.createElement("div");
-    row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:8px";
-    row.innerHTML = `
-      <input type="checkbox" class="linkEventCheck" value="${evt.event_id}" id="evt_${evt.event_id}">
-      <label for="evt_${evt.event_id}" style="flex:1;color:var(--text-secondary);font-weight:700;">
-        ${evt.name} <span style="color:var(--text-muted)">(${evt.event_date || "No date"})</span>
-      </label>
-    `;
-    linkList.appendChild(row);
-  });
-}
-
-async function createEvent(){
-  const name = $("eventName").value.trim();
-  const date = $("eventDate").value;
-  if(!name || !date){
-    showToast("Event name and date required", "error");
-    return;
-  }
-  try{
-    const res = await fetch(UPSERT_EVENT_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-    showToast("Event created");
-    $("eventForm").style.display = "none";
-    await loadEvents();
-  }catch(e){
-    console.error("createEvent error:", e);
-    showToast("Failed to create event", "error");
-  }
-}
-
-async function deleteEvent(eventId){
-  if(!confirm("Delete this event? Photos inside will be deleted from backend.")) return;
-
-  try{
-    const res = await fetch(DELETE_EVENT_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, event_id: eventId })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-
-    showToast("Event deleted");
-
-    // IMPORTANT: full refresh (events + photos + faces + leads)
-    currentSelectedFaceId = null;
-    filteredPhotos = [];
-    await Promise.all([loadEvents(), loadPhotos()]);
-    await loadFaceGroups();
-    await loadLeads();
-  }catch(e){
-    console.error("deleteEvent error:", e);
-    showToast("Failed to delete event", "error");
-  }
-}
-
-/* =========================================================
-  PHOTOS
-========================================================= */
-async function loadPhotos(){
-  try{
-    $("galleryContainer").innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-spinner fa-spin"></i>
-        <h3 style="margin-bottom:8px;">Loading photos...</h3>
-        <p style="color:var(--text-muted);">Please wait</p>
-      </div>
-    `;
-
-    const res = await fetch(GET_PHOTOS_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-
-    allPhotos = data.photos || [];
-    filteredPhotos = [...allPhotos];
-
-    $("totalPhotos").textContent = allPhotos.length;
-
-    renderPhotos();
-  }catch(e){
-    console.error("loadPhotos error:", e);
-    $("galleryContainer").innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-exclamation-triangle"></i>
-        <h3>Failed to load photos</h3>
-        <p style="color:var(--text-muted);">${e.message || e}</p>
-      </div>
-    `;
-  }
-}
-
-function groupPhotosForRender(photos){
-  const byDate = {};
-  photos.forEach(p=>{
-    const dt = p.created_at ? new Date(p.created_at) : null;
-    const key = (dt && !isNaN(dt)) ? dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "Unknown Date";
-    if(!byDate[key]) byDate[key] = [];
-    byDate[key].push(p);
-  });
-  const keys = Object.keys(byDate).sort((a,b)=>{
-    const da = new Date(a); const db = new Date(b);
-    if(isNaN(da) || isNaN(db)) return 0;
-    return db-da;
-  });
-  return {byDate, keys};
-}
-
-function renderPhotos(){
-  const container = $("galleryContainer");
-
-  if(filteredPhotos.length === 0){
-    container.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-images"></i>
-        <h3 style="margin-bottom:8px;">No photos found</h3>
-        <p style="color:var(--text-muted);">${currentSelectedFaceId ? "No photos for selected person." : "Upload photos to get started."}</p>
-      </div>
-    `;
-    return;
+  function getPhotoPersonIds(photo) {
+    // नया schema: person_ids (list)
+    const pids = photo?.person_ids || photo?.personIds || [];
+    return Array.isArray(pids) ? pids.filter(Boolean) : [];
   }
 
-  container.innerHTML = "";
+  function getPhotoFaceIds(photo) {
+    const ids = photo?.face_ids || photo?.faceIds || [];
+    if (Array.isArray(ids) && ids.length) return ids.filter(Boolean);
 
-  const {byDate, keys} = groupPhotosForRender(filteredPhotos);
-
-  keys.forEach(dateKey=>{
-    const h = document.createElement("h3");
-    h.textContent = dateKey;
-    h.style.cssText = "margin:18px 0 10px;color:var(--text-secondary);font-size:14px;font-weight:900;";
-    container.appendChild(h);
-
-    const grid = document.createElement("div");
-    grid.className = "gallery-grid";
-
-    byDate[dateKey].forEach(photo=>{
-      const card = document.createElement("div");
-      card.className = "photo-card";
-      card.onclick = ()=> showPhotoDetails(photo);
-
-      const img = document.createElement("img");
-      img.src = photo.thumbnail_url || photo.url;
-      img.alt = "photo";
-      img.loading = "lazy";
-      img.onerror = ()=>{ if(photo.url && img.src !== photo.url) img.src = photo.url; };
-
-      const badges = document.createElement("div");
-      badges.className = "photo-badges";
-
-      const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
-      const tagCount = (photo.ai_tags && Array.isArray(photo.ai_tags)) ? photo.ai_tags.length : 0;
-
-      if(faceCount){
-        const b1 = document.createElement("div");
-        b1.className = "badge";
-        b1.innerHTML = `<i class="fas fa-user"></i> ${faceCount}`;
-        badges.appendChild(b1);
+    // fallback: faces[] के अंदर FaceId
+    const out = [];
+    const faces = photo?.faces || [];
+    if (Array.isArray(faces)) {
+      for (const f of faces) {
+        const fid = f?.FaceId || f?.face_id;
+        if (fid) out.push(fid);
       }
-      if(tagCount){
-        const b2 = document.createElement("div");
-        b2.className = "badge";
-        b2.innerHTML = `<i class="fas fa-robot"></i> ${tagCount}`;
-        badges.appendChild(b2);
+    }
+    return out;
+  }
+
+  function getPhotoThumb(photo) {
+    return photo?.thumbnail_url || photo?.thumb_url || photo?.thumbnailUrl || photo?.url || "";
+  }
+
+  function computeCountsFromPhotos() {
+    const counts = {}; // person_id -> photoCount (per photo unique)
+    for (const p of (allPhotos || [])) {
+      const uniq = new Set(getPhotoPersonIds(p));
+      for (const pid of uniq) {
+        counts[pid] = (counts[pid] || 0) + 1;
+      }
+    }
+    // apply to groups
+    for (const g of faceGroups) {
+      if (!g?.person_id) continue;
+      if (counts[g.person_id] != null) g.photoCount = counts[g.person_id];
+    }
+  }
+
+  function attachSamplesFromPhotosIfMissing() {
+    // sample_url missing हो तो photos से pick करें
+    const picked = new Set();
+    for (const p of (allPhotos || [])) {
+      const primPid = p?.primary_person_id || p?.primaryPersonId;
+      const thumb = getPhotoThumb(p);
+      if (!thumb) continue;
+
+      if (primPid) {
+        const g = faceGroups.find(x => x.person_id === primPid);
+        if (g && !g.sample_url) {
+          g.sample_url = thumb;
+          picked.add(primPid);
+        }
       }
 
-      const overlay = document.createElement("div");
-      overlay.className = "photo-overlay";
-      overlay.innerHTML = `
-        <span>${photo.event_id ? "Event: " + photo.event_id : ""}</span>
-        <span>${photo.created_at ? formatDate(photo.created_at) : ""}</span>
-      `;
-
-      card.appendChild(img);
-      card.appendChild(badges);
-      card.appendChild(overlay);
-      grid.appendChild(card);
-    });
-
-    container.appendChild(grid);
-  });
-
-  if(lastUploadFinishedAt){
-    console.log("UPLOAD finished at", lastUploadFinishedAt);
+      // fallback: किसी भी person को first thumb दे दो
+      if (picked.size === faceGroups.length) break;
+      for (const pid of getPhotoPersonIds(p)) {
+        const g2 = faceGroups.find(x => x.person_id === pid);
+        if (g2 && !g2.sample_url) {
+          g2.sample_url = thumb;
+          picked.add(pid);
+        }
+      }
+    }
   }
+
+  function buildFaceGroupsFromPeople(people) {
+    const groups = [];
+    const seen = new Set();
+
+    for (const it of (people || [])) {
+      const person_id = it?.person_id || it?.personId;
+      if (!person_id || seen.has(person_id)) continue;
+
+      seen.add(person_id);
+
+      groups.push({
+        person_id,
+        FaceId: it?.FaceId || it?.face_id || it?.faceId || null, // rep face id (rename के लिए)
+        FaceName: normalizeFaceName(it?.FaceName || it?.name),
+        photoCount: Number(it?.photoCount || it?.photo_count || 0) || 0,
+        sample_url: it?.sample_url || it?.sampleUrl || it?.sample || null,
+        BoundingBox: it?.BoundingBox || it?.bbox || null
+      });
+    }
+
+    return groups;
+  }
+
+  function buildFaceGroupsFromPhotosFallback() {
+    // अगर list_people fail हो गया तो photos से person_id निकाल कर chips बनाओ
+    const groups = [];
+    const seen = new Set();
+
+    for (const p of (allPhotos || [])) {
+      const pids = getPhotoPersonIds(p);
+      const faces = getPhotoFaceIds(p);
+
+      // photo में person_ids हैं तो उन्हीं से groups
+      if (pids.length) {
+        for (const pid of new Set(pids)) {
+          if (seen.has(pid)) continue;
+          seen.add(pid);
+
+          // rename के लिए rep FaceId नहीं पता, तो null रहने दो (rename button hide होगा)
+          groups.push({
+            person_id: pid,
+            FaceId: null,
+            FaceName: "Unknown",
+            photoCount: 0,
+            sample_url: getPhotoThumb(p) || null,
+            BoundingBox: null
+          });
+        }
+      } else {
+        // बहुत old data: person_ids नहीं हैं, तो FaceId chips दिखेंगे (fallback mode)
+        // NOTE: इस mode में grouping person wise नहीं हो पाएगी
+        for (const fid of new Set(faces)) {
+          const pid = "face_" + fid; // pseudo
+          if (seen.has(pid)) continue;
+          seen.add(pid);
+          groups.push({
+            person_id: pid,
+            FaceId: fid,
+            FaceName: "Unknown",
+            photoCount: 0,
+            sample_url: getPhotoThumb(p) || null,
+            BoundingBox: null
+          });
+        }
+      }
+    }
+
+    return groups;
+  }
+/** ✅ Photos table se accurate photoCount nikalke people list me merge karna
+ *  (Hindi) - log issue: sab face icon par same count aa raha tha, isliye counts ko photos se recompute kar rahe hai
+ */
+function mergePeopleCountsFromPhotos(peopleGroups, photos){
+  try{
+    const fromPhotos = buildFaceGroupsFromPhotos(photos || []);
+    const byPid = new Map();
+    for(const g of (fromPhotos||[])){
+      if(g && g.person_id) byPid.set(g.person_id, g);
+    }
+    // merge
+    for(const g of (peopleGroups||[])){
+      if(!g) continue;
+      const pid = g.person_id;
+      const ph = pid ? byPid.get(pid) : null;
+      if(ph){
+        g.photoCount = ph.photoCount || g.photoCount || 0;
+        // better sample (if missing)
+        if(!g.sample_url && ph.sample_url) g.sample_url = ph.sample_url;
+        if(!g.BoundingBox && ph.BoundingBox) g.BoundingBox = ph.BoundingBox;
+      }
+    }
+    // also: if list_people missed some persons but photos have them, add
+    const existing = new Set((peopleGroups||[]).map(x=>x && x.person_id).filter(Boolean));
+    for(const [pid, ph] of byPid.entries()){
+      if(!existing.has(pid)){
+        peopleGroups.push({
+          person_id: pid,
+          FaceId: ph.FaceId,
+          FaceName: ph.FaceName || "Unknown",
+          photoCount: ph.photoCount || 0,
+          sample_url: ph.sample_url,
+          BoundingBox: ph.BoundingBox
+        });
+      }
+    }
+  }catch(e){
+    console.warn("mergePeopleCountsFromPhotos error", e);
+  }
+  return peopleGroups;
 }
 
-/* =========================================================
-  PEOPLE (Face Icons)
-========================================================= */
-async function loadFaceGroups(){
-  try{
-    const tryFetch = async (url)=>{
-      const res = await fetch(url, {
-        method:"POST",
-        headers:{
-          "Authorization": `Bearer ${idToken}`,
-          "Content-Type":"application/json"
-        },
+
+  async function loadFaceGroups() {
+    // ✅ ये function list_people API से लोगों को लाता है (person-wise)
+    // और फिर photos से accurate photoCount compute करता है
+    faceGroups = [];
+    try {
+      const res = await fetch(LIST_PEOPLE_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ collection_id: collectionId })
       });
-      const data = await res.json().catch(()=>({}));
-      return {res, data};
-    };
 
-    let result = await tryFetch(LIST_PEOPLE_API);
+      const data = await res.json();
+      const people = data?.people || [];
 
-    if(!result.res.ok){
-      result = await tryFetch(LIST_PEOPLE_API_ALT);
-    }
-
-    if(result.res.ok){
-      const data = result.data || {};
-      const people = data.people || data.items || data.faces || [];
-      if(Array.isArray(people) && people.length){
-        faceGroups = people.map(p=>{
-          const fid = p.FaceId || p.face_id || p.faceId;
-          return {
-            FaceId: fid,
-            FaceName: p.FaceName || p.name || "Unknown",
-            photoCount: p.photo_count || p.count || 0,
-            thumbnail: p.face_thumbnail_url || p.thumbnail || p.thumb || null,
-            sampleUrl: p.sample_url || p.sampleUrl || null,
-            BoundingBox: p.BoundingBox || p.bounding_box || null
-          };
-        }).filter(x=>x.FaceId);
-
-        if(faceGroups.every(x=>!x.thumbnail)){
-          faceGroups = buildFacesFromPhotos();
-        }
-      }else{
-        faceGroups = buildFacesFromPhotos();
+      if (Array.isArray(people) && people.length) {
+        faceGroups = buildFaceGroupsFromPeople(people);
+      } else {
+        faceGroups = buildFaceGroupsFromPhotosFallback();
       }
-    }else{
-      faceGroups = buildFacesFromPhotos();
+    } catch (e) {
+      console.warn("list_people failed, fallback:", e);
+      faceGroups = buildFaceGroupsFromPhotosFallback();
     }
 
-    faceGroups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
+    // photoCount को photos table से recompute करके सही बनाओ
+    computeCountsFromPhotos();
+    attachSamplesFromPhotosIfMissing();
 
-    renderFaceIcons();
-  }catch(e){
-    console.error("loadFaceGroups error:", e);
-    faceGroups = buildFacesFromPhotos();
+    // सबसे ज्यादा photos वाले first
+    faceGroups.sort((a, b) => (b.photoCount || 0) - (a.photoCount || 0));
+
     renderFaceIcons();
   }
-}
 
-function buildFacesFromPhotos(){
-  const map = new Map();
+  function renderFaceIcons() {
+    const wrap = document.getElementById("facesRow");
+    if (!wrap) return;
 
-  allPhotos.forEach(photo=>{
-    const sampleUrl = photo.thumbnail_url || photo.url;
-    const faces = Array.isArray(photo.faces) ? photo.faces : [];
+    // IMPORTANT: refresh पर duplicate icons ना बने
+    wrap.innerHTML = "";
 
-    faces.forEach(f=>{
-      const fid = getFaceId(f);
-      if(!fid) return;
-
-      if(!map.has(fid)){
-        map.set(fid, {
-          FaceId: fid,
-          FaceName: "Unknown",
-          sampleUrl,
-          BoundingBox: getBBox(f) || null,
-          photoCount: 1
-        });
-      }else{
-        map.get(fid).photoCount++;
-        if(!map.get(fid).BoundingBox && getBBox(f)) map.get(fid).BoundingBox = getBBox(f);
-      }
-    });
-
-    const faceIds = Array.isArray(photo.face_ids) ? photo.face_ids : [];
-    faceIds.forEach(fid=>{
-      if(!fid) return;
-      if(!map.has(fid)){
-        map.set(fid,{
-          FaceId: fid,
-          FaceName:"Unknown",
-          sampleUrl,
-          BoundingBox: null,
-          photoCount:1
-        });
-      }else{
-        map.get(fid).photoCount++;
-      }
-    });
-  });
-
-  return Array.from(map.values());
-}
-
-function renderFaceIcons(){
-  const bar = $("faceIconsBar");
-  bar.innerHTML = "";
-
-  // "All" chip
-  const allItem = document.createElement("div");
-  allItem.className = "face-item";
-
-  const allWrap = document.createElement("div");
-  allWrap.className = "face-icon-wrapper";
-  if(!currentSelectedFaceId) allWrap.classList.add("selected");
-  allWrap.style.display = "flex";
-  allWrap.style.alignItems = "center";
-  allWrap.style.justifyContent = "center";
-  allWrap.style.background = "rgba(99,102,241,.18)";
-  allWrap.innerHTML = `<i class="fas fa-users" style="font-size:20px;color:#fff;"></i>`;
-  allWrap.onclick = (e)=>{ e.stopPropagation(); toggleFaceSelection(null); };
-
-  const allLabel = document.createElement("div");
-  allLabel.className = "face-name-label";
-  allLabel.textContent = "All";
-
-  const allCount = document.createElement("div");
-  allCount.className = "face-count";
-  allCount.textContent = `${allPhotos.length || 0} photos`;
-
-  allItem.appendChild(allWrap);
-  allItem.appendChild(allLabel);
-  allItem.appendChild(allCount);
-  bar.appendChild(allItem);
-
-  if(!faceGroups.length){
-    const empty = document.createElement("div");
-    empty.style.cssText = "text-align:center;width:100%;padding:16px;color:var(--text-muted);";
-    empty.innerHTML = `
-      <i class="fas fa-users" style="font-size:22px;margin-bottom:6px;display:block;"></i>
-      <p>No faces detected yet. Upload photos with faces.</p>
+    const allChip = document.createElement("div");
+    allChip.className = "face-chip" + (currentSelectedPersonId ? "" : " active");
+    allChip.innerHTML = `
+      <div class="face-avatar all">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div class="face-meta">
+        <div class="face-name">All</div>
+        <div class="face-sub">${(allPhotos || []).length} photos</div>
+      </div>
     `;
-    bar.appendChild(empty);
-    return;
-  }
-
-  faceGroups.forEach(face=>{
-    const item = document.createElement("div");
-    item.className = "face-item";
-
-    const wrap = document.createElement("div");
-    wrap.className = "face-icon-wrapper";
-    if(currentSelectedFaceId === face.FaceId) wrap.classList.add("selected");
-
-    wrap.onclick = (e)=>{
-      e.stopPropagation();
-      toggleFaceSelection(face.FaceId);
+    allChip.onclick = () => {
+      currentSelectedPersonId = null;
+      applyFilters();
+      renderFaceIcons();
     };
+    wrap.appendChild(allChip);
 
-    wrap.ondblclick = (e)=>{
-      e.stopPropagation();
-      startFaceNaming(face.FaceId, face.FaceName || "Unknown");
-    };
+    for (const g of (faceGroups || [])) {
+      if (!g?.person_id) continue;
 
-    const url = face.thumbnail || face.sampleUrl || face.sample_url || face.sample || "";
-    if(url){
-      setFaceBgCrop(wrap, url, face.thumbnail ? null : face.BoundingBox);
-    }else{
-      wrap.style.backgroundImage = "none";
-      wrap.style.background = "rgba(255,255,255,.06)";
+      const chip = document.createElement("div");
+      chip.className = "face-chip" + (currentSelectedPersonId === g.person_id ? " active" : "");
+      const avatar = g.sample_url
+        ? `<img class="face-thumb" src="${g.sample_url}" alt="face" loading="lazy" />`
+        : `<div class="face-avatar"><i class="fa-solid fa-user"></i></div>`;
+
+      const safeName = normalizeFaceName(g.FaceName);
+      const count = Number(g.photoCount || 0) || 0;
+
+      // Rename सिर्फ तब दिखाओ जब rep FaceId मौजूद हो
+      const renameBtn = g.FaceId
+        ? `<button class="mini-btn" title="Rename" data-rename="1"><i class="fa-solid fa-pen"></i></button>`
+        : ``;
+
+      chip.innerHTML = `
+        <div class="face-avatar-wrap">
+          ${avatar}
+        </div>
+        <div class="face-meta">
+          <div class="face-name">${safeName}</div>
+          <div class="face-sub">${count} photos</div>
+        </div>
+        ${renameBtn}
+      `;
+
+      chip.onclick = (ev) => {
+        // अगर rename button पर click हुआ, selection change ना हो
+        const isRename = ev?.target?.closest?.('[data-rename="1"]');
+        if (isRename) {
+          startFaceNaming(g.person_id);
+          return;
+        }
+        togglePersonSelection(g.person_id);
+      };
+
+      // double click => rename
+      chip.ondblclick = () => startFaceNaming(g.person_id);
+
+      wrap.appendChild(chip);
     }
-
-    const label = document.createElement("div");
-    label.className = "face-name-label";
-    label.textContent = face.FaceName || "Unknown";
-    label.title = face.FaceName || "Unknown";
-
-    const count = document.createElement("div");
-    count.className = "face-count";
-    count.textContent = `${face.photoCount || 0} photos`;
-
-    item.appendChild(wrap);
-    item.appendChild(label);
-    item.appendChild(count);
-    bar.appendChild(item);
-  });
-}
-
-function toggleFaceSelection(faceId){
-  if(!faceId){
-    currentSelectedFaceId = null;
-    filteredPhotos = [...allPhotos];
-  }else if(currentSelectedFaceId === faceId){
-    currentSelectedFaceId = null;
-    filteredPhotos = [...allPhotos];
-  }else{
-    currentSelectedFaceId = faceId;
-    filteredPhotos = allPhotos.filter(p => photoHasFace(p, faceId));
-  }
-  console.log("Face selected:", currentSelectedFaceId, "photos:", filteredPhotos.length);
-  renderFaceIcons();
-  renderPhotos();
-}
-
-/* =========================================================
-  FACE NAMING
-========================================================= */
-function startFaceNaming(faceId, currentName){
-  currentNamingFaceId = faceId;
-
-  const face = faceGroups.find(f=>f.FaceId === faceId);
-  const imgUrl = face?.thumbnail || face?.sampleUrl || "";
-
-  $("faceHeaderImg").src = imgUrl;
-  $("faceHeaderTitle").textContent = currentName && currentName !== "Unknown" ? `Edit name for ${currentName}` : "Who is this?";
-  $("faceNameInput").value = currentName && currentName !== "Unknown" ? currentName : "";
-  $("faceNamingHeader").style.display = "block";
-
-  const suggestions = faceGroups
-    .map(f=>f.FaceName)
-    .filter(n=>n && n !== "Unknown")
-    .filter((n,i,arr)=>arr.indexOf(n)===i)
-    .slice(0,6);
-
-  $("faceSuggestions").innerHTML = suggestions.length
-    ? `<b>Suggestions:</b> ${suggestions.join(", ")}`
-    : "";
-}
-
-function cancelFaceNaming(){
-  $("faceNamingHeader").style.display = "none";
-  currentNamingFaceId = null;
-}
-
-async function saveFaceName(){
-  const name = $("faceNameInput").value.trim();
-  if(!name || !currentNamingFaceId){
-    showToast("Enter a name", "error");
-    return;
   }
 
-  try{
-    const res = await fetch(SAVE_FACE_NAME_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-
-    const idx = faceGroups.findIndex(f=>f.FaceId === currentNamingFaceId);
-    if(idx !== -1) faceGroups[idx].FaceName = name;
-
-    showToast("Face name saved");
-    cancelFaceNaming();
+  function togglePersonSelection(personId) {
+    if (currentSelectedPersonId === personId) currentSelectedPersonId = null;
+    else currentSelectedPersonId = personId;
+    applyFilters();
     renderFaceIcons();
-  }catch(e){
-    console.error("saveFaceName error:", e);
-    showToast("Failed to save face name", "error");
   }
-}
 
-/* =========================================================
-  LEADS (Guest)
-========================================================= */
-async function loadLeads(){
-  try{
-    let res = await fetch(SAVE_DETAILS_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, action:"list" })
-    });
+  // NOTE: function नाम पुराना रखा है ताकि बाकी code ना टूटे
+  function photoHasFace(photo, personId) {
+    // personId = selected person_id
+    if (!personId) return true;
 
-    let data = await res.json().catch(()=>null);
+    const pids = getPhotoPersonIds(photo);
+    if (pids.includes(personId)) return true;
 
-    if(!res.ok){
-      const url = `${SAVE_DETAILS_API}?collection_id=${encodeURIComponent(collectionId)}`;
-      res = await fetch(url, {
-        method:"GET",
-        headers:{ "Authorization": `Bearer ${idToken}` }
-      });
-      data = await res.json().catch(()=>null);
+    // fallback (old photos): rep FaceId match
+    const grp = (faceGroups || []).find(x => x.person_id === personId);
+    const rep = grp?.FaceId;
+    if (rep) {
+      const faceIds = new Set(getPhotoFaceIds(photo));
+      if (faceIds.has(rep)) return true;
     }
+    return false;
+  }
 
-    if(!res.ok){
-      console.warn("Leads API not ok:", res.status, data);
-      allLeads = [];
-      renderLeads();
+  function startFaceNaming(personId) {
+    const grp = (faceGroups || []).find(x => x.person_id === personId);
+    if (!grp || !grp.FaceId) {
+      toast("Is person के लिए representative FaceId नहीं मिला (old data).");
       return;
     }
 
-    console.log("Leads raw response:", data);
+    currentNamingPersonId = personId;
+    currentNamingFaceId = grp.FaceId;
+    currentNamingOldName = normalizeFaceName(grp.FaceName);
 
-    let items = [];
-    if(Array.isArray(data)) items = data;
-    else if(data?.leads) items = data.leads;
-    else if(data?.items) items = data.items;
-    else if(data?.history) items = data.history;
-    else if(data?.data && Array.isArray(data.data)) items = data.data;
-    else items = [];
+    const nameInput = document.getElementById("faceNameInput");
+    const oldNameEl = document.getElementById("faceOldName");
+    const modal = document.getElementById("renameFaceModal");
 
-    items = items.filter(l=>{
-      const cid = l.collection_id || l.collectionId || l.cid;
-      return !cid || cid === collectionId;
-    });
+    if (nameInput) nameInput.value = (currentNamingOldName === "Unknown" ? "" : currentNamingOldName);
+    if (oldNameEl) oldNameEl.textContent = currentNamingOldName;
 
-    const dateFilter = $("dateFilter").value;
-    const mobileFilter = $("mobileFilter").value.trim();
-
-    if(dateFilter){
-      items = items.filter(l=>{
-        const t = l.created_at || l.timestamp || l.createdAt;
-        if(!t) return false;
-        const d = new Date(t);
-        if(isNaN(d)) return false;
-        const yyyy_mm_dd = d.toISOString().slice(0,10);
-        return yyyy_mm_dd === dateFilter;
-      });
-    }
-
-    if(mobileFilter){
-      items = items.filter(l=>{
-        const m = String(l.mobile || l.phone || l.number || "");
-        return m.includes(mobileFilter);
-      });
-    }
-
-    allLeads = items.sort((a,b)=>{
-      const da = new Date(a.created_at || a.timestamp || 0);
-      const db = new Date(b.created_at || b.timestamp || 0);
-      return db - da;
-    });
-
-    $("totalLeads").textContent = allLeads.length;
-    renderLeads();
-
-  }catch(e){
-    console.error("loadLeads error:", e);
-    allLeads = [];
-    renderLeads();
+    modal?.classList?.add("open");
+    nameInput?.focus?.();
   }
-}
 
-function renderLeads(){
+  function closeFaceNaming() {
+    document.getElementById("renameFaceModal")?.classList?.remove("open");
+    currentNamingPersonId = null;
+    currentNamingFaceId = null;
+    currentNamingOldName = null;
+  }
+
+  // backward compatibility
+  function cancelFaceNaming(){ closeFaceNaming(); }
+
+  async function saveFaceName() {
+    const input = document.getElementById("faceNameInput");
+    const newName = normalizeFaceName(input?.value);
+
+    if (!currentNamingFaceId) {
+      toast("FaceId missing");
+      return;
+    }
+
+    try {
+      // ✅ rename lambda (photographer-face-map-prod update)
+      const res = await fetch(RENAME_FACE_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          collection_id: collectionId,
+          face_id: currentNamingFaceId,
+          name: newName
+        })
+      });
+      const out = await res.json();
+
+      if (!res.ok) {
+        console.error("rename error:", out);
+        toast("Rename failed");
+        return;
+      }
+
+      // UI update
+      for (const g of (faceGroups || [])) {
+        if (g.person_id === currentNamingPersonId) g.FaceName = newName;
+      }
+
+      renderFaceIcons();
+      toast("Name saved ✅");
+      closeFaceNaming();
+    } catch (e) {
+      console.error(e);
+      toast("Rename error");
+    }
+  }
+
+      async function loadLeads(){
+    // ✅ Guest Leads (selfie-guest-data) LIST
+    // NOTE: save-details lambda का POST केवल save के लिए है (name/mobile/linkId required)
+    // listing के लिए हम GET scan करेंगे और client-side filter करेंगे
+    allLeads = [];
+    try{
+      setGuestsLoading(true);
+
+      const url = `${SAVE_DETAILS_API}?t=${Date.now()}`;
+      const res = await fetch(url, { method: "GET" });
+      const data = await res.json();
+
+      if(!res.ok){
+        console.warn("loadLeads GET not ok:", data);
+        allLeads = [];
+      } else {
+        const arr = (data && data.leads) ? data.leads : (Array.isArray(data) ? data : []);
+        const cid = String(collectionId);
+
+        allLeads = (arr || []).filter(x => {
+          const lc = x?.collection_id || x?.CollectionId || x?.collectionId;
+          if(!lc) return false;
+          return String(lc) === cid;
+        });
+
+        if(currentEventId){
+          const eid = String(currentEventId);
+          allLeads = allLeads.filter(x => String(x?.event_id || x?.eventId || "") === eid);
+        }
+
+        allLeads.sort((a,b) => String(b?.created_at || b?.createdAt || "").localeCompare(String(a?.created_at || a?.createdAt || "")));
+      }
+
+      // header counter update
+      const totalLeadsEl = document.getElementById("totalLeads");
+      if(totalLeadsEl) totalLeadsEl.textContent = String((allLeads || []).length);
+
+      renderLeads();
+    }catch(e){
+      console.error(e);
+      allLeads = [];
+      const totalLeadsEl = document.getElementById("totalLeads");
+      if(totalLeadsEl) totalLeadsEl.textContent = "0";
+      renderLeads();
+    }finally{
+      setGuestsLoading(false);
+    }
+  }
+
+  function renderLeads(){
   const grid = $("leadsGrid");
   const empty = $("noLeadsMessage");
   grid.innerHTML = "";
@@ -1608,7 +1320,7 @@ function showPhotoDetails(photo){
       chip.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
       chip.onclick = ()=>{
         $("photoDetailsModal").classList.remove("active");
-        toggleFaceSelection(fid);
+        togglePersonSelection(fid);
       };
       peopleBox.appendChild(chip);
     });
@@ -1623,7 +1335,7 @@ function showPhotoDetails(photo){
         chip.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
         chip.onclick = ()=>{
           $("photoDetailsModal").classList.remove("active");
-          toggleFaceSelection(fid);
+          togglePersonSelection(fid);
         };
         peopleBox.appendChild(chip);
       });
@@ -1675,8 +1387,8 @@ function applyFilters(){
   const aiSearch = $("aiTagSearch").value.toLowerCase().trim();
 
   filteredPhotos = allPhotos.filter(photo=>{
-    if(currentSelectedFaceId){
-      if(!photoHasFace(photo, currentSelectedFaceId)) return false;
+    if(currentSelectedPersonId){
+      if(!photoHasFace(photo, currentSelectedPersonId)) return false;
     }
 
     const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
@@ -1699,14 +1411,14 @@ function applyFilters(){
     return true;
   });
 
-  console.log("Filters applied:", {type, aiSearch, selectedFace: currentSelectedFaceId, result: filteredPhotos.length});
+  console.log("Filters applied:", {type, aiSearch, selectedFace: currentSelectedPersonId, result: filteredPhotos.length});
   renderPhotos();
 }
 
 function clearFilters(){
   $("filterType").value = "ALL";
   $("aiTagSearch").value = "";
-  currentSelectedFaceId = null;
+  currentSelectedPersonId = null;
   filteredPhotos = [...allPhotos];
   renderFaceIcons();
   renderPhotos();
