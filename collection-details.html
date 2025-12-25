@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Collection Manager • Premium Backend Synced</title>
 
-  <!-- External Libraries (Zaroori Libraries) -->
+  <!-- External Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
@@ -13,7 +13,7 @@
 
   <style>
     /* =========================================================
-      THEME & DESIGN (Aapka Diya Hua Premium Look)
+      THEME & DESIGN
     ========================================================= */
     :root{
       --bg-primary:#0a0a0f;
@@ -133,12 +133,13 @@
     }
     .photo-card:hover .photo-overlay{opacity:1}
 
-    /* PEOPLE BAR (Circular Face Icons) */
+    /* PEOPLE BAR */
     #faceIconsBar{
       display:flex;gap:16px;padding:10px 5px;
       overflow-x:auto;margin-bottom:20px;
       scrollbar-width: none;
     }
+    #faceIconsBar::-webkit-scrollbar { display: none; }
     .face-item{display:flex;flex-direction:column;align-items:center;min-width:85px;cursor:pointer;}
     .face-icon-wrapper{
       width:70px;height:70px;border-radius:50%;
@@ -147,7 +148,7 @@
       box-shadow:var(--shadow);
     }
     .face-icon-wrapper.selected{border-color:var(--brand);transform:scale(1.1)}
-    .face-name-label{font-size:12px;font-weight:700;margin-top:8px;text-align:center;color:var(--text-secondary)}
+    .face-name-label{font-size:12px;font-weight:700;margin-top:8px;text-align:center;color:var(--text-secondary);max-width:85px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
     /* CARDS */
     .card{
@@ -164,6 +165,7 @@
     }
     .btn-primary{background:var(--brand-gradient);color:#fff}
     .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text-primary);border:1px solid var(--border)}
+    .btn-sm{padding:6px 12px;font-size:12px;}
 
     /* UPLOAD ZONE */
     #dropZone{
@@ -172,6 +174,19 @@
       transition:var(--transition);cursor:pointer;
     }
     #dropZone:hover{border-color:var(--brand);background:rgba(99,102,241,0.05)}
+
+    /* EVENT CHECKBOX LIST */
+    .event-selection-list {
+      max-height: 200px; overflow-y: auto;
+      padding: 10px; background: rgba(0,0,0,0.2);
+      border-radius: 8px; border: 1px solid var(--border);
+      margin-bottom: 15px;
+    }
+    .event-check-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .event-check-item:last-child { border: none; }
 
     /* MODAL */
     .modal{
@@ -190,9 +205,7 @@
 
 <body>
 <div class="wrap">
-  <!-- =========================
-      TOP HEADER SECTION
-  ========================= -->
+  <!-- TOP HEADER -->
   <div class="top-bar">
     <div class="header-left">
       <a href="dashboard.html" style="color:var(--text-secondary);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Back to Collections</a>
@@ -209,9 +222,7 @@
     </div>
   </div>
 
-  <!-- =========================
-      TAB NAVIGATION
-  ========================= -->
+  <!-- TABS -->
   <div class="tabs-container">
     <div class="tabs">
       <div class="tab active" data-tab="tabPhotos"><i class="fas fa-camera-retro"></i> Photos</div>
@@ -222,13 +233,9 @@
     </div>
   </div>
 
-  <!-- =========================
-      TAB CONTENT: PHOTOS
-  ========================= -->
+  <!-- PHOTOS TAB -->
   <div id="tabPhotos" class="tab-content active">
-    <!-- Face Icons Bar (Circular Navigation) -->
     <div id="faceIconsBar"></div>
-
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:15px;flex-wrap:wrap;">
         <div style="display:flex;gap:10px;">
@@ -243,7 +250,6 @@
         <button class="btn btn-primary" onclick="downloadSelectedPhotos()"><i class="fas fa-cloud-download-alt"></i> Download Batch</button>
       </div>
 
-      <!-- Face Naming Bar (Google Photos Style Rename) -->
       <div id="faceNamingPanel" style="display:none;background:rgba(99,102,241,0.1);padding:15px;border-radius:12px;margin-bottom:20px;border:1px solid var(--brand);">
         <div style="display:flex;align-items:center;gap:15px;">
            <img id="namingFaceThumb" src="" style="width:50px;height:50px;border-radius:50%;border:2px solid var(--brand);">
@@ -256,127 +262,100 @@
         </div>
       </div>
 
-      <div id="galleryContainer" class="gallery-grid">
-        <!-- Photos dynamically injected -->
-      </div>
+      <div id="galleryContainer" class="gallery-grid"></div>
     </div>
   </div>
 
-  <!-- =========================
-      TAB CONTENT: EVENTS
-  ========================= -->
+  <!-- EVENTS TAB -->
   <div id="tabEvents" class="tab-content">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
         <h3>Event Management</h3>
         <button class="btn btn-primary" onclick="showNewEventForm()"><i class="fas fa-plus"></i> Create New Event</button>
       </div>
-      
       <div id="newEventForm" style="display:none;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:20px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-          <input type="text" id="newEvName" placeholder="Event Name (e.g. Sangeet, Reception)" style="background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;">
-          <input type="date" id="newEvDate" style="background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;">
+          <input type="text" id="newEvName" placeholder="Event Name">
+          <input type="date" id="newEvDate">
         </div>
         <div style="margin-top:15px;display:flex;gap:10px;">
           <button class="btn btn-primary" onclick="saveNewEvent()">Save Event</button>
           <button class="btn btn-secondary" onclick="hideNewEventForm()">Cancel</button>
         </div>
       </div>
-
-      <div id="eventsList">
-        <!-- Events rendered here -->
-      </div>
+      <div id="eventsList"></div>
     </div>
   </div>
 
-  <!-- =========================
-      TAB CONTENT: UPLOAD
-  ========================= -->
+  <!-- UPLOAD TAB -->
   <div id="tabUpload" class="tab-content">
     <div class="card" style="max-width:800px;margin:0 auto;">
       <h3><i class="fas fa-cloud-upload-alt"></i> Batch Upload</h3>
-      <p style="color:var(--text-secondary);margin-bottom:20px;">Upload photos directly to a specific event.</p>
-      
-      <div style="margin-bottom:20px;">
-        <label style="font-size:12px;color:var(--text-secondary);">Target Event:</label>
+      <div style="margin: 20px 0;">
+        <label>Target Event:</label>
         <select id="uploadTargetEvent" style="width:100%;background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;margin-top:5px;">
           <option value="">Select an Event...</option>
         </select>
       </div>
-
       <div id="dropZone">
         <i class="fas fa-images" style="font-size:40px;color:var(--brand);margin-bottom:15px;display:block;"></i>
         <h4 style="margin-bottom:5px;">Drag & Drop Photos</h4>
-        <p style="color:var(--text-secondary);font-size:13px;">Supports JPG, PNG, HEIC (Max 20MB per file)</p>
         <input type="file" id="fileInput" multiple style="display:none" accept="image/*,.heic">
       </div>
-
       <div id="uploadPreview" style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;"></div>
-
       <div id="uploadProgressContainer" style="display:none;margin-top:20px;padding:15px;background:rgba(255,255,255,0.03);border-radius:12px;">
          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
            <span id="uploadStatusLabel">Uploading...</span>
            <span id="uploadPercentage">0%</span>
          </div>
          <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;">
-            <div id="uploadProgressBar" style="width:0%;height:100%;background:var(--brand-gradient);transition:width 0.3s ease;"></div>
+            <div id="uploadProgressBar" style="width:0%;height:100%;background:var(--brand-gradient);"></div>
          </div>
          <div id="uploadLog" style="margin-top:10px;font-size:11px;color:var(--text-muted);font-family:monospace;max-height:100px;overflow-y:auto;"></div>
       </div>
-
       <div style="margin-top:20px;display:flex;gap:12px;">
-        <button class="btn btn-primary" id="startUploadBtn" style="flex:1"><i class="fas fa-paper-plane"></i> Start Processing & Upload</button>
+        <button class="btn btn-primary" id="startUploadBtn" style="flex:1"><i class="fas fa-paper-plane"></i> Start Upload</button>
         <button class="btn btn-secondary" onclick="clearUploadQueue()">Clear</button>
       </div>
     </div>
   </div>
 
-  <!-- =========================
-      TAB CONTENT: GUESTS (Leads)
-  ========================= -->
+  <!-- GUESTS TAB -->
   <div id="tabGuests" class="tab-content">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
         <h3>Guest Activity & Leads</h3>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-secondary" onclick="exportLeads()"><i class="fas fa-file-excel"></i> Export CSV</button>
-        </div>
+        <button class="btn btn-secondary" onclick="loadLeads()"><i class="fas fa-sync"></i> Refresh Leads</button>
       </div>
-      
-      <div id="leadsContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(350px, 1fr));gap:15px;">
-        <!-- Leads cards dynamic -->
-      </div>
+      <div id="leadsContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(350px, 1fr));gap:15px;"></div>
     </div>
   </div>
 
-  <!-- =========================
-      TAB CONTENT: LINKS
-  ========================= -->
+  <!-- LINKS TAB -->
   <div id="tabLinks" class="tab-content">
     <div class="card" style="max-width:600px;margin:0 auto;">
       <h3>Generate Guest Experience Link</h3>
-      <p style="color:var(--text-secondary);margin-bottom:20px;">Creates a secure URL where guests can search their faces.</p>
+      <p style="color:var(--text-secondary);margin-bottom:15px;">Select events to include in the search link:</p>
+      
+      <!-- Event List for Selection -->
+      <div id="linkEventSelection" class="event-selection-list">
+        <!-- Loaded dynamically -->
+      </div>
       
       <div style="margin-bottom:15px;">
-        <label style="font-size:12px;color:var(--text-secondary);">Expiry (In Hours - 0 for never):</label>
+        <label>Expiry (In Hours - 0 for never):</label>
         <input type="number" id="linkExpiry" value="0" style="width:100%;background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;margin-top:5px;">
       </div>
-
-      <button class="btn btn-primary" style="width:100%;" onclick="createNewSmartLink()"><i class="fas fa-magic"></i> Generate New Link</button>
-
+      <button class="btn btn-primary" style="width:100%;" onclick="createNewSmartLink()"><i class="fas fa-magic"></i> Generate Link</button>
       <div id="generatedLinkResult" style="display:none;margin-top:20px;padding:20px;background:rgba(99,102,241,0.1);border:1px dashed var(--brand);border-radius:12px;text-align:center;">
-          <div style="font-size:12px;color:var(--brand);font-weight:700;margin-bottom:8px;">LIVE GUEST URL:</div>
-          <a id="smartLinkAnchor" href="#" target="_blank" style="color:#fff;text-decoration:none;word-break:break-all;font-weight:700;display:block;margin-bottom:15px;">...</a>
-          <button class="btn btn-primary btn-sm" onclick="copySmartLink()"><i class="fas fa-copy"></i> Copy to Clipboard</button>
+          <a id="smartLinkAnchor" href="#" target="_blank" style="color:#fff;word-break:break-all;font-weight:700;display:block;margin-bottom:15px;">...</a>
+          <button class="btn btn-primary btn-sm" onclick="copySmartLink()"><i class="fas fa-copy"></i> Copy</button>
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- =========================
-    MODAL: PHOTO DETAILS
-========================= -->
+<!-- MODAL -->
 <div class="modal" id="modalPhotoDetails">
   <div class="modal-content">
     <button style="position:absolute;top:15px;right:15px;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;" onclick="closePhotoDetails()">&times;</button>
@@ -391,32 +370,22 @@
           <div id="detailFaces" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
         </div>
         <div style="margin-bottom:20px;">
-          <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">AI Content Tags:</div>
+          <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">AI Tags:</div>
           <div id="detailTags" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
         </div>
-        <div style="margin-bottom:20px;padding:15px;background:rgba(255,255,255,0.03);border-radius:10px;font-size:13px;">
-          <div style="margin-bottom:5px;"><i class="fas fa-calendar-alt"></i> Captured: <span id="detailDate" class="stat-value">...</span></div>
-          <div><i class="fas fa-info-circle"></i> ID: <span id="detailID" class="stat-value" style="font-size:10px;">...</span></div>
-        </div>
-        <button class="btn btn-primary" style="width:100%;" onclick="downloadCurrentDetail()"><i class="fas fa-download"></i> Download Original</button>
+        <button class="btn btn-primary" style="width:100%;" onclick="downloadCurrentDetail()"><i class="fas fa-download"></i> Download</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-/* =========================================================
-  BACKEND INTEGRATION CONFIG (Mapping logic)
-========================================================= */
 const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const idToken = localStorage.getItem("idToken");
-
-// URL Params parsing
 const urlParams = new URLSearchParams(window.location.search);
 const collectionId = urlParams.get("id");
 const collectionName = urlParams.get("name") || "Event Collection";
 
-// Global State Management
 let allPhotos = [];
 let allEvents = [];
 let allFaceGroups = [];
@@ -424,619 +393,280 @@ let selectedFaceId = null;
 let currentDetailPhoto = null;
 let uploadQueue = [];
 
-/* =========================================================
-  INITIALIZATION (App Load Pe Kya Hoga)
-========================================================= */
 window.onload = async () => {
-  if(!collectionId || !idToken) {
-    alert("Session invalid or Collection ID missing.");
-    window.location.href = "index.html";
-    return;
-  }
-
+  if(!collectionId || !idToken) { window.location.href = "index.html"; return; }
   document.getElementById("collectionNameDisplay").textContent = collectionName;
   
-  // Tab Switching Logic
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
       document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
       tab.classList.add("active");
       document.getElementById(tab.dataset.tab).classList.add("active");
-      
-      // Lazy load tab specific data
       if(tab.dataset.tab === "tabGuests") loadLeads();
     });
   });
 
-  // Upload Logic Wire-up
   setupUploadZone();
-  
-  // Pehla load
   await refreshData();
 };
 
-/* =========================================================
-  CORE DATA FETCHING (Backend Sync)
-========================================================= */
 async function refreshData() {
-  console.log("Refreshing all collection data...");
   try {
-    await Promise.all([
-      fetchEvents(),
-      fetchPhotos()
-    ]);
-    processFaces(); // Raw photos se faces extract karna
+    await Promise.all([fetchEvents(), fetchPhotos()]);
+    processFaces();
     renderUI();
-  } catch (err) {
-    console.error("Refresh failed:", err);
-  }
+  } catch (err) { console.error("Refresh failed", err); }
 }
 
-// 1. Events List mangwana
 async function fetchEvents() {
   const res = await fetch(`${API_BASE}/get-events`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+    method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ collection_id: collectionId })
   });
   const data = await res.json();
   allEvents = data.events || [];
-  updateEventDropdowns();
+  updateEventControls();
 }
 
-// 2. Photos List mangwana
 async function fetchPhotos() {
   const res = await fetch(`${API_BASE}/get-photos`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+    method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ collection_id: collectionId })
   });
   const data = await res.json();
   allPhotos = data.photos || [];
 }
 
-// 3. Guests / Leads mangwana
 async function loadLeads() {
-  console.log("Loading leads...");
+  const container = document.getElementById("leadsContainer");
+  container.innerHTML = "Loading leads...";
   try {
-    const res = await fetch(`${API_BASE}/save-details`, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+    // Lead fetch logic with fallback
+    let res = await fetch(`${API_BASE}/save-details`, {
+      method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ collection_id: collectionId, action: "list" })
     });
+    if(!res.ok) {
+       res = await fetch(`${API_BASE}/save-details?collection_id=${collectionId}`, {
+         method: "GET", headers: { "Authorization": `Bearer ${idToken}` }
+       });
+    }
     const data = await res.json();
-    const leads = data.items || data.leads || [];
+    const leads = data.items || data.leads || data.data || [];
     renderLeads(leads);
     document.getElementById("statLeads").textContent = leads.length;
-  } catch (err) {
-    console.error("Leads load error:", err);
-  }
+  } catch (err) { container.innerHTML = "Failed to load leads."; }
 }
 
-/* =========================================================
-  FACE PROCESSING (Google Photos Style AI Logic)
-========================================================= */
 function processFaces() {
   const faceMap = new Map();
-
   allPhotos.forEach(p => {
-    // Backend mein FaceId keys Capital hoti hain: FaceId
     const faces = p.faces || [];
     faces.forEach(f => {
       const fid = f.FaceId || f.face_id;
       if (!fid) return;
-
       if (!faceMap.has(fid)) {
         faceMap.set(fid, {
-          FaceId: fid,
-          FaceName: f.FaceName || "Unknown",
+          FaceId: fid, FaceName: f.FaceName || "Unknown",
           thumbnail: f.face_thumbnail_url || p.thumbnail_url || p.url,
-          count: 0,
-          photos: []
+          count: 0, photos: []
         });
       }
       const group = faceMap.get(fid);
       group.count++;
       group.photos.push(p);
-      // Agar backend se naam mil gaya hai to use update karein
       if(f.FaceName && f.FaceName !== "Unknown") group.FaceName = f.FaceName;
     });
   });
-
   allFaceGroups = Array.from(faceMap.values()).sort((a,b) => b.count - a.count);
 }
 
-/* =========================================================
-  UI RENDERING (Dashboard Elements)
-========================================================= */
 function renderUI() {
   document.getElementById("statEvents").textContent = allEvents.length;
   document.getElementById("statPhotos").textContent = allPhotos.length;
-
   renderFaceBar();
   renderGallery();
   renderEventsList();
 }
 
-// Face Selection Bar (Circle icons)
 function renderFaceBar() {
   const bar = document.getElementById("faceIconsBar");
   bar.innerHTML = "";
-
-  // "All" Icon
   const allChip = document.createElement("div");
   allChip.className = "face-item";
-  allChip.innerHTML = `
-    <div class="face-icon-wrapper ${!selectedFaceId ? 'selected' : ''}" style="display:flex;align-items:center;justify-content:center;background:var(--brand-gradient);">
-       <i class="fas fa-users" style="color:#fff;"></i>
-    </div>
-    <div class="face-name-label">Everyone</div>
-  `;
+  allChip.innerHTML = `<div class="face-icon-wrapper ${!selectedFaceId?'selected':''}" style="display:flex;align-items:center;justify-content:center;background:var(--brand-gradient);"><i class="fas fa-users" style="color:#fff;"></i></div><div class="face-name-label">Everyone</div>`;
   allChip.onclick = () => { selectedFaceId = null; renderFaceBar(); renderGallery(); };
   bar.appendChild(allChip);
 
-  // Individual Faces
   allFaceGroups.forEach(group => {
     const chip = document.createElement("div");
     chip.className = "face-item";
-    const isSelected = selectedFaceId === group.FaceId;
-    
-    chip.innerHTML = `
-      <div class="face-icon-wrapper ${isSelected ? 'selected' : ''}" style="background-image:url('${group.thumbnail}')"></div>
-      <div class="face-name-label">${group.FaceName}</div>
-    `;
-    
-    chip.onclick = () => {
-       selectedFaceId = (selectedFaceId === group.FaceId) ? null : group.FaceId;
-       renderFaceBar();
-       renderGallery();
-    };
-
-    // Double click to rename
+    chip.innerHTML = `<div class="face-icon-wrapper ${selectedFaceId===group.FaceId?'selected':''}" style="background-image:url('${group.thumbnail}')"></div><div class="face-name-label">${group.FaceName}</div>`;
+    chip.onclick = () => { selectedFaceId = (selectedFaceId === group.FaceId) ? null : group.FaceId; renderFaceBar(); renderGallery(); };
     chip.ondblclick = () => openNamingPanel(group);
-
     bar.appendChild(chip);
   });
 }
 
-// Main Photo Gallery
 function renderGallery() {
   const container = document.getElementById("galleryContainer");
   container.innerHTML = "";
-
-  let displayPhotos = selectedFaceId 
-      ? allPhotos.filter(p => (p.faces || []).some(f => (f.FaceId || f.face_id) === selectedFaceId))
-      : allPhotos;
-
-  if(displayPhotos.length === 0) {
-    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-secondary);">No photos found in this view.</div>`;
-    return;
-  }
-
+  let displayPhotos = selectedFaceId ? allPhotos.filter(p => (p.faces || []).some(f => (f.FaceId || f.face_id) === selectedFaceId)) : allPhotos;
   displayPhotos.forEach(p => {
     const card = document.createElement("div");
     card.className = "photo-card";
-    card.innerHTML = `
-      <img src="${p.thumbnail_url || p.url}" loading="lazy">
-      <div class="photo-overlay">
-        <div style="font-size:10px;font-weight:700;">${new Date(p.created_at).toLocaleDateString()}</div>
-        <div style="font-size:11px;color:var(--brand);"><i class="fas fa-user"></i> ${(p.faces || []).length} Faces</div>
-      </div>
-    `;
+    card.innerHTML = `<img src="${p.thumbnail_url || p.url}" loading="lazy"><div class="photo-overlay"><div style="font-size:11px;color:var(--brand);"><i class="fas fa-user"></i> ${(p.faces || []).length} Faces</div></div>`;
     card.onclick = () => openPhotoDetails(p);
     container.appendChild(card);
   });
 }
 
-// Events Management List
 function renderEventsList() {
   const container = document.getElementById("eventsList");
   container.innerHTML = "";
-
-  if(allEvents.length === 0) {
-    container.innerHTML = `<div style="padding:20px;color:var(--text-muted);">No events created yet. Add your first event to organize photos.</div>`;
-    return;
-  }
-
   allEvents.forEach(ev => {
     const item = document.createElement("div");
-    item.className = "card";
-    item.style.marginBottom = "10px";
-    item.style.display = "flex";
-    item.style.justifyContent = "space-between";
-    item.style.alignItems = "center";
-    item.innerHTML = `
-      <div>
-        <div style="font-weight:800;font-size:16px;">${ev.name}</div>
-        <div style="font-size:12px;color:var(--text-secondary);"><i class="fas fa-calendar"></i> ${ev.event_date} | ${ev.photo_count || 0} Photos</div>
-      </div>
-      <div style="display:flex;gap:10px;">
-         <button class="btn btn-secondary btn-sm" onclick="deleteEvent('${ev.event_id}')"><i class="fas fa-trash"></i></button>
-      </div>
-    `;
+    item.className = "card"; item.style.display = "flex"; item.style.justifyContent = "space-between";
+    item.innerHTML = `<div><div style="font-weight:800;">${ev.name}</div><div style="font-size:12px;color:var(--text-secondary);">${ev.event_date}</div></div><button class="btn btn-secondary btn-sm" onclick="deleteEvent('${ev.event_id}')"><i class="fas fa-trash"></i></button>`;
     container.appendChild(item);
   });
 }
 
-/* =========================================================
-  GUEST LEADS RENDERING
-========================================================= */
 function renderLeads(leads) {
   const container = document.getElementById("leadsContainer");
   container.innerHTML = "";
-
-  if(leads.length === 0) {
-    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);">Intezaar karein... guests jab search karenge, unka data yahan dikhega.</div>`;
-    return;
-  }
-
+  if(!leads.length) { container.innerHTML = "No leads found."; return; }
   leads.forEach(l => {
     const card = document.createElement("div");
-    card.className = "card";
-    card.style.display = "flex";
-    card.style.gap = "15px";
-    card.style.alignItems = "center";
-    
-    const selfie = l.selfie_url || l.selfie_image || "https://via.placeholder.com/60";
-    
-    card.innerHTML = `
-       <img src="${selfie}" style="width:65px;height:65px;border-radius:50%;object-fit:cover;border:2px solid var(--brand);">
-       <div style="flex:1">
-          <div style="font-weight:800;color:#fff;">${l.name || 'Anonymous Guest'}</div>
-          <div style="color:var(--brand);font-size:14px;font-weight:700;">${l.mobile || l.phone || 'No Mobile'}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;border-top:1px solid rgba(255,255,255,0.05);padding-top:5px;">
-             Searched on: ${new Date(l.created_at || l.timestamp).toLocaleString()}
-          </div>
-       </div>
-    `;
+    card.className = "card"; card.style.display = "flex"; card.style.gap = "15px";
+    card.innerHTML = `<img src="${l.selfie_url||l.selfie_image||'https://via.placeholder.com/60'}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid var(--brand);"><div><div style="font-weight:800;">${l.name||'Guest'}</div><div style="color:var(--brand);">${l.mobile||l.phone||'N/A'}</div></div>`;
     container.appendChild(card);
   });
 }
 
-/* =========================================================
-  FACE NAMING ACTIONS
-========================================================= */
-let activeNamingId = null;
-
-function openNamingPanel(group) {
-  activeNamingId = group.FaceId;
-  document.getElementById("namingFaceThumb").src = group.thumbnail;
-  document.getElementById("faceNameInput").value = group.FaceName === "Unknown" ? "" : group.FaceName;
-  document.getElementById("faceNamingPanel").style.display = "block";
-  document.getElementById("faceNameInput").focus();
-}
-
-function closeNamingPanel() {
-  document.getElementById("faceNamingPanel").style.display = "none";
-  activeNamingId = null;
-}
-
-async function submitFaceName() {
-  const newName = document.getElementById("faceNameInput").value.trim();
-  if(!newName || !activeNamingId) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/save-face-name`, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        collection_id: collectionId,
-        face_id: activeNamingId,
-        name: newName
-      })
-    });
-
-    if(res.ok) {
-      // Local state update karein turant
-      const group = allFaceGroups.find(g => g.FaceId === activeNamingId);
-      if(group) group.FaceName = newName;
-      
-      closeNamingPanel();
-      renderFaceBar();
-      showToast("Face Renamed Successfully!");
-    }
-  } catch (err) {
-    console.error("Face rename error:", err);
-  }
-}
-
-/* =========================================================
-  BATCH UPLOAD LOGIC (Optimized)
-========================================================= */
 function setupUploadZone() {
   const zone = document.getElementById("dropZone");
   const input = document.getElementById("fileInput");
-
   zone.onclick = () => input.click();
-  input.onchange = (e) => handleFileSelection(e.target.files);
-
-  zone.ondragover = (e) => { e.preventDefault(); zone.style.borderColor = "var(--brand)"; };
-  zone.ondragleave = () => { zone.style.borderColor = "var(--border)"; };
-  zone.ondrop = (e) => { e.preventDefault(); handleFileSelection(e.dataTransfer.files); };
-
+  input.onchange = (e) => { for(let f of e.target.files) { uploadQueue.push(f); renderUploadPreview(f); } };
   document.getElementById("startUploadBtn").onclick = startBatchUpload;
-}
-
-function handleFileSelection(files) {
-  for(let f of files) {
-    uploadQueue.push(f);
-    renderUploadPreview(f);
-  }
 }
 
 function renderUploadPreview(file) {
   const container = document.getElementById("uploadPreview");
   const div = document.createElement("div");
-  div.style.cssText = "aspect-ratio:1;background:#1a1a25;border-radius:8px;position:relative;overflow:hidden;border:1px solid var(--border);";
-  
+  div.style.cssText = "aspect-ratio:1;background:#1a1a25;border-radius:8px;overflow:hidden;border:1px solid var(--border);";
   const url = URL.createObjectURL(file);
-  div.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;opacity:0.5">`;
+  div.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;opacity:0.6">`;
   container.appendChild(div);
 }
 
-function clearUploadQueue() {
-  uploadQueue = [];
-  document.getElementById("uploadPreview").innerHTML = "";
-  document.getElementById("uploadProgressContainer").style.display = "none";
-}
-
-function logUpload(msg) {
-  const log = document.getElementById("uploadLog");
-  const entry = document.createElement("div");
-  entry.textContent = `> ${msg}`;
-  log.prepend(entry);
-}
-
-// Main Batch Upload Function
 async function startBatchUpload() {
   const eventId = document.getElementById("uploadTargetEvent").value;
-  if(!eventId) { alert("Pehle target event select karein!"); return; }
-  if(uploadQueue.length === 0) { alert("Queue khali hai."); return; }
-
+  if(!eventId || !uploadQueue.length) { alert("Select event and photos."); return; }
   const btn = document.getElementById("startUploadBtn");
   btn.disabled = true;
-  document.getElementById("uploadProgressContainer").style.display = "block";
+  const progressCont = document.getElementById("uploadProgressContainer");
+  progressCont.style.display = "block";
   
-  logUpload(`Starting batch of ${uploadQueue.length} files...`);
-
-  // 1. Get Presigned URLs from Backend
   try {
     const fileMeta = uploadQueue.map(f => ({ name: f.name, type: f.type || "image/jpeg" }));
     const res = await fetch(`${API_BASE}/generate-upload-urls`, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+      method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileMeta })
     });
     const data = await res.json();
     const uploadUrls = data.urls || [];
 
-    // 2. Upload one by one with progress
     for(let i=0; i < uploadQueue.length; i++) {
        const file = uploadQueue[i];
        const putUrl = uploadUrls[i].uploadURL;
-       
-       logUpload(`Processing ${file.name}...`);
-       
-       let finalBlob = file;
-       // HEIC check
+       let blob = file;
        if(file.name.toLowerCase().endsWith(".heic")) {
-          logUpload(`Converting HEIC...`);
-          finalBlob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
+          blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
        }
-
-       // Actual S3 PUT
-       await uploadToS3(putUrl, finalBlob, (pct) => {
-          const overall = ((i / uploadQueue.length) * 100) + (pct / uploadQueue.length);
-          updateProgressBar(overall, `Uploading ${i+1}/${uploadQueue.length}`);
+       await new Promise((res, rej) => {
+         const xhr = new XMLHttpRequest();
+         xhr.open("PUT", putUrl);
+         xhr.setRequestHeader("Content-Type", blob.type || "image/jpeg");
+         xhr.upload.onprogress = (e) => {
+            if(e.lengthComputable) {
+              const overall = ((i / uploadQueue.length) * 100) + ((e.loaded/e.total) * (100 / uploadQueue.length));
+              document.getElementById("uploadProgressBar").style.width = overall + "%";
+              document.getElementById("uploadPercentage").textContent = Math.round(overall) + "%";
+            }
+         };
+         xhr.onload = () => xhr.status === 200 ? res() : rej();
+         xhr.onerror = rej;
+         xhr.send(blob);
        });
-       
-       logUpload(`${file.name} uploaded successfully.`);
     }
-
-    logUpload("ALL DONE! Backend is now indexing faces. Wait 10-15 seconds.");
-    updateProgressBar(100, "Upload Complete!");
-    
-    // Auto refresh after delay to allow AI processing
-    setTimeout(refreshData, 10000);
+    showToast("Upload Successful!");
+    setTimeout(refreshData, 5000);
     clearUploadQueue();
-
-  } catch (err) {
-    logUpload(`ERROR: ${err.message}`);
-    console.error(err);
-  } finally {
-    btn.disabled = false;
-  }
+  } catch (err) { alert("Upload failed."); } finally { btn.disabled = false; }
 }
 
-function uploadToS3(url, blob, progressCallback) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", blob.type || "image/jpeg");
-    xhr.upload.onprogress = (e) => {
-       if(e.lengthComputable) {
-         const pct = (e.loaded / e.total) * 100;
-         progressCallback(pct);
-       }
-    };
-    xhr.onload = () => (xhr.status === 200) ? resolve() : reject();
-    xhr.onerror = reject;
-    xhr.send(blob);
-  });
-}
+function clearUploadQueue() { uploadQueue = []; document.getElementById("uploadPreview").innerHTML = ""; document.getElementById("uploadProgressContainer").style.display = "none"; }
 
-function updateProgressBar(pct, label) {
-  document.getElementById("uploadProgressBar").style.width = `${pct}%`;
-  document.getElementById("uploadPercentage").textContent = `${Math.round(pct)}%`;
-  document.getElementById("uploadStatusLabel").textContent = label;
-}
-
-/* =========================================================
-  EVENT HELPERS (Form handling)
-========================================================= */
-function updateEventDropdowns() {
-  const sel = document.getElementById("uploadTargetEvent");
-  const currentVal = sel.value;
-  sel.innerHTML = `<option value="">Select an Event...</option>`;
+function updateEventControls() {
+  const upSel = document.getElementById("uploadTargetEvent");
+  const linkList = document.getElementById("linkEventSelection");
+  upSel.innerHTML = `<option value="">Select an Event...</option>`;
+  linkList.innerHTML = "";
+  
   allEvents.forEach(e => {
     const opt = document.createElement("option");
-    opt.value = e.event_id;
-    opt.textContent = `${e.name} (${e.event_date})`;
-    sel.appendChild(opt);
+    opt.value = e.event_id; opt.textContent = e.name;
+    upSel.appendChild(opt);
+    
+    const div = document.createElement("div");
+    div.className = "event-check-item";
+    div.innerHTML = `<input type="checkbox" class="link-event-cb" value="${e.event_id}" id="cb_${e.event_id}"> <label for="cb_${e.event_id}">${e.name}</label>`;
+    linkList.appendChild(div);
   });
-  sel.value = currentVal;
 }
 
-function showNewEventForm() { document.getElementById("newEventForm").style.display = "block"; }
-function hideNewEventForm() { document.getElementById("newEventForm").style.display = "none"; }
-
-async function saveNewEvent() {
-  const name = document.getElementById("newEvName").value;
-  const date = document.getElementById("newEvDate").value;
-  if(!name || !date) return;
-
-  const res = await fetch(`${API_BASE}/upsert-event`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-  });
-
-  if(res.ok) {
-    hideNewEventForm();
-    await fetchEvents();
-    renderEventsList();
-    showToast("Event Created!");
-  }
-}
-
-async function deleteEvent(id) {
-  if(!confirm("Warning: Is event ki saari photos delete ho jayengi. Sure?")) return;
-  const res = await fetch(`${API_BASE}/delete-event`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ collection_id: collectionId, event_id: id })
-  });
-  if(res.ok) {
-     await refreshData();
-     showToast("Event Deleted.");
-  }
-}
-
-/* =========================================================
-  SMART LINKS LOGIC
-========================================================= */
 async function createNewSmartLink() {
   const expiry = document.getElementById("linkExpiry").value;
+  const selectedEvents = Array.from(document.querySelectorAll(".link-event-cb:checked")).map(cb => cb.value);
+  
+  if(!selectedEvents.length) { alert("Select at least one event."); return; }
   
   try {
     const res = await fetch(`${API_BASE}/generate-search-link`, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        collection_id: collectionId, 
-        expiry_hours: parseInt(expiry) || 0 
-      })
+      method: "POST", headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ collection_id: collectionId, event_ids: selectedEvents, expiry_hours: parseInt(expiry) || 0 })
     });
     const data = await res.json();
     const link = data.searchUrl || data.link;
-
     if(link) {
       document.getElementById("smartLinkAnchor").href = link;
       document.getElementById("smartLinkAnchor").textContent = link;
       document.getElementById("generatedLinkResult").style.display = "block";
-      showToast("Guest Link Generated!");
     }
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) { console.error(err); }
 }
 
-function copySmartLink() {
-  const link = document.getElementById("smartLinkAnchor").textContent;
-  navigator.clipboard.writeText(link);
-  showToast("Link Copied!");
-}
+function copySmartLink() { navigator.clipboard.writeText(document.getElementById("smartLinkAnchor").textContent); showToast("Copied!"); }
 
-/* =========================================================
-  PHOTO MODAL & DOWNLOADS
-========================================================= */
 function openPhotoDetails(photo) {
   currentDetailPhoto = photo;
   document.getElementById("detailImg").src = photo.url;
-  document.getElementById("detailDate").textContent = new Date(photo.created_at).toLocaleString();
-  document.getElementById("detailID").textContent = photo.photo_id;
-
-  // Render Identified Faces in Modal
   const facesDiv = document.getElementById("detailFaces");
   facesDiv.innerHTML = "";
   (photo.faces || []).forEach(f => {
-     const fid = f.FaceId || f.face_id;
-     const group = allFaceGroups.find(g => g.FaceId === fid);
-     const badge = document.createElement("span");
-     badge.style.cssText = "padding:5px 12px;background:var(--brand);color:#fff;border-radius:20px;font-size:11px;font-weight:700;";
-     badge.textContent = group ? group.FaceName : "Unknown";
-     facesDiv.appendChild(badge);
+     const name = allFaceGroups.find(g => g.FaceId === (f.FaceId || f.face_id))?.FaceName || "Unknown";
+     facesDiv.innerHTML += `<span style="padding:4px 10px;background:var(--brand);border-radius:20px;font-size:11px;">${name}</span>`;
   });
-
-  // Render Tags
-  const tagsDiv = document.getElementById("detailTags");
-  tagsDiv.innerHTML = "";
-  (photo.ai_tags || []).forEach(t => {
-     const badge = document.createElement("span");
-     badge.style.cssText = "padding:5px 12px;background:rgba(255,255,255,0.08);color:var(--text-secondary);border-radius:20px;font-size:11px;";
-     badge.textContent = t;
-     tagsDiv.appendChild(badge);
-  });
-
   document.getElementById("modalPhotoDetails").classList.add("active");
 }
-
-function closePhotoDetails() {
-  document.getElementById("modalPhotoDetails").classList.remove("active");
-}
-
-async function downloadCurrentDetail() {
-  if(!currentDetailPhoto) return;
-  const res = await fetch(currentDetailPhoto.url);
-  const blob = await res.blob();
-  saveAs(blob, `photo_${currentDetailPhoto.photo_id.slice(-6)}.jpg`);
-}
-
-async function downloadSelectedPhotos() {
-  let list = selectedFaceId 
-      ? allPhotos.filter(p => (p.faces || []).some(f => (f.FaceId || f.face_id) === selectedFaceId))
-      : allPhotos;
-
-  if(list.length === 0) return;
-  
-  showToast(`Preparing ${list.length} photos in ZIP...`);
-  const zip = new JSZip();
-  
-  for(let i=0; i<Math.min(list.length, 50); i++) { // Limit to 50 for browser stability
-    const p = list[i];
-    const res = await fetch(p.url);
-    const blob = await res.blob();
-    zip.file(`photo_${i+1}.jpg`, blob);
-  }
-  
-  const content = await zip.generateAsync({type:"blob"});
-  saveAs(content, "collection_export.zip");
-}
-
-/* =========================================================
-  UTILS
-========================================================= */
+function closePhotoDetails() { document.getElementById("modalPhotoDetails").classList.remove("active"); }
 function showToast(msg) {
-  const toast = document.createElement("div");
-  toast.style.cssText = `
-    position:fixed;bottom:30px;right:30px;background:var(--brand-gradient);
-    color:#fff;padding:12px 25px;border-radius:10px;box-shadow:var(--shadow);
-    z-index:9999;font-weight:700;animation:fadeIn 0.3s ease;
-  `;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  const t = document.createElement("div");
+  t.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--brand-gradient);padding:10px 20px;border-radius:8px;z-index:9999;";
+  t.textContent = msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
 }
 </script>
 </body>
