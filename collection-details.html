@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collection Manager • Premium (Final)</title>
+  <title>Collection Manager • Premium Backend Synced</title>
 
-  <!-- libs -->
+  <!-- External Libraries (Zaroori Libraries) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
@@ -13,7 +13,7 @@
 
   <style>
     /* =========================================================
-      THEME
+      THEME & DESIGN (Aapka Diya Hua Premium Look)
     ========================================================= */
     :root{
       --bg-primary:#0a0a0f;
@@ -58,13 +58,10 @@
     ::-webkit-scrollbar{width:8px;height:8px}
     ::-webkit-scrollbar-track{background:var(--bg-secondary);border-radius:4px}
     ::-webkit-scrollbar-thumb{background:var(--brand);border-radius:4px}
-    ::-webkit-scrollbar-thumb:hover{background:var(--brand-hover)}
 
     .wrap{max-width:1600px;margin:0 auto;padding:24px}
 
-    /* =========================================================
-      HEADER
-    ========================================================= */
+    /* HEADER STYLES */
     .top-bar{
       display:flex;align-items:center;justify-content:space-between;
       margin-bottom:18px;padding:18px 22px;
@@ -89,28 +86,14 @@
       padding:6px 10px;border-radius:var(--radius-sm);
       background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)
     }
-    .stat-item i{color:var(--brand);font-size:12px}
+    .stat-item i{color:var(--brand)}
     .stat-value{color:var(--text-primary);font-weight:700}
 
-    .header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-    .back-link{
-      display:inline-flex;align-items:center;gap:8px;
-      color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:600;
-      padding:8px 14px;border-radius:var(--radius-sm);
-      transition:var(--transition);
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.06);
-    }
-    .back-link:hover{color:var(--brand);background:rgba(99,102,241,.1);transform:translateX(-2px)}
-
-    /* =========================================================
-      TABS
-    ========================================================= */
+    /* TABS */
     .tabs-container{margin-bottom:18px}
     .tabs{
       display:flex;gap:4px;background:var(--bg-secondary);
       border-radius:var(--radius-lg);padding:6px;
-      box-shadow:0 5px 15px rgba(0,0,0,.2);
       overflow-x:auto;
     }
     .tab{
@@ -121,542 +104,270 @@
       display:flex;align-items:center;justify-content:center;gap:10px;
       white-space:nowrap;
     }
-    .tab:hover{color:var(--text-primary);background:rgba(255,255,255,.05)}
     .tab.active{color:#fff;background:var(--brand-gradient);box-shadow:0 4px 12px rgba(99,102,241,.3)}
     .tab-content{display:none;animation:fadeIn .35s ease}
     .tab-content.active{display:block}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-    /* =========================================================
-      CARDS & BUTTONS
-    ========================================================= */
-    .card{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-radius:var(--radius-lg);
-      padding:22px;margin-bottom:18px;
-      box-shadow:var(--shadow-card);
-      transition:var(--transition);
-      position:relative;overflow:hidden;
-    }
-    .card:hover{border-color:var(--border-light);transform:translateY(-3px)}
-    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
-    .card-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}
-    .card-title i{color:var(--brand)}
-    .btn{
-      display:inline-flex;align-items:center;justify-content:center;gap:10px;
-      padding:10px 16px;font-size:13px;font-weight:800;
-      border-radius:var(--radius-md);border:none;cursor:pointer;
-      transition:var(--transition);text-decoration:none;user-select:none;
-      position:relative;overflow:hidden;
-    }
-    .btn-primary{background:var(--brand-gradient);color:#fff;box-shadow:0 4px 15px rgba(99,102,241,.3)}
-    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.4)}
-    .btn-secondary{background:rgba(255,255,255,.06);color:var(--text-primary);border:1px solid var(--border)}
-    .btn-secondary:hover{background:rgba(255,255,255,.10);border-color:var(--border-light);transform:translateY(-2px)}
-    .btn-danger{background:var(--danger);color:#fff}
-    .btn-success{background:var(--success);color:#fff}
-    .btn-sm{padding:7px 12px;font-size:12px;border-radius:10px}
-
-    /* =========================================================
-      FILTERS
-    ========================================================= */
-    .filter-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
-    .filter-group{display:flex;gap:10px;flex-wrap:wrap;flex:1}
-    .filter-input,.filter-select{
-      flex:1;min-width:180px;
-      padding:10px 12px;
-      background:rgba(255,255,255,.05);
-      border:1px solid var(--border);
-      border-radius:var(--radius-md);
-      color:var(--text-primary);
-      font-size:13px;
-      transition:var(--transition);
-    }
-    .filter-input:focus,.filter-select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(99,102,241,.2)}
-    .filter-input::placeholder{color:var(--text-muted)}
-    .filter-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-
-    /* =========================================================
-      GOOGLE PHOTOS STYLE THUMBNAILS
-      - smaller tiles
-      - tighter gap
-    ========================================================= */
+    /* GALLERY GRID */
     .gallery-grid{
       display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
-      gap:10px;
-    }
-    @media (max-width: 768px){
-      .gallery-grid{grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:8px;}
+      grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+      gap:12px;
     }
     .photo-card{
       aspect-ratio:1/1;
       background:var(--bg-secondary);
-      border-radius:12px;
+      border-radius:var(--radius-md);
       overflow:hidden;
       position:relative;
       cursor:pointer;
       transition:var(--transition);
       border:1px solid var(--border);
     }
-    .photo-card:hover{transform:translateY(-4px);border-color:rgba(99,102,241,.6)}
-    .photo-card img{width:100%;height:100%;object-fit:cover;display:block}
-    .photo-badges{
-      position:absolute;left:10px;top:10px;display:flex;gap:8px;z-index:2;
-    }
-    .badge{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:5px 8px;border-radius:999px;
-      font-size:11px;font-weight:800;color:#fff;
-      background:rgba(0,0,0,.55);
-      backdrop-filter:blur(4px);
-      border:1px solid rgba(255,255,255,.14);
-    }
-    .badge i{font-size:11px}
+    .photo-card img{width:100%;height:100%;object-fit:cover}
     .photo-overlay{
-      position:absolute;left:0;right:0;bottom:0;
-      padding:10px;
-      background:linear-gradient(to top, rgba(0,0,0,.72), transparent);
-      transform:translateY(100%);
-      transition:var(--transition);
-      color:#fff;
-      font-size:11px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
+      position:absolute;inset:0;
+      background:linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      opacity:0;transition:var(--transition);
+      display:flex;flex-direction:column;justify-content:flex-end;padding:12px;
     }
-    .photo-card:hover .photo-overlay{transform:translateY(0)}
+    .photo-card:hover .photo-overlay{opacity:1}
 
-    /* =========================================================
-      PEOPLE BAR (Face Icons) – FIXED (background-crop)
-    ========================================================= */
+    /* PEOPLE BAR (Circular Face Icons) */
     #faceIconsBar{
-      display:flex;
-      gap:14px;
-      padding:8px 2px 16px;
-      margin-bottom:12px;
-      overflow-x:auto;
-      scrollbar-width:thin;
+      display:flex;gap:16px;padding:10px 5px;
+      overflow-x:auto;margin-bottom:20px;
+      scrollbar-width: none;
     }
-    .face-item{display:flex;flex-direction:column;align-items:center;min-width:86px;cursor:pointer;transition:var(--transition)}
+    .face-item{display:flex;flex-direction:column;align-items:center;min-width:85px;cursor:pointer;}
     .face-icon-wrapper{
-      width:66px;height:66px;border-radius:50%;
-      overflow:hidden;border:3px solid transparent;
-      background:rgba(255,255,255,.06);
-      transition:var(--transition);
-      position:relative;
-      box-shadow:0 10px 18px rgba(0,0,0,.25);
-      background-size:cover;
-      background-position:center;
-      background-repeat:no-repeat;
+      width:70px;height:70px;border-radius:50%;
+      border:3px solid transparent;background-size:cover;
+      background-position:center;transition:var(--transition);
+      box-shadow:var(--shadow);
     }
-    .face-icon-wrapper:hover{transform:scale(1.08);border-color:rgba(99,102,241,.85)}
-    .face-icon-wrapper.selected{border-color:var(--success);transform:scale(1.08);box-shadow:0 0 20px rgba(16,185,129,.35)}
-    /* keep img rule (harmless even if not used) */
-    .face-icon-wrapper img{
-      position:absolute;left:0;top:0;
-      width:100%;height:100%;
-      object-fit:cover;
-      transform-origin: 0 0;
-      will-change: transform;
-    }
-    .face-name-label{
-      margin-top:8px;
-      font-size:12px;font-weight:800;color:var(--text-secondary);
-      max-width:86px;text-align:center;
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    }
-    .face-count{
-      font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:700;
-    }
+    .face-icon-wrapper.selected{border-color:var(--brand);transform:scale(1.1)}
+    .face-name-label{font-size:12px;font-weight:700;margin-top:8px;text-align:center;color:var(--text-secondary)}
 
-    /* =========================================================
-      Face Naming Panel
-    ========================================================= */
-    #faceNamingHeader{display:none;margin-top:12px}
-    #faceNamingHeader .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    #faceHeaderImg{width:82px;height:82px;border-radius:50%;border:3px solid var(--brand);object-fit:cover}
-    #faceNameInput{flex:1;min-width:180px}
-    #faceSuggestions{color:var(--text-muted);font-size:13px;margin-top:8px}
-
-    /* =========================================================
-      EVENTS TABLE
-    ========================================================= */
-    table{width:100%;border-collapse:collapse}
-    th{padding:14px;text-align:left;color:var(--text-secondary);font-size:13px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
-    td{padding:14px;border-bottom:1px solid var(--border)}
-    tr:hover{background:rgba(255,255,255,.03)}
-
-    /* =========================================================
-      UPLOAD – better progress + logs
-    ========================================================= */
-    #dropZone{
-      border:2px dashed var(--border);
-      border-radius:var(--radius-lg);
-      padding:40px 24px;
-      text-align:center;
-      background:rgba(255,255,255,.02);
-      transition:var(--transition);
-      cursor:pointer;
-      position:relative;
-    }
-    #dropZone:hover,#dropZone.dragover{border-color:var(--brand);background:rgba(99,102,241,.05);transform:translateY(-2px)}
-    #dropZone i{font-size:42px;color:var(--brand);margin-bottom:12px;display:block}
-    .progress-container{margin-top:14px;background:rgba(255,255,255,.05);border-radius:var(--radius-md);overflow:hidden;height:10px}
-    #progress-bar{height:100%;background:var(--brand-gradient);width:0%;transition:width .2s ease}
-
-    .upload-log{
-      margin-top:14px;
-      background:rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius-md);
-      padding:12px;
-      max-height:180px;
-      overflow:auto;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size:12px;
-      color:#e2e8f0;
-      white-space:pre-wrap;
-    }
-
-    /* =========================================================
-      LEADS
-    ========================================================= */
-    .lead-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-    .lead-card{
+    /* CARDS */
+    .card{
       background:var(--bg-card);
       border:1px solid var(--border);
       border-radius:var(--radius-lg);
-      padding:16px;
-      display:flex;gap:14px;align-items:center;
+      padding:24px;margin-bottom:20px;
+      box-shadow:var(--shadow-card);
+    }
+    .btn{
+      padding:10px 18px;border-radius:var(--radius-md);border:none;
+      font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
       transition:var(--transition);
     }
-    .lead-card:hover{border-color:rgba(99,102,241,.6);transform:translateY(-3px)}
-    .selfie-img{width:66px;height:66px;border-radius:50%;object-fit:cover;border:3px solid var(--brand)}
-    .lead-name{font-weight:900;font-size:16px}
-    .lead-mobile{color:var(--brand);font-weight:800;font-size:13px;margin-top:2px}
-    .lead-meta{margin-top:8px;font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px}
-    .empty-state{text-align:center;padding:44px 18px;color:var(--text-secondary)}
-    .empty-state i{font-size:44px;color:var(--brand);margin-bottom:12px;display:block}
+    .btn-primary{background:var(--brand-gradient);color:#fff}
+    .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text-primary);border:1px solid var(--border)}
 
-    /* =========================================================
-      MODALS
-    ========================================================= */
+    /* UPLOAD ZONE */
+    #dropZone{
+      border:2px dashed var(--border);border-radius:var(--radius-lg);
+      padding:50px;text-align:center;background:rgba(255,255,255,0.02);
+      transition:var(--transition);cursor:pointer;
+    }
+    #dropZone:hover{border-color:var(--brand);background:rgba(99,102,241,0.05)}
+
+    /* MODAL */
     .modal{
-      display:none;
-      position:fixed;inset:0;
-      background:rgba(0,0,0,.88);
-      z-index:1100;
-      align-items:center;
-      justify-content:center;
-      backdrop-filter:blur(10px);
+      display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);
+      z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(8px);
     }
     .modal.active{display:flex}
     .modal-content{
-      background:var(--bg-card);
-      border-radius:var(--radius-lg);
-      padding:24px;
-      width:min(900px, 92vw);
-      max-height:92vh;
-      overflow:auto;
-      border:1px solid var(--border);
-      box-shadow:var(--shadow);
-      position:relative;
+      background:var(--bg-secondary);padding:30px;border-radius:var(--radius-lg);
+      width:90%;max-width:1000px;max-height:90vh;overflow-y:auto;position:relative;
     }
-    .modal-close{
-      position:absolute;top:14px;right:14px;
-      background:none;border:none;color:var(--text-secondary);
-      font-size:22px;cursor:pointer;
-      transition:var(--transition);
-    }
-    .modal-close:hover{color:var(--danger);transform:rotate(90deg)}
-    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-    @media(max-width: 900px){.detail-grid{grid-template-columns:1fr}}
-    .tag{background:rgba(99,102,241,.15);color:var(--brand);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
-    .tag.ai{background:rgba(16,185,129,.15);color:var(--success)}
-    .tag.face{background:rgba(245,158,11,.15);color:var(--warning)}
-    .tags-container{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   </style>
 </head>
 
 <body>
 <div class="wrap">
   <!-- =========================
-      HEADER
+      TOP HEADER SECTION
   ========================= -->
-  <div class="top-bar glass">
+  <div class="top-bar">
     <div class="header-left">
-      <a href="dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
-      <h1><i class="fas fa-images"></i> <span id="collectionName">Loading...</span></h1>
+      <a href="dashboard.html" style="color:var(--text-secondary);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Back to Collections</a>
+      <h1><i class="fas fa-layer-group"></i> <span id="collectionNameDisplay">Loading...</span></h1>
       <div class="stats-line">
-        <div class="stat-item"><i class="fas fa-calendar-alt"></i> <span id="totalEvents" class="stat-value">0</span> Events</div>
-        <div class="stat-item"><i class="fas fa-camera"></i> <span id="totalPhotos" class="stat-value">0</span> Photos</div>
-        <div class="stat-item"><i class="fas fa-users"></i> <span id="totalLeads" class="stat-value">0</span> Guests</div>
+        <div class="stat-item"><i class="fas fa-calendar-check"></i> <span id="statEvents" class="stat-value">0</span> Events</div>
+        <div class="stat-item"><i class="fas fa-images"></i> <span id="statPhotos" class="stat-value">0</span> Photos</div>
+        <div class="stat-item"><i class="fas fa-user-friends"></i> <span id="statLeads" class="stat-value">0</span> Leads</div>
       </div>
     </div>
-
     <div class="header-actions">
-      <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
-      <a href="#" id="assistantLink" target="_blank" class="btn btn-primary"><i class="fas fa-bolt"></i> Staff Upload Link</a>
+      <button class="btn btn-secondary" onclick="refreshData()"><i class="fas fa-sync"></i> Refresh</button>
+      <button class="btn btn-primary" id="shareLinkBtn"><i class="fas fa-share-alt"></i> Share Hub</button>
     </div>
   </div>
 
   <!-- =========================
-      TABS
+      TAB NAVIGATION
   ========================= -->
   <div class="tabs-container">
     <div class="tabs">
-      <div class="tab active" data-tab="galleryTab"><i class="fas fa-images"></i> Photos</div>
-      <div class="tab" data-tab="eventsTab"><i class="fas fa-calendar-alt"></i> Events</div>
-      <div class="tab" data-tab="uploadTab"><i class="fas fa-cloud-upload-alt"></i> Upload</div>
-      <div class="tab" data-tab="linksTab"><i class="fas fa-link"></i> Links</div>
-      <div class="tab" data-tab="analyticsTab"><i class="fas fa-users"></i> Guests</div>
+      <div class="tab active" data-tab="tabPhotos"><i class="fas fa-camera-retro"></i> Photos</div>
+      <div class="tab" data-tab="tabEvents"><i class="fas fa-calendar-day"></i> Events</div>
+      <div class="tab" data-tab="tabUpload"><i class="fas fa-upload"></i> Upload</div>
+      <div class="tab" data-tab="tabGuests"><i class="fas fa-users"></i> Guests & Leads</div>
+      <div class="tab" data-tab="tabLinks"><i class="fas fa-link"></i> Smart Links</div>
     </div>
   </div>
 
   <!-- =========================
-      PHOTOS TAB
+      TAB CONTENT: PHOTOS
   ========================= -->
-  <div id="galleryTab" class="tab-content active">
+  <div id="tabPhotos" class="tab-content active">
+    <!-- Face Icons Bar (Circular Navigation) -->
+    <div id="faceIconsBar"></div>
+
     <div class="card">
-      <div class="filter-row">
-        <div class="filter-group">
-          <select id="filterType" class="filter-select">
-            <option value="ALL">All Photos</option>
-            <option value="BEST">⭐ Best Shots</option>
-            <option value="HAPPY">😊 Happy</option>
-            <option value="GROUP">👥 Groups</option>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:15px;flex-wrap:wrap;">
+        <div style="display:flex;gap:10px;">
+          <select id="filterCategory" class="btn btn-secondary" style="background:#1a1a25;padding:8px 12px;">
+            <option value="all">All Shots</option>
+            <option value="candid">Candids</option>
+            <option value="group">Group Photos</option>
+            <option value="portrait">Portraits</option>
           </select>
-
-          <input type="text" id="tagSearch" class="filter-input" placeholder="Search tags (coming soon)..." disabled>
-          <input type="text" id="aiTagSearch" class="filter-input" placeholder="Search AI tags (e.g., Wedding, Stage)..." />
+          <input type="text" id="aiTagInput" placeholder="AI Search (e.g. Wedding, Laughing)" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:0 15px;color:#fff;">
         </div>
-        <div class="filter-actions">
-          <button class="btn btn-secondary" id="clearFiltersBtn"><i class="fas fa-times"></i> Clear</button>
-          <button class="btn btn-primary" id="downloadZipBtn"><i class="fas fa-download"></i> Download Zip</button>
+        <button class="btn btn-primary" onclick="downloadSelectedPhotos()"><i class="fas fa-cloud-download-alt"></i> Download Batch</button>
+      </div>
+
+      <!-- Face Naming Bar (Google Photos Style Rename) -->
+      <div id="faceNamingPanel" style="display:none;background:rgba(99,102,241,0.1);padding:15px;border-radius:12px;margin-bottom:20px;border:1px solid var(--brand);">
+        <div style="display:flex;align-items:center;gap:15px;">
+           <img id="namingFaceThumb" src="" style="width:50px;height:50px;border-radius:50%;border:2px solid var(--brand);">
+           <div style="flex:1">
+             <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Renaming Person...</div>
+             <input type="text" id="faceNameInput" placeholder="Enter Name..." style="width:100%;max-width:300px;background:#0a0a0f;border:1px solid var(--border);padding:8px;color:#fff;border-radius:6px;">
+           </div>
+           <button class="btn btn-primary btn-sm" onclick="submitFaceName()">Save Name</button>
+           <button class="btn btn-secondary btn-sm" onclick="closeNamingPanel()">Cancel</button>
         </div>
       </div>
 
-      <!-- =========================
-         PEOPLE BAR (Face Icons)
-      ========================= -->
-      <div id="faceIconsBar"></div>
-
-      <!-- =========================
-         FACE NAMING (double click)
-      ========================= -->
-      <div id="faceNamingHeader" class="card">
-        <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-user-tag"></i> <span id="faceHeaderTitle">Who is this?</span></h3>
-          <button class="btn btn-secondary" id="closeFaceNamingBtn"><i class="fas fa-times"></i> Close</button>
-        </div>
-        <div class="row">
-          <img id="faceHeaderImg" src="" alt="face">
-          <div style="flex:1;min-width:240px">
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <input type="text" id="faceNameInput" placeholder="Enter name..." />
-              <button class="btn btn-primary" id="saveFaceBtn"><i class="fas fa-save"></i> Save</button>
-              <button class="btn btn-secondary" id="cancelFaceBtn"><i class="fas fa-times"></i> Cancel</button>
-            </div>
-            <div id="faceSuggestions"></div>
-            <div style="margin-top:10px;color:var(--text-muted);font-size:12px">
-              Tip: Double click any face icon to rename (Google Photos style).
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- =========================
-         GALLERY CONTAINER
-      ========================= -->
-      <div id="galleryContainer">
-        <div class="empty-state">
-          <i class="fas fa-spinner fa-spin"></i>
-          <h3 style="margin-bottom:8px;">Loading photos...</h3>
-          <p style="color:var(--text-muted);">Please wait</p>
-        </div>
-      </div>
-
-      <div style="text-align:center;margin-top:18px;">
-        <button id="loadMoreBtn" class="btn btn-secondary" style="display:none;"><i class="fas fa-plus"></i> Load More</button>
+      <div id="galleryContainer" class="gallery-grid">
+        <!-- Photos dynamically injected -->
       </div>
     </div>
   </div>
 
   <!-- =========================
-      EVENTS TAB
+      TAB CONTENT: EVENTS
   ========================= -->
-  <div id="eventsTab" class="tab-content">
+  <div id="tabEvents" class="tab-content">
     <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-calendar-alt"></i> Events</h3>
-        <button class="btn btn-primary" id="newEvtBtn"><i class="fas fa-plus"></i> New Event</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3>Event Management</h3>
+        <button class="btn btn-primary" onclick="showNewEventForm()"><i class="fas fa-plus"></i> Create New Event</button>
+      </div>
+      
+      <div id="newEventForm" style="display:none;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+          <input type="text" id="newEvName" placeholder="Event Name (e.g. Sangeet, Reception)" style="background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;">
+          <input type="date" id="newEvDate" style="background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;">
+        </div>
+        <div style="margin-top:15px;display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="saveNewEvent()">Save Event</button>
+          <button class="btn btn-secondary" onclick="hideNewEventForm()">Cancel</button>
+        </div>
       </div>
 
-      <div id="eventForm" style="display:none;margin-bottom:16px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-          <input type="text" id="eventName" placeholder="Event Name">
-          <input type="date" id="eventDate">
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
-          <button class="btn btn-secondary" id="cancelEventBtn"><i class="fas fa-times"></i> Cancel</button>
-          <button class="btn btn-primary" id="saveEventBtn"><i class="fas fa-save"></i> Save</button>
-        </div>
+      <div id="eventsList">
+        <!-- Events rendered here -->
       </div>
-
-      <table id="eventsTable">
-        <thead><tr><th>Name</th><th>Date</th><th>Photos</th><th>Actions</th></tr></thead>
-        <tbody id="eventsTbody"></tbody>
-      </table>
     </div>
   </div>
 
   <!-- =========================
-      UPLOAD TAB
+      TAB CONTENT: UPLOAD
   ========================= -->
-  <div id="uploadTab" class="tab-content">
-    <div class="card" style="max-width:900px;margin:0 auto;">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-cloud-upload-alt"></i> Upload Photos</h3>
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <label style="display:block;margin-bottom:8px;color:var(--text-secondary);font-weight:700">
-          <i class="fas fa-calendar"></i> Select Event
-        </label>
-        <select id="uploadEventSelect">
-          <option value="">Loading events...</option>
+  <div id="tabUpload" class="tab-content">
+    <div class="card" style="max-width:800px;margin:0 auto;">
+      <h3><i class="fas fa-cloud-upload-alt"></i> Batch Upload</h3>
+      <p style="color:var(--text-secondary);margin-bottom:20px;">Upload photos directly to a specific event.</p>
+      
+      <div style="margin-bottom:20px;">
+        <label style="font-size:12px;color:var(--text-secondary);">Target Event:</label>
+        <select id="uploadTargetEvent" style="width:100%;background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;margin-top:5px;">
+          <option value="">Select an Event...</option>
         </select>
       </div>
 
       <div id="dropZone">
-        <i class="fas fa-cloud-upload-alt"></i>
-        <h3 style="margin-bottom:6px;">Drop photos here or click to browse</h3>
-        <p style="color:var(--text-secondary);">JPG / PNG / HEIC / WEBP etc. up to 20MB</p>
-        <input type="file" id="fileInput" multiple style="display:none" accept="image/*,.heic,.heif,.webp,.bmp,.tiff,.tif">
+        <i class="fas fa-images" style="font-size:40px;color:var(--brand);margin-bottom:15px;display:block;"></i>
+        <h4 style="margin-bottom:5px;">Drag & Drop Photos</h4>
+        <p style="color:var(--text-secondary);font-size:13px;">Supports JPG, PNG, HEIC (Max 20MB per file)</p>
+        <input type="file" id="fileInput" multiple style="display:none" accept="image/*,.heic">
       </div>
 
-      <div id="uploadControls" style="display:none;margin-top:14px;">
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-secondary" id="clearFilesBtn"><i class="fas fa-trash"></i> Clear Files</button>
-          <button class="btn btn-primary" id="startUploadBtn"><i class="fas fa-upload"></i> Start Upload (Batch)</button>
-        </div>
+      <div id="uploadPreview" style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;"></div>
+
+      <div id="uploadProgressContainer" style="display:none;margin-top:20px;padding:15px;background:rgba(255,255,255,0.03);border-radius:12px;">
+         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
+           <span id="uploadStatusLabel">Uploading...</span>
+           <span id="uploadPercentage">0%</span>
+         </div>
+         <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;">
+            <div id="uploadProgressBar" style="width:0%;height:100%;background:var(--brand-gradient);transition:width 0.3s ease;"></div>
+         </div>
+         <div id="uploadLog" style="margin-top:10px;font-size:11px;color:var(--text-muted);font-family:monospace;max-height:100px;overflow-y:auto;"></div>
       </div>
 
-      <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
-        <div>
-          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
-            <i class="fas fa-compress-alt"></i> Optimize images
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;color:var(--text-secondary);font-weight:700">
-            <input type="checkbox" id="optimizeToggle" checked> Enable
-          </label>
-        </div>
-        <div>
-          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
-            <i class="fas fa-exchange-alt"></i> Convert to JPG
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;color:var(--text-secondary);font-weight:700">
-            <input type="checkbox" id="convertToggle" checked> Enable
-          </label>
-        </div>
-        <div>
-          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
-            <i class="fas fa-ruler-horizontal"></i> Max Width
-          </label>
-          <select id="maxWidthSelect">
-            <option value="0">Original</option>
-            <option value="4096">4096px</option>
-            <option value="2048" selected>2048px</option>
-            <option value="1920">1920px</option>
-            <option value="1280">1280px</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
-            <i class="fas fa-tachometer-alt"></i> Quality (<span id="jpegQualityVal">0.85</span>)
-          </label>
-          <input id="jpegQuality" type="range" min="0.5" max="0.95" step="0.01" value="0.85">
-        </div>
-      </div>
-
-      <div id="fileList" style="margin-top:14px;"></div>
-
-      <div id="progress-container" style="display:none;margin-top:14px;">
-        <div class="progress-container"><div id="progress-bar"></div></div>
-        <p id="uploadStatus" style="text-align:center;margin-top:10px;color:var(--text-secondary);font-weight:800;"></p>
-        <div class="upload-log" id="uploadLog"></div>
+      <div style="margin-top:20px;display:flex;gap:12px;">
+        <button class="btn btn-primary" id="startUploadBtn" style="flex:1"><i class="fas fa-paper-plane"></i> Start Processing & Upload</button>
+        <button class="btn btn-secondary" onclick="clearUploadQueue()">Clear</button>
       </div>
     </div>
   </div>
 
   <!-- =========================
-      LINKS TAB
+      TAB CONTENT: GUESTS (Leads)
   ========================= -->
-  <div id="linksTab" class="tab-content">
-    <div class="card" style="max-width:700px;margin:0 auto;">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-link"></i> Generate Search Link</h3>
-      </div>
-      <p style="color:var(--text-secondary);margin-bottom:12px;">
-        Select events to include in guest search link.
-      </p>
-
-      <div id="linkEventList" style="max-height:220px;overflow:auto;padding:14px;background:rgba(255,255,255,.03);border-radius:var(--radius-md);border:1px solid var(--border);"></div>
-
-      <div style="display:grid;gap:12px;margin-top:12px;">
-        <div>
-          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
-            <i class="fas fa-clock"></i> Expiry (hours)
-          </label>
-          <input type="number" id="expiryHours" placeholder="0 for no expiry" min="0">
-        </div>
-        <div>
-          <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
-            <i class="fas fa-lock"></i> Optional Password
-          </label>
-          <input type="password" id="linkPassword" placeholder="Leave empty for no password">
-        </div>
-      </div>
-
-      <button class="btn btn-primary" id="genLinkBtn" style="width:100%;margin-top:14px;">
-        <i class="fas fa-magic"></i> Generate Link
-      </button>
-
-      <div id="linkResult" style="display:none;margin-top:14px;padding:14px;background:rgba(99,102,241,.1);border:1px dashed var(--brand);border-radius:var(--radius-md);">
-        <h4 style="margin-bottom:8px;color:var(--brand);font-weight:900"><i class="fas fa-check-circle"></i> Link Generated</h4>
-        <a id="generatedLink" href="#" target="_blank" style="display:block;color:var(--brand);text-decoration:none;word-break:break-all;margin-bottom:10px;"></a>
-        <button class="btn btn-secondary" id="copyLinkBtn" style="width:100%;"><i class="fas fa-copy"></i> Copy Link</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================
-      GUEST LEADS TAB
-  ========================= -->
-  <div id="analyticsTab" class="tab-content">
+  <div id="tabGuests" class="tab-content">
     <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-users"></i> Guest Leads</h3>
-        <button class="btn btn-secondary" id="reloadLeadsBtn"><i class="fas fa-sync-alt"></i> Reload</button>
-      </div>
-
-      <div class="filter-row">
-        <div class="filter-group">
-          <input type="date" id="dateFilter" class="filter-input" placeholder="Filter by Date">
-          <input type="tel" id="mobileFilter" class="filter-input" placeholder="Filter by Mobile">
-        </div>
-        <div class="filter-actions">
-          <button class="btn btn-secondary" id="clearLeadsFiltersBtn"><i class="fas fa-times"></i> Clear Filters</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3>Guest Activity & Leads</h3>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-secondary" onclick="exportLeads()"><i class="fas fa-file-excel"></i> Export CSV</button>
         </div>
       </div>
+      
+      <div id="leadsContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(350px, 1fr));gap:15px;">
+        <!-- Leads cards dynamic -->
+      </div>
+    </div>
+  </div>
 
-      <div id="leadsGrid" class="lead-grid"></div>
-      <div id="noLeadsMessage" class="empty-state" style="display:none;">
-        <i class="fas fa-users-slash"></i>
-        <h3 style="margin-bottom:8px;">No leads yet</h3>
-        <p style="color:var(--text-muted);">Guest leads will appear once guests search for their photos.</p>
+  <!-- =========================
+      TAB CONTENT: LINKS
+  ========================= -->
+  <div id="tabLinks" class="tab-content">
+    <div class="card" style="max-width:600px;margin:0 auto;">
+      <h3>Generate Guest Experience Link</h3>
+      <p style="color:var(--text-secondary);margin-bottom:20px;">Creates a secure URL where guests can search their faces.</p>
+      
+      <div style="margin-bottom:15px;">
+        <label style="font-size:12px;color:var(--text-secondary);">Expiry (In Hours - 0 for never):</label>
+        <input type="number" id="linkExpiry" value="0" style="width:100%;background:#1a1a25;border:1px solid var(--border);padding:12px;color:#fff;border-radius:8px;margin-top:5px;">
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="createNewSmartLink()"><i class="fas fa-magic"></i> Generate New Link</button>
+
+      <div id="generatedLinkResult" style="display:none;margin-top:20px;padding:20px;background:rgba(99,102,241,0.1);border:1px dashed var(--brand);border-radius:12px;text-align:center;">
+          <div style="font-size:12px;color:var(--brand);font-weight:700;margin-bottom:8px;">LIVE GUEST URL:</div>
+          <a id="smartLinkAnchor" href="#" target="_blank" style="color:#fff;text-decoration:none;word-break:break-all;font-weight:700;display:block;margin-bottom:15px;">...</a>
+          <button class="btn btn-primary btn-sm" onclick="copySmartLink()"><i class="fas fa-copy"></i> Copy to Clipboard</button>
       </div>
     </div>
   </div>
@@ -664,42 +375,30 @@
 </div>
 
 <!-- =========================
-    PHOTO DETAILS MODAL
+    MODAL: PHOTO DETAILS
 ========================= -->
-<div class="modal" id="photoDetailsModal">
+<div class="modal" id="modalPhotoDetails">
   <div class="modal-content">
-    <button class="modal-close" id="closePhotoDetailsBtn"><i class="fas fa-times"></i></button>
-
-    <h3 style="margin-bottom:14px;font-weight:900"><i class="fas fa-info-circle"></i> Photo Details</h3>
-
-    <div class="detail-grid">
-      <div>
-        <img id="detailPhotoImg" src="" style="width:100%;border-radius:14px;border:1px solid var(--border)" />
+    <button style="position:absolute;top:15px;right:15px;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;" onclick="closePhotoDetails()">&times;</button>
+    <div style="display:grid;grid-template-columns:1fr 350px;gap:25px;">
+      <div style="background:#000;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:400px;">
+         <img id="detailImg" src="" style="max-width:100%;max-height:80vh;">
       </div>
       <div>
-        <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-          <div style="color:var(--text-secondary);font-weight:900;margin-bottom:8px;text-transform:uppercase;font-size:12px">File</div>
-          <div style="font-size:13px">
-            <div><b>Filename:</b> <span id="detailFilename"></span></div>
-            <div><b>Uploaded:</b> <span id="detailUploadDate"></span></div>
-            <div><b>Faces:</b> <span id="detailFaceCount"></span></div>
-          </div>
+        <h2 id="detailTitle" style="margin-bottom:15px;">Photo Details</h2>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">Identified People:</div>
+          <div id="detailFaces" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
         </div>
-
-        <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-          <div style="color:var(--text-secondary);font-weight:900;margin-bottom:8px;text-transform:uppercase;font-size:12px">People</div>
-          <div id="detailPeople" class="tags-container"></div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">AI Content Tags:</div>
+          <div id="detailTags" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
         </div>
-
-        <div style="margin-bottom:14px;">
-          <div style="color:var(--text-secondary);font-weight:900;margin-bottom:8px;text-transform:uppercase;font-size:12px">AI Tags</div>
-          <div id="detailTags" class="tags-container"></div>
+        <div style="margin-bottom:20px;padding:15px;background:rgba(255,255,255,0.03);border-radius:10px;font-size:13px;">
+          <div style="margin-bottom:5px;"><i class="fas fa-calendar-alt"></i> Captured: <span id="detailDate" class="stat-value">...</span></div>
+          <div><i class="fas fa-info-circle"></i> ID: <span id="detailID" class="stat-value" style="font-size:10px;">...</span></div>
         </div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
-          <button class="btn btn-secondary" id="closeDetailsBtn2"><i class="fas fa-times"></i> Close</button>
-          <button class="btn btn-primary" id="downloadSingleBtn"><i class="fas fa-download"></i> Download</button>
-        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="downloadCurrentDetail()"><i class="fas fa-download"></i> Download Original</button>
       </div>
     </div>
   </div>
@@ -707,1392 +406,637 @@
 
 <script>
 /* =========================================================
-  API CONFIG (IMPORTANT)
+  BACKEND INTEGRATION CONFIG (Mapping logic)
 ========================================================= */
-const API_BASE = localStorage.getItem("API_BASE") || "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const idToken = localStorage.getItem("idToken");
 
-// URL params
+// URL Params parsing
 const urlParams = new URLSearchParams(window.location.search);
 const collectionId = urlParams.get("id");
-const collectionName = urlParams.get("name") || "Collection";
+const collectionName = urlParams.get("name") || "Event Collection";
 
-// endpoints
-const GET_EVENTS_API      = `${API_BASE}/get-events`;            // POST
-const GET_PHOTOS_API      = `${API_BASE}/get-photos`;            // POST
-const UPSERT_EVENT_API    = `${API_BASE}/upsert-event`;          // POST
-const DELETE_EVENT_API    = `${API_BASE}/delete-event`;          // POST
-const UPLOAD_URLS_API     = `${API_BASE}/generate-upload-urls`;  // POST
-const GENERATE_LINK_API   = `${API_BASE}/generate-search-link`;  // POST
-const LIST_PEOPLE_API     = `${API_BASE}/list_people`;           // POST
-const LIST_PEOPLE_API_ALT = `${API_BASE}/list-people`;           // fallback
-const SAVE_FACE_NAME_API  = `${API_BASE}/save-face-name`;        // POST
-const SAVE_DETAILS_API    = `${API_BASE}/save-details`;          // GET/POST (leads)
-
-// utils
-const $ = (id) => document.getElementById(id);
-
-// Global State
+// Global State Management
 let allPhotos = [];
-let filteredPhotos = [];
 let allEvents = [];
-let allLeads = [];
-
-// People (Face) state
-let faceGroups = [];              // [{FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount}]
-let currentSelectedFaceId = null;
-let currentNamingFaceId = null;
-
-// Upload state
-let selectedFiles = [];
-let lastUploadFinishedAt = null;  // for "indexing" UX
+let allFaceGroups = [];
+let selectedFaceId = null;
+let currentDetailPhoto = null;
+let uploadQueue = [];
 
 /* =========================================================
-  HELPERS (FACE NORMALIZATION + CROP)
+  INITIALIZATION (App Load Pe Kya Hoga)
 ========================================================= */
-function getFaceId(faceObj){
-  return faceObj?.FaceId || faceObj?.face_id || faceObj?.faceId || null;
-}
-function getBBox(faceObj){
-  return faceObj?.BoundingBox || faceObj?.bounding_box || faceObj?.bbox || null;
-}
-function clamp01(x){
-  x = Number(x);
-  if(isNaN(x)) return 0;
-  return Math.max(0, Math.min(1, x));
-}
-function photoHasFace(photo, faceId){
-  if(!faceId) return true;
-  if(Array.isArray(photo.face_ids) && photo.face_ids.includes(faceId)) return true;
-  const faces = Array.isArray(photo.faces) ? photo.faces : [];
-  return faces.some(f => getFaceId(f) === faceId);
-}
-function setFaceBgCrop(wrapper, url, bbox){
-  wrapper.style.backgroundImage = url ? `url("${url}")` : "none";
-  wrapper.style.backgroundRepeat = "no-repeat";
-  wrapper.style.backgroundPosition = "center";
-  wrapper.style.backgroundSize = "cover";
-
-  if(!bbox || bbox.Left === undefined) return;
-
-  const L = clamp01(bbox.Left);
-  const T = clamp01(bbox.Top);
-  const W = clamp01(bbox.Width);
-  const H = clamp01(bbox.Height);
-
-  const zoom = 1 / Math.max(W, H, 0.0001);
-  const cx = (L + W/2) * 100;
-  const cy = (T + H/2) * 100;
-
-  wrapper.style.backgroundSize = `${zoom*100}% ${zoom*100}%`;
-  wrapper.style.backgroundPosition = `${cx}% ${cy}%`;
-}
-
-/* =========================================================
-  TOAST (simple)
-========================================================= */
-function showToast(message, type="success"){
-  const toast = document.createElement("div");
-  toast.style.cssText = `
-    position:fixed;top:18px;right:18px;z-index:99999;
-    padding:10px 14px;border-radius:12px;
-    background:${type==="success" ? "rgba(16,185,129,.95)" : "rgba(239,68,68,.95)"};
-    color:#fff;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.35);
-  `;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(), 2600);
-}
-
-function logUpload(line){
-  const el = $("uploadLog");
-  if(!el) return;
-  const ts = new Date().toLocaleTimeString();
-  el.textContent += `[${ts}] ${line}\n`;
-  el.scrollTop = el.scrollHeight;
-  console.log("[UPLOAD]", line);
-}
-
-function formatDate(dateString){
-  if(!dateString) return "Unknown";
-  const d = new Date(dateString);
-  if(isNaN(d)) return String(dateString);
-  return d.toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
-}
-
-function safeJsonParse(text){
-  try{return JSON.parse(text);}catch(e){return null;}
-}
-
-/* =========================================================
-  INIT
-========================================================= */
-document.addEventListener("DOMContentLoaded", async ()=>{
-  if(!collectionId){
-    showToast("Collection ID missing in URL", "error");
-    setTimeout(()=>window.location.href="dashboard.html", 1200);
-    return;
-  }
-  if(!idToken){
-    showToast("Please login first", "error");
-    setTimeout(()=>window.location.href="login.html", 1200);
+window.onload = async () => {
+  if(!collectionId || !idToken) {
+    alert("Session invalid or Collection ID missing.");
+    window.location.href = "index.html";
     return;
   }
 
-  $("collectionName").textContent = collectionName;
-  $("assistantLink").href = `quick-upload.html?id=${collectionId}&name=${encodeURIComponent(collectionName)}`;
+  document.getElementById("collectionNameDisplay").textContent = collectionName;
+  
+  // Tab Switching Logic
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.tab).classList.add("active");
+      
+      // Lazy load tab specific data
+      if(tab.dataset.tab === "tabGuests") loadLeads();
+    });
+  });
 
-  setupEventListeners();
+  // Upload Logic Wire-up
+  setupUploadZone();
+  
+  // Pehla load
+  await refreshData();
+};
 
-  // start
-  await initLoad();
-});
+/* =========================================================
+  CORE DATA FETCHING (Backend Sync)
+========================================================= */
+async function refreshData() {
+  console.log("Refreshing all collection data...");
+  try {
+    await Promise.all([
+      fetchEvents(),
+      fetchPhotos()
+    ]);
+    processFaces(); // Raw photos se faces extract karna
+    renderUI();
+  } catch (err) {
+    console.error("Refresh failed:", err);
+  }
+}
 
-async function initLoad(){
-  try{
-    console.group("COLLECTION INIT");
-    console.log("API_BASE:", API_BASE);
-    console.log("collectionId:", collectionId);
+// 1. Events List mangwana
+async function fetchEvents() {
+  const res = await fetch(`${API_BASE}/get-events`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ collection_id: collectionId })
+  });
+  const data = await res.json();
+  allEvents = data.events || [];
+  updateEventDropdowns();
+}
 
-    await Promise.all([loadEvents(), loadPhotos()]);
-    await loadFaceGroups();   // depends on photos (fallback build)
-    await loadLeads();
+// 2. Photos List mangwana
+async function fetchPhotos() {
+  const res = await fetch(`${API_BASE}/get-photos`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ collection_id: collectionId })
+  });
+  const data = await res.json();
+  allPhotos = data.photos || [];
+}
 
-    showToast("Collection loaded");
-    console.groupEnd();
-  }catch(e){
-    console.error("Init error:", e);
-    showToast("Failed to load collection", "error");
+// 3. Guests / Leads mangwana
+async function loadLeads() {
+  console.log("Loading leads...");
+  try {
+    const res = await fetch(`${API_BASE}/save-details`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ collection_id: collectionId, action: "list" })
+    });
+    const data = await res.json();
+    const leads = data.items || data.leads || [];
+    renderLeads(leads);
+    document.getElementById("statLeads").textContent = leads.length;
+  } catch (err) {
+    console.error("Leads load error:", err);
   }
 }
 
 /* =========================================================
-  EVENTS
+  FACE PROCESSING (Google Photos Style AI Logic)
 ========================================================= */
-async function loadEvents(){
-  try{
-    const res = await fetch(GET_EVENTS_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+function processFaces() {
+  const faceMap = new Map();
 
-    allEvents = data.events || [];
-    $("totalEvents").textContent = allEvents.length;
+  allPhotos.forEach(p => {
+    // Backend mein FaceId keys Capital hoti hain: FaceId
+    const faces = p.faces || [];
+    faces.forEach(f => {
+      const fid = f.FaceId || f.face_id;
+      if (!fid) return;
 
-    renderEvents();
-    populateEventDropdowns();
-  }catch(e){
-    console.error("loadEvents error:", e);
-    $("eventsTbody").innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a0aec0;">Failed to load events</td></tr>`;
-  }
-}
-
-function renderEvents(){
-  const tbody = $("eventsTbody");
-  tbody.innerHTML = "";
-  if(allEvents.length === 0){
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a0aec0;">No events found</td></tr>`;
-    return;
-  }
-  allEvents.forEach(evt=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${evt.name || "Untitled"}</td>
-      <td>${evt.event_date || "No date"}</td>
-      <td>${evt.photo_count || 0}</td>
-      <td>
-        <button class="btn btn-sm btn-danger" onclick="deleteEvent('${evt.event_id}')">
-          <i class="fas fa-trash"></i> Delete
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function populateEventDropdowns(){
-  const uploadSelect = $("uploadEventSelect");
-  const linkList = $("linkEventList");
-
-  uploadSelect.innerHTML = `<option value="">Select an event</option>`;
-  (allEvents||[]).forEach(evt=>{
-    const op = document.createElement("option");
-    op.value = evt.event_id;
-    op.textContent = `${evt.name} (${evt.event_date || "No date"})`;
-    uploadSelect.appendChild(op);
-  });
-
-  linkList.innerHTML = "";
-  (allEvents||[]).forEach(evt=>{
-    const row = document.createElement("div");
-    row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:8px";
-    row.innerHTML = `
-      <input type="checkbox" class="linkEventCheck" value="${evt.event_id}" id="evt_${evt.event_id}">
-      <label for="evt_${evt.event_id}" style="flex:1;color:var(--text-secondary);font-weight:700;">
-        ${evt.name} <span style="color:var(--text-muted)">(${evt.event_date || "No date"})</span>
-      </label>
-    `;
-    linkList.appendChild(row);
-  });
-}
-
-async function createEvent(){
-  const name = $("eventName").value.trim();
-  const date = $("eventDate").value;
-  if(!name || !date){
-    showToast("Event name and date required", "error");
-    return;
-  }
-  try{
-    const res = await fetch(UPSERT_EVENT_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-    showToast("Event created");
-    $("eventForm").style.display = "none";
-    await loadEvents();
-  }catch(e){
-    console.error("createEvent error:", e);
-    showToast("Failed to create event", "error");
-  }
-}
-
-async function deleteEvent(eventId){
-  if(!confirm("Delete this event? Photos inside will be deleted from backend.")) return;
-
-  try{
-    const res = await fetch(DELETE_EVENT_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, event_id: eventId })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-
-    showToast("Event deleted");
-
-    // IMPORTANT: full refresh (events + photos + faces + leads)
-    currentSelectedFaceId = null;
-    filteredPhotos = [];
-    await Promise.all([loadEvents(), loadPhotos()]);
-    await loadFaceGroups();
-    await loadLeads();
-  }catch(e){
-    console.error("deleteEvent error:", e);
-    showToast("Failed to delete event", "error");
-  }
-}
-
-/* =========================================================
-  PHOTOS
-========================================================= */
-async function loadPhotos(){
-  try{
-    $("galleryContainer").innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-spinner fa-spin"></i>
-        <h3 style="margin-bottom:8px;">Loading photos...</h3>
-        <p style="color:var(--text-muted);">Please wait</p>
-      </div>
-    `;
-
-    const res = await fetch(GET_PHOTOS_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-
-    allPhotos = data.photos || [];
-    filteredPhotos = [...allPhotos];
-
-    $("totalPhotos").textContent = allPhotos.length;
-
-    renderPhotos();
-  }catch(e){
-    console.error("loadPhotos error:", e);
-    $("galleryContainer").innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-exclamation-triangle"></i>
-        <h3>Failed to load photos</h3>
-        <p style="color:var(--text-muted);">${e.message || e}</p>
-      </div>
-    `;
-  }
-}
-
-function groupPhotosForRender(photos){
-  const byDate = {};
-  photos.forEach(p=>{
-    const dt = p.created_at ? new Date(p.created_at) : null;
-    const key = (dt && !isNaN(dt)) ? dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "Unknown Date";
-    if(!byDate[key]) byDate[key] = [];
-    byDate[key].push(p);
-  });
-  const keys = Object.keys(byDate).sort((a,b)=>{
-    const da = new Date(a); const db = new Date(b);
-    if(isNaN(da) || isNaN(db)) return 0;
-    return db-da;
-  });
-  return {byDate, keys};
-}
-
-function renderPhotos(){
-  const container = $("galleryContainer");
-
-  if(filteredPhotos.length === 0){
-    container.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-images"></i>
-        <h3 style="margin-bottom:8px;">No photos found</h3>
-        <p style="color:var(--text-muted);">${currentSelectedFaceId ? "No photos for selected person." : "Upload photos to get started."}</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = "";
-
-  const {byDate, keys} = groupPhotosForRender(filteredPhotos);
-
-  keys.forEach(dateKey=>{
-    const h = document.createElement("h3");
-    h.textContent = dateKey;
-    h.style.cssText = "margin:18px 0 10px;color:var(--text-secondary);font-size:14px;font-weight:900;";
-    container.appendChild(h);
-
-    const grid = document.createElement("div");
-    grid.className = "gallery-grid";
-
-    byDate[dateKey].forEach(photo=>{
-      const card = document.createElement("div");
-      card.className = "photo-card";
-      card.onclick = ()=> showPhotoDetails(photo);
-
-      const img = document.createElement("img");
-      img.src = photo.thumbnail_url || photo.url;
-      img.alt = "photo";
-      img.loading = "lazy";
-      img.onerror = ()=>{ if(photo.url && img.src !== photo.url) img.src = photo.url; };
-
-      const badges = document.createElement("div");
-      badges.className = "photo-badges";
-
-      const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
-      const tagCount = (photo.ai_tags && Array.isArray(photo.ai_tags)) ? photo.ai_tags.length : 0;
-
-      if(faceCount){
-        const b1 = document.createElement("div");
-        b1.className = "badge";
-        b1.innerHTML = `<i class="fas fa-user"></i> ${faceCount}`;
-        badges.appendChild(b1);
-      }
-      if(tagCount){
-        const b2 = document.createElement("div");
-        b2.className = "badge";
-        b2.innerHTML = `<i class="fas fa-robot"></i> ${tagCount}`;
-        badges.appendChild(b2);
-      }
-
-      const overlay = document.createElement("div");
-      overlay.className = "photo-overlay";
-      overlay.innerHTML = `
-        <span>${photo.event_id ? "Event: " + photo.event_id : ""}</span>
-        <span>${photo.created_at ? formatDate(photo.created_at) : ""}</span>
-      `;
-
-      card.appendChild(img);
-      card.appendChild(badges);
-      card.appendChild(overlay);
-      grid.appendChild(card);
-    });
-
-    container.appendChild(grid);
-  });
-
-  if(lastUploadFinishedAt){
-    console.log("UPLOAD finished at", lastUploadFinishedAt);
-  }
-}
-
-/* =========================================================
-  PEOPLE (Face Icons)
-========================================================= */
-async function loadFaceGroups(){
-  try{
-    const tryFetch = async (url)=>{
-      const res = await fetch(url, {
-        method:"POST",
-        headers:{
-          "Authorization": `Bearer ${idToken}`,
-          "Content-Type":"application/json"
-        },
-        body: JSON.stringify({ collection_id: collectionId })
-      });
-      const data = await res.json().catch(()=>({}));
-      return {res, data};
-    };
-
-    let result = await tryFetch(LIST_PEOPLE_API);
-
-    if(!result.res.ok){
-      result = await tryFetch(LIST_PEOPLE_API_ALT);
-    }
-
-    if(result.res.ok){
-      const data = result.data || {};
-      const people = data.people || data.items || data.faces || [];
-      if(Array.isArray(people) && people.length){
-        faceGroups = people.map(p=>{
-          const fid = p.FaceId || p.face_id || p.faceId;
-          return {
-            FaceId: fid,
-            FaceName: p.FaceName || p.name || "Unknown",
-            photoCount: p.photo_count || p.count || 0,
-            thumbnail: p.face_thumbnail_url || p.thumbnail || p.thumb || null,
-            sampleUrl: p.sample_url || p.sampleUrl || null,
-            BoundingBox: p.BoundingBox || p.bounding_box || null
-          };
-        }).filter(x=>x.FaceId);
-
-        if(faceGroups.every(x=>!x.thumbnail)){
-          faceGroups = buildFacesFromPhotos();
-        }
-      }else{
-        faceGroups = buildFacesFromPhotos();
-      }
-    }else{
-      faceGroups = buildFacesFromPhotos();
-    }
-
-    faceGroups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
-
-    renderFaceIcons();
-  }catch(e){
-    console.error("loadFaceGroups error:", e);
-    faceGroups = buildFacesFromPhotos();
-    renderFaceIcons();
-  }
-}
-
-function buildFacesFromPhotos(){
-  const map = new Map();
-
-  allPhotos.forEach(photo=>{
-    const sampleUrl = photo.thumbnail_url || photo.url;
-    const faces = Array.isArray(photo.faces) ? photo.faces : [];
-
-    faces.forEach(f=>{
-      const fid = getFaceId(f);
-      if(!fid) return;
-
-      if(!map.has(fid)){
-        map.set(fid, {
+      if (!faceMap.has(fid)) {
+        faceMap.set(fid, {
           FaceId: fid,
-          FaceName: "Unknown",
-          sampleUrl,
-          BoundingBox: getBBox(f) || null,
-          photoCount: 1
+          FaceName: f.FaceName || "Unknown",
+          thumbnail: f.face_thumbnail_url || p.thumbnail_url || p.url,
+          count: 0,
+          photos: []
         });
-      }else{
-        map.get(fid).photoCount++;
-        if(!map.get(fid).BoundingBox && getBBox(f)) map.get(fid).BoundingBox = getBBox(f);
       }
-    });
-
-    const faceIds = Array.isArray(photo.face_ids) ? photo.face_ids : [];
-    faceIds.forEach(fid=>{
-      if(!fid) return;
-      if(!map.has(fid)){
-        map.set(fid,{
-          FaceId: fid,
-          FaceName:"Unknown",
-          sampleUrl,
-          BoundingBox: null,
-          photoCount:1
-        });
-      }else{
-        map.get(fid).photoCount++;
-      }
+      const group = faceMap.get(fid);
+      group.count++;
+      group.photos.push(p);
+      // Agar backend se naam mil gaya hai to use update karein
+      if(f.FaceName && f.FaceName !== "Unknown") group.FaceName = f.FaceName;
     });
   });
 
-  return Array.from(map.values());
+  allFaceGroups = Array.from(faceMap.values()).sort((a,b) => b.count - a.count);
 }
 
-function renderFaceIcons(){
-  const bar = $("faceIconsBar");
+/* =========================================================
+  UI RENDERING (Dashboard Elements)
+========================================================= */
+function renderUI() {
+  document.getElementById("statEvents").textContent = allEvents.length;
+  document.getElementById("statPhotos").textContent = allPhotos.length;
+
+  renderFaceBar();
+  renderGallery();
+  renderEventsList();
+}
+
+// Face Selection Bar (Circle icons)
+function renderFaceBar() {
+  const bar = document.getElementById("faceIconsBar");
   bar.innerHTML = "";
 
-  // "All" chip
-  const allItem = document.createElement("div");
-  allItem.className = "face-item";
+  // "All" Icon
+  const allChip = document.createElement("div");
+  allChip.className = "face-item";
+  allChip.innerHTML = `
+    <div class="face-icon-wrapper ${!selectedFaceId ? 'selected' : ''}" style="display:flex;align-items:center;justify-content:center;background:var(--brand-gradient);">
+       <i class="fas fa-users" style="color:#fff;"></i>
+    </div>
+    <div class="face-name-label">Everyone</div>
+  `;
+  allChip.onclick = () => { selectedFaceId = null; renderFaceBar(); renderGallery(); };
+  bar.appendChild(allChip);
 
-  const allWrap = document.createElement("div");
-  allWrap.className = "face-icon-wrapper";
-  if(!currentSelectedFaceId) allWrap.classList.add("selected");
-  allWrap.style.display = "flex";
-  allWrap.style.alignItems = "center";
-  allWrap.style.justifyContent = "center";
-  allWrap.style.background = "rgba(99,102,241,.18)";
-  allWrap.innerHTML = `<i class="fas fa-users" style="font-size:20px;color:#fff;"></i>`;
-  allWrap.onclick = (e)=>{ e.stopPropagation(); toggleFaceSelection(null); };
-
-  const allLabel = document.createElement("div");
-  allLabel.className = "face-name-label";
-  allLabel.textContent = "All";
-
-  const allCount = document.createElement("div");
-  allCount.className = "face-count";
-  allCount.textContent = `${allPhotos.length || 0} photos`;
-
-  allItem.appendChild(allWrap);
-  allItem.appendChild(allLabel);
-  allItem.appendChild(allCount);
-  bar.appendChild(allItem);
-
-  if(!faceGroups.length){
-    const empty = document.createElement("div");
-    empty.style.cssText = "text-align:center;width:100%;padding:16px;color:var(--text-muted);";
-    empty.innerHTML = `
-      <i class="fas fa-users" style="font-size:22px;margin-bottom:6px;display:block;"></i>
-      <p>No faces detected yet. Upload photos with faces.</p>
+  // Individual Faces
+  allFaceGroups.forEach(group => {
+    const chip = document.createElement("div");
+    chip.className = "face-item";
+    const isSelected = selectedFaceId === group.FaceId;
+    
+    chip.innerHTML = `
+      <div class="face-icon-wrapper ${isSelected ? 'selected' : ''}" style="background-image:url('${group.thumbnail}')"></div>
+      <div class="face-name-label">${group.FaceName}</div>
     `;
-    bar.appendChild(empty);
-    return;
-  }
-
-  faceGroups.forEach(face=>{
-    const item = document.createElement("div");
-    item.className = "face-item";
-
-    const wrap = document.createElement("div");
-    wrap.className = "face-icon-wrapper";
-    if(currentSelectedFaceId === face.FaceId) wrap.classList.add("selected");
-
-    wrap.onclick = (e)=>{
-      e.stopPropagation();
-      toggleFaceSelection(face.FaceId);
+    
+    chip.onclick = () => {
+       selectedFaceId = (selectedFaceId === group.FaceId) ? null : group.FaceId;
+       renderFaceBar();
+       renderGallery();
     };
 
-    wrap.ondblclick = (e)=>{
-      e.stopPropagation();
-      startFaceNaming(face.FaceId, face.FaceName || "Unknown");
-    };
+    // Double click to rename
+    chip.ondblclick = () => openNamingPanel(group);
 
-    const url = face.thumbnail || face.sampleUrl || face.sample_url || face.sample || "";
-    if(url){
-      setFaceBgCrop(wrap, url, face.thumbnail ? null : face.BoundingBox);
-    }else{
-      wrap.style.backgroundImage = "none";
-      wrap.style.background = "rgba(255,255,255,.06)";
-    }
-
-    const label = document.createElement("div");
-    label.className = "face-name-label";
-    label.textContent = face.FaceName || "Unknown";
-    label.title = face.FaceName || "Unknown";
-
-    const count = document.createElement("div");
-    count.className = "face-count";
-    count.textContent = `${face.photoCount || 0} photos`;
-
-    item.appendChild(wrap);
-    item.appendChild(label);
-    item.appendChild(count);
-    bar.appendChild(item);
+    bar.appendChild(chip);
   });
 }
 
-function toggleFaceSelection(faceId){
-  if(!faceId){
-    currentSelectedFaceId = null;
-    filteredPhotos = [...allPhotos];
-  }else if(currentSelectedFaceId === faceId){
-    currentSelectedFaceId = null;
-    filteredPhotos = [...allPhotos];
-  }else{
-    currentSelectedFaceId = faceId;
-    filteredPhotos = allPhotos.filter(p => photoHasFace(p, faceId));
-  }
-  console.log("Face selected:", currentSelectedFaceId, "photos:", filteredPhotos.length);
-  renderFaceIcons();
-  renderPhotos();
-}
+// Main Photo Gallery
+function renderGallery() {
+  const container = document.getElementById("galleryContainer");
+  container.innerHTML = "";
 
-/* =========================================================
-  FACE NAMING
-========================================================= */
-function startFaceNaming(faceId, currentName){
-  currentNamingFaceId = faceId;
+  let displayPhotos = selectedFaceId 
+      ? allPhotos.filter(p => (p.faces || []).some(f => (f.FaceId || f.face_id) === selectedFaceId))
+      : allPhotos;
 
-  const face = faceGroups.find(f=>f.FaceId === faceId);
-  const imgUrl = face?.thumbnail || face?.sampleUrl || "";
-
-  $("faceHeaderImg").src = imgUrl;
-  $("faceHeaderTitle").textContent = currentName && currentName !== "Unknown" ? `Edit name for ${currentName}` : "Who is this?";
-  $("faceNameInput").value = currentName && currentName !== "Unknown" ? currentName : "";
-  $("faceNamingHeader").style.display = "block";
-
-  const suggestions = faceGroups
-    .map(f=>f.FaceName)
-    .filter(n=>n && n !== "Unknown")
-    .filter((n,i,arr)=>arr.indexOf(n)===i)
-    .slice(0,6);
-
-  $("faceSuggestions").innerHTML = suggestions.length
-    ? `<b>Suggestions:</b> ${suggestions.join(", ")}`
-    : "";
-}
-
-function cancelFaceNaming(){
-  $("faceNamingHeader").style.display = "none";
-  currentNamingFaceId = null;
-}
-
-async function saveFaceName(){
-  const name = $("faceNameInput").value.trim();
-  if(!name || !currentNamingFaceId){
-    showToast("Enter a name", "error");
+  if(displayPhotos.length === 0) {
+    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:50px;color:var(--text-secondary);">No photos found in this view.</div>`;
     return;
   }
 
-  try{
-    const res = await fetch(SAVE_FACE_NAME_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, face_id: currentNamingFaceId, name })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-
-    const idx = faceGroups.findIndex(f=>f.FaceId === currentNamingFaceId);
-    if(idx !== -1) faceGroups[idx].FaceName = name;
-
-    showToast("Face name saved");
-    cancelFaceNaming();
-    renderFaceIcons();
-  }catch(e){
-    console.error("saveFaceName error:", e);
-    showToast("Failed to save face name", "error");
-  }
-}
-
-/* =========================================================
-  LEADS (Guest)
-========================================================= */
-async function loadLeads(){
-  try{
-    let res = await fetch(SAVE_DETAILS_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, action:"list" })
-    });
-
-    let data = await res.json().catch(()=>null);
-
-    if(!res.ok){
-      const url = `${SAVE_DETAILS_API}?collection_id=${encodeURIComponent(collectionId)}`;
-      res = await fetch(url, {
-        method:"GET",
-        headers:{ "Authorization": `Bearer ${idToken}` }
-      });
-      data = await res.json().catch(()=>null);
-    }
-
-    if(!res.ok){
-      console.warn("Leads API not ok:", res.status, data);
-      allLeads = [];
-      renderLeads();
-      return;
-    }
-
-    console.log("Leads raw response:", data);
-
-    let items = [];
-    if(Array.isArray(data)) items = data;
-    else if(data?.leads) items = data.leads;
-    else if(data?.items) items = data.items;
-    else if(data?.history) items = data.history;
-    else if(data?.data && Array.isArray(data.data)) items = data.data;
-    else items = [];
-
-    items = items.filter(l=>{
-      const cid = l.collection_id || l.collectionId || l.cid;
-      return !cid || cid === collectionId;
-    });
-
-    const dateFilter = $("dateFilter").value;
-    const mobileFilter = $("mobileFilter").value.trim();
-
-    if(dateFilter){
-      items = items.filter(l=>{
-        const t = l.created_at || l.timestamp || l.createdAt;
-        if(!t) return false;
-        const d = new Date(t);
-        if(isNaN(d)) return false;
-        const yyyy_mm_dd = d.toISOString().slice(0,10);
-        return yyyy_mm_dd === dateFilter;
-      });
-    }
-
-    if(mobileFilter){
-      items = items.filter(l=>{
-        const m = String(l.mobile || l.phone || l.number || "");
-        return m.includes(mobileFilter);
-      });
-    }
-
-    allLeads = items.sort((a,b)=>{
-      const da = new Date(a.created_at || a.timestamp || 0);
-      const db = new Date(b.created_at || b.timestamp || 0);
-      return db - da;
-    });
-
-    $("totalLeads").textContent = allLeads.length;
-    renderLeads();
-
-  }catch(e){
-    console.error("loadLeads error:", e);
-    allLeads = [];
-    renderLeads();
-  }
-}
-
-function renderLeads(){
-  const grid = $("leadsGrid");
-  const empty = $("noLeadsMessage");
-  grid.innerHTML = "";
-
-  if(!allLeads.length){
-    empty.style.display = "block";
-    return;
-  }
-  empty.style.display = "none";
-
-  allLeads.forEach(lead=>{
+  displayPhotos.forEach(p => {
     const card = document.createElement("div");
-    card.className = "lead-card";
-
-    let selfie = "https://placehold.co/70x70/333/fff?text=No+Selfie";
-    if(lead.selfie_b64) selfie = `data:image/jpeg;base64,${lead.selfie_b64}`;
-    else if(lead.selfie_image) selfie = lead.selfie_image;
-    else if(lead.selfieUrl) selfie = lead.selfieUrl;
-
-    const name = lead.name || lead.guest_name || "Unknown Guest";
-    const mobile = lead.mobile || lead.phone || "No phone";
-    const created = formatDate(lead.created_at || lead.timestamp || lead.createdAt);
-    const matchCount = lead.match_count || lead.matches || lead.photos || 0;
-
+    card.className = "photo-card";
     card.innerHTML = `
-      <img class="selfie-img" src="${selfie}" alt="selfie">
-      <div style="flex:1">
-        <div class="lead-name">${escapeHtml(name)}</div>
-        <div class="lead-mobile">${escapeHtml(mobile)}</div>
-        <div class="lead-meta">
-          <span><i class="fas fa-calendar"></i> ${escapeHtml(created)}</span>
-          <span style="color:var(--success);font-weight:900"><i class="fas fa-images"></i> ${matchCount} photos</span>
-        </div>
+      <img src="${p.thumbnail_url || p.url}" loading="lazy">
+      <div class="photo-overlay">
+        <div style="font-size:10px;font-weight:700;">${new Date(p.created_at).toLocaleDateString()}</div>
+        <div style="font-size:11px;color:var(--brand);"><i class="fas fa-user"></i> ${(p.faces || []).length} Faces</div>
       </div>
     `;
-    grid.appendChild(card);
+    card.onclick = () => openPhotoDetails(p);
+    container.appendChild(card);
   });
 }
 
-function escapeHtml(str){
-  return String(str||"").replace(/[&<>"']/g, s=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[s]));
+// Events Management List
+function renderEventsList() {
+  const container = document.getElementById("eventsList");
+  container.innerHTML = "";
+
+  if(allEvents.length === 0) {
+    container.innerHTML = `<div style="padding:20px;color:var(--text-muted);">No events created yet. Add your first event to organize photos.</div>`;
+    return;
+  }
+
+  allEvents.forEach(ev => {
+    const item = document.createElement("div");
+    item.className = "card";
+    item.style.marginBottom = "10px";
+    item.style.display = "flex";
+    item.style.justifyContent = "space-between";
+    item.style.alignItems = "center";
+    item.innerHTML = `
+      <div>
+        <div style="font-weight:800;font-size:16px;">${ev.name}</div>
+        <div style="font-size:12px;color:var(--text-secondary);"><i class="fas fa-calendar"></i> ${ev.event_date} | ${ev.photo_count || 0} Photos</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+         <button class="btn btn-secondary btn-sm" onclick="deleteEvent('${ev.event_id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    `;
+    container.appendChild(item);
+  });
 }
 
 /* =========================================================
-  LINK GENERATION
+  GUEST LEADS RENDERING
 ========================================================= */
-async function generateLink(){
-  try{
-    const checked = document.querySelectorAll(".linkEventCheck:checked");
-    const eventIds = Array.from(checked).map(x=>x.value);
-    if(!eventIds.length){
-      showToast("Select at least one event", "error");
-      return;
-    }
-    const expiry = parseInt($("expiryHours").value || "0", 10) || 0;
-    const password = $("linkPassword").value.trim();
+function renderLeads(leads) {
+  const container = document.getElementById("leadsContainer");
+  container.innerHTML = "";
 
-    const res = await fetch(GENERATE_LINK_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
+  if(leads.length === 0) {
+    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);">Intezaar karein... guests jab search karenge, unka data yahan dikhega.</div>`;
+    return;
+  }
+
+  leads.forEach(l => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.style.display = "flex";
+    card.style.gap = "15px";
+    card.style.alignItems = "center";
+    
+    const selfie = l.selfie_url || l.selfie_image || "https://via.placeholder.com/60";
+    
+    card.innerHTML = `
+       <img src="${selfie}" style="width:65px;height:65px;border-radius:50%;object-fit:cover;border:2px solid var(--brand);">
+       <div style="flex:1">
+          <div style="font-weight:800;color:#fff;">${l.name || 'Anonymous Guest'}</div>
+          <div style="color:var(--brand);font-size:14px;font-weight:700;">${l.mobile || l.phone || 'No Mobile'}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;border-top:1px solid rgba(255,255,255,0.05);padding-top:5px;">
+             Searched on: ${new Date(l.created_at || l.timestamp).toLocaleString()}
+          </div>
+       </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+/* =========================================================
+  FACE NAMING ACTIONS
+========================================================= */
+let activeNamingId = null;
+
+function openNamingPanel(group) {
+  activeNamingId = group.FaceId;
+  document.getElementById("namingFaceThumb").src = group.thumbnail;
+  document.getElementById("faceNameInput").value = group.FaceName === "Unknown" ? "" : group.FaceName;
+  document.getElementById("faceNamingPanel").style.display = "block";
+  document.getElementById("faceNameInput").focus();
+}
+
+function closeNamingPanel() {
+  document.getElementById("faceNamingPanel").style.display = "none";
+  activeNamingId = null;
+}
+
+async function submitFaceName() {
+  const newName = document.getElementById("faceNameInput").value.trim();
+  if(!newName || !activeNamingId) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/save-face-name`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         collection_id: collectionId,
-        event_ids: eventIds,
-        expiry_hours: expiry,
-        password
+        face_id: activeNamingId,
+        name: newName
       })
     });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
 
-    const link = data.searchUrl || data.link || data.url;
-    if(!link) throw new Error("No link returned");
-
-    $("generatedLink").href = link;
-    $("generatedLink").textContent = link;
-    $("linkResult").style.display = "block";
-    showToast("Link generated");
-  }catch(e){
-    console.error("generateLink error:", e);
-    showToast("Failed to generate link", "error");
-  }
-}
-
-function copyLink(){
-  const link = $("generatedLink").textContent;
-  if(!link) return;
-  navigator.clipboard.writeText(link)
-    .then(()=>showToast("Copied"))
-    .catch(()=>showToast("Copy failed","error"));
-}
-
-/* =========================================================
-  PHOTO DETAILS MODAL
-========================================================= */
-let currentDetailPhoto = null;
-
-function showPhotoDetails(photo){
-  currentDetailPhoto = photo;
-
-  $("detailPhotoImg").src = photo.url || photo.thumbnail_url || "";
-  $("detailFilename").textContent = (photo.photo_id ? String(photo.photo_id).split("___").pop() : "Unknown");
-  $("detailUploadDate").textContent = formatDate(photo.created_at);
-  const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
-  $("detailFaceCount").textContent = faceCount;
-
-  const peopleBox = $("detailPeople");
-  peopleBox.innerHTML = "";
-  const faces = Array.isArray(photo.faces) ? photo.faces : [];
-  if(faces.length){
-    faces.forEach(f=>{
-      const fid = getFaceId(f);
-      if(!fid) return;
-      const name = faceGroups.find(x=>x.FaceId===fid)?.FaceName || "Unknown";
-      const chip = document.createElement("span");
-      chip.className = "tag face";
-      chip.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
-      chip.onclick = ()=>{
-        $("photoDetailsModal").classList.remove("active");
-        toggleFaceSelection(fid);
-      };
-      peopleBox.appendChild(chip);
-    });
-  }else{
-    // fallback: face_ids
-    const ids = Array.isArray(photo.face_ids) ? photo.face_ids : [];
-    if(ids.length){
-      ids.forEach(fid=>{
-        const name = faceGroups.find(x=>x.FaceId===fid)?.FaceName || "Unknown";
-        const chip = document.createElement("span");
-        chip.className = "tag face";
-        chip.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
-        chip.onclick = ()=>{
-          $("photoDetailsModal").classList.remove("active");
-          toggleFaceSelection(fid);
-        };
-        peopleBox.appendChild(chip);
-      });
-    }else{
-      peopleBox.innerHTML = `<span style="color:var(--text-muted);font-size:13px;">No people detected</span>`;
+    if(res.ok) {
+      // Local state update karein turant
+      const group = allFaceGroups.find(g => g.FaceId === activeNamingId);
+      if(group) group.FaceName = newName;
+      
+      closeNamingPanel();
+      renderFaceBar();
+      showToast("Face Renamed Successfully!");
     }
-  }
-
-  const tagBox = $("detailTags");
-  tagBox.innerHTML = "";
-  const tags = Array.isArray(photo.ai_tags) ? photo.ai_tags : [];
-  if(tags.length){
-    tags.slice(0,24).forEach(t=>{
-      const chip = document.createElement("span");
-      chip.className = "tag ai";
-      chip.innerHTML = `<i class="fas fa-robot"></i> ${escapeHtml(t)}`;
-      tagBox.appendChild(chip);
-    });
-  }else{
-    tagBox.innerHTML = `<span style="color:var(--text-muted);font-size:13px;">No AI tags</span>`;
-  }
-
-  $("photoDetailsModal").classList.add("active");
-}
-
-function closePhotoDetails(){
-  $("photoDetailsModal").classList.remove("active");
-}
-
-async function downloadSinglePhoto(){
-  try{
-    const url = currentDetailPhoto?.url || currentDetailPhoto?.thumbnail_url;
-    if(!url) return;
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const filename = $("detailFilename").textContent || `photo_${Date.now()}.jpg`;
-    saveAs(blob, filename);
-    showToast("Downloaded");
-  }catch(e){
-    showToast("Download failed","error");
+  } catch (err) {
+    console.error("Face rename error:", err);
   }
 }
 
 /* =========================================================
-  FILTERS
+  BATCH UPLOAD LOGIC (Optimized)
 ========================================================= */
-function applyFilters(){
-  const type = $("filterType").value;
-  const aiSearch = $("aiTagSearch").value.toLowerCase().trim();
+function setupUploadZone() {
+  const zone = document.getElementById("dropZone");
+  const input = document.getElementById("fileInput");
 
-  filteredPhotos = allPhotos.filter(photo=>{
-    if(currentSelectedFaceId){
-      if(!photoHasFace(photo, currentSelectedFaceId)) return false;
-    }
+  zone.onclick = () => input.click();
+  input.onchange = (e) => handleFileSelection(e.target.files);
 
-    const faceCount = photo.face_count ?? (photo.face_ids ? photo.face_ids.length : 0);
-    if(type !== "ALL"){
-      if(type === "BEST" && faceCount < 3) return false;
-      if(type === "GROUP" && faceCount < 2) return false;
-      if(type === "HAPPY"){
-        const hasHappy = (photo.faces||[]).some(f=>
-          (f.Emotions||[]).some(e=>e.Type==="HAPPY" && Number(e.Confidence||0) > 50)
-        );
-        if(!hasHappy) return false;
-      }
-    }
+  zone.ondragover = (e) => { e.preventDefault(); zone.style.borderColor = "var(--brand)"; };
+  zone.ondragleave = () => { zone.style.borderColor = "var(--border)"; };
+  zone.ondrop = (e) => { e.preventDefault(); handleFileSelection(e.dataTransfer.files); };
 
-    if(aiSearch){
-      const tags = Array.isArray(photo.ai_tags) ? photo.ai_tags : [];
-      const ok = tags.some(t=>String(t).toLowerCase().includes(aiSearch));
-      if(!ok) return false;
-    }
-    return true;
-  });
-
-  console.log("Filters applied:", {type, aiSearch, selectedFace: currentSelectedFaceId, result: filteredPhotos.length});
-  renderPhotos();
+  document.getElementById("startUploadBtn").onclick = startBatchUpload;
 }
 
-function clearFilters(){
-  $("filterType").value = "ALL";
-  $("aiTagSearch").value = "";
-  currentSelectedFaceId = null;
-  filteredPhotos = [...allPhotos];
-  renderFaceIcons();
-  renderPhotos();
-}
-
-/* =========================================================
-  ZIP DOWNLOAD
-========================================================= */
-async function downloadZip(){
-  try{
-    if(!window.JSZip || !window.saveAs) throw new Error("ZIP libs missing");
-    const photos = filteredPhotos.length ? filteredPhotos : allPhotos;
-    if(!photos.length){ showToast("No photos", "error"); return; }
-
-    showToast("Preparing ZIP...");
-    const zip = new JSZip();
-
-    const limit = Math.min(photos.length, 80);
-    for(let i=0;i<limit;i++){
-      const p = photos[i];
-      const url = p.url || p.thumbnail_url;
-      if(!url) continue;
-      try{
-        const res = await fetch(url);
-        const blob = await res.blob();
-        zip.file(`photo_${i+1}.jpg`, blob);
-      }catch(err){
-        console.warn("zip photo fail", i, err);
-      }
-    }
-
-    const blob = await zip.generateAsync({type:"blob"});
-    saveAs(blob, `collection_${collectionId}_photos.zip`);
-    showToast("ZIP ready");
-  }catch(e){
-    console.error("downloadZip error:", e);
-    showToast("ZIP failed","error");
+function handleFileSelection(files) {
+  for(let f of files) {
+    uploadQueue.push(f);
+    renderUploadPreview(f);
   }
 }
 
-/* =========================================================
-  UPLOAD
-========================================================= */
-function setupUpload(){
-  const dz = $("dropZone");
-  const input = $("fileInput");
-
-  dz.addEventListener("click", ()=> input.click());
-  dz.addEventListener("dragover", (e)=>{ e.preventDefault(); dz.classList.add("dragover"); });
-  dz.addEventListener("dragleave", ()=> dz.classList.remove("dragover"));
-  dz.addEventListener("drop", (e)=>{
-    e.preventDefault();
-    dz.classList.remove("dragover");
-    handleFiles(e.dataTransfer.files);
-  });
-
-  input.addEventListener("change",(e)=>handleFiles(e.target.files));
+function renderUploadPreview(file) {
+  const container = document.getElementById("uploadPreview");
+  const div = document.createElement("div");
+  div.style.cssText = "aspect-ratio:1;background:#1a1a25;border-radius:8px;position:relative;overflow:hidden;border:1px solid var(--border);";
+  
+  const url = URL.createObjectURL(file);
+  div.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;opacity:0.5">`;
+  container.appendChild(div);
 }
 
-function handleFiles(files){
-  if(!files || !files.length) return;
-
-  const eventId = $("uploadEventSelect").value;
-  if(!eventId){
-    showToast("Select an event first","error");
-    return;
-  }
-
-  const valid = [];
-  Array.from(files).forEach(f=>{
-    if(f.size > 20*1024*1024){
-      showToast(`${f.name} too large (20MB max)`, "error");
-    }else if(!String(f.type||"").startsWith("image/") && !/\.(heic|heif|webp|bmp|tiff|tif)$/i.test(f.name)){
-      showToast(`${f.name} not supported`, "error");
-    }else{
-      valid.push(f);
-    }
-  });
-
-  selectedFiles = [...selectedFiles, ...valid];
-  renderFileList();
-  $("uploadControls").style.display = selectedFiles.length ? "block" : "none";
+function clearUploadQueue() {
+  uploadQueue = [];
+  document.getElementById("uploadPreview").innerHTML = "";
+  document.getElementById("uploadProgressContainer").style.display = "none";
 }
 
-function formatBytes(bytes){
-  if(!bytes) return "0 B";
-  const k=1024,sizes=["B","KB","MB","GB"];
-  const i=Math.floor(Math.log(bytes)/Math.log(k));
-  return (bytes/Math.pow(k,i)).toFixed(2)+" "+sizes[i];
+function logUpload(msg) {
+  const log = document.getElementById("uploadLog");
+  const entry = document.createElement("div");
+  entry.textContent = `> ${msg}`;
+  log.prepend(entry);
 }
 
-function getFileFormat(file){
-  const ext = (file.name.split(".").pop()||"").toLowerCase();
-  if(ext==="heic") return "HEIC";
-  if(ext==="heif") return "HEIF";
-  if(ext==="webp") return "WEBP";
-  if(ext==="png") return "PNG";
-  if(ext==="jpg"||ext==="jpeg") return "JPG";
-  if(ext==="gif") return "GIF";
-  if(ext==="bmp") return "BMP";
-  if(ext==="tiff"||ext==="tif") return "TIFF";
-  return ext.toUpperCase();
-}
+// Main Batch Upload Function
+async function startBatchUpload() {
+  const eventId = document.getElementById("uploadTargetEvent").value;
+  if(!eventId) { alert("Pehle target event select karein!"); return; }
+  if(uploadQueue.length === 0) { alert("Queue khali hai."); return; }
 
-function renderFileList(){
-  const box = $("fileList");
-  box.innerHTML = "";
-  selectedFiles.forEach((f,idx)=>{
-    const div = document.createElement("div");
-    div.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:8px;border:1px solid rgba(255,255,255,.06)";
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;">
-        <i class="fas fa-image" style="color:var(--brand)"></i>
-        <div>
-          <div style="font-weight:900">${escapeHtml(f.name)}</div>
-          <div style="color:var(--text-muted);font-size:12px;font-weight:700">${formatBytes(f.size)} • ${getFileFormat(f)}</div>
-        </div>
-      </div>
-      <button class="btn btn-sm btn-danger" onclick="removeFile(${idx})"><i class="fas fa-times"></i></button>
-    `;
-    box.appendChild(div);
-  });
-}
-
-function removeFile(idx){
-  selectedFiles.splice(idx,1);
-  renderFileList();
-  $("uploadControls").style.display = selectedFiles.length ? "block" : "none";
-}
-
-async function startUpload(){
-  const eventId = $("uploadEventSelect").value;
-  if(!eventId){ showToast("Select event","error"); return; }
-  if(!selectedFiles.length){ showToast("Select files","error"); return; }
-
-  const btn = $("startUploadBtn");
+  const btn = document.getElementById("startUploadBtn");
   btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+  document.getElementById("uploadProgressContainer").style.display = "block";
+  
+  logUpload(`Starting batch of ${uploadQueue.length} files...`);
 
-  $("progress-container").style.display = "block";
-  $("progress-bar").style.width = "0%";
-  $("uploadStatus").style.color = "var(--text-secondary)";
-  $("uploadStatus").textContent = "Preparing upload...";
-  $("uploadLog").textContent = "";
-  logUpload(`Starting upload. Files: ${selectedFiles.length}`);
-
-  try{
-    const filesPayload = selectedFiles.map(f=>({ name:f.name, type:f.type || "image/jpeg" }));
-
-    const urlsRes = await fetch(UPLOAD_URLS_API, {
-      method:"POST",
-      headers:{
-        "Authorization": `Bearer ${idToken}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: filesPayload })
+  // 1. Get Presigned URLs from Backend
+  try {
+    const fileMeta = uploadQueue.map(f => ({ name: f.name, type: f.type || "image/jpeg" }));
+    const res = await fetch(`${API_BASE}/generate-upload-urls`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ collection_id: collectionId, event_id: eventId, files: fileMeta })
     });
-    const urlsData = await urlsRes.json().catch(()=>({}));
-    if(!urlsRes.ok) throw new Error(urlsData?.message || "Failed to get upload URLs");
+    const data = await res.json();
+    const uploadUrls = data.urls || [];
 
-    const urls = urlsData.urls || urlsData.items || [];
-    logUpload(`Got presigned URLs: ${urls.length}`);
+    // 2. Upload one by one with progress
+    for(let i=0; i < uploadQueue.length; i++) {
+       const file = uploadQueue[i];
+       const putUrl = uploadUrls[i].uploadURL;
+       
+       logUpload(`Processing ${file.name}...`);
+       
+       let finalBlob = file;
+       // HEIC check
+       if(file.name.toLowerCase().endsWith(".heic")) {
+          logUpload(`Converting HEIC...`);
+          finalBlob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.8 });
+       }
 
-    let uploaded = 0;
-    const total = selectedFiles.length;
-
-    for(let i=0;i<total;i++){
-      const file = selectedFiles[i];
-      const info = urls[i];
-      const putUrl = info?.uploadURL || info?.uploadUrl || info?.url;
-      if(!putUrl){ logUpload(`No upload URL for ${file.name} (skip)`); continue; }
-
-      $("uploadStatus").textContent = `Uploading ${i+1}/${total}: ${file.name}`;
-      logUpload(`Uploading ${file.name}`);
-
-      let blob = file;
-      const format = getFileFormat(file);
-
-      const quality = parseFloat($("jpegQuality").value || "0.85") || 0.85;
-      const convertToJpg = $("convertToggle").checked;
-      const optimize = $("optimizeToggle").checked;
-      const maxWidth = parseInt($("maxWidthSelect").value || "0", 10) || 0;
-
-      if(format==="HEIC" || format==="HEIF"){
-        try{
-          blob = await heic2any({ blob:file, toType:"image/jpeg", quality });
-          logUpload(`HEIC->JPG converted: ${file.name}`);
-        }catch(e){
-          logUpload(`HEIC convert failed (upload original): ${file.name}`);
-          blob = file;
-        }
-      }
-
-      if(convertToJpg && !String(blob.type||"").includes("jpeg")){
-        blob = await convertToJpeg(blob, quality);
-        logUpload(`Converted to JPG: ${file.name}`);
-      }
-
-      if(optimize && maxWidth>0){
-        blob = await optimizeImage(blob, maxWidth, quality);
-        logUpload(`Optimized: ${file.name} (maxWidth ${maxWidth})`);
-      }
-
-      await putWithProgress(putUrl, blob, (pct)=>{
-        const overall = ((uploaded + (pct/100)) / total) * 100;
-        $("progress-bar").style.width = `${overall.toFixed(2)}%`;
-      });
-
-      uploaded++;
-      $("progress-bar").style.width = `${(uploaded/total)*100}%`;
-      logUpload(`Done: ${file.name}`);
+       // Actual S3 PUT
+       await uploadToS3(putUrl, finalBlob, (pct) => {
+          const overall = ((i / uploadQueue.length) * 100) + (pct / uploadQueue.length);
+          updateProgressBar(overall, `Uploading ${i+1}/${uploadQueue.length}`);
+       });
+       
+       logUpload(`${file.name} uploaded successfully.`);
     }
 
-    lastUploadFinishedAt = Date.now();
-    $("uploadStatus").style.color = "var(--success)";
-    $("uploadStatus").textContent = `✅ Upload finished (${uploaded}/${total}). Indexing will start now...`;
-    logUpload("Upload finished. Now indexing (S3 trigger Lambda).");
+    logUpload("ALL DONE! Backend is now indexing faces. Wait 10-15 seconds.");
+    updateProgressBar(100, "Upload Complete!");
+    
+    // Auto refresh after delay to allow AI processing
+    setTimeout(refreshData, 10000);
+    clearUploadQueue();
 
-    selectedFiles = [];
-    $("fileList").innerHTML = "";
-    $("uploadControls").style.display = "none";
-    $("fileInput").value = "";
-
-    setTimeout(async ()=>{
-      logUpload("Refreshing photos (after 5s)...");
-      await Promise.all([loadPhotos(), loadEvents()]);
-      await loadFaceGroups();
-      logUpload("Refresh done.");
-    }, 5000);
-
-    setTimeout(async ()=>{
-      logUpload("Refreshing photos again (after 12s)...");
-      await Promise.all([loadPhotos(), loadEvents()]);
-      await loadFaceGroups();
-      logUpload("Refresh done.");
-      showToast("Photos refreshed");
-    }, 12000);
-
-  }catch(e){
-    console.error("startUpload error:", e);
-    $("uploadStatus").style.color = "var(--danger)";
-    $("uploadStatus").textContent = `❌ Upload failed: ${e.message || e}`;
-    logUpload(`ERROR: ${e.message || e}`);
-    showToast("Upload failed", "error");
-  }finally{
+  } catch (err) {
+    logUpload(`ERROR: ${err.message}`);
+    console.error(err);
+  } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-upload"></i> Start Upload (Batch)';
   }
 }
 
-function putWithProgress(url, blob, onProgress){
-  return new Promise((resolve, reject)=>{
+function uploadToS3(url, blob, progressCallback) {
+  return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url, true);
-    xhr.upload.onprogress = (e)=>{
-      if(e.lengthComputable){
-        const pct = (e.loaded / e.total) * 100;
-        onProgress?.(pct);
-      }
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", blob.type || "image/jpeg");
+    xhr.upload.onprogress = (e) => {
+       if(e.lengthComputable) {
+         const pct = (e.loaded / e.total) * 100;
+         progressCallback(pct);
+       }
     };
-    xhr.onload = ()=>{
-      if(xhr.status >=200 && xhr.status <300) resolve();
-      else reject(new Error(`PUT failed: HTTP ${xhr.status}`));
-    };
-    xhr.onerror = ()=> reject(new Error("PUT network error"));
-    xhr.setRequestHeader("Content-Type", "image/jpeg");
+    xhr.onload = () => (xhr.status === 200) ? resolve() : reject();
+    xhr.onerror = reject;
     xhr.send(blob);
   });
 }
 
-function convertToJpeg(blob, quality){
-  return new Promise((resolve)=>{
-    const img = new Image();
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    img.onload = ()=>{
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img,0,0);
-      canvas.toBlob((b)=>resolve(b || blob), "image/jpeg", quality);
-    };
-    img.onerror = ()=> resolve(blob);
-    img.src = URL.createObjectURL(blob);
-  });
-}
-
-function optimizeImage(blob, maxWidth, quality){
-  return new Promise((resolve)=>{
-    const img = new Image();
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    img.onload = ()=>{
-      let w = img.width, h = img.height;
-      if(maxWidth>0 && w>maxWidth){
-        const r = maxWidth / w;
-        w = maxWidth;
-        h = Math.round(h * r);
-      }
-      canvas.width = w; canvas.height = h;
-      ctx.drawImage(img,0,0,w,h);
-      canvas.toBlob((b)=>resolve(b || blob), "image/jpeg", quality);
-    };
-    img.onerror = ()=> resolve(blob);
-    img.src = URL.createObjectURL(blob);
-  });
+function updateProgressBar(pct, label) {
+  document.getElementById("uploadProgressBar").style.width = `${pct}%`;
+  document.getElementById("uploadPercentage").textContent = `${Math.round(pct)}%`;
+  document.getElementById("uploadStatusLabel").textContent = label;
 }
 
 /* =========================================================
-  EVENT LISTENERS & TAB SWITCH
+  EVENT HELPERS (Form handling)
 ========================================================= */
-function switchTab(tabId){
-  document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+function updateEventDropdowns() {
+  const sel = document.getElementById("uploadTargetEvent");
+  const currentVal = sel.value;
+  sel.innerHTML = `<option value="">Select an Event...</option>`;
+  allEvents.forEach(e => {
+    const opt = document.createElement("option");
+    opt.value = e.event_id;
+    opt.textContent = `${e.name} (${e.event_date})`;
+    sel.appendChild(opt);
+  });
+  sel.value = currentVal;
+}
 
-  $(tabId).classList.add("active");
-  document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add("active");
+function showNewEventForm() { document.getElementById("newEventForm").style.display = "block"; }
+function hideNewEventForm() { document.getElementById("newEventForm").style.display = "none"; }
 
-  if(tabId === "analyticsTab"){
-    loadLeads();
-  }else if(tabId === "linksTab"){
-    if(!allEvents.length) loadEvents();
+async function saveNewEvent() {
+  const name = document.getElementById("newEvName").value;
+  const date = document.getElementById("newEvDate").value;
+  if(!name || !date) return;
+
+  const res = await fetch(`${API_BASE}/upsert-event`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ collection_id: collectionId, name, event_date: date })
+  });
+
+  if(res.ok) {
+    hideNewEventForm();
+    await fetchEvents();
+    renderEventsList();
+    showToast("Event Created!");
   }
 }
 
-function setupEventListeners(){
-  document.querySelectorAll(".tab").forEach(t=>{
-    t.addEventListener("click", ()=> switchTab(t.getAttribute("data-tab")));
+async function deleteEvent(id) {
+  if(!confirm("Warning: Is event ki saari photos delete ho jayengi. Sure?")) return;
+  const res = await fetch(`${API_BASE}/delete-event`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ collection_id: collectionId, event_id: id })
   });
-
-  $("refreshBtn").addEventListener("click", async ()=>{
-    $("refreshBtn").innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refresh';
-    await initLoad();
-    $("refreshBtn").innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
-  });
-
-  $("filterType").addEventListener("change", applyFilters);
-  $("aiTagSearch").addEventListener("input", applyFilters);
-  $("clearFiltersBtn").addEventListener("click", clearFilters);
-  $("downloadZipBtn").addEventListener("click", downloadZip);
-
-  $("saveFaceBtn").addEventListener("click", saveFaceName);
-  $("cancelFaceBtn").addEventListener("click", cancelFaceNaming);
-  $("closeFaceNamingBtn").addEventListener("click", cancelFaceNaming);
-
-  $("newEvtBtn").addEventListener("click", ()=>{
-    $("eventForm").style.display = "block";
-    $("eventName").value = "";
-    $("eventDate").value = new Date().toISOString().slice(0,10);
-  });
-  $("cancelEventBtn").addEventListener("click", ()=> $("eventForm").style.display = "none");
-  $("saveEventBtn").addEventListener("click", createEvent);
-
-  setupUpload();
-  $("clearFilesBtn").addEventListener("click", ()=>{
-    selectedFiles = [];
-    $("fileList").innerHTML = "";
-    $("uploadControls").style.display = "none";
-    $("fileInput").value = "";
-  });
-  $("startUploadBtn").addEventListener("click", startUpload);
-  $("jpegQuality").addEventListener("input",(e)=> $("jpegQualityVal").textContent = e.target.value);
-
-  $("genLinkBtn").addEventListener("click", generateLink);
-  $("copyLinkBtn").addEventListener("click", copyLink);
-
-  $("reloadLeadsBtn").addEventListener("click", loadLeads);
-  $("dateFilter").addEventListener("change", loadLeads);
-  $("mobileFilter").addEventListener("input", debounce(loadLeads, 500));
-  $("clearLeadsFiltersBtn").addEventListener("click", ()=>{
-    $("dateFilter").value = "";
-    $("mobileFilter").value = "";
-    loadLeads();
-  });
-
-  $("closePhotoDetailsBtn").addEventListener("click", closePhotoDetails);
-  $("closeDetailsBtn2").addEventListener("click", closePhotoDetails);
-  $("photoDetailsModal").addEventListener("click", (e)=>{ if(e.target === $("photoDetailsModal")) closePhotoDetails(); });
-  $("downloadSingleBtn").addEventListener("click", downloadSinglePhoto);
+  if(res.ok) {
+     await refreshData();
+     showToast("Event Deleted.");
+  }
 }
 
-function debounce(fn, wait){
-  let t;
-  return (...args)=>{
-    clearTimeout(t);
-    t = setTimeout(()=>fn(...args), wait);
-  };
+/* =========================================================
+  SMART LINKS LOGIC
+========================================================= */
+async function createNewSmartLink() {
+  const expiry = document.getElementById("linkExpiry").value;
+  
+  try {
+    const res = await fetch(`${API_BASE}/generate-search-link`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${idToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        collection_id: collectionId, 
+        expiry_hours: parseInt(expiry) || 0 
+      })
+    });
+    const data = await res.json();
+    const link = data.searchUrl || data.link;
+
+    if(link) {
+      document.getElementById("smartLinkAnchor").href = link;
+      document.getElementById("smartLinkAnchor").textContent = link;
+      document.getElementById("generatedLinkResult").style.display = "block";
+      showToast("Guest Link Generated!");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function copySmartLink() {
+  const link = document.getElementById("smartLinkAnchor").textContent;
+  navigator.clipboard.writeText(link);
+  showToast("Link Copied!");
+}
+
+/* =========================================================
+  PHOTO MODAL & DOWNLOADS
+========================================================= */
+function openPhotoDetails(photo) {
+  currentDetailPhoto = photo;
+  document.getElementById("detailImg").src = photo.url;
+  document.getElementById("detailDate").textContent = new Date(photo.created_at).toLocaleString();
+  document.getElementById("detailID").textContent = photo.photo_id;
+
+  // Render Identified Faces in Modal
+  const facesDiv = document.getElementById("detailFaces");
+  facesDiv.innerHTML = "";
+  (photo.faces || []).forEach(f => {
+     const fid = f.FaceId || f.face_id;
+     const group = allFaceGroups.find(g => g.FaceId === fid);
+     const badge = document.createElement("span");
+     badge.style.cssText = "padding:5px 12px;background:var(--brand);color:#fff;border-radius:20px;font-size:11px;font-weight:700;";
+     badge.textContent = group ? group.FaceName : "Unknown";
+     facesDiv.appendChild(badge);
+  });
+
+  // Render Tags
+  const tagsDiv = document.getElementById("detailTags");
+  tagsDiv.innerHTML = "";
+  (photo.ai_tags || []).forEach(t => {
+     const badge = document.createElement("span");
+     badge.style.cssText = "padding:5px 12px;background:rgba(255,255,255,0.08);color:var(--text-secondary);border-radius:20px;font-size:11px;";
+     badge.textContent = t;
+     tagsDiv.appendChild(badge);
+  });
+
+  document.getElementById("modalPhotoDetails").classList.add("active");
+}
+
+function closePhotoDetails() {
+  document.getElementById("modalPhotoDetails").classList.remove("active");
+}
+
+async function downloadCurrentDetail() {
+  if(!currentDetailPhoto) return;
+  const res = await fetch(currentDetailPhoto.url);
+  const blob = await res.blob();
+  saveAs(blob, `photo_${currentDetailPhoto.photo_id.slice(-6)}.jpg`);
+}
+
+async function downloadSelectedPhotos() {
+  let list = selectedFaceId 
+      ? allPhotos.filter(p => (p.faces || []).some(f => (f.FaceId || f.face_id) === selectedFaceId))
+      : allPhotos;
+
+  if(list.length === 0) return;
+  
+  showToast(`Preparing ${list.length} photos in ZIP...`);
+  const zip = new JSZip();
+  
+  for(let i=0; i<Math.min(list.length, 50); i++) { // Limit to 50 for browser stability
+    const p = list[i];
+    const res = await fetch(p.url);
+    const blob = await res.blob();
+    zip.file(`photo_${i+1}.jpg`, blob);
+  }
+  
+  const content = await zip.generateAsync({type:"blob"});
+  saveAs(content, "collection_export.zip");
+}
+
+/* =========================================================
+  UTILS
+========================================================= */
+function showToast(msg) {
+  const toast = document.createElement("div");
+  toast.style.cssText = `
+    position:fixed;bottom:30px;right:30px;background:var(--brand-gradient);
+    color:#fff;padding:12px 25px;border-radius:10px;box-shadow:var(--shadow);
+    z-index:9999;font-weight:700;animation:fadeIn 0.3s ease;
+  `;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 </script>
 </body>
