@@ -356,37 +356,33 @@
     <p style="color:var(--muted); font-size:14px;">AI Powered Photo Finder</p>
   </header>
 
-  <!-- STEP 1: UPLOAD (ENHANCED DESIGN) -->
+  <!-- STEP 1: UPLOAD -->
   <div id="step1" class="card" style="text-align:center;">
     <div class="step-title" style="text-align:left;">1. Upload Your Selfie</div>
     
-    <!-- Inputs (Hidden) -->
     <input type="file" id="cameraInput" accept="image/*" capture="user" style="display:none">
     <input type="file" id="galleryInput" accept="image/*" style="display:none">
 
-    <!-- Big Camera Button -->
     <label for="cameraInput" class="camera-btn">
       <div class="camera-icon">📸</div>
       Take Selfie
     </label>
 
-    <!-- Small Gallery Link -->
     <div style="margin-top:5px;">
       <span style="color:#555; font-size:13px;">or</span><br>
       <label for="galleryInput" class="gallery-link">Upload from Gallery</label>
     </div>
 
-    <!-- Preview Area (ENHANCED) -->
     <div id="previewContainer" style="display:none;">
       <img id="previewImg">
-      <button id="retakeBtn" class="btn btn-retake">Retake Photo</button> <!-- NEW: Retake button -->
+      <button id="retakeBtn" class="btn btn-retake">Retake Photo</button>
       <button id="searchBtn" class="btn">Find My Photos 🔍</button>
     </div>
 
-    <p id="loadingText" class="loading-text"></p> <!-- NEW: Enhanced loading -->
+    <p id="loadingText" class="loading-text"></p>
   </div>
 
-  <!-- STEP 2: LEAD GEN -->
+  <!-- STEP 2: DETAILS -->
   <div id="step2" class="card" style="display:none;">
     <div class="step-title">2. Enter Details</div>
     <p style="margin-bottom:15px;">
@@ -397,10 +393,8 @@
     <button id="showGalleryBtn" class="btn">View Gallery 👉</button>
   </div>
 
-  <!-- STEP 3: SMART GALLERY -->
+  <!-- STEP 3: GALLERY -->
   <div id="step3" class="card" style="background:transparent; border:none; padding:0; display:none;">
-    
-    <!-- SEARCH & FILTER -->
     <div class="search-wrapper">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Search (e.g. 'Red Shirt', 'Stage', 'Smile')...">
@@ -414,7 +408,6 @@
       <div class="chip" onclick="filterPhotos('TEXT', this)">🅰️ Text</div>
     </div>
 
-    <!-- ACTIONS -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 5px;">
       <span style="font-size:13px; color:var(--muted);">Selected: <b id="selCount" style="color:#fff;">0</b></span>
       <div>
@@ -423,10 +416,8 @@
       </div>
     </div>
 
-    <!-- GRID -->
     <div id="photoGrid" class="grid"></div>
 
-    <!-- NEW: WhatsApp Share Button -->
     <button id="whatsappBtn" class="btn btn-whatsapp" onclick="shareOnWhatsApp()" style="display:none;">
       Share on WhatsApp 🎉
     </button>
@@ -446,11 +437,9 @@
 </div>
 
 <script>
-  // CONFIG (UNCHANGED) - Yeh part input APIs define karta hai.
   const SEARCH_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/search";
   const SAVE_API = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/save-details";
 
-  // STATE (UNCHANGED) - Yeh variables app ke state store karte hain.
   let allPhotos = [];
   let filteredPhotos = [];
   let selectedUrls = new Set();
@@ -458,12 +447,9 @@
   let currentViewerIndex = 0;
   let currentMatchCount = 0; 
 
-  // --- 1. HANDLE SELFIE (ENHANCED WITH COMPRESSION) - Yeh part file select handle karta hai, compress karta hai, preview show karta hai.
   function handleFileSelect(e) {
-    console.log("DEBUG: Handling file select from input"); // Debugging: Input se file aaya check.
     const file = e.target.files[0];
     if(file){
-      // NEW: Compress image before upload
       const reader = new FileReader();
       reader.onload = function(ev) {
         const img = new Image();
@@ -472,348 +458,147 @@
           const MAX_WIDTH = 800;
           let width = img.width;
           let height = img.height;
-          
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height = (height * MAX_WIDTH) / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_WIDTH) {
-              width = (width * MAX_WIDTH) / height;
-              height = MAX_WIDTH;
-            }
-          }
-          
+          if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
+          else { if (height > MAX_WIDTH) { width *= MAX_WIDTH / height; height = MAX_WIDTH; } }
           canvas.width = width;
           canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          selfieBase64 = canvas.toDataURL('image/jpeg', 0.7); // 70% quality
-          console.log("DEBUG: Selfie compressed and base64 generated"); // Debugging: Compression done.
-          
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          selfieBase64 = canvas.toDataURL('image/jpeg', 0.7);
           document.getElementById('previewImg').src = selfieBase64;
           document.getElementById('previewContainer').style.display = 'block';
-          
-          // NEW: Smooth scroll to preview
           document.getElementById('previewContainer').scrollIntoView({behavior: 'smooth'});
         };
         img.src = ev.target.result;
       };
       reader.readAsDataURL(file);
-    } else {
-      console.error("ERROR: No file selected"); // Debugging: No file.
     }
   }
 
-  // Bind both inputs to the same handler - Yeh inputs bind karta hai.
   document.getElementById('cameraInput').addEventListener('change', handleFileSelect);
   document.getElementById('galleryInput').addEventListener('change', handleFileSelect);
-
-  // NEW: Retake functionality - Yeh retake button handle karta hai.
-  document.getElementById('retakeBtn').addEventListener('click', function() {
-    console.log("DEBUG: Retake button clicked"); // Debugging: Retake start.
+  document.getElementById('retakeBtn').addEventListener('click', () => {
     selfieBase64 = null;
     document.getElementById('previewContainer').style.display = 'none';
     document.getElementById('cameraInput').value = '';
     document.getElementById('galleryInput').value = '';
   });
 
-  // --- 2. API CALL (ENHANCED WITH LOADING & CONFETTI) - Yeh search API call karta hai, loading show, confetti if matches.
   document.getElementById('searchBtn').addEventListener('click', async () => {
-    console.log("DEBUG: Search button clicked"); // Debugging: Search start.
-    // 1. Validation for Selfie
     if(!selfieBase64) return alert("Please upload a selfie first.");
-    
-    // 2. Validation for LinkID
     const params = new URLSearchParams(window.location.search);
     const linkId = params.get('linkId');
-    if (!linkId) {
-      alert("Error: Link ID missing! Please open the correct link (e.g. ?linkId=123)");
-      return;
-    }
+    if (!linkId) return alert("Error: Link ID missing!");
 
-    // NEW: Enhanced UI Loading State
     const loadingText = document.getElementById('loadingText');
-    const originalText = loadingText.innerHTML;
     loadingText.innerHTML = "Scanning faces with AI<span class='dots'></span>";
-    
-    const btn = document.getElementById('searchBtn');
-    btn.disabled = true;
+    document.getElementById('searchBtn').disabled = true;
 
     try {
-      console.log("DEBUG: Calling SEARCH_API with linkId:", linkId); // Debugging: API call start.
       const res = await fetch(SEARCH_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ linkId: linkId, selfie_image: selfieBase64 })
       });
-      
-      // 3. Handle API Errors Explicitly
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Server Error");
-      }
-
       const data = await res.json();
-      
-      // Check for logical error in response body
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
       allPhotos = data.matches || [];
       filteredPhotos = [...allPhotos];
-      
-      // ✅ NEW: Capture match count for saving
       currentMatchCount = allPhotos.length;
-      console.log("DEBUG: API response with matches count:", currentMatchCount); // Debugging: Matches mile.
-
       document.getElementById('matchCount').innerText = currentMatchCount;
-      
       document.getElementById('step1').style.display = 'none';
       document.getElementById('step2').style.display = 'block';
-
-      // NEW: Confetti celebration!
-      if (currentMatchCount > 0) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-        console.log("DEBUG: Confetti triggered for matches"); // Debugging: Confetti done.
-      }
-
-    } catch(err) {
-      console.error("ERROR: API call failed:", err); // Debugging: API error.
-      alert("Failed to find photos: " + err.message);
-    } finally {
-      // Always re-enable button and clear text
-      btn.disabled = false;
-      loadingText.innerHTML = originalText;
-      console.log("DEBUG: Search process ended"); // Debugging: Search end.
-    }
+      if (currentMatchCount > 0) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    } catch(err) { alert("Failed to find photos."); }
+    finally { document.getElementById('searchBtn').disabled = false; loadingText.innerHTML = ""; }
   });
 
-  // --- 3. SHOW GALLERY (FIXED) - Yeh gallery show karta hai aur lead save karta hai (Updated Logic).
+  // --- FIX APPLIED HERE ---
   document.getElementById('showGalleryBtn').addEventListener('click', () => {
-    console.log("DEBUG: Show gallery button clicked"); // Debugging: Gallery start.
     const name = document.getElementById('guestName').value;
     const mobile = document.getElementById('guestMobile').value;
-    
     if(!name || mobile.length < 10) return alert("Please enter valid details.");
 
-    // --- CRITICAL FIX: IDs ko alag handle karna ---
     const params = new URLSearchParams(window.location.search);
-    
-    // Parent Collection ID (Default from logs, or from URL)
+    const linkId = params.get('linkId');
+    // Admin log se mila Collection ID
     const COLLECTION_ID = params.get('cid') || "e06c902e-63e5-4572-9d65-924bbe56d9fb";
-    const LINK_ID = params.get('linkId'); // Event ID
 
-    // Save Data in background
+    // Data save request
     fetch(SAVE_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        // Updated Fields:
-        collection_id: COLLECTION_ID, // Sahi collection ID
-        link_id: LINK_ID,             // Sahi event ID
-        
-        // Legacy fields (backup):
-        linkId: LINK_ID,
-        
+        collection_id: COLLECTION_ID, // Parent ID
+        link_id: linkId,              // Event ID
+        linkId: linkId,               // Backup field
         name: name, 
         mobile: mobile, 
-        selfie_image: selfieBase64, // Base64 data to save
-        photo_count: currentMatchCount // NEW: Match count to save
+        selfie_image: selfieBase64,
+        photo_count: currentMatchCount
       })
-    }).then(res => {
-        if (!res.ok) console.error("Background lead save failed.");
-        console.log("DEBUG: Lead saved successfully with Fixed IDs"); // Debugging: Save done.
-    }).catch(err => {
-        console.error("Background lead save failed:", err);
     });
 
     document.getElementById('step2').style.display = 'none';
     document.getElementById('step3').style.display = 'block';
     renderGrid();
-    
-    // NEW: Show WhatsApp button after gallery loads
-    setTimeout(() => {
-      document.getElementById('whatsappBtn').style.display = 'block';
-    }, 500);
+    setTimeout(() => { document.getElementById('whatsappBtn').style.display = 'block'; }, 500);
   });
 
-  // NEW: WhatsApp Share Function - Yeh WhatsApp share handle karta hai.
   function shareOnWhatsApp() {
-    console.log("DEBUG: WhatsApp share clicked"); // Debugging: Share start.
-    const text = `🎉 I just found ${currentMatchCount} amazing photos of me from the event using EventLens! You should try it too! 📸\n\n${window.location.origin}${window.location.pathname}?linkId=${new URLSearchParams(window.location.search).get('linkId')}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(whatsappUrl, '_blank');
+    const text = `🎉 I just found ${currentMatchCount} photos of me! Try it: ${window.location.href}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }
 
-  // --- 4. SMART FILTERS (UNCHANGED) - Yeh search input aur filters handle karta hai.
   document.getElementById('searchInput').addEventListener('input', (e) => {
-    console.log("DEBUG: Search input changed to:", e.target.value); // Debugging: Search change.
     const q = e.target.value.toLowerCase();
-    
-    filteredPhotos = allPhotos.filter(photo => {
-      const tags = (photo.ai_tags || []).join(' ').toLowerCase();
-      const ocr = (photo.detected_text || []).join(' ').toLowerCase();
-      const evt = (photo.eventName || "").toLowerCase();
-      return tags.includes(q) || ocr.includes(q) || evt.includes(q);
-    });
-    
+    filteredPhotos = allPhotos.filter(photo => (photo.ai_tags || []).join(' ').toLowerCase().includes(q));
     renderGrid();
-    resetChips();
   });
 
-  window.filterPhotos = function(type, el) {
-    console.log("DEBUG: Filter applied:", type); // Debugging: Filter change.
-    document.getElementById('searchInput').value = ""; // clear search
-    resetChips();
-    el.classList.add('active');
-
-    if (type === 'ALL') {
-      filteredPhotos = [...allPhotos];
-    } 
-    else if (type === 'BEST') {
-      filteredPhotos = allPhotos.filter(p => {
-        const isHappy = (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 80);
-        return (p.quality_score > 0.85) || isHappy;
-      });
-    }
-    else if (type === 'HAPPY') {
-      filteredPhotos = allPhotos.filter(p => {
-        return (p.emotions || []).some(e => e.Type === 'HAPPY' && e.Confidence > 60);
-      });
-    }
-    else if (type === 'GROUP') {
-      filteredPhotos = allPhotos.filter(p => p.face_count >= 3);
-    }
-    else if (type === 'TEXT') {
-      filteredPhotos = allPhotos.filter(p => (p.detected_text || []).length > 0);
-    }
-
-    renderGrid();
-  };
-
-  function resetChips() {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  }
-
-  // --- 5. RENDER GRID (ENHANCED) - Yeh photo grid render karta hai.
   function renderGrid() {
-    console.log("DEBUG: Rendering grid with filtered photos count:", filteredPhotos.length); // Debugging: Grid render.
     const grid = document.getElementById('photoGrid');
     grid.innerHTML = "";
-
     filteredPhotos.forEach((photo, index) => {
-      const isSelected = selectedUrls.has(photo.url);
-      
       const div = document.createElement('div');
-      div.className = `photo-item ${isSelected ? 'selected' : ''}`;
-      
-      div.onclick = (e) => {
-        if(e.target.closest('.check-mark')) {
-          toggleSelect(photo.url);
-        } else {
-          openViewer(index);
-        }
-      };
-
-      div.innerHTML = `
-        <img src="${photo.url}" loading="lazy">
-        <div class="check-mark">✓</div>
-      `;
+      div.className = `photo-item ${selectedUrls.has(photo.url) ? 'selected' : ''}`;
+      div.onclick = (e) => e.target.closest('.check-mark') ? toggleSelect(photo.url) : openViewer(index);
+      div.innerHTML = `<img src="${photo.url}" loading="lazy"><div class="check-mark">✓</div>`;
       grid.appendChild(div);
     });
-
     document.getElementById('selCount').innerText = selectedUrls.size;
   }
 
-  // --- 6. SELECTION & DOWNLOAD (UNCHANGED) - Yeh selection aur download handle karta hai.
   function toggleSelect(url) {
-    console.log("DEBUG: Toggling select for URL:", url); // Debugging: Select toggle.
-    if(selectedUrls.has(url)) selectedUrls.delete(url);
-    else selectedUrls.add(url);
+    selectedUrls.has(url) ? selectedUrls.delete(url) : selectedUrls.add(url);
     renderGrid();
   }
 
-  window.selectAll = function() {
-    console.log("DEBUG: Select all clicked"); // Debugging: Select all.
+  window.selectAll = () => {
     if(selectedUrls.size === filteredPhotos.length) selectedUrls.clear();
     else filteredPhotos.forEach(p => selectedUrls.add(p.url));
     renderGrid();
-  }
-
-  window.downloadZip = async function() {
-    console.log("DEBUG: Download ZIP started with selected count:", selectedUrls.size); // Debugging: ZIP start.
-    if(selectedUrls.size === 0) return alert("Select photos first!");
-    
-    const zip = new JSZip();
-    const folder = zip.folder("EventLens_Photos");
-    const urls = Array.from(selectedUrls);
-
-    const btn = document.querySelector("button[onclick='downloadZip()']");
-    const oldText = btn.innerText;
-    btn.innerText = "⏳ Zipping...";
-    btn.disabled = true;
-
-    try {
-      for(let i=0; i<urls.length; i++) {
-        const blob = await fetch(urls[i]).then(r => r.blob());
-        folder.file(`photo_${i+1}.jpg`, blob);
-      }
-      const content = await zip.generateAsync({type:"blob"});
-      saveAs(content, "My_Photos.zip");
-      console.log("DEBUG: ZIP download complete"); // Debugging: ZIP done.
-    } catch(e) {
-      alert("Download failed. Try again.");
-      console.error("ERROR: ZIP download failed:", e); // Debugging: ZIP error.
-    } finally {
-      btn.innerText = oldText;
-      btn.disabled = false;
-    }
   };
 
-  // --- 7. VIEWER LOGIC (ENHANCED) - Yeh fullscreen viewer handle karta hai.
+  window.downloadZip = async function() {
+    if(selectedUrls.size === 0) return alert("Select photos first!");
+    const zip = new JSZip();
+    const urls = Array.from(selectedUrls);
+    for(let i=0; i<urls.length; i++) {
+      const blob = await fetch(urls[i]).then(r => r.blob());
+      zip.file(`photo_${i+1}.jpg`, blob);
+    }
+    const content = await zip.generateAsync({type:"blob"});
+    saveAs(content, "Photos.zip");
+  };
+
   function openViewer(index) {
-    console.log("DEBUG: Opening viewer for index:", index); // Debugging: Viewer open.
     currentViewerIndex = index;
-    updateViewer();
+    document.getElementById('viewerImage').src = filteredPhotos[index].url;
     document.getElementById('viewer').classList.add('open');
   }
-  
-  window.closeViewer = function() {
-    console.log("DEBUG: Closing viewer"); // Debugging: Viewer close.
-    document.getElementById('viewer').classList.remove('open');
-  }
-
-  function updateViewer() {
-    const photo = filteredPhotos[currentViewerIndex];
-    document.getElementById('viewerImage').src = photo.url;
-  }
-
-  window.nextImage = function() {
-    console.log("DEBUG: Next image in viewer"); // Debugging: Next.
-    currentViewerIndex = (currentViewerIndex + 1) % filteredPhotos.length;
-    updateViewer();
-  }
-  
-  window.prevImage = function() {
-    console.log("DEBUG: Previous image in viewer"); // Debugging: Prev.
-    currentViewerIndex = (currentViewerIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
-    updateViewer();
-  }
-
-  window.toggleViewerSelect = function() {
-    console.log("DEBUG: Toggle select in viewer"); // Debugging: Toggle in viewer.
-    const url = filteredPhotos[currentViewerIndex].url;
-    toggleSelect(url);
-  }
-
+  window.closeViewer = () => document.getElementById('viewer').classList.remove('open');
+  window.nextImage = () => { currentViewerIndex = (currentViewerIndex + 1) % filteredPhotos.length; openViewer(currentViewerIndex); };
+  window.prevImage = () => { currentViewerIndex = (currentViewerIndex - 1 + filteredPhotos.length) % filteredPhotos.length; openViewer(currentViewerIndex); };
+  window.toggleViewerSelect = () => toggleSelect(filteredPhotos[currentViewerIndex].url);
 </script>
 </body>
 </html>
