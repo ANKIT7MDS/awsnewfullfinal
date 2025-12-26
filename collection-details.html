@@ -765,7 +765,8 @@ let allEvents = [];
 let allLeads = [];
 
 // People (Face) state
-let faceGroups = [];              // [{FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount}]
+let faceGroups = [];
+let faceNameCache = safeJsonParse(localStorage.getItem('faceNameCache') || '{}') || {};              // [{FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount}]
 let currentSelectedFaceId = null;
 let currentNamingFaceId = null;
 
@@ -1212,6 +1213,7 @@ async function loadFaceGroups(){
 
     faceGroups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
 
+    applyFaceNameCache();
     renderFaceIcons();
   }catch(e){
     console.error("loadFaceGroups error:", e);
@@ -1220,18 +1222,21 @@ async function loadFaceGroups(){
   }
 }
 
+
+function applyFaceNameCache(){
+  try{
+    if(!faceGroups || !faceGroups.length) return;
+    faceGroups.forEach(f=>{
+      if(f?.FaceId && faceNameCache[f.FaceId]) f.FaceName = faceNameCache[f.FaceId];
+    });
+  }catch(e){}
+}
 function buildFacesFromPhotos(){
   const map = new Map();
 
   allPhotos.forEach(photo=>{
     const sampleUrl = photo.thumbnail_url || photo.url;
-
-// DynamoDB item me kabhi `faces` aata hai, kabhi sirf `face_ids`.
-// People icons ko hamesha build karne ke liye dono support:
-const faces = Array.isArray(photo.faces) ? photo.faces : [];
-const faceIdsFallback = Array.isArray(photo.face_ids) ? photo.face_ids
-  : (Array.isArray(photo.faceIds) ? photo.faceIds
-  : (Array.isArray(photo.FaceIds) ? photo.FaceIds : []));
+    const faces = Array.isArray(photo.faces) ? photo.faces : [];
 
     faces.forEach(f=>{
       const fid = getFaceId(f);
@@ -1240,7 +1245,7 @@ const faceIdsFallback = Array.isArray(photo.face_ids) ? photo.face_ids
       if(!map.has(fid)){
         map.set(fid, {
           FaceId: fid,
-          FaceName: "Unknown",
+          FaceName: (faceNameCache[fid] || "Unknown"),
           sampleUrl,
           BoundingBox: getBBox(f) || null,
           photoCount: 1
@@ -1266,25 +1271,6 @@ const faceIdsFallback = Array.isArray(photo.face_ids) ? photo.face_ids
         map.get(fid).photoCount++;
       }
     });
-
-    // Fallback: agar `faces` nahi aaya, but `face_ids` aaya hai
-    if(faceIdsFallback && faceIdsFallback.length){
-      faceIdsFallback.forEach(fid=>{
-        if(!fid) return;
-        if(!map.has(fid)){
-          map.set(fid,{
-            FaceId: fid,
-            FaceName: "Unknown",
-            sampleUrl,
-            BoundingBox: null,
-            photoCount: 1
-          });
-        }else{
-          map.get(fid).photoCount++;
-        }
-      });
-    }
-
   });
 
   return Array.from(map.values());
@@ -1352,7 +1338,7 @@ function renderFaceIcons(){
 
     const url = face.thumbnail || face.sampleUrl || face.sample_url || face.sample || "";
     if(url){
-      setFaceBgCrop(wrap, url, face.thumbnail ? null : face.BoundingBox);
+      setFaceBgCrop(wrap, url, face.BoundingBox || null);
     }else{
       wrap.style.backgroundImage = "none";
       wrap.style.background = "rgba(255,255,255,.06)";
@@ -1441,6 +1427,9 @@ async function saveFaceName(){
 
     const idx = faceGroups.findIndex(f=>f.FaceId === currentNamingFaceId);
     if(idx !== -1) faceGroups[idx].FaceName = name;
+
+    faceNameCache[currentNamingFaceId] = name;
+    localStorage.setItem('faceNameCache', JSON.stringify(faceNameCache));
 
     showToast("Face name saved");
     cancelFaceNaming();
@@ -1558,44 +1547,19 @@ function renderLeads(){
     const group = grouped[phone];
     const latestEntry = group.entries[0];
     
-    // Selfie helper (Handle base64 data:image + plain base64 + urls)
-// NOTE: data:image/... ko kabhi fetch/new URL/encode mat karo. Direct <img src> me lagao.
-const PLACEHOLDER_SELFIE_70 = "https://via.placeholder.com/70x70?text=NA";
-const PLACEHOLDER_SELFIE_50 = "https://via.placeholder.com/50x50?text=NA";
-const getSelfie = (item) => {
-  try{
-    if(!item) return PLACEHOLDER_SELFIE_70;
-
-    const raw = (item.selfie_b64 || item.selfie_image || item.selfieImage || item.selfie || item.image || "").toString();
-    if(!raw) return PLACEHOLDER_SELFIE_70;
-
-    // DynamoDB/JSON ke wajah se kabhi-kabhi whitespace/newlines aa jate hain
-    const cleaned = raw.replace(/\s+/g, "");
-
-    // 1) Already a data URI
-    if(cleaned.startsWith("data:image")) return cleaned;
-
-    // 2) Sometimes only base64 is stored (without prefix)
-    //    (Most JPEG base64 starts with /9j/)
-    if((cleaned.startsWith("/9j") || cleaned.startsWith("iVBOR")) && cleaned.length > 100){
-      return `data:image/jpeg;base64,${cleaned}`;
-    }
-
-    // 3) Normal URL
-    if(/^https?:\/\//i.test(cleaned)) return cleaned;
-
-    return PLACEHOLDER_SELFIE_70;
-  }catch(e){
-    return PLACEHOLDER_SELFIE_70;
-  }
-};
+    // Selfie helper (Handle base64 and URLs)
+    const getSelfie = (item) => {
+        if(item.selfie_b64) return item.selfie_b64.startsWith('data:') ? item.selfie_b64 : `data:image/jpeg;base64,${item.selfie_b64}`;
+        if(item.selfie_image) return item.selfie_image;
+        return "https://via.placeholder.com/70?text=NA";
+    };
 
     const groupCard = document.createElement("div");
     groupCard.className = "lead-group-card";
     
     groupCard.innerHTML = `
       <div class="lead-header" onclick="this.parentElement.classList.toggle('open')">
-        <img src="${getSelfie(latestEntry)}" class="group-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/70x70?text=NA'">
+        <img src="${getSelfie(latestEntry)}" class="group-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/70?text=NA'">
         <div class="lead-info">
           <div class="lead-name">${escapeHtml(group.name)}</div>
           <div class="lead-mobile">${escapeHtml(phone)}</div>
@@ -1606,12 +1570,12 @@ const getSelfie = (item) => {
       <div class="lead-history">
         ${group.entries.map(entry => `
             <div class="history-item">
-              <img src="${getSelfie(entry)}" class="history-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/50x50?text=NA'">
+              <img src="${getSelfie(entry)}" class="history-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/50?text=NA'">
               <div class="history-meta">
                 <div><b>Time:</b> ${new Date(entry.timestamp || entry.created_at).toLocaleString()}</div>
                 <div class="history-matches">${entry.match_count || entry.photo_count || 0} Matches</div>
               </div>
-              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); window.open('${getSelfie(entry)}', '_blank')">View Selfie</button>
+              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); showSelfieModal('${getSelfie(entry)}')">View Selfie</button>
             </div>
           `).join('')}
       </div>
@@ -1624,6 +1588,27 @@ function escapeHtml(str){
   return String(str||"").replace(/[&<>"']/g, s=>({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[s]));
+}
+
+
+function showSelfieModal(src){
+  try{
+    if(!src) return;
+    // If it's a plain base64 string, turn into data URI
+    let cleaned = String(src).trim();
+    if(cleaned && !cleaned.startsWith("data:image") && (cleaned.startsWith("/9j") || cleaned.startsWith("iVBOR"))){
+      cleaned = "data:image/jpeg;base64," + cleaned;
+    }
+    const m = document.createElement("div");
+    m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);";
+    m.innerHTML = `<div style="max-width:92vw;max-height:92vh;position:relative;">
+      <button style="position:absolute;top:-14px;right:-14px;background:#111;border:1px solid rgba(255,255,255,.15);color:#fff;width:36px;height:36px;border-radius:12px;cursor:pointer;font-weight:900;">✕</button>
+      <img src="${cleaned}" style="max-width:92vw;max-height:92vh;border-radius:14px;border:1px solid rgba(255,255,255,.12);box-shadow:0 15px 40px rgba(0,0,0,.5);" />
+    </div>`;
+    m.querySelector("button").onclick = (e)=>{ e.stopPropagation(); m.remove(); };
+    m.onclick = ()=> m.remove();
+    document.body.appendChild(m);
+  }catch(e){}
 }
 
 /* =========================================================
