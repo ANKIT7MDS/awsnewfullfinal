@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collection Manager • Premium (v2)</title>
+  <title>Collection Manager • Premium (Stable)</title>
 
   <!-- LIBS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
@@ -138,13 +138,6 @@
     .modal-content{background:var(--bg-secondary);border:1px solid var(--border);width:90%;max-width:500px;border-radius:var(--radius-xl);padding:24px;position:relative;}
     .close-modal{position:absolute;top:15px;right:15px;cursor:pointer;color:var(--text-secondary);}
 
-    /* AUTH ERROR OVERLAY (High Z-Index to block everything) */
-    #authErrorOverlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: var(--bg-primary); z-index: 99999;
-        display: none; flex-direction: column; align-items: center; justify-content: center;
-        text-align: center; padding: 20px;
-    }
     /* UTILS */
     .btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.2s;display:inline-flex;align-items:center;gap:6px;}
     .btn-primary{background:var(--accent);color:#fff;}
@@ -154,25 +147,6 @@
   </style>
 </head>
 <body>
-
-  <!-- AUTH ERROR OVERLAY -->
-  <div id="authErrorOverlay">
-      <i class="fas fa-bug" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
-      <h2 style="margin-bottom: 10px; color:#fff;">Access Issue</h2>
-      <p style="color: var(--text-secondary); margin-bottom: 10px;" id="authErrorMessage">Checking...</p>
-      
-      <!-- Debug Info for User -->
-      <div style="background:#000; padding:10px; border-radius:6px; margin-bottom:20px; text-align:left; font-family:monospace; font-size:12px; color:#ccc; max-width:300px; overflow:hidden;">
-          <strong>Debug Info:</strong><br>
-          Token Found: <span id="debugTokenStatus">No</span><br>
-          Collection ID: <span id="debugColId">Missing</span>
-      </div>
-
-      <div style="display:flex; gap:10px;">
-          <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
-          <button class="btn btn-primary" onclick="window.location.href='login.html'">Login Again</button>
-      </div>
-  </div>
 
   <!-- SIDEBAR -->
   <div class="sidebar">
@@ -291,13 +265,13 @@
 
 <script>
     // =========================================================
-    // CONFIG & STATE (WRAPPED IN TRY-CATCH FOR SAFETY)
+    // CONFIG & STATE
     // =========================================================
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const urlParams = new URLSearchParams(window.location.search);
     const COLLECTION_ID = urlParams.get('id');
 
-    // Robust Token Retrieval (Checks all common keys)
+    // 1. SIMPLE TOKEN CHECK (NO DECODING, NO EXPIRY LOGIC HERE)
     function getStoredToken() {
         return localStorage.getItem('id_token') || 
                localStorage.getItem('access_token') || 
@@ -314,66 +288,25 @@
     };
 
     // =========================================================
-    // AUTH & LOGGING LOGIC
+    // INIT - PASSIVE AUTH (API-First Approach)
     // =========================================================
-    function parseJwt (token) {
-        if (!token) return null;
-        try {
-            var base64Url = token.split('.')[1];
-            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        } catch (e) { return null; }
-    }
-
-    function showAuthError(msg) {
-        // Update Debug Info
-        document.getElementById('debugTokenStatus').innerText = idToken ? (idToken.substr(0,10) + '...') : "NULL";
-        document.getElementById('debugColId').innerText = COLLECTION_ID || "NULL";
-        document.getElementById('authErrorMessage').innerText = msg;
-        document.getElementById('authErrorOverlay').style.display = 'flex';
-    }
-
-    // MAIN INIT LOGIC
     document.addEventListener('DOMContentLoaded', () => {
-        try {
-            // 1. Check Token Existence
-            if(!idToken) {
-                showAuthError("Not Logged In (Token Missing)");
-                return;
-            }
-
-            // 2. Check Collection ID
-            if(!COLLECTION_ID) {
-                showAuthError("No Collection Selected (URL Issue)");
-                return;
-            }
-
-            // 3. Check Token Validity
-            const payload = parseJwt(idToken);
-            if (!payload) {
-                showAuthError("Invalid Token Format (Corrupt Data)");
-                return;
-            }
-
-            // 4. Check Expiry (With 5 min buffer)
-            const now = Date.now() / 1000;
-            if (payload.exp && now > (payload.exp + 300)) { 
-                showAuthError("Session Expired (Login Again)");
-                return;
-            }
-
-            // 5. Success - Load Data
-            fetchCollectionData();
-            setupDragDrop();
-            document.getElementById('downloadZipBtn').addEventListener('click', downloadSelected);
-
-        } catch(e) {
-            console.error("Critical Init Error:", e);
-            showAuthError("Critical Script Error: " + e.message);
+        // If no token at all, then redirect to login
+        if(!idToken) {
+            window.location.href = 'login.html';
+            return;
         }
+        // If no Collection ID, warn but stay or go to dashboard
+        if(!COLLECTION_ID) {
+            alert("No Collection ID found. Going to Dashboard.");
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // Just start fetching. If API fails with 401, we handle it in the fetch functions.
+        fetchCollectionData();
+        setupDragDrop();
+        document.getElementById('downloadZipBtn').addEventListener('click', downloadSelected);
     });
 
 
@@ -391,13 +324,11 @@
     function setupDragDrop() {
         const zone = document.getElementById('dropZone');
         const input = document.getElementById('fileInput');
-
         if(!zone || !input) return;
-
         zone.addEventListener('click', () => input.click());
         input.addEventListener('change', (e) => handleFiles(e.target.files));
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'); });
         zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
     }
 
@@ -463,11 +394,12 @@
                 } catch(e) { console.error(e); }
             }
             try {
-                const res = await fetch(`${API_BASE}/generate-upload-urls`, {
+                const res = await fetchWithAuth(`${API_BASE}/generate-upload-urls`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ collection_id: COLLECTION_ID, event_id: eventId, files: filesPayload })
                 });
+                if(!res) return; // Auth failed
+
                 const data = await res.json();
                 if(data.skipped) {
                     data.skipped.forEach(name => {
@@ -501,9 +433,10 @@
     // --- FACES ---
     async function loadFaceGroups() {
         try {
+            // Note: list_people might not require auth in some versions, but sending it just in case
             const res = await fetch(`${API_BASE}/list_people`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify({ collection_id: COLLECTION_ID })
             });
             const data = await res.json();
@@ -539,11 +472,12 @@
     // --- DATA ---
     async function fetchCollectionData() {
         try {
-            const res = await fetch(`${API_BASE}/get-photos`, {
+            const res = await fetchWithAuth(`${API_BASE}/get-photos`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: COLLECTION_ID, limit: 100 })
             });
+            if(!res) return;
+
             const data = await res.json();
             state.photos = data.photos;
             document.getElementById('collectionTitle').innerHTML = `Collection ${COLLECTION_ID.substr(0,4)}... <span class="badge">${data.photos.length} Photos</span>`;
@@ -551,11 +485,12 @@
         } catch(e) { console.error(e); }
 
         try {
-            const res = await fetch(`${API_BASE}/get-events`, {
+            const res = await fetchWithAuth(`${API_BASE}/get-events`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: COLLECTION_ID })
             });
+            if(!res) return;
+
             const data = await res.json();
             state.events = data.events;
             const sel = document.getElementById('uploadEventSelect');
@@ -619,11 +554,12 @@
         const tbody = document.getElementById('leadsTableBody');
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
         try {
-            const res = await fetch(`${API_BASE}/save-details`, {
+            const res = await fetchWithAuth(`${API_BASE}/save-details`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'list', collection_id: COLLECTION_ID })
             });
+            if(!res) return;
+
             const leads = await res.json();
             tbody.innerHTML = '';
             if(leads.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No leads yet.</td></tr>'; return; }
@@ -648,31 +584,53 @@
 
     function openCreateEventModal() { document.getElementById('eventModal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    
     async function createEvent() {
         const name = document.getElementById('newEventName').value;
         const date = document.getElementById('newEventDate').value;
         if(!name || !date) return alert("Fill all fields");
         try {
-            await fetch(`${API_BASE}/create-event`, {
+            await fetchWithAuth(`${API_BASE}/create-event`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: COLLECTION_ID, name, event_date: date })
             });
             closeModal('eventModal');
             fetchCollectionData();
         } catch(e) { alert("Error creating event"); }
     }
+    
     async function generateSearchLink() {
         try {
-            const res = await fetch(`${API_BASE}/generate-search-link`, {
+            const res = await fetchWithAuth(`${API_BASE}/generate-search-link`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: COLLECTION_ID })
             });
+            if(!res) return;
             const data = await res.json();
             document.getElementById('generatedLinkResult').style.display = 'block';
             document.getElementById('shareLinkInput').value = data.searchUrl;
         } catch(e) { alert("Error"); }
+    }
+
+    // =========================================================
+    // HELPER: FETCH WITH AUTH (Centralized 401 Handling)
+    // =========================================================
+    async function fetchWithAuth(url, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+            ...options.headers
+        };
+        
+        const res = await fetch(url, { ...options, headers });
+        
+        if (res.status === 401 || res.status === 403) {
+            alert("Session expired. Please login again.");
+            localStorage.clear();
+            window.location.href = 'login.html';
+            return null;
+        }
+        return res;
     }
 </script>
 </body>
