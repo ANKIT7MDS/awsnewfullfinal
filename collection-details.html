@@ -328,7 +328,7 @@
         zone.addEventListener('click', () => input.click());
         input.addEventListener('change', (e) => handleFiles(e.target.files));
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'); });
+        zone.addEventListener('dragleave', () => { zone.classList.remove('dragover'); });
         zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
     }
 
