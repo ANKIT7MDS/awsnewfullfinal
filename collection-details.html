@@ -149,9 +149,27 @@
     .btn-primary:hover{background:var(--accent-hover);}
     .btn-secondary{background:var(--border);color:var(--text-primary);}
     .btn-secondary:hover{background:var(--border-light);}
+    
+    /* AUTH ERROR OVERLAY */
+    #authErrorOverlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--bg-primary); z-index: 9999;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 20px;
+    }
   </style>
 </head>
 <body>
+
+  <!-- AUTH ERROR OVERLAY -->
+  <div id="authErrorOverlay">
+      <i class="fas fa-exclamation-triangle" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
+      <h2 style="margin-bottom: 10px;">Authentication Error</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 30px; max-width: 400px;" id="authErrorMessage">
+          Your session is invalid or expired.
+      </p>
+      <button class="btn btn-primary" onclick="window.location.href='login.html'">Go to Login Page</button>
+  </div>
 
   <!-- SIDEBAR -->
   <div class="sidebar">
@@ -307,6 +325,7 @@
         if (!token) return null;
         try {
             var base64Url = token.split('.')[1];
+            // Fix padding if needed
             var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
@@ -314,36 +333,47 @@
             return JSON.parse(jsonPayload);
         } catch (e) {
             console.error("Token parse error", e);
-            return null;
+            return null; // Don't throw, just return null so we can handle it UI side
         }
     }
 
+    function showAuthError(msg) {
+        document.getElementById('authErrorMessage').innerText = msg;
+        document.getElementById('authErrorOverlay').style.display = 'flex';
+    }
+
     // =========================================================
-    // REDIRECT / AUTH LOGIC (FIXED)
+    // REDIRECT / AUTH LOGIC (STOPPED AUTO-REDIRECT LOOP)
     // =========================================================
     if(!idToken) {
-        // No token -> Login
-        window.location.href = 'login.html';
+        // No token -> Show Error (Don't loop)
+        showAuthError("No authentication token found. Please login again.");
     } else if(!COLLECTION_ID) {
-        // Token exists but No ID -> Dashboard (with Alert)
+        // Token exists but No ID
         alert("Collection ID not found in URL. Redirecting to Dashboard.");
         window.location.href = 'dashboard.html';
     } else {
         // Token & ID exist -> Check Expiry with Robust Parser
         const payload = parseJwt(idToken);
-        if (!payload || (payload.exp && Date.now() > payload.exp * 1000)) {
-            console.warn("Session expired or invalid token.");
-            localStorage.clear();
-            window.location.href = 'login.html';
+        
+        if (!payload) {
+             showAuthError("Invalid Token Format. Please login again.");
+        } else {
+            // Check expiry (Add 5 min buffer for clock skew)
+            const now = Date.now() / 1000;
+            if (payload.exp && now > (payload.exp + 300)) { 
+                showAuthError("Session expired. Please login again.");
+            }
+            // If valid, script continues...
         }
-        // If valid, stay on page
     }
 
     // =========================================================
     // INIT
     // =========================================================
     document.addEventListener('DOMContentLoaded', () => {
-        if(idToken && COLLECTION_ID) {
+        // Only run if auth passed (Error overlay is hidden by default)
+        if(idToken && COLLECTION_ID && document.getElementById('authErrorOverlay').style.display !== 'flex') {
             fetchCollectionData();
             setupDragDrop();
             document.getElementById('downloadZipBtn').addEventListener('click', downloadSelected);
