@@ -754,8 +754,9 @@ const LIST_PEOPLE_API     = `${API_BASE}/list_people`;           // POST
 const LIST_PEOPLE_API_ALT = `${API_BASE}/list-people`;           // fallback
 const SAVE_FACE_NAME_API  = `${API_BASE}/save-face-name`;        // POST
 const SAVE_DETAILS_API
-const LIST_FACE_NAMES_API = `${API_BASE}/list-face-names`; // NEW
+const LIST_FACE_NAMES_API = `${API_BASE}/list-face-names`;
 
+/* ===== Face name read helper ===== */
 async function loadSavedFaceNames(){
   try{
     const res = await fetch(LIST_FACE_NAMES_API,{
@@ -774,7 +775,9 @@ async function loadSavedFaceNames(){
     faceGroups.forEach(f=>{
       if(map[f.FaceId]) f.FaceName = map[f.FaceId];
     });
-  }catch(e){ console.warn("loadSavedFaceNames failed", e); }
+  }catch(e){
+    console.warn("loadSavedFaceNames failed", e);
+  }
 }
     = `${API_BASE}/save-details`;          // GET/POST (leads)
 
@@ -1235,7 +1238,7 @@ async function loadFaceGroups(){
 
     faceGroups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
 
-    renderFaceIcons();
+    
   }catch(e){
     console.error("loadFaceGroups error:", e);
     faceGroups = buildFacesFromPhotos();
@@ -1584,7 +1587,7 @@ function renderLeads(){
                 <div><b>Time:</b> ${new Date(entry.timestamp || entry.created_at).toLocaleString()}</div>
                 <div class="history-matches">${entry.match_count || entry.photo_count || 0} Matches</div>
               </div>
-              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); showSelfieModal('${getSelfie(entry)}', '_blank')">View Selfie</button>
+              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); // window.open disabled '${getSelfie(entry)}', '_blank')">View Selfie</button>
             </div>
           `).join('')}
       </div>
@@ -2167,11 +2170,15 @@ function debounce(fn, wait){
 </body>
 </html>
 
+/* ===== Safe selfie modal ===== */
 function showSelfieModal(src){
   if(!src || !src.startsWith("data:image")) return;
   const m = document.createElement("div");
   m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;";
-  m.innerHTML = `<img src="${src}" style="max-width:90%;max-height:90%;border-radius:14px">`;
+  const img = document.createElement("img");
+  img.src = src;
+  img.style.cssText = "max-width:90%;max-height:90%;border-radius:14px";
+  m.appendChild(img);
   m.onclick = ()=> m.remove();
   document.body.appendChild(m);
 }
