@@ -753,7 +753,30 @@ const GENERATE_LINK_API   = `${API_BASE}/generate-search-link`;  // POST
 const LIST_PEOPLE_API     = `${API_BASE}/list_people`;           // POST
 const LIST_PEOPLE_API_ALT = `${API_BASE}/list-people`;           // fallback
 const SAVE_FACE_NAME_API  = `${API_BASE}/save-face-name`;        // POST
-const SAVE_DETAILS_API    = `${API_BASE}/save-details`;          // GET/POST (leads)
+const SAVE_DETAILS_API
+const LIST_FACE_NAMES_API = `${API_BASE}/list-face-names`; // NEW
+
+async function loadSavedFaceNames(){
+  try{
+    const res = await fetch(LIST_FACE_NAMES_API,{
+      method:"POST",
+      headers:{
+        "Authorization": `Bearer ${idToken}`,
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({ collection_id: collectionId })
+    });
+    const data = await res.json().catch(()=>({}));
+    const map = {};
+    (data.items||[]).forEach(i=>{
+      if(i.FaceId && i.Name) map[i.FaceId] = i.Name;
+    });
+    faceGroups.forEach(f=>{
+      if(map[f.FaceId]) f.FaceName = map[f.FaceId];
+    });
+  }catch(e){ console.warn("loadSavedFaceNames failed", e); }
+}
+    = `${API_BASE}/save-details`;          // GET/POST (leads)
 
 // utils
 const $ = (id) => document.getElementById(id);
@@ -765,8 +788,7 @@ let allEvents = [];
 let allLeads = [];
 
 // People (Face) state
-let faceGroups = [];
-let faceNameCache = safeJsonParse(localStorage.getItem('faceNameCache') || '{}') || {};              // [{FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount}]
+let faceGroups = [];              // [{FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount}]
 let currentSelectedFaceId = null;
 let currentNamingFaceId = null;
 
@@ -1213,7 +1235,6 @@ async function loadFaceGroups(){
 
     faceGroups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
 
-    applyFaceNameCache();
     renderFaceIcons();
   }catch(e){
     console.error("loadFaceGroups error:", e);
@@ -1222,15 +1243,6 @@ async function loadFaceGroups(){
   }
 }
 
-
-function applyFaceNameCache(){
-  try{
-    if(!faceGroups || !faceGroups.length) return;
-    faceGroups.forEach(f=>{
-      if(f?.FaceId && faceNameCache[f.FaceId]) f.FaceName = faceNameCache[f.FaceId];
-    });
-  }catch(e){}
-}
 function buildFacesFromPhotos(){
   const map = new Map();
 
@@ -1245,7 +1257,7 @@ function buildFacesFromPhotos(){
       if(!map.has(fid)){
         map.set(fid, {
           FaceId: fid,
-          FaceName: (faceNameCache[fid] || "Unknown"),
+          FaceName: "Unknown",
           sampleUrl,
           BoundingBox: getBBox(f) || null,
           photoCount: 1
@@ -1338,7 +1350,7 @@ function renderFaceIcons(){
 
     const url = face.thumbnail || face.sampleUrl || face.sample_url || face.sample || "";
     if(url){
-      setFaceBgCrop(wrap, url, face.BoundingBox || null);
+      setFaceBgCrop(wrap, url, face.thumbnail ? null : face.BoundingBox);
     }else{
       wrap.style.backgroundImage = "none";
       wrap.style.background = "rgba(255,255,255,.06)";
@@ -1427,9 +1439,6 @@ async function saveFaceName(){
 
     const idx = faceGroups.findIndex(f=>f.FaceId === currentNamingFaceId);
     if(idx !== -1) faceGroups[idx].FaceName = name;
-
-    faceNameCache[currentNamingFaceId] = name;
-    localStorage.setItem('faceNameCache', JSON.stringify(faceNameCache));
 
     showToast("Face name saved");
     cancelFaceNaming();
@@ -1575,7 +1584,7 @@ function renderLeads(){
                 <div><b>Time:</b> ${new Date(entry.timestamp || entry.created_at).toLocaleString()}</div>
                 <div class="history-matches">${entry.match_count || entry.photo_count || 0} Matches</div>
               </div>
-              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); showSelfieModal('${getSelfie(entry)}')">View Selfie</button>
+              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); showSelfieModal('${getSelfie(entry)}', '_blank')">View Selfie</button>
             </div>
           `).join('')}
       </div>
@@ -1588,27 +1597,6 @@ function escapeHtml(str){
   return String(str||"").replace(/[&<>"']/g, s=>({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[s]));
-}
-
-
-function showSelfieModal(src){
-  try{
-    if(!src) return;
-    // If it's a plain base64 string, turn into data URI
-    let cleaned = String(src).trim();
-    if(cleaned && !cleaned.startsWith("data:image") && (cleaned.startsWith("/9j") || cleaned.startsWith("iVBOR"))){
-      cleaned = "data:image/jpeg;base64," + cleaned;
-    }
-    const m = document.createElement("div");
-    m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);";
-    m.innerHTML = `<div style="max-width:92vw;max-height:92vh;position:relative;">
-      <button style="position:absolute;top:-14px;right:-14px;background:#111;border:1px solid rgba(255,255,255,.15);color:#fff;width:36px;height:36px;border-radius:12px;cursor:pointer;font-weight:900;">✕</button>
-      <img src="${cleaned}" style="max-width:92vw;max-height:92vh;border-radius:14px;border:1px solid rgba(255,255,255,.12);box-shadow:0 15px 40px rgba(0,0,0,.5);" />
-    </div>`;
-    m.querySelector("button").onclick = (e)=>{ e.stopPropagation(); m.remove(); };
-    m.onclick = ()=> m.remove();
-    document.body.appendChild(m);
-  }catch(e){}
 }
 
 /* =========================================================
@@ -2178,3 +2166,12 @@ function debounce(fn, wait){
 </script>
 </body>
 </html>
+
+function showSelfieModal(src){
+  if(!src || !src.startsWith("data:image")) return;
+  const m = document.createElement("div");
+  m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;";
+  m.innerHTML = `<img src="${src}" style="max-width:90%;max-height:90%;border-radius:14px">`;
+  m.onclick = ()=> m.remove();
+  document.body.appendChild(m);
+}
