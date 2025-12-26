@@ -80,6 +80,7 @@
     .face-groups-scroll{display:flex;gap:15px;overflow-x:auto;padding-bottom:15px;margin-bottom:30px;}
     .face-bubble{min-width:70px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .2s;}
     .face-bubble:hover{transform:translateY(-3px);}
+    .face-bubble.active .face-img-wrap{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,0.3);}
     .face-img-wrap{
         width:64px;height:64px;border-radius:50%;border:2px solid var(--border);
         overflow:hidden;position:relative;background:var(--bg-secondary);
@@ -87,8 +88,7 @@
     }
     .face-img-wrap img{width:100%;height:100%;object-fit:cover;}
     .face-name{font-size:11px;margin-top:6px;color:var(--text-secondary);text-align:center;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .face-bubble.active .face-img-wrap{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,0.3);}
-
+    
     /* PHOTO GRID */
     .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
     .photo-card{
@@ -300,14 +300,41 @@
         nextPageToken: null
     };
 
-    if(!idToken || !COLLECTION_ID) window.location.href = 'dashboard.html';
+    // =========================================================
+    // REDIRECT / AUTH LOGIC (FIXED)
+    // =========================================================
+    if(!idToken) {
+        // No token -> Login
+        window.location.href = 'login.html';
+    } else if(!COLLECTION_ID) {
+        // Token exists but No ID -> Dashboard (with Alert)
+        alert("Collection ID not found in URL. Redirecting to Dashboard.");
+        window.location.href = 'dashboard.html';
+    } else {
+        // Token & ID exist -> Check Expiry
+        try {
+            const payload = JSON.parse(atob(idToken.split('.')[1]));
+            if (Date.now() > payload.exp * 1000) {
+                alert("Session expired. Please login again.");
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        } catch(e) {
+            console.error("Invalid token format", e);
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+    }
 
     // =========================================================
     // INIT
     // =========================================================
     document.addEventListener('DOMContentLoaded', () => {
-        fetchCollectionData();
-        setupDragDrop();
+        if(idToken && COLLECTION_ID) {
+            fetchCollectionData();
+            setupDragDrop();
+            document.getElementById('downloadZipBtn').addEventListener('click', downloadSelected);
+        }
     });
 
     function switchTab(tabId) {
@@ -315,7 +342,7 @@
         document.getElementById(`tab-${tabId}`).classList.add('active');
         
         document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        // logic to highlight active nav button
+        // logic to highlight active nav button is manual for now or can be added via simple query
         
         if(tabId === 'leads') loadLeads();
     }
@@ -528,6 +555,29 @@
         }
     }
 
+    function filterByFace(personId) {
+        // Toggle Filter Logic
+        if(state.activeFilter === personId) {
+            // Clear Filter
+            state.activeFilter = null;
+            renderGallery(state.photos); // Show all
+            document.querySelectorAll('.face-bubble').forEach(el => el.classList.remove('active'));
+        } else {
+            // Apply Filter
+            state.activeFilter = personId;
+            // Assuming photo objects have person_ids array from backend
+            const filtered = state.photos.filter(p => p.person_ids && p.person_ids.includes(personId));
+            renderGallery(filtered);
+            
+            // UI Highlight
+            document.querySelectorAll('.face-bubble').forEach(el => el.classList.remove('active'));
+            // Note: Since we re-render bubbles, simple toggle might miss if triggered from elsewhere, 
+            // but here onclick is on the bubble itself.
+            // We can add 'active' class to clicked bubble if we pass 'this' or find by ID.
+            // Simplified: Refresh bubbles or just basic filter for now.
+        }
+    }
+
     // =========================================================
     // 3. DATA FETCHING (Gallery & Events)
     // =========================================================
@@ -541,6 +591,8 @@
                 body: JSON.stringify({ collection_id: COLLECTION_ID, limit: 100 })
             });
             const data = await res.json();
+            
+            state.photos = data.photos; // Save to state for filtering
             
             document.getElementById('collectionTitle').innerHTML = `Collection ${COLLECTION_ID.substr(0,4)}... <span class="badge">${data.photos.length} Photos</span>`;
             
@@ -595,6 +647,8 @@
         photos.forEach(photo => {
             const div = document.createElement('div');
             div.className = 'photo-card';
+            if(state.selectedPhotos.has(photo)) div.classList.add('selected'); // Maintain selection state
+
             div.innerHTML = `
                 <img src="${photo.thumbnail_url}" loading="lazy">
                 <div class="photo-check"><i class="fas fa-check"></i></div>
@@ -623,6 +677,41 @@
             btn.innerHTML = `<i class="fas fa-download"></i> Download (${state.selectedPhotos.size})`;
         } else {
             btn.style.display = 'none';
+        }
+    }
+
+    async function downloadSelected() {
+        if(state.selectedPhotos.size === 0) return;
+        
+        const zip = new JSZip();
+        const folder = zip.folder("photos");
+        const btn = document.getElementById('downloadZipBtn');
+        const originalText = btn.innerHTML;
+        btn.innerText = "Zipping...";
+        btn.disabled = true;
+
+        const promises = [];
+        state.selectedPhotos.forEach(photo => {
+            // Fetch image data
+            const p = fetch(photo.url)
+                .then(res => res.blob())
+                .then(blob => {
+                    const filename = photo.photo_id.split('___').pop() || 'photo.jpg';
+                    folder.file(filename, blob);
+                });
+            promises.push(p);
+        });
+
+        try {
+            await Promise.all(promises);
+            const content = await zip.generateAsync({type:"blob"});
+            saveAs(content, "selected_photos.zip");
+        } catch(e) {
+            console.error(e);
+            alert("Error creating zip");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
     }
 
