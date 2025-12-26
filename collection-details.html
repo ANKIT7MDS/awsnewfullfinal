@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collection Manager • Premium (Stable)</title>
+  <title>Collection Manager • Premium (Safe Mode)</title>
 
   <!-- LIBS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
@@ -47,9 +47,7 @@
     .nav-btn{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);margin-bottom:12px;cursor:pointer;transition:all .2s;font-size:1.2rem;position:relative;}
     .nav-btn:hover{background:var(--border);color:var(--text-primary);}
     .nav-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 15px rgba(99,102,241,0.4);}
-    .nav-tooltip{position:absolute;left:60px;background:#000;padding:4px 8px;border-radius:4px;font-size:12px;opacity:0;pointer-events:none;transition:.2s;white-space:nowrap;border:1px solid var(--border);}
-    .nav-btn:hover .nav-tooltip{opacity:1;left:65px;}
-
+    
     .main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
 
     /* =========================================================
@@ -71,7 +69,6 @@
     ========================================================= */
     .gallery-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
     
-    /* FACE GROUPS - GOOGLE PHOTOS STYLE */
     .face-groups-scroll{display:flex;gap:15px;overflow-x:auto;padding-bottom:15px;margin-bottom:30px;}
     .face-bubble{min-width:70px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .2s;}
     .face-bubble:hover{transform:translateY(-3px);}
@@ -132,11 +129,19 @@
     .selfie-thumb{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--border);}
 
     /* =========================================================
-      MODAL
+      MODAL & ERROR OVERLAY
     ========================================================= */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);}
     .modal-content{background:var(--bg-secondary);border:1px solid var(--border);width:90%;max-width:500px;border-radius:var(--radius-xl);padding:24px;position:relative;}
     .close-modal{position:absolute;top:15px;right:15px;cursor:pointer;color:var(--text-secondary);}
+
+    /* ERROR OVERLAY STYLES */
+    #authErrorOverlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--bg-primary); z-index: 99999;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 20px;
+    }
 
     /* UTILS */
     .btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.2s;display:inline-flex;align-items:center;gap:6px;}
@@ -148,13 +153,33 @@
 </head>
 <body>
 
+  <!-- 1. AUTH ERROR OVERLAY (Stops loops) -->
+  <div id="authErrorOverlay">
+      <i class="fas fa-shield-alt" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
+      <h2 style="margin-bottom: 10px; color:#fff;">Access Issue</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 15px;" id="authErrorMessage">Checking access...</p>
+      
+      <!-- Debug Info for User -->
+      <div style="background:#000; padding:15px; border-radius:8px; margin-bottom:20px; text-align:left; font-family:monospace; font-size:12px; color:#ccc; width:100%; max-width:320px; border:1px solid var(--border);">
+          <div style="margin-bottom:5px; color:var(--accent);">DEBUG INFO:</div>
+          Token Present: <span id="debugTokenStatus" style="color:var(--danger)">No</span><br>
+          Collection ID: <span id="debugColId" style="color:var(--danger)">Missing</span><br>
+          API Status: <span id="debugApiStatus">Waiting...</span>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+          <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'"><i class="fas fa-home"></i> Dashboard</button>
+          <button class="btn btn-primary" onclick="window.location.href='login.html'"><i class="fas fa-sign-in-alt"></i> Login Again</button>
+      </div>
+  </div>
+
   <!-- SIDEBAR -->
   <div class="sidebar">
-    <div class="nav-btn active" onclick="switchTab('gallery')" title="Gallery"><i class="fas fa-images"></i><span class="nav-tooltip">Gallery</span></div>
-    <div class="nav-btn" onclick="switchTab('events')" title="Events"><i class="fas fa-calendar-alt"></i><span class="nav-tooltip">Events</span></div>
-    <div class="nav-btn" onclick="switchTab('upload')" title="Upload"><i class="fas fa-cloud-upload-alt"></i><span class="nav-tooltip">Upload</span></div>
-    <div class="nav-btn" onclick="switchTab('leads')" title="Guest Leads"><i class="fas fa-users"></i><span class="nav-tooltip">Guests</span></div>
-    <div class="nav-btn" onclick="switchTab('settings')" title="Settings"><i class="fas fa-cog"></i><span class="nav-tooltip">Settings</span></div>
+    <div class="nav-btn active" onclick="switchTab('gallery')" title="Gallery"><i class="fas fa-images"></i></div>
+    <div class="nav-btn" onclick="switchTab('events')" title="Events"><i class="fas fa-calendar-alt"></i></div>
+    <div class="nav-btn" onclick="switchTab('upload')" title="Upload"><i class="fas fa-cloud-upload-alt"></i></div>
+    <div class="nav-btn" onclick="switchTab('leads')" title="Guest Leads"><i class="fas fa-users"></i></div>
+    <div class="nav-btn" onclick="switchTab('settings')" title="Settings"><i class="fas fa-cog"></i></div>
     <div style="flex:1"></div>
     <div class="nav-btn" onclick="window.location.href='dashboard.html'"><i class="fas fa-arrow-left"></i></div>
   </div>
@@ -288,30 +313,81 @@
     };
 
     // =========================================================
-    // INIT - PASSIVE AUTH (API-First Approach)
+    // CORE: SHOW ERROR SCREEN INSTEAD OF REDIRECT LOOP
+    // =========================================================
+    function showAuthError(msg, apiStatus = "-") {
+        const overlay = document.getElementById('authErrorOverlay');
+        const tokenSpan = document.getElementById('debugTokenStatus');
+        const colSpan = document.getElementById('debugColId');
+        const apiSpan = document.getElementById('debugApiStatus');
+
+        // Update Debug UI
+        tokenSpan.innerText = idToken ? "Yes (Exists)" : "No (Missing)";
+        tokenSpan.style.color = idToken ? "var(--success)" : "var(--danger)";
+        
+        colSpan.innerText = COLLECTION_ID || "Missing from URL";
+        colSpan.style.color = COLLECTION_ID ? "var(--success)" : "var(--danger)";
+
+        apiSpan.innerText = apiStatus;
+        apiSpan.style.color = "var(--text-secondary)";
+
+        document.getElementById('authErrorMessage').innerText = msg;
+        overlay.style.display = 'flex';
+    }
+
+    // =========================================================
+    // INIT - STRICTLY CONTROLLED
     // =========================================================
     document.addEventListener('DOMContentLoaded', () => {
-        // If no token at all, then redirect to login
+        // 1. Check Basics (Frontend Check only)
         if(!idToken) {
-            window.location.href = 'login.html';
+            showAuthError("You are not logged in. Please login first.");
             return;
         }
-        // If no Collection ID, warn but stay or go to dashboard
         if(!COLLECTION_ID) {
-            alert("No Collection ID found. Going to Dashboard.");
-            window.location.href = 'dashboard.html';
+            showAuthError("Collection ID missing in URL link.");
             return;
         }
 
-        // Just start fetching. If API fails with 401, we handle it in the fetch functions.
+        // 2. If OK, try fetching data
         fetchCollectionData();
         setupDragDrop();
         document.getElementById('downloadZipBtn').addEventListener('click', downloadSelected);
     });
 
+    // =========================================================
+    // HELPER: FETCH WITH AUTH (Centralized 401 Handling)
+    // =========================================================
+    async function fetchWithAuth(url, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+            ...options.headers
+        };
+        
+        try {
+            const res = await fetch(url, { ...options, headers });
+            
+            if (res.status === 401 || res.status === 403) {
+                // TOKEN EXPIRED OR INVALID - STOP EVERYTHING
+                showAuthError("Session Expired or Unauthorized.", res.status);
+                return null;
+            }
+            if (!res.ok) {
+                // OTHER API ERRORS
+                console.error("API Error", res.status);
+                return null;
+            }
+            return res;
+        } catch(e) {
+            showAuthError("Network Error or API Down.", "NetErr");
+            return null;
+        }
+    }
+
 
     // =========================================================
-    // BUSINESS LOGIC
+    // BUSINESS LOGIC (Same as before)
     // =========================================================
     function switchTab(tabId) {
         document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
@@ -433,12 +509,12 @@
     // --- FACES ---
     async function loadFaceGroups() {
         try {
-            // Note: list_people might not require auth in some versions, but sending it just in case
-            const res = await fetch(`${API_BASE}/list_people`, {
+            const res = await fetchWithAuth(`${API_BASE}/list_people`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                 body: JSON.stringify({ collection_id: COLLECTION_ID })
             });
+            if(!res) return;
+
             const data = await res.json();
             const container = document.getElementById('faceGroupsContainer');
             container.innerHTML = '';
@@ -610,27 +686,6 @@
             document.getElementById('generatedLinkResult').style.display = 'block';
             document.getElementById('shareLinkInput').value = data.searchUrl;
         } catch(e) { alert("Error"); }
-    }
-
-    // =========================================================
-    // HELPER: FETCH WITH AUTH (Centralized 401 Handling)
-    // =========================================================
-    async function fetchWithAuth(url, options = {}) {
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
-            ...options.headers
-        };
-        
-        const res = await fetch(url, { ...options, headers });
-        
-        if (res.status === 401 || res.status === 403) {
-            alert("Session expired. Please login again.");
-            localStorage.clear();
-            window.location.href = 'login.html';
-            return null;
-        }
-        return res;
     }
 </script>
 </body>
