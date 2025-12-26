@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collection Manager • Premium (Safe Mode)</title>
+  <title>Collection Manager • Premium (vFinal)</title>
 
   <!-- LIBS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
@@ -153,18 +153,16 @@
 </head>
 <body>
 
-  <!-- 1. AUTH ERROR OVERLAY (Stops loops) -->
+  <!-- AUTH ERROR OVERLAY -->
   <div id="authErrorOverlay">
       <i class="fas fa-shield-alt" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
       <h2 style="margin-bottom: 10px; color:#fff;">Access Issue</h2>
       <p style="color: var(--text-secondary); margin-bottom: 15px;" id="authErrorMessage">Checking access...</p>
       
-      <!-- Debug Info for User -->
       <div style="background:#000; padding:15px; border-radius:8px; margin-bottom:20px; text-align:left; font-family:monospace; font-size:12px; color:#ccc; width:100%; max-width:320px; border:1px solid var(--border);">
           <div style="margin-bottom:5px; color:var(--accent);">DEBUG INFO:</div>
           Token Present: <span id="debugTokenStatus" style="color:var(--danger)">No</span><br>
-          Collection ID: <span id="debugColId" style="color:var(--danger)">Missing</span><br>
-          API Status: <span id="debugApiStatus">Waiting...</span>
+          Collection ID: <span id="debugColId" style="color:var(--danger)">Missing</span>
       </div>
 
       <div style="display:flex; gap:10px;">
@@ -175,11 +173,11 @@
 
   <!-- SIDEBAR -->
   <div class="sidebar">
-    <div class="nav-btn active" onclick="switchTab('gallery')" title="Gallery"><i class="fas fa-images"></i></div>
-    <div class="nav-btn" onclick="switchTab('events')" title="Events"><i class="fas fa-calendar-alt"></i></div>
-    <div class="nav-btn" onclick="switchTab('upload')" title="Upload"><i class="fas fa-cloud-upload-alt"></i></div>
-    <div class="nav-btn" onclick="switchTab('leads')" title="Guest Leads"><i class="fas fa-users"></i></div>
-    <div class="nav-btn" onclick="switchTab('settings')" title="Settings"><i class="fas fa-cog"></i></div>
+    <div class="nav-btn active" id="nav-gallery" onclick="switchTab('gallery')" title="Gallery"><i class="fas fa-images"></i></div>
+    <div class="nav-btn" id="nav-events" onclick="switchTab('events')" title="Events"><i class="fas fa-calendar-alt"></i></div>
+    <div class="nav-btn" id="nav-upload" onclick="switchTab('upload')" title="Upload"><i class="fas fa-cloud-upload-alt"></i></div>
+    <div class="nav-btn" id="nav-leads" onclick="switchTab('leads')" title="Guest Leads"><i class="fas fa-users"></i></div>
+    <div class="nav-btn" id="nav-settings" onclick="switchTab('settings')" title="Settings"><i class="fas fa-cog"></i></div>
     <div style="flex:1"></div>
     <div class="nav-btn" onclick="window.location.href='dashboard.html'"><i class="fas fa-arrow-left"></i></div>
   </div>
@@ -193,7 +191,7 @@
         <h1 id="collectionTitle">Loading... <span class="badge" id="photoCountBadge">0 Photos</span></h1>
       </div>
       <div>
-        <button class="btn btn-secondary" onclick="fetchCollectionData()"><i class="fas fa-sync-alt"></i></button>
+        <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt"></i></button>
       </div>
     </div>
 
@@ -207,12 +205,11 @@
         <h2 style="font-size:16px;">All Photos</h2>
         <div style="display:flex; gap:10px;">
           <button class="btn btn-secondary" id="downloadZipBtn" style="display:none;"><i class="fas fa-download"></i> Download Selected</button>
-          <button class="btn btn-primary" onclick="switchTab('upload')"><i class="fas fa-plus"></i> Add Photos</button>
+          <button class="btn btn-primary" id="addPhotosBtn" onclick="switchTab('upload')"><i class="fas fa-plus"></i> Add Photos</button>
         </div>
       </div>
 
       <div class="photo-grid" id="photoGrid"></div>
-      <div id="loadMoreTrigger" style="height:20px; margin-top:20px;"></div>
     </div>
 
     <!-- 2. UPLOAD TAB -->
@@ -232,7 +229,7 @@
       </div>
       <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
         <h3 style="font-size:14px;">Queue <span id="queueCount">(0)</span></h3>
-        <button class="btn btn-primary" id="startUploadBtn" disabled onclick="processUploadQueue()">Start Upload</button>
+        <button class="btn btn-primary" id="startUploadBtn" disabled>Start Upload</button>
       </div>
       <div class="file-list" id="uploadList"></div>
     </div>
@@ -241,7 +238,7 @@
     <div id="tab-events" class="view-container">
       <div class="gallery-header">
         <h2>Events</h2>
-        <button class="btn btn-primary" onclick="openCreateEventModal()">New Event</button>
+        <button class="btn btn-primary" id="openEventModalBtn">New Event</button>
       </div>
       <div id="eventsList" style="display:grid; gap:15px;"></div>
     </div>
@@ -250,7 +247,7 @@
     <div id="tab-leads" class="view-container">
       <div class="gallery-header">
         <h2>Guest Leads</h2>
-        <button class="btn btn-secondary" onclick="loadLeads()"><i class="fas fa-sync"></i> Refresh</button>
+        <button class="btn btn-secondary" id="refreshLeadsBtn"><i class="fas fa-sync"></i> Refresh</button>
       </div>
       <table class="leads-table">
         <thead>
@@ -268,7 +265,7 @@
         <div style="background:var(--bg-card); padding:20px; border-radius:12px; margin-top:20px;">
             <h3>Generate Search Link</h3>
             <p style="font-size:13px; color:var(--text-secondary); margin-bottom:15px;">Create a public link for guests to find their photos.</p>
-            <button class="btn btn-primary" onclick="generateSearchLink()">Create Link</button>
+            <button class="btn btn-primary" id="genLinkBtn">Create Link</button>
             <div id="generatedLinkResult" style="margin-top:15px; display:none;">
                 <input type="text" id="shareLinkInput" readonly style="width:100%; padding:10px; background:#000; border:1px solid var(--border); color:var(--accent); border-radius:6px;">
             </div>
@@ -280,23 +277,26 @@
   <!-- Create Event Modal -->
   <div class="modal-overlay" id="eventModal">
     <div class="modal-content">
-      <i class="fas fa-times close-modal" onclick="closeModal('eventModal')"></i>
+      <i class="fas fa-times close-modal" id="closeEventModalBtn"></i>
       <h3>Create New Event</h3>
       <input type="text" id="newEventName" placeholder="Event Name (e.g., Haldi)" style="width:100%; padding:10px; margin:10px 0; background:var(--bg-primary); border:1px solid var(--border); color:#fff;">
       <input type="date" id="newEventDate" style="width:100%; padding:10px; margin-bottom:15px; background:var(--bg-primary); border:1px solid var(--border); color:#fff;">
-      <button class="btn btn-primary" onclick="createEvent()">Create</button>
+      <button class="btn btn-primary" id="saveEventBtn">Create</button>
     </div>
   </div>
 
 <script>
     // =========================================================
-    // CONFIG & STATE
+    // GLOBAL VARS & CONFIG
     // =========================================================
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const urlParams = new URLSearchParams(window.location.search);
     const COLLECTION_ID = urlParams.get('id');
+    
+    // Helper for DOM Selection
+    const $ = id => document.getElementById(id);
 
-    // 1. SIMPLE TOKEN CHECK (NO DECODING, NO EXPIRY LOGIC HERE)
+    // Get Token Safely
     function getStoredToken() {
         return localStorage.getItem('id_token') || 
                localStorage.getItem('access_token') || 
@@ -309,54 +309,85 @@
         events: [],
         selectedPhotos: new Set(),
         uploadQueue: [],
-        nextPageToken: null
+        activeFilter: null
     };
 
     // =========================================================
-    // CORE: SHOW ERROR SCREEN INSTEAD OF REDIRECT LOOP
+    // INIT
     // =========================================================
-    function showAuthError(msg, apiStatus = "-") {
-        const overlay = document.getElementById('authErrorOverlay');
-        const tokenSpan = document.getElementById('debugTokenStatus');
-        const colSpan = document.getElementById('debugColId');
-        const apiSpan = document.getElementById('debugApiStatus');
+    document.addEventListener('DOMContentLoaded', init);
 
-        // Update Debug UI
-        tokenSpan.innerText = idToken ? "Yes (Exists)" : "No (Missing)";
-        tokenSpan.style.color = idToken ? "var(--success)" : "var(--danger)";
+    function init() {
+        console.log("Initializing...");
+
+        // 1. Check Auth (Passive Mode - Show Overlay if Failed)
+        if(!idToken || !COLLECTION_ID) {
+            showAuthError("Missing Token or Collection ID");
+            return;
+        }
+
+        try {
+            // 2. Setup Event Listeners
+            setupEventListeners();
+
+            // 3. Initial Fetch
+            fetchCollectionData();
+
+        } catch (e) {
+            console.error("Init failed:", e);
+            alert("Application Error: " + e.message);
+        }
+    }
+
+    function setupEventListeners() {
+        // Tab Nav
+        $('refreshBtn').addEventListener('click', fetchCollectionData);
+        $('downloadZipBtn').addEventListener('click', downloadSelected);
+
+        // Upload
+        const zone = $('dropZone');
+        const input = $('fileInput');
+        if(zone && input) {
+            zone.addEventListener('click', () => input.click());
+            input.addEventListener('change', (e) => handleFiles(e.target.files));
+            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+        }
+        $('startUploadBtn').addEventListener('click', processUploadQueue);
+
+        // Events
+        $('openEventModalBtn').addEventListener('click', () => $('eventModal').style.display = 'flex');
+        $('closeEventModalBtn').addEventListener('click', () => $('eventModal').style.display = 'none');
+        $('saveEventBtn').addEventListener('click', createEvent);
+
+        // Leads
+        $('refreshLeadsBtn').addEventListener('click', loadLeads);
+
+        // Settings
+        $('genLinkBtn').addEventListener('click', generateSearchLink);
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+        $(`tab-${tabId}`).classList.add('active');
         
-        colSpan.innerText = COLLECTION_ID || "Missing from URL";
-        colSpan.style.color = COLLECTION_ID ? "var(--success)" : "var(--danger)";
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        $(`nav-${tabId}`).classList.add('active');
+        
+        if(tabId === 'leads') loadLeads();
+    }
 
-        apiSpan.innerText = apiStatus;
-        apiSpan.style.color = "var(--text-secondary)";
-
-        document.getElementById('authErrorMessage').innerText = msg;
-        overlay.style.display = 'flex';
+    function showAuthError(msg) {
+        $('debugTokenStatus').innerText = idToken ? "Yes" : "No";
+        $('debugTokenStatus').style.color = idToken ? "var(--success)" : "var(--danger)";
+        $('debugColId').innerText = COLLECTION_ID || "Missing";
+        $('authErrorMessage').innerText = msg;
+        $('authErrorOverlay').style.display = 'flex';
     }
 
     // =========================================================
-    // INIT - STRICTLY CONTROLLED
-    // =========================================================
-    document.addEventListener('DOMContentLoaded', () => {
-        // 1. Check Basics (Frontend Check only)
-        if(!idToken) {
-            showAuthError("You are not logged in. Please login first.");
-            return;
-        }
-        if(!COLLECTION_ID) {
-            showAuthError("Collection ID missing in URL link.");
-            return;
-        }
-
-        // 2. If OK, try fetching data
-        fetchCollectionData();
-        setupDragDrop();
-        document.getElementById('downloadZipBtn').addEventListener('click', downloadSelected);
-    });
-
-    // =========================================================
-    // HELPER: FETCH WITH AUTH (Centralized 401 Handling)
+    // DATA FETCHING
     // =========================================================
     async function fetchWithAuth(url, options = {}) {
         const headers = {
@@ -364,78 +395,110 @@
             'Authorization': `Bearer ${idToken}`,
             ...options.headers
         };
-        
         try {
             const res = await fetch(url, { ...options, headers });
-            
             if (res.status === 401 || res.status === 403) {
-                // TOKEN EXPIRED OR INVALID - STOP EVERYTHING
-                showAuthError("Session Expired or Unauthorized.", res.status);
-                return null;
-            }
-            if (!res.ok) {
-                // OTHER API ERRORS
-                console.error("API Error", res.status);
+                showAuthError("Session Expired (401)");
                 return null;
             }
             return res;
         } catch(e) {
-            showAuthError("Network Error or API Down.", "NetErr");
+            showAuthError("Network Error");
             return null;
         }
     }
 
+    async function fetchCollectionData() {
+        // 1. Photos
+        const resPhotos = await fetchWithAuth(`${API_BASE}/get-photos`, {
+            method: 'POST',
+            body: JSON.stringify({ collection_id: COLLECTION_ID, limit: 100 })
+        });
+        if(resPhotos) {
+            const data = await resPhotos.json();
+            state.photos = data.photos || [];
+            $('collectionTitle').innerHTML = `Collection ${COLLECTION_ID.substr(0,4)}... <span class="badge">${state.photos.length} Photos</span>`;
+            renderGallery(state.photos);
+        }
 
-    // =========================================================
-    // BUSINESS LOGIC (Same as before)
-    // =========================================================
-    function switchTab(tabId) {
-        document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
-        document.getElementById(`tab-${tabId}`).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        if(tabId === 'leads') loadLeads();
+        // 2. Events
+        const resEvents = await fetchWithAuth(`${API_BASE}/get-events`, {
+            method: 'POST',
+            body: JSON.stringify({ collection_id: COLLECTION_ID })
+        });
+        if(resEvents) {
+            const data = await resEvents.json();
+            state.events = data.events || [];
+            updateEventsUI(state.events);
+        }
+
+        // 3. Faces
+        loadFaceGroups();
     }
 
-    // --- UPLOAD ---
-    function setupDragDrop() {
-        const zone = document.getElementById('dropZone');
-        const input = document.getElementById('fileInput');
-        if(!zone || !input) return;
-        zone.addEventListener('click', () => input.click());
-        input.addEventListener('change', (e) => handleFiles(e.target.files));
-        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
-        zone.addEventListener('dragleave', () => { zone.classList.remove('dragover'); });
-        zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+    function updateEventsUI(events) {
+        const sel = $('uploadEventSelect');
+        const list = $('eventsList');
+        sel.innerHTML = '<option value="">Select Event Folder</option>';
+        list.innerHTML = '';
+
+        events.forEach(ev => {
+            // Select Option
+            sel.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
+            
+            // List Item
+            const div = document.createElement('div');
+            div.style = "background:var(--bg-secondary); padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;";
+            div.innerHTML = `
+                <div>
+                    <div style="font-weight:600;">${ev.name}</div>
+                    <div style="font-size:12px; color:var(--text-secondary);">${ev.event_date || 'No Date'}</div>
+                </div>
+                <div class="badge">${ev.photo_count || 0} photos</div>
+            `;
+            list.appendChild(div);
+        });
     }
 
+    // =========================================================
+    // UPLOAD LOGIC (With MD5)
+    // =========================================================
     async function handleFiles(fileList) {
-        const list = document.getElementById('uploadList');
-        const eventId = document.getElementById('uploadEventSelect').value;
+        const list = $('uploadList');
+        const eventId = $('uploadEventSelect').value;
         if(!eventId) { alert("Please select an event first!"); return; }
 
         for (let file of fileList) {
+            // Basic Filter
             if(!file.type.match('image.*') && !file.name.toLowerCase().endsWith('.heic')) continue;
+
             const fileId = Math.random().toString(36).substr(2, 9);
             state.uploadQueue.push({ file, id: fileId, status: 'pending' });
+
+            // UI
             const item = document.createElement('div');
             item.className = 'file-item';
             item.id = `ui-${fileId}`;
-            item.innerHTML = `<span>${file.name} <small style="color:var(--text-secondary)">(${formatBytes(file.size)})</small></span><span class="status-badge status-pending">Queued</span>`;
+            item.innerHTML = `
+                <span>${file.name} <small style="color:var(--text-secondary)">(${formatBytes(file.size)})</small></span>
+                <span class="status-badge status-pending">Queued</span>
+            `;
             list.appendChild(item);
         }
-        document.getElementById('queueCount').innerText = `(${state.uploadQueue.length})`;
-        document.getElementById('startUploadBtn').disabled = false;
+        $('queueCount').innerText = `(${state.uploadQueue.length})`;
+        $('startUploadBtn').disabled = false;
     }
 
     function calculateMD5(file) {
         return new Promise((resolve, reject) => {
             if(typeof SparkMD5 === 'undefined') { reject("MD5 Lib Missing"); return; }
             const blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-            const chunkSize = 2097152; 
+            const chunkSize = 2097152; // 2MB
             const chunks = Math.ceil(file.size / chunkSize);
             const spark = new SparkMD5.ArrayBuffer();
             const fileReader = new FileReader();
             let currentChunk = 0;
+
             fileReader.onload = function(e) {
                 spark.append(e.target.result);
                 currentChunk++;
@@ -452,240 +515,255 @@
     }
 
     async function processUploadQueue() {
-        const btn = document.getElementById('startUploadBtn');
+        const btn = $('startUploadBtn');
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        const eventId = document.getElementById('uploadEventSelect').value;
+        
+        const eventId = $('uploadEventSelect').value;
         const BATCH_SIZE = 5; 
         let processingQueue = [...state.uploadQueue.filter(i => i.status === 'pending')];
 
+        // Process in Batches
         for (let i = 0; i < processingQueue.length; i += BATCH_SIZE) {
             const chunk = processingQueue.slice(i, i + BATCH_SIZE);
             const filesPayload = [];
+
+            // 1. Calculate Hash
             for (let item of chunk) {
-                document.querySelector(`#ui-${item.id} .status-badge`).innerText = 'Hashing...';
+                const badge = document.querySelector(`#ui-${item.id} .status-badge`);
+                if(badge) badge.innerText = 'Hashing...';
                 try {
                     const hash = await calculateMD5(item.file);
                     filesPayload.push({ name: item.file.name, hash: hash, id: item.id });
-                } catch(e) { console.error(e); }
+                } catch(e) { console.error("Hash failed", e); }
             }
+
+            // 2. Get URLs
             try {
                 const res = await fetchWithAuth(`${API_BASE}/generate-upload-urls`, {
                     method: 'POST',
                     body: JSON.stringify({ collection_id: COLLECTION_ID, event_id: eventId, files: filesPayload })
                 });
-                if(!res) return; // Auth failed
+                
+                if(res && res.ok) {
+                    const data = await res.json();
+                    
+                    // Mark Duplicates
+                    if(data.skipped) {
+                        data.skipped.forEach(name => {
+                            const original = filesPayload.find(f => f.name === name);
+                            if(original) {
+                                const badge = document.querySelector(`#ui-${original.id} .status-badge`);
+                                if(badge) {
+                                    badge.className = 'status-badge status-duplicate';
+                                    badge.innerText = 'Duplicate (Skipped)';
+                                }
+                            }
+                        });
+                    }
 
-                const data = await res.json();
-                if(data.skipped) {
-                    data.skipped.forEach(name => {
-                        const original = filesPayload.find(f => f.name === name);
-                        if(original) {
-                            const ui = document.querySelector(`#ui-${original.id} .status-badge`);
-                            ui.className = 'status-badge status-duplicate';
-                            ui.innerText = 'Duplicate (Skipped)';
+                    // Upload Valid Files
+                    const uploadPromises = data.urls.map(async (urlObj) => {
+                        const originalItem = chunk.find(c => c.file.name === urlObj.originalName);
+                        if (!originalItem) return;
+
+                        await fetch(urlObj.uploadURL, {
+                            method: 'PUT',
+                            body: originalItem.file,
+                            headers: { 'Content-Type': 'image/jpeg' } 
+                        });
+
+                        const badge = document.querySelector(`#ui-${originalItem.id} .status-badge`);
+                        if(badge) {
+                            badge.className = 'status-badge status-success';
+                            badge.innerText = 'Uploaded';
                         }
                     });
+                    await Promise.all(uploadPromises);
                 }
-                const uploadPromises = data.urls.map(async (urlObj) => {
-                    const originalItem = chunk.find(c => c.file.name === urlObj.originalName);
-                    if (!originalItem) return;
-                    await fetch(urlObj.uploadURL, {
-                        method: 'PUT',
-                        body: originalItem.file,
-                        headers: { 'Content-Type': 'image/jpeg' } 
-                    });
-                    const ui = document.querySelector(`#ui-${originalItem.id} .status-badge`);
-                    ui.className = 'status-badge status-success';
-                    ui.innerText = 'Uploaded';
-                });
-                await Promise.all(uploadPromises);
-            } catch (err) { console.error("Batch upload failed", err); }
+            } catch (err) { console.error("Batch failed", err); }
         }
+
         btn.innerHTML = 'Upload Complete';
-        setTimeout(() => { btn.innerHTML = 'Start Upload'; btn.disabled = false; fetchCollectionData(); }, 2000);
+        setTimeout(() => { 
+            btn.innerHTML = 'Start Upload'; 
+            btn.disabled = false; 
+            fetchCollectionData(); // Refresh Gallery
+        }, 2000);
     }
 
-    // --- FACES ---
+    // =========================================================
+    // GALLERY & FACES
+    // =========================================================
     async function loadFaceGroups() {
-        try {
-            const res = await fetchWithAuth(`${API_BASE}/list_people`, {
-                method: 'POST',
-                body: JSON.stringify({ collection_id: COLLECTION_ID })
-            });
-            if(!res) return;
+        const res = await fetchWithAuth(`${API_BASE}/list_people`, {
+            method: 'POST',
+            body: JSON.stringify({ collection_id: COLLECTION_ID })
+        });
+        if(!res) return;
+        const data = await res.json();
+        const container = $('faceGroupsContainer');
+        container.innerHTML = '';
+        
+        if(!data.people || data.people.length === 0) {
+            container.innerHTML = '<span style="padding:10px; color:var(--text-secondary); font-size:12px;">No faces detected yet.</span>';
+            return;
+        }
 
-            const data = await res.json();
-            const container = document.getElementById('faceGroupsContainer');
-            container.innerHTML = '';
-            if(!data.people || data.people.length === 0) {
-                container.innerHTML = '<span style="padding:10px; color:var(--text-secondary); font-size:12px;">No faces detected yet.</span>';
-                return;
-            }
-            data.people.forEach(person => {
-                const div = document.createElement('div');
-                div.className = 'face-bubble';
-                div.onclick = () => filterByFace(person.PersonId);
-                div.innerHTML = `<div class="face-img-wrap"><img src="${person.sample_url}" loading="lazy" alt="Face"></div><div class="face-name">${person.photo_count} Photos</div>`;
-                container.appendChild(div);
-            });
-        } catch(e) { console.error("Face load error", e); }
+        data.people.forEach(person => {
+            const div = document.createElement('div');
+            div.className = 'face-bubble';
+            div.onclick = () => filterByFace(person.PersonId);
+            div.innerHTML = `
+                <div class="face-img-wrap"><img src="${person.sample_url}" loading="lazy"></div>
+                <div class="face-name">${person.photo_count}</div>
+            `;
+            container.appendChild(div);
+        });
     }
 
     function filterByFace(personId) {
         if(state.activeFilter === personId) {
             state.activeFilter = null;
             renderGallery(state.photos);
-            document.querySelectorAll('.face-bubble').forEach(el => el.classList.remove('active'));
         } else {
             state.activeFilter = personId;
             const filtered = state.photos.filter(p => p.person_ids && p.person_ids.includes(personId));
             renderGallery(filtered);
-            document.querySelectorAll('.face-bubble').forEach(el => el.classList.remove('active'));
         }
-    }
-
-    // --- DATA ---
-    async function fetchCollectionData() {
-        try {
-            const res = await fetchWithAuth(`${API_BASE}/get-photos`, {
-                method: 'POST',
-                body: JSON.stringify({ collection_id: COLLECTION_ID, limit: 100 })
-            });
-            if(!res) return;
-
-            const data = await res.json();
-            state.photos = data.photos;
-            document.getElementById('collectionTitle').innerHTML = `Collection ${COLLECTION_ID.substr(0,4)}... <span class="badge">${data.photos.length} Photos</span>`;
-            renderGallery(data.photos);
-        } catch(e) { console.error(e); }
-
-        try {
-            const res = await fetchWithAuth(`${API_BASE}/get-events`, {
-                method: 'POST',
-                body: JSON.stringify({ collection_id: COLLECTION_ID })
-            });
-            if(!res) return;
-
-            const data = await res.json();
-            state.events = data.events;
-            const sel = document.getElementById('uploadEventSelect');
-            sel.innerHTML = '<option value="">Select Event Folder</option>';
-            data.events.forEach(ev => { sel.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`; });
-            const evList = document.getElementById('eventsList');
-            evList.innerHTML = '';
-            data.events.forEach(ev => {
-                evList.innerHTML += `<div style="background:var(--bg-secondary); padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-weight:600;">${ev.name}</div><div style="font-size:12px; color:var(--text-secondary);">${ev.event_date}</div></div><div class="badge">${ev.photo_count || 0} photos</div></div>`;
-            });
-        } catch(e) { console.error(e); }
-        loadFaceGroups();
+        // Highlight active bubble logic can be added here
     }
 
     function renderGallery(photos) {
-        const grid = document.getElementById('photoGrid');
+        const grid = $('photoGrid');
         grid.innerHTML = '';
-        const fragment = document.createDocumentFragment();
+        const frag = document.createDocumentFragment();
+        
         photos.forEach(photo => {
             const div = document.createElement('div');
             div.className = 'photo-card';
             if(state.selectedPhotos.has(photo)) div.classList.add('selected');
+            
             div.innerHTML = `<img src="${photo.thumbnail_url}" loading="lazy"><div class="photo-check"><i class="fas fa-check"></i></div>`;
             div.onclick = () => {
-                if(state.selectedPhotos.has(photo)) { state.selectedPhotos.delete(photo); div.classList.remove('selected'); }
-                else { state.selectedPhotos.add(photo); div.classList.add('selected'); }
+                if(state.selectedPhotos.has(photo)) {
+                    state.selectedPhotos.delete(photo);
+                    div.classList.remove('selected');
+                } else {
+                    state.selectedPhotos.add(photo);
+                    div.classList.add('selected');
+                }
                 updateActionButtons();
             };
-            fragment.appendChild(div);
+            frag.appendChild(div);
         });
-        grid.appendChild(fragment);
+        grid.appendChild(frag);
     }
 
     function updateActionButtons() {
-        const btn = document.getElementById('downloadZipBtn');
-        if(state.selectedPhotos.size > 0) { btn.style.display = 'inline-flex'; btn.innerHTML = `<i class="fas fa-download"></i> Download (${state.selectedPhotos.size})`; }
-        else { btn.style.display = 'none'; }
+        const btn = $('downloadZipBtn');
+        if(state.selectedPhotos.size > 0) {
+            btn.style.display = 'inline-flex';
+            btn.innerHTML = `<i class="fas fa-download"></i> Download (${state.selectedPhotos.size})`;
+        } else {
+            btn.style.display = 'none';
+        }
     }
 
     async function downloadSelected() {
         if(state.selectedPhotos.size === 0) return;
         const zip = new JSZip();
         const folder = zip.folder("photos");
-        const btn = document.getElementById('downloadZipBtn');
-        const originalText = btn.innerHTML;
+        const btn = $('downloadZipBtn');
+        const oldText = btn.innerHTML;
         btn.innerText = "Zipping...";
         btn.disabled = true;
+
         const promises = [];
         state.selectedPhotos.forEach(photo => {
             const p = fetch(photo.url).then(res => res.blob()).then(blob => {
-                const filename = photo.photo_id.split('___').pop() || 'photo.jpg';
-                folder.file(filename, blob);
+                const name = photo.photo_id.split('___').pop() || 'photo.jpg';
+                folder.file(name, blob);
             });
             promises.push(p);
         });
-        try { await Promise.all(promises); const content = await zip.generateAsync({type:"blob"}); saveAs(content, "selected_photos.zip"); }
-        catch(e) { alert("Error creating zip"); } finally { btn.innerHTML = originalText; btn.disabled = false; }
+
+        try {
+            await Promise.all(promises);
+            const content = await zip.generateAsync({type:"blob"});
+            saveAs(content, "selected_photos.zip");
+        } catch(e) { alert("Error making zip"); }
+        finally { btn.innerHTML = oldText; btn.disabled = false; }
     }
 
+    // =========================================================
+    // LEADS & UTILS
+    // =========================================================
     async function loadLeads() {
-        const tbody = document.getElementById('leadsTableBody');
+        const tbody = $('leadsTableBody');
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
-        try {
-            const res = await fetchWithAuth(`${API_BASE}/save-details`, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'list', collection_id: COLLECTION_ID })
-            });
-            if(!res) return;
+        
+        const res = await fetchWithAuth(`${API_BASE}/save-details`, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'list', collection_id: COLLECTION_ID })
+        });
+        if(!res) return;
 
-            const leads = await res.json();
-            tbody.innerHTML = '';
-            if(leads.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No leads yet.</td></tr>'; return; }
-            leads.forEach(lead => {
-                let imgHtml = '<div style="width:40px;height:40px;background:#333;border-radius:50%"></div>';
-                if(lead.selfie_b64) imgHtml = `<img src="data:image/jpeg;base64,${lead.selfie_b64}" class="selfie-thumb">`;
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${imgHtml}</td><td>${lead.name || 'Unknown'}</td><td>${lead.mobile}</td><td><span class="badge">${lead.match_count || 0}</span></td><td style="color:var(--text-secondary); font-size:11px;">${new Date(lead.timestamp).toLocaleString()}</td>`;
-                tbody.appendChild(tr);
-            });
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load leads</td></tr>'; }
+        const leads = await res.json();
+        tbody.innerHTML = '';
+        if(leads.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No leads found.</td></tr>';
+            return;
+        }
+
+        leads.forEach(lead => {
+            let img = `<div style="width:40px;height:40px;background:#333;border-radius:50%"></div>`;
+            if(lead.selfie_b64) img = `<img src="data:image/jpeg;base64,${lead.selfie_b64}" class="selfie-thumb">`;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${img}</td>
+                <td>${lead.name || '-'}</td>
+                <td>${lead.mobile || '-'}</td>
+                <td><span class="badge">${lead.match_count || 0}</span></td>
+                <td style="color:#888; font-size:11px;">${new Date(lead.timestamp).toLocaleString()}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function createEvent() {
+        const name = $('newEventName').value;
+        const date = $('newEventDate').value;
+        if(!name || !date) return alert("All fields required");
+
+        const res = await fetchWithAuth(`${API_BASE}/create-event`, {
+            method: 'POST',
+            body: JSON.stringify({ collection_id: COLLECTION_ID, name, event_date: date })
+        });
+        if(res && res.ok) {
+            $('eventModal').style.display = 'none';
+            fetchCollectionData();
+        }
+    }
+
+    async function generateSearchLink() {
+        const res = await fetchWithAuth(`${API_BASE}/generate-search-link`, {
+            method: 'POST',
+            body: JSON.stringify({ collection_id: COLLECTION_ID })
+        });
+        if(res && res.ok) {
+            const data = await res.json();
+            $('generatedLinkResult').style.display = 'block';
+            $('shareLinkInput').value = data.searchUrl;
+        }
     }
 
     function formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
-
-    function openCreateEventModal() { document.getElementById('eventModal').style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    
-    async function createEvent() {
-        const name = document.getElementById('newEventName').value;
-        const date = document.getElementById('newEventDate').value;
-        if(!name || !date) return alert("Fill all fields");
-        try {
-            await fetchWithAuth(`${API_BASE}/create-event`, {
-                method: 'POST',
-                body: JSON.stringify({ collection_id: COLLECTION_ID, name, event_date: date })
-            });
-            closeModal('eventModal');
-            fetchCollectionData();
-        } catch(e) { alert("Error creating event"); }
-    }
-    
-    async function generateSearchLink() {
-        try {
-            const res = await fetchWithAuth(`${API_BASE}/generate-search-link`, {
-                method: 'POST',
-                body: JSON.stringify({ collection_id: COLLECTION_ID })
-            });
-            if(!res) return;
-            const data = await res.json();
-            document.getElementById('generatedLinkResult').style.display = 'block';
-            document.getElementById('shareLinkInput').value = data.searchUrl;
-        } catch(e) { alert("Error"); }
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + ['Bytes', 'KB', 'MB', 'GB', 'TB'][i];
     }
 </script>
 </body>
