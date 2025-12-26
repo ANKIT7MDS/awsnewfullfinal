@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Collection Manager • Premium</title>
+  <title>Collection Manager • Premium (v2)</title>
 
   <!-- LIBS -->
-  <!-- MD5 for Duplicate Check -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
-  <!-- Zip Download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <!-- HEIC Conversion -->
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -34,7 +31,6 @@
       --success:#10b981;
       --radius-xl:16px;
       --radius-lg:12px;
-      --shadow:0 10px 30px -10px rgba(0,0,0,0.5);
     }
     *{box-sizing:border-box;margin:0;padding:0;outline:none;user-select:none;}
     body{font-family:'Inter',system-ui,sans-serif;background:var(--bg-primary);color:var(--text-primary);height:100vh;overflow:hidden;display:flex;}
@@ -43,7 +39,6 @@
     ::-webkit-scrollbar{width:6px;height:6px}
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
-    ::-webkit-scrollbar-thumb:hover{background:var(--text-secondary)}
 
     /* =========================================================
       LAYOUT (Sidebar + Main)
@@ -143,32 +138,40 @@
     .modal-content{background:var(--bg-secondary);border:1px solid var(--border);width:90%;max-width:500px;border-radius:var(--radius-xl);padding:24px;position:relative;}
     .close-modal{position:absolute;top:15px;right:15px;cursor:pointer;color:var(--text-secondary);}
 
+    /* AUTH ERROR OVERLAY (High Z-Index to block everything) */
+    #authErrorOverlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--bg-primary); z-index: 99999;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 20px;
+    }
     /* UTILS */
     .btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.2s;display:inline-flex;align-items:center;gap:6px;}
     .btn-primary{background:var(--accent);color:#fff;}
     .btn-primary:hover{background:var(--accent-hover);}
     .btn-secondary{background:var(--border);color:var(--text-primary);}
     .btn-secondary:hover{background:var(--border-light);}
-    
-    /* AUTH ERROR OVERLAY */
-    #authErrorOverlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: var(--bg-primary); z-index: 9999;
-        display: none; flex-direction: column; align-items: center; justify-content: center;
-        text-align: center; padding: 20px;
-    }
   </style>
 </head>
 <body>
 
   <!-- AUTH ERROR OVERLAY -->
   <div id="authErrorOverlay">
-      <i class="fas fa-exclamation-triangle" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
-      <h2 style="margin-bottom: 10px;">Authentication Error</h2>
-      <p style="color: var(--text-secondary); margin-bottom: 30px; max-width: 400px;" id="authErrorMessage">
-          Your session is invalid or expired.
-      </p>
-      <button class="btn btn-primary" onclick="window.location.href='login.html'">Go to Login Page</button>
+      <i class="fas fa-bug" style="font-size: 50px; color: var(--danger); margin-bottom: 20px;"></i>
+      <h2 style="margin-bottom: 10px; color:#fff;">Access Issue</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 10px;" id="authErrorMessage">Checking...</p>
+      
+      <!-- Debug Info for User -->
+      <div style="background:#000; padding:10px; border-radius:6px; margin-bottom:20px; text-align:left; font-family:monospace; font-size:12px; color:#ccc; max-width:300px; overflow:hidden;">
+          <strong>Debug Info:</strong><br>
+          Token Found: <span id="debugTokenStatus">No</span><br>
+          Collection ID: <span id="debugColId">Missing</span>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+          <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+          <button class="btn btn-primary" onclick="window.location.href='login.html'">Login Again</button>
+      </div>
   </div>
 
   <!-- SIDEBAR -->
@@ -197,10 +200,7 @@
 
     <!-- 1. GALLERY TAB -->
     <div id="tab-gallery" class="view-container active">
-      
-      <!-- Face Groups (Google Photos Style) -->
       <div class="face-groups-scroll" id="faceGroupsContainer">
-        <!-- JS will populate faces here -->
         <div style="padding:10px; color:var(--text-secondary); font-size:12px;">Indexing Faces...</div>
       </div>
 
@@ -212,35 +212,29 @@
         </div>
       </div>
 
-      <div class="photo-grid" id="photoGrid">
-        <!-- Photos go here -->
-      </div>
+      <div class="photo-grid" id="photoGrid"></div>
       <div id="loadMoreTrigger" style="height:20px; margin-top:20px;"></div>
     </div>
 
     <!-- 2. UPLOAD TAB -->
     <div id="tab-upload" class="view-container">
       <h2 style="margin-bottom:20px;">Upload Photos</h2>
-      
       <div style="margin-bottom:20px;">
         <label style="font-size:13px; color:var(--text-secondary);">Select Event</label>
         <select id="uploadEventSelect" style="width:100%; padding:10px; background:var(--bg-card); border:1px solid var(--border); color:#fff; border-radius:8px; margin-top:5px;">
           <option value="">Loading events...</option>
         </select>
       </div>
-
       <div class="upload-zone" id="dropZone">
         <i class="fas fa-cloud-upload-alt" style="font-size:40px; margin-bottom:15px; color:var(--accent);"></i>
         <p>Drag & Drop photos here</p>
         <p style="font-size:12px; opacity:0.6;">or click to browse</p>
         <input type="file" id="fileInput" multiple accept="image/*,.heic" style="display:none;">
       </div>
-
       <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
         <h3 style="font-size:14px;">Queue <span id="queueCount">(0)</span></h3>
         <button class="btn btn-primary" id="startUploadBtn" disabled onclick="processUploadQueue()">Start Upload</button>
       </div>
-
       <div class="file-list" id="uploadList"></div>
     </div>
 
@@ -262,20 +256,14 @@
       <table class="leads-table">
         <thead>
           <tr>
-            <th>Selfie</th>
-            <th>Name</th>
-            <th>Mobile</th>
-            <th>Matched</th>
-            <th>Time</th>
+            <th>Selfie</th><th>Name</th><th>Mobile</th><th>Matched</th><th>Time</th>
           </tr>
         </thead>
-        <tbody id="leadsTableBody">
-          <tr><td colspan="5" style="text-align:center;">Loading leads...</td></tr>
-        </tbody>
+        <tbody id="leadsTableBody"><tr><td colspan="5" style="text-align:center;">Loading leads...</td></tr></tbody>
       </table>
     </div>
 
-    <!-- 5. SETTINGS TAB (Generate Link) -->
+    <!-- 5. SETTINGS TAB -->
     <div id="tab-settings" class="view-container">
         <h2>Settings & Sharing</h2>
         <div style="background:var(--bg-card); padding:20px; border-radius:12px; margin-top:20px;">
@@ -303,12 +291,19 @@
 
 <script>
     // =========================================================
-    // CONFIG & STATE
+    // CONFIG & STATE (WRAPPED IN TRY-CATCH FOR SAFETY)
     // =========================================================
     const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
     const urlParams = new URLSearchParams(window.location.search);
     const COLLECTION_ID = urlParams.get('id');
-    const idToken = localStorage.getItem('id_token');
+
+    // Robust Token Retrieval (Checks all common keys)
+    function getStoredToken() {
+        return localStorage.getItem('id_token') || 
+               localStorage.getItem('access_token') || 
+               localStorage.getItem('token');
+    }
+    const idToken = getStoredToken();
 
     let state = {
         photos: [],
@@ -319,155 +314,132 @@
     };
 
     // =========================================================
-    // HELPER: ROBUST JWT PARSER (FIXES LOGIN LOOP)
+    // AUTH & LOGGING LOGIC
     // =========================================================
     function parseJwt (token) {
         if (!token) return null;
         try {
             var base64Url = token.split('.')[1];
-            // Fix padding if needed
             var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
             return JSON.parse(jsonPayload);
-        } catch (e) {
-            console.error("Token parse error", e);
-            return null; // Don't throw, just return null so we can handle it UI side
-        }
+        } catch (e) { return null; }
     }
 
     function showAuthError(msg) {
+        // Update Debug Info
+        document.getElementById('debugTokenStatus').innerText = idToken ? (idToken.substr(0,10) + '...') : "NULL";
+        document.getElementById('debugColId').innerText = COLLECTION_ID || "NULL";
         document.getElementById('authErrorMessage').innerText = msg;
         document.getElementById('authErrorOverlay').style.display = 'flex';
     }
 
-    // =========================================================
-    // REDIRECT / AUTH LOGIC (STOPPED AUTO-REDIRECT LOOP)
-    // =========================================================
-    if(!idToken) {
-        // No token -> Show Error (Don't loop)
-        showAuthError("No authentication token found. Please login again.");
-    } else if(!COLLECTION_ID) {
-        // Token exists but No ID
-        alert("Collection ID not found in URL. Redirecting to Dashboard.");
-        window.location.href = 'dashboard.html';
-    } else {
-        // Token & ID exist -> Check Expiry with Robust Parser
-        const payload = parseJwt(idToken);
-        
-        if (!payload) {
-             showAuthError("Invalid Token Format. Please login again.");
-        } else {
-            // Check expiry (Add 5 min buffer for clock skew)
+    // MAIN INIT LOGIC
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            // 1. Check Token Existence
+            if(!idToken) {
+                showAuthError("Not Logged In (Token Missing)");
+                return;
+            }
+
+            // 2. Check Collection ID
+            if(!COLLECTION_ID) {
+                showAuthError("No Collection Selected (URL Issue)");
+                return;
+            }
+
+            // 3. Check Token Validity
+            const payload = parseJwt(idToken);
+            if (!payload) {
+                showAuthError("Invalid Token Format (Corrupt Data)");
+                return;
+            }
+
+            // 4. Check Expiry (With 5 min buffer)
             const now = Date.now() / 1000;
             if (payload.exp && now > (payload.exp + 300)) { 
-                showAuthError("Session expired. Please login again.");
+                showAuthError("Session Expired (Login Again)");
+                return;
             }
-            // If valid, script continues...
-        }
-    }
 
-    // =========================================================
-    // INIT
-    // =========================================================
-    document.addEventListener('DOMContentLoaded', () => {
-        // Only run if auth passed (Error overlay is hidden by default)
-        if(idToken && COLLECTION_ID && document.getElementById('authErrorOverlay').style.display !== 'flex') {
+            // 5. Success - Load Data
             fetchCollectionData();
             setupDragDrop();
             document.getElementById('downloadZipBtn').addEventListener('click', downloadSelected);
+
+        } catch(e) {
+            console.error("Critical Init Error:", e);
+            showAuthError("Critical Script Error: " + e.message);
         }
     });
 
+
+    // =========================================================
+    // BUSINESS LOGIC
+    // =========================================================
     function switchTab(tabId) {
         document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
         document.getElementById(`tab-${tabId}`).classList.add('active');
-        
         document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        // logic to highlight active nav button is manual for now or can be added via simple query
-        
         if(tabId === 'leads') loadLeads();
     }
 
-    // =========================================================
-    // 1. DUPLICATE CHECK UPLOAD LOGIC (Crucial)
-    // =========================================================
+    // --- UPLOAD ---
     function setupDragDrop() {
         const zone = document.getElementById('dropZone');
         const input = document.getElementById('fileInput');
 
+        if(!zone || !input) return;
+
         zone.addEventListener('click', () => input.click());
         input.addEventListener('change', (e) => handleFiles(e.target.files));
-
-        zone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            zone.classList.add('dragover');
-        });
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
         zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            zone.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
-        });
+        zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
     }
 
     async function handleFiles(fileList) {
         const list = document.getElementById('uploadList');
         const eventId = document.getElementById('uploadEventSelect').value;
-
         if(!eventId) { alert("Please select an event first!"); return; }
 
         for (let file of fileList) {
-            // Check File Type
             if(!file.type.match('image.*') && !file.name.toLowerCase().endsWith('.heic')) continue;
-
             const fileId = Math.random().toString(36).substr(2, 9);
             state.uploadQueue.push({ file, id: fileId, status: 'pending' });
-
-            // UI Item
             const item = document.createElement('div');
             item.className = 'file-item';
             item.id = `ui-${fileId}`;
-            item.innerHTML = `
-                <span>${file.name} <small style="color:var(--text-secondary)">(${formatBytes(file.size)})</small></span>
-                <span class="status-badge status-pending">Queued</span>
-            `;
+            item.innerHTML = `<span>${file.name} <small style="color:var(--text-secondary)">(${formatBytes(file.size)})</small></span><span class="status-badge status-pending">Queued</span>`;
             list.appendChild(item);
         }
-        
         document.getElementById('queueCount').innerText = `(${state.uploadQueue.length})`;
         document.getElementById('startUploadBtn').disabled = false;
     }
 
-    // --- MD5 Calculation (Web Worker recommended but using Promise for simplicity) ---
     function calculateMD5(file) {
         return new Promise((resolve, reject) => {
+            if(typeof SparkMD5 === 'undefined') { reject("MD5 Lib Missing"); return; }
             const blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-            const chunkSize = 2097152; // 2MB
+            const chunkSize = 2097152; 
             const chunks = Math.ceil(file.size / chunkSize);
             const spark = new SparkMD5.ArrayBuffer();
             const fileReader = new FileReader();
             let currentChunk = 0;
-
             fileReader.onload = function(e) {
                 spark.append(e.target.result);
                 currentChunk++;
-                if (currentChunk < chunks) {
-                    loadNext();
-                } else {
-                    resolve(spark.end());
-                }
+                if (currentChunk < chunks) loadNext(); else resolve(spark.end());
             };
-
             fileReader.onerror = () => reject("MD5 Error");
-
             function loadNext() {
                 const start = currentChunk * chunkSize;
                 const end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
                 fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
             }
-
             loadNext();
         });
     }
@@ -476,47 +448,27 @@
         const btn = document.getElementById('startUploadBtn');
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
         const eventId = document.getElementById('uploadEventSelect').value;
-        const BATCH_SIZE = 5; // Upload 5 at a time
-        
-        // 1. Calculate Hashes for Batch
-        let batch = [];
+        const BATCH_SIZE = 5; 
         let processingQueue = [...state.uploadQueue.filter(i => i.status === 'pending')];
 
-        // Only process first 10-20 to avoid freezing, or process all?
-        // Let's process loop
-        
         for (let i = 0; i < processingQueue.length; i += BATCH_SIZE) {
             const chunk = processingQueue.slice(i, i + BATCH_SIZE);
             const filesPayload = [];
-
-            // Calculate MD5 for this chunk
             for (let item of chunk) {
                 document.querySelector(`#ui-${item.id} .status-badge`).innerText = 'Hashing...';
                 try {
                     const hash = await calculateMD5(item.file);
                     filesPayload.push({ name: item.file.name, hash: hash, id: item.id });
-                } catch(e) {
-                    console.error(e);
-                }
+                } catch(e) { console.error(e); }
             }
-
-            // Get URLs from Backend (Backend checks Duplicate Hash)
             try {
                 const res = await fetch(`${API_BASE}/generate-upload-urls`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        collection_id: COLLECTION_ID,
-                        event_id: eventId,
-                        files: filesPayload // Sending hashes!
-                    })
+                    body: JSON.stringify({ collection_id: COLLECTION_ID, event_id: eventId, files: filesPayload })
                 });
-
                 const data = await res.json();
-                
-                // Handle Skipped (Duplicates)
                 if(data.skipped) {
                     data.skipped.forEach(name => {
                         const original = filesPayload.find(f => f.name === name);
@@ -527,122 +479,77 @@
                         }
                     });
                 }
-
-                // Handle Uploads
                 const uploadPromises = data.urls.map(async (urlObj) => {
                     const originalItem = chunk.find(c => c.file.name === urlObj.originalName);
                     if (!originalItem) return;
-
-                    // Upload to S3
                     await fetch(urlObj.uploadURL, {
                         method: 'PUT',
                         body: originalItem.file,
-                        headers: { 'Content-Type': 'image/jpeg' } // Force JPEG content type
+                        headers: { 'Content-Type': 'image/jpeg' } 
                     });
-
-                    // Update UI
                     const ui = document.querySelector(`#ui-${originalItem.id} .status-badge`);
                     ui.className = 'status-badge status-success';
                     ui.innerText = 'Uploaded';
                 });
-
                 await Promise.all(uploadPromises);
-
-            } catch (err) {
-                console.error("Batch upload failed", err);
-            }
+            } catch (err) { console.error("Batch upload failed", err); }
         }
-
         btn.innerHTML = 'Upload Complete';
-        setTimeout(() => { 
-            btn.innerHTML = 'Start Upload'; 
-            btn.disabled = false;
-            fetchCollectionData(); // Refresh Gallery
-        }, 2000);
+        setTimeout(() => { btn.innerHTML = 'Start Upload'; btn.disabled = false; fetchCollectionData(); }, 2000);
     }
 
-
-    // =========================================================
-    // 2. FACE GROUPS (Google Photos Style)
-    // =========================================================
+    // --- FACES ---
     async function loadFaceGroups() {
         try {
             const res = await fetch(`${API_BASE}/list_people`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: COLLECTION_ID }) // Public API for now? or needs auth? check backend
+                body: JSON.stringify({ collection_id: COLLECTION_ID })
             });
             const data = await res.json();
             const container = document.getElementById('faceGroupsContainer');
             container.innerHTML = '';
-
             if(!data.people || data.people.length === 0) {
                 container.innerHTML = '<span style="padding:10px; color:var(--text-secondary); font-size:12px;">No faces detected yet.</span>';
                 return;
             }
-
             data.people.forEach(person => {
                 const div = document.createElement('div');
                 div.className = 'face-bubble';
                 div.onclick = () => filterByFace(person.PersonId);
-                div.innerHTML = `
-                    <div class="face-img-wrap">
-                        <img src="${person.sample_url}" loading="lazy" alt="Face">
-                    </div>
-                    <div class="face-name">${person.photo_count} Photos</div>
-                `;
+                div.innerHTML = `<div class="face-img-wrap"><img src="${person.sample_url}" loading="lazy" alt="Face"></div><div class="face-name">${person.photo_count} Photos</div>`;
                 container.appendChild(div);
             });
-        } catch(e) {
-            console.error("Face load error", e);
-        }
+        } catch(e) { console.error("Face load error", e); }
     }
 
     function filterByFace(personId) {
-        // Toggle Filter Logic
         if(state.activeFilter === personId) {
-            // Clear Filter
             state.activeFilter = null;
-            renderGallery(state.photos); // Show all
+            renderGallery(state.photos);
             document.querySelectorAll('.face-bubble').forEach(el => el.classList.remove('active'));
         } else {
-            // Apply Filter
             state.activeFilter = personId;
-            // Assuming photo objects have person_ids array from backend
             const filtered = state.photos.filter(p => p.person_ids && p.person_ids.includes(personId));
             renderGallery(filtered);
-            
-            // UI Highlight
             document.querySelectorAll('.face-bubble').forEach(el => el.classList.remove('active'));
-            // Note: Since we re-render bubbles, simple toggle might miss if triggered from elsewhere, 
-            // but here onclick is on the bubble itself.
-            // We can add 'active' class to clicked bubble if we pass 'this' or find by ID.
-            // Simplified: Refresh bubbles or just basic filter for now.
         }
     }
 
-    // =========================================================
-    // 3. DATA FETCHING (Gallery & Events)
-    // =========================================================
+    // --- DATA ---
     async function fetchCollectionData() {
-        // 1. Load Collection Info & Photos
         try {
-            // Using get-photos lambda
             const res = await fetch(`${API_BASE}/get-photos`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collection_id: COLLECTION_ID, limit: 100 })
             });
             const data = await res.json();
-            
-            state.photos = data.photos; // Save to state for filtering
-            
+            state.photos = data.photos;
             document.getElementById('collectionTitle').innerHTML = `Collection ${COLLECTION_ID.substr(0,4)}... <span class="badge">${data.photos.length} Photos</span>`;
-            
             renderGallery(data.photos);
         } catch(e) { console.error(e); }
 
-        // 2. Load Events (for Sidebar/Upload)
         try {
             const res = await fetch(`${API_BASE}/get-events`, {
                 method: 'POST',
@@ -651,120 +558,66 @@
             });
             const data = await res.json();
             state.events = data.events;
-            
-            // Populate Upload Select
             const sel = document.getElementById('uploadEventSelect');
             sel.innerHTML = '<option value="">Select Event Folder</option>';
-            data.events.forEach(ev => {
-                sel.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`;
-            });
-
-            // Populate Events Tab
+            data.events.forEach(ev => { sel.innerHTML += `<option value="${ev.event_id}">${ev.name}</option>`; });
             const evList = document.getElementById('eventsList');
             evList.innerHTML = '';
             data.events.forEach(ev => {
-                evList.innerHTML += `
-                    <div style="background:var(--bg-secondary); padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:600;">${ev.name}</div>
-                            <div style="font-size:12px; color:var(--text-secondary);">${ev.event_date}</div>
-                        </div>
-                        <div class="badge">${ev.photo_count || 0} photos</div>
-                    </div>
-                `;
+                evList.innerHTML += `<div style="background:var(--bg-secondary); padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-weight:600;">${ev.name}</div><div style="font-size:12px; color:var(--text-secondary);">${ev.event_date}</div></div><div class="badge">${ev.photo_count || 0} photos</div></div>`;
             });
-
         } catch(e) { console.error(e); }
-
-        // 3. Load Faces
         loadFaceGroups();
     }
 
     function renderGallery(photos) {
         const grid = document.getElementById('photoGrid');
-        grid.innerHTML = ''; // Clear (Improve logic for Load More later)
-        
-        // Use DocumentFragment for performance
+        grid.innerHTML = '';
         const fragment = document.createDocumentFragment();
-
         photos.forEach(photo => {
             const div = document.createElement('div');
             div.className = 'photo-card';
-            if(state.selectedPhotos.has(photo)) div.classList.add('selected'); // Maintain selection state
-
-            div.innerHTML = `
-                <img src="${photo.thumbnail_url}" loading="lazy">
-                <div class="photo-check"><i class="fas fa-check"></i></div>
-            `;
-            // Selection Logic
+            if(state.selectedPhotos.has(photo)) div.classList.add('selected');
+            div.innerHTML = `<img src="${photo.thumbnail_url}" loading="lazy"><div class="photo-check"><i class="fas fa-check"></i></div>`;
             div.onclick = () => {
-                if(state.selectedPhotos.has(photo)) {
-                    state.selectedPhotos.delete(photo);
-                    div.classList.remove('selected');
-                } else {
-                    state.selectedPhotos.add(photo);
-                    div.classList.add('selected');
-                }
+                if(state.selectedPhotos.has(photo)) { state.selectedPhotos.delete(photo); div.classList.remove('selected'); }
+                else { state.selectedPhotos.add(photo); div.classList.add('selected'); }
                 updateActionButtons();
             };
             fragment.appendChild(div);
         });
-        
         grid.appendChild(fragment);
     }
 
     function updateActionButtons() {
         const btn = document.getElementById('downloadZipBtn');
-        if(state.selectedPhotos.size > 0) {
-            btn.style.display = 'inline-flex';
-            btn.innerHTML = `<i class="fas fa-download"></i> Download (${state.selectedPhotos.size})`;
-        } else {
-            btn.style.display = 'none';
-        }
+        if(state.selectedPhotos.size > 0) { btn.style.display = 'inline-flex'; btn.innerHTML = `<i class="fas fa-download"></i> Download (${state.selectedPhotos.size})`; }
+        else { btn.style.display = 'none'; }
     }
 
     async function downloadSelected() {
         if(state.selectedPhotos.size === 0) return;
-        
         const zip = new JSZip();
         const folder = zip.folder("photos");
         const btn = document.getElementById('downloadZipBtn');
         const originalText = btn.innerHTML;
         btn.innerText = "Zipping...";
         btn.disabled = true;
-
         const promises = [];
         state.selectedPhotos.forEach(photo => {
-            // Fetch image data
-            const p = fetch(photo.url)
-                .then(res => res.blob())
-                .then(blob => {
-                    const filename = photo.photo_id.split('___').pop() || 'photo.jpg';
-                    folder.file(filename, blob);
-                });
+            const p = fetch(photo.url).then(res => res.blob()).then(blob => {
+                const filename = photo.photo_id.split('___').pop() || 'photo.jpg';
+                folder.file(filename, blob);
+            });
             promises.push(p);
         });
-
-        try {
-            await Promise.all(promises);
-            const content = await zip.generateAsync({type:"blob"});
-            saveAs(content, "selected_photos.zip");
-        } catch(e) {
-            console.error(e);
-            alert("Error creating zip");
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
+        try { await Promise.all(promises); const content = await zip.generateAsync({type:"blob"}); saveAs(content, "selected_photos.zip"); }
+        catch(e) { alert("Error creating zip"); } finally { btn.innerHTML = originalText; btn.disabled = false; }
     }
 
-    // =========================================================
-    // 4. LEADS (Guest Selfies)
-    // =========================================================
     async function loadLeads() {
         const tbody = document.getElementById('leadsTableBody');
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
-
         try {
             const res = await fetch(`${API_BASE}/save-details`, {
                 method: 'POST',
@@ -772,39 +625,18 @@
                 body: JSON.stringify({ action: 'list', collection_id: COLLECTION_ID })
             });
             const leads = await res.json();
-            
             tbody.innerHTML = '';
-            if(leads.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No leads yet.</td></tr>';
-                return;
-            }
-
+            if(leads.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No leads yet.</td></tr>'; return; }
             leads.forEach(lead => {
-                // Fix Selfie Display (Base64)
                 let imgHtml = '<div style="width:40px;height:40px;background:#333;border-radius:50%"></div>';
-                if(lead.selfie_b64) {
-                    imgHtml = `<img src="data:image/jpeg;base64,${lead.selfie_b64}" class="selfie-thumb">`;
-                }
-
+                if(lead.selfie_b64) imgHtml = `<img src="data:image/jpeg;base64,${lead.selfie_b64}" class="selfie-thumb">`;
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${imgHtml}</td>
-                    <td>${lead.name || 'Unknown'}</td>
-                    <td>${lead.mobile}</td>
-                    <td><span class="badge">${lead.match_count || 0}</span></td>
-                    <td style="color:var(--text-secondary); font-size:11px;">${new Date(lead.timestamp).toLocaleString()}</td>
-                `;
+                tr.innerHTML = `<td>${imgHtml}</td><td>${lead.name || 'Unknown'}</td><td>${lead.mobile}</td><td><span class="badge">${lead.match_count || 0}</span></td><td style="color:var(--text-secondary); font-size:11px;">${new Date(lead.timestamp).toLocaleString()}</td>`;
                 tbody.appendChild(tr);
             });
-
-        } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load leads</td></tr>';
-        }
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load leads</td></tr>'; }
     }
 
-    // =========================================================
-    // UTILS
-    // =========================================================
     function formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -814,16 +646,12 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
-    // Modal Logic
     function openCreateEventModal() { document.getElementById('eventModal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    
     async function createEvent() {
         const name = document.getElementById('newEventName').value;
         const date = document.getElementById('newEventDate').value;
         if(!name || !date) return alert("Fill all fields");
-        
-        // API Call...
         try {
             await fetch(`${API_BASE}/create-event`, {
                 method: 'POST',
@@ -831,10 +659,9 @@
                 body: JSON.stringify({ collection_id: COLLECTION_ID, name, event_date: date })
             });
             closeModal('eventModal');
-            fetchCollectionData(); // Refresh
+            fetchCollectionData();
         } catch(e) { alert("Error creating event"); }
     }
-    
     async function generateSearchLink() {
         try {
             const res = await fetch(`${API_BASE}/generate-search-link`, {
@@ -843,8 +670,7 @@
                 body: JSON.stringify({ collection_id: COLLECTION_ID })
             });
             const data = await res.json();
-            const resDiv = document.getElementById('generatedLinkResult');
-            resDiv.style.display = 'block';
+            document.getElementById('generatedLinkResult').style.display = 'block';
             document.getElementById('shareLinkInput').value = data.searchUrl;
         } catch(e) { alert("Error"); }
     }
