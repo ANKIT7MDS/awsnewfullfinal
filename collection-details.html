@@ -775,7 +775,7 @@
 /* =========================================================
   API CONFIG (IMPORTANT)
 ========================================================= */
-const API_BASE = localStorage.getItem("API_BASE") || "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+const API_BASE = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
 const idToken = localStorage.getItem("idToken");
 
 // URL params
@@ -1330,106 +1330,61 @@ async function loadFaceGroups(){
 
 
 function buildFacesFromPhotos(photos){
-  /**
-   * ✅ ONE PERSON = ONE ICON (Google Photos style)
-   * हम photos table के data से एक "people list" बनाते हैं:
-   * - person_id available हो तो उसी के हिसाब से group करेंगे
-   * - हर person के लिए 1 representative thumbnail बनेगा (face crop via bbox)
-   *
-   * Backend से photo item में ये fields आते हैं:
-   * - url
-   * - face_ids: [FaceId...]
-   * - person_ids: [person_x...]
-   * - faces: [{FaceId, BoundingBox, ...}]  ✅ यही bbox हमें crop के लिए चाहिए
-   *
-   * IMPORTANT:
-   * - अगर bbox न मिले तो हम fallback में normal cover center दिखाएंगे
-   * - existing flow (guest selfie search / photo search) पर कोई impact नहीं
-   */
-  const map = new Map(); // key = person_id OR face_id
+  /* =========================================================
+    FRONTEND-ONLY GOOGLE-PHOTOS STYLE
+    ✅ 1 person_id = 1 icon
+    - We group faces across ALL photos by person_id
+    - Representative photo_url picked as: first occurrence (usually most recent because photos list is newest-first)
+    - Count badge uses how many photos contain that person_id
+    NOTE: No backend change needed.
+  ========================================================= */
+  const list = Array.isArray(photos) ? photos : (Array.isArray(allPhotos) ? allPhotos : []);
+  const map = {}; // person_id -> group
 
-  (photos||[]).forEach(p=>{
-    const url = p.url || p.s3_url || p.photo_url || p.image_url;
-    const faceIds = Array.isArray(p.face_ids) ? p.face_ids : [];
-    const personIds = Array.isArray(p.person_ids) ? p.person_ids : [];
-    const facesArr = Array.isArray(p.faces) ? p.faces : []; // [{FaceId, BoundingBox, ...}] OR {face_id,bbox,...}
+  for(const p of list){
+    const url = p.url || p.photo_url || p.s3_url || p.image_url;
+    const faces = p.faces_v2 || p.faces || p.Faces || [];
+    for(const f of faces){
+      const pid = f.person_id || f.PersonId || f.personId;
+      if(!pid) continue;
 
-    // faceId -> bbox quick lookup
-    const bboxByFaceId = {};
-    for(const f of facesArr){
-      const fid = f.FaceId || f.face_id || f.faceId;
-      const bb = f.BoundingBox || f.bbox || f.boundingBox;
-      if(fid && bb) bboxByFaceId[fid] = bb;
-    }
+      if(!map[pid]){
+        map[pid] = {
+          person_id: pid,
+          // representative image for icon (no crop, just zoom via CSS)
+          photo_url: url,
+          // store any available face_id for rename (optional)
+          face_id: f.face_id || f.FaceId || f.faceId || null,
+          // keep bbox if present (future crop)
+          bbox: f.bounding_box || f.BoundingBox || f.bbox || null,
+          count: 0,
+          photoCount: 0
+        };
+      }
 
-    for(let i=0;i<faceIds.length;i++){
-      const fid = faceIds[i];
-      const pid = personIds[i] || null;
-
-      // ✅ group key
-      const key = pid || fid || "unknown";
-      if(!fid) continue;
-
-      // ✅ representative bbox (prefer largest area)
-      const bb = bboxByFaceId[fid] || null;
-      const area = bb ? (Number(bb.Width||0)*Number(bb.Height||0)) : 0;
-
-      const prev = map.get(key);
-      if(!prev){
-        map.set(key, {
-          personId: pid || null,
-          faceId: fid,
-          sampleUrl: url || "",
-          bbox: bb,
-          area,
-          photoCount: 1,      // इस person के कितने photos (approx)
-          faceCount: 1,       // fallback
-          label: "Unknown"
-        });
-      }else{
-        prev.photoCount += 1;
-
-        // अगर नई bbox बड़ी है तो thumbnail update कर दो
-        if(area > (prev.area||0)){
-          prev.faceId = fid;
-          prev.sampleUrl = url || prev.sampleUrl;
-          prev.bbox = bb;
-          prev.area = area;
-        }
+      // Count unique photos: increment once per photo per person
+      // We'll track seen key on the group temporarily
+      const key = p.photo_id || p.id || p.ExternalImageId || url;
+      map[pid].__seen = map[pid].__seen || {};
+      if(!map[pid].__seen[key]){
+        map[pid].__seen[key] = 1;
+        map[pid].count += 1;
+        map[pid].photoCount += 1;
       }
     }
+  }
+
+  faceGroups = Object.values(map).map(g=>{
+    // cleanup temp
+    if(g.__seen) delete g.__seen;
+    return g;
   });
 
-  // map -> array
-  const out = Array.from(map.values()).map((x, idx)=> {
-    const personId = x.personId || (x.faceId ? ("person_"+x.faceId.slice(0,8)) : ("person_"+idx));
-    const faceId = x.faceId || null;
-    const name = x.label || "Unknown";
-    const sampleUrl = x.sampleUrl || "";
-    const bbox = x.bbox || null;
+  // Sort: highest count first (Google Photos feel)
+  faceGroups.sort((a,b)=>(b.count||0)-(a.count||0));
 
-    // ✅ Normalize keys so renderFaceIcons() works without changes
-    return {
-      // preferred keys used by UI
-      PersonId: personId,
-      FaceId: faceId || personId,          // fallback
-      FaceName: name,
-      photoCount: x.photoCount || 0,
-      thumbnail: "",                       // if you later add a real thumbnail URL
-      sampleUrl: sampleUrl,
-      BoundingBox: bbox,
-
-      // keep alternates for safety (other code paths)
-      personId,
-      faceId,
-      label: name,
-      bbox,
-    };
-  });
-
-  // stable ordering: more photos first
-  out.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
-  return out;
+  // Re-render icons with new groups
+  if(typeof renderFaceIcons === "function") renderFaceIcons();
 }
 
 function renderFaceIcons(){
