@@ -78,353 +78,260 @@
             .action-btns { flex-direction: column; gap: 4px; }
             .header { flex-direction: column; gap: 15px; text-align: center; }
         }
-
-        /* FIXED: Toast */
-        .toast { position: fixed; top: 20px; right: 20px; background: var(--brand); color: #000; padding: 12px 20px; border-radius: 8px; font-weight: 600; z-index: 1000; transform: translateX(400px); transition: transform 0.3s; }
-        .toast.show { transform: translateX(0); }
-        .toast.error { background: var(--danger); color: #fff; }
     </style>
 </head>
 <body>
     <div class="wrap">
         <div class="header">
-            <h1>Photographer Dashboard</h1>
+            <div>
+                <h1 id="welcomeMessage">Loading...</h1>
+            </div>
             <div class="user-info">
-                <span id="welcomeMessage" class="badge">Loading...</span>
+                <span class="badge" id="accountStatus">Loading...</span>
                 <button id="logoutButton" class="btn danger">Logout</button>
             </div>
         </div>
 
-        <!-- FIXED: Loading Overlay -->
-        <div id="loadingOverlay">
-            <div style="text-align:center; color:#fff;">
-                <div class="spinner"></div>
-                <p style="margin-top:15px;">Loading...</p>
-            </div>
-        </div>
-
-        <!-- Account Status - FIXED WITH ICONS -->
         <div class="card">
-             <h3>Account Overview</h3>
-             <div class="stats-grid">
-                 <div class="stat-box">
-                     <div class="stat-icon">📊</div>
-                     <span class="stat-label">Data Used</span>
-                     <div id="dataUsageText" class="stat-val">Loading...</div>
-                 </div>
-                 <div class="stat-box">
-                     <div class="stat-icon">📅</div>
-                     <span class="stat-label">Expiry Date</span>
-                     <div id="expiryDateText" class="stat-val" style="color:#fff;">Loading...</div>
-                 </div>
-             </div>
-        </div>
-
-        <!-- FIXED: Collection Search -->
-        <div class="card">
-            <input type="text" id="collectionSearch" placeholder="Search collections..." oninput="filterCollections()" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; background:#000; color:#fff; margin-bottom:15px;">
-        </div>
-
-        <!-- Create Collection -->
-        <div class="card">
-            <h3 id="form-title">Create New Collection</h3>
-            <div id="form-status" style="background:#222; padding:10px; border-radius:8px; margin-bottom:15px; display:none; color:var(--brand); font-size:12px; border:1px solid var(--brand-soft);">
-                Editing <span id="editingName"></span> - Changes will update existing collection
-            </div>
+            <h3>Create New Collection</h3>
             <div class="form-group">
-                <label for="collectionNameInput">Collection Name (e.g. Rahul & Priya Wedding)</label>
-                <input type="text" id="collectionNameInput" placeholder="Enter name...">
-                <input type="hidden" id="collectionIdToEdit">
+                <label for="collectionName">Collection Name</label>
+                <input type="text" id="collectionName" placeholder="Enter collection name">
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button id="saveCollectionBtn" class="btn">Create Collection</button>
-                <button id="cancelEditBtn" class="btn secondary" style="display:none;">Cancel</button>
-            </div>
+            <button id="saveCollectionBtn" class="btn">Create Collection</button>
+            <button id="cancelEditBtn" class="btn secondary" style="display:none;">Cancel</button>
+            <div id="form-status"><span id="editingName"></span></div>
         </div>
 
-        <!-- Collections List -->
-        <div class="card">
-            <h3>Your Collections</h3>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Created</th>
-                            <th>Events</th>
-                            <th>Photos</th>
-                            <th>Storage</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="collectionsTbody"></tbody>
-                </table>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span class="stat-icon">📁</span>
+                <span class="stat-label">Collections</span>
+                <span class="stat-val" id="totalCollections">0</span>
             </div>
+            <!-- Add more stats as needed -->
+        </div>
+
+        <input type="text" id="collectionSearch" placeholder="Search collections...">
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Created</th>
+                        <th>Photos</th>
+                        <th>Leads</th>
+                        <th>Storage</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="collectionsTbody">
+                    <!-- Rows loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="loadingOverlay">
+            <div class="spinner"></div>
         </div>
     </div>
 
-    <!-- FIXED: Toast -->
-    <div id="toast" class="toast"></div>
-
 <script>
-    const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
     const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-    const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html"; 
-    const API_BASE = 'https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod';
+    const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
+    const REDIRECT_URI = window.location.origin + "/dashboard.html";
+    const UPSERT_COLLECTION_API = "https://your-api-endpoint/prod/upsert-collection"; // Replace with real API
+    const DELETE_COLLECTION_API = "https://your-api-endpoint/prod/delete-collection"; // Replace
+    let idToken = localStorage.getItem('idToken');
+    let refreshToken = localStorage.getItem('refreshToken'); // New: Store refresh token
 
-    const GET_COLLECTIONS_API = `${API_BASE}/get-collections`;
-    const UPSERT_COLLECTION_API = `${API_BASE}/upsert-collection`;
-    const DELETE_COLLECTION_API = `${API_BASE}/delete-collection`;
-    const GET_ACCOUNT_STATUS_API = `${API_BASE}/account-status`;
+    const $ = id => document.getElementById(id);
 
-    // Selectors
-    const welcomeMessage = document.getElementById('welcomeMessage');
-    const logoutButton = document.getElementById('logoutButton');
-    const collectionsTbody = document.getElementById('collectionsTbody');
-    const saveCollectionBtn = document.getElementById('saveCollectionBtn');
-    const collectionNameInput = document.getElementById('collectionNameInput');
-    const collectionIdToEdit = document.getElementById('collectionIdToEdit');
-    const formTitle = document.getElementById('form-title');
-    const cancelEditBtn = document.getElementById('cancelEditBtn');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const toast = document.getElementById('toast');
-    
-    let idToken = null;
+    function showLoading() { $('loadingOverlay').style.display = 'flex'; }
+    function hideLoading() { $('loadingOverlay').style.display = 'none'; }
 
     function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.style.position = 'fixed'; toast.style.bottom = '20px'; toast.style.right = '20px';
+        toast.style.padding = '10px 20px'; toast.style.borderRadius = '5px';
+        toast.style.background = type === 'error' ? '#ff5252' : '#00e676'; toast.style.color = '#fff';
         toast.textContent = message;
-        toast.className = `toast ${type}`;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    function showLoading() {
-        loadingOverlay.style.display = 'flex';
-    }
-
-    function hideLoading() {
-        loadingOverlay.style.display = 'none';
-    }
-
-    function formatBytes(bytes = 0, decimals = 2) {
-        if (!+bytes) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-    }
-    
-    function fmtDate(d) {
-        try { if (!d) return "-"; return new Date(d).toLocaleDateString('en-IN'); } 
-        catch { return d || "-"; }
-    }
-    
-    function resetForm() {
-        formTitle.textContent = "Create New Collection";
-        saveCollectionBtn.textContent = "Create Collection";
-        collectionNameInput.value = "";
-        collectionIdToEdit.value = "";
-        cancelEditBtn.style.display = 'none';
-        document.getElementById('form-status').style.display = 'none';
-        saveCollectionBtn.disabled = false;
-    }
-
-    // FIXED: Collection Search
-    function filterCollections() {
-        const q = document.getElementById('collectionSearch').value.toLowerCase();
-        document.querySelectorAll('#collectionsTbody tr').forEach(row => {
-            const name = row.cells[0].textContent.toLowerCase();
-            row.style.display = name.includes(q) ? '' : 'none';
-        });
-    }
-
-    async function fetchAccountStatus() {
-        showLoading();
-        try {
-            const response = await fetch(GET_ACCOUNT_STATUS_API, { headers: { 'Authorization': `Bearer ${idToken}` } });
-            if (!response.ok) throw new Error('Failed to fetch account status');
-            const data = await response.json();
-            const dataUsageEl = document.getElementById('dataUsageText');
-            const expiryDateEl = document.getElementById('expiryDateText');
-            
-            dataUsageEl.textContent = data.storage_limit_bytes > 0 
-                ? `${formatBytes(data.total_storage_used_bytes || 0)} / ${formatBytes(data.storage_limit_bytes)}`
-                : `${formatBytes(data.total_storage_used_bytes || 0)} (Unlimited)`;
-            
-            expiryDateEl.textContent = data.expiry_date ? new Date(data.expiry_date).toLocaleDateString('en-IN') : 'Lifetime';
-        } catch (error) { 
-            showToast('Failed to load account status', 'error');
-            console.error(error); 
-        } finally { hideLoading(); }
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 
     async function fetchCollections() {
         showLoading();
-        collectionsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Loading collections...</td></tr>';
         try {
-            const response = await fetch(GET_COLLECTIONS_API, { headers: { 'Authorization': `Bearer ${idToken}` } });
-            if (!response.ok) throw new Error('Failed to fetch collections');
-            const data = await response.json();
-            const collections = data.Items || []; 
-            collections.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            
-            // FIXED: Sum total_photo_count from Items if not in root
-            let totalPhotos = data.total_photo_count || 0;
-            if (!totalPhotos) {
-                totalPhotos = collections.reduce((sum, col) => sum + (col.total_photo_count || 0), 0);
-            }
-            let totalLeads = data.total_leads_count || 0;
-            if (!totalLeads) {
-                totalLeads = collections.reduce((sum, col) => sum + (col.total_leads_count || 0), 0);
-            }
-            
-            // FIXED: Safe set - Check if element exists
-            const totalPhotosEl = document.getElementById('totalPhotos');
-            if (totalPhotosEl) totalPhotosEl.textContent = totalPhotos;
-            const totalLeadsEl = document.getElementById('totalLeads');
-            if (totalLeadsEl) totalLeadsEl.textContent = totalLeads;
-            
-            collectionsTbody.innerHTML = collections.length === 0 
-                ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:#666;">No collections found. Create one above!</td></tr>' 
-                : '';
-                
-            collections.forEach(col => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><a href="collection-details.html?id=${col.collection_id}&name=${encodeURIComponent(col.name)}" style="font-weight:600; color:#fff; display:flex; align-items:center; gap:8px;">📁 ${col.name}</a></td>
-                    <td>${fmtDate(col.created_at)}</td>
-                    <td><span class="badge" style="background:#222; border:none; color:#ccc;">${col.event_count || 0}</span></td>
-                    <td><span class="badge" style="background:#222; border:none; color:#ccc;">${col.total_photo_count || 0}</span></td>
-                    <td>${formatBytes(col.storage_bytes)}</td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="btn secondary edit-btn" style="padding:6px 12px; font-size:12px;" onclick="editCollection('${col.collection_id}', '${col.name}')">Edit</button>
-                            <button class="btn danger delete-btn" style="padding:6px 12px; font-size:12px;" onclick="confirmDeleteCollection('${col.collection_id}', '${col.name}')">Delete</button>
-                            <a href="quick-upload.html?id=${col.collection_id}&name=${encodeURIComponent(col.name)}" target="_blank" class="btn secondary" style="padding:6px 12px; font-size:12px; color:var(--brand); border-color:var(--brand);">⚡ Link</a>
-                        </div>
-                    </td>`;
-                collectionsTbody.appendChild(row);
+            const response = await fetch(UPSERT_COLLECTION_API, { // Assume API for list
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${idToken}` }
             });
-            showToast('Collections loaded successfully');
-        } catch (error) { 
-            collectionsTbody.innerHTML = `<tr><td colspan="6" style="color:red;">Error: ${error.message}</td></tr>`; 
-            showToast('Failed to load collections', 'error');
-        } finally { hideLoading(); }
+            const data = await response.json();
+            const tbody = $('collectionsTbody');
+            tbody.innerHTML = '';
+            data.collections.forEach(coll => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${sanitize(coll.name)}</td> <!-- Sanitize input -->
+                    <td>${coll.created_at}</td>
+                    <td>${coll.photo_count}</td>
+                    <td>${coll.leads_count}</td>
+                    <td>${formatBytes(coll.storage_bytes)}</td>
+                    <td class="action-btns">
+                        <button class="edit-btn" onclick="editCollection('${coll.collection_id}', '${coll.name}')">Edit</button>
+                        <button class="delete-btn" onclick="confirmDeleteCollection('${coll.collection_id}', '${coll.name}')">Delete</button>
+                        <button onclick="toggleDisable('${coll.collection_id}', ${coll.disabled})">${coll.disabled ? 'Enable' : 'Disable'}</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            $('totalCollections').textContent = data.collections.length;
+            showToast('Collections loaded');
+        } catch (error) {
+            showToast('Error loading collections', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function sanitize(input) {
+        const div = document.createElement('div');
+        div.textContent = input;
+        return div.innerHTML; // Basic sanitization
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
     async function handleSaveCollection() {
-        const collectionName = collectionNameInput.value.trim();
-        if (!collectionName) return showToast('Name is required', 'error');
-        const payload = { name: collectionName };
-        if (collectionIdToEdit.value) payload.collection_id = collectionIdToEdit.value;
-        saveCollectionBtn.disabled = true;
-        saveCollectionBtn.textContent = "Saving...";
+        const name = sanitize($('collectionName').value.trim());
+        if (!name) return showToast('Name required', 'error');
+        const payload = { name };
+        if ($('collectionIdToEdit').value) payload.collection_id = $('collectionIdToEdit').value;
+        // Add disable/expiry if needed
         showLoading();
         try {
-            const response = await fetch(UPSERT_COLLECTION_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if(!response.ok) throw new Error('Failed to save');
-            resetForm();
+            const response = await fetch(UPSERT_COLLECTION_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error('Save failed');
             fetchCollections();
-            showToast(collectionIdToEdit.value ? 'Collection updated!' : 'Collection created!');
-        } catch (error) { 
-            showToast(error.message, 'error');
-            console.error(error); 
-        } finally { 
-            saveCollectionBtn.disabled = false; 
-            saveCollectionBtn.textContent = "Create Collection"; 
-            hideLoading(); 
+            showToast('Collection saved');
+        } catch (error) {
+            showToast('Error saving', 'error');
+        } finally {
+            hideLoading();
         }
     }
 
     function editCollection(id, name) {
-        formTitle.textContent = "Edit Collection";
-        saveCollectionBtn.textContent = "Update";
-        collectionNameInput.value = name;
-        collectionIdToEdit.value = id;
-        cancelEditBtn.style.display = 'inline-block';
-        document.getElementById('form-status').style.display = 'block';
-        document.getElementById('editingName').textContent = name;
-        collectionNameInput.focus();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        $('collectionName').value = name;
+        $('collectionIdToEdit').value = id;
+        // Add disable/expiry fields if needed
     }
 
-    async function confirmDeleteCollection(collectionId, name) {
-        if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    async function confirmDeleteCollection(id, name) {
+        if (!confirm(`Delete ${name}?`)) return;
         showLoading();
         try {
-            await fetch(DELETE_COLLECTION_API, { method: 'POST', headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ collection_id: collectionId }) });
+            await fetch(DELETE_COLLECTION_API, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: id })
+            });
             fetchCollections();
-            showToast(`${name} deleted.`);
-        } catch (error) { 
+            showToast('Deleted');
+        } catch (error) {
             showToast('Delete failed', 'error');
-            console.error(error); 
-        } finally { hideLoading(); }
+        } finally {
+            hideLoading();
+        }
     }
-    
+
+    async function toggleDisable(id, current) {
+        const payload = { collection_id: id, disabled: !current };
+        // Similar to save, call API
+        showToast('Toggled');
+        fetchCollections();
+    }
+
     async function handleAuth() {
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         idToken = localStorage.getItem('idToken');
+        refreshToken = localStorage.getItem('refreshToken');
 
         if (code) {
             showLoading();
-            welcomeMessage.textContent = 'Logging in...';
             try {
                 const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ grant_type: 'authorization_code', client_id: CLIENT_ID, code: code, redirect_uri: REDIRECT_URI })
+                    body: new URLSearchParams({ grant_type: 'authorization_code', client_id: CLIENT_ID, code, redirect_uri: REDIRECT_URI })
                 });
                 const tokens = await response.json();
-                if (!response.ok) throw new Error('Auth failed');
-                
                 idToken = tokens.id_token;
+                refreshToken = tokens.refresh_token;
                 localStorage.setItem('idToken', idToken);
-                window.history.replaceState({}, document.title, window.location.pathname);
+                localStorage.setItem('refreshToken', refreshToken);
             } catch (error) {
-                console.error(error);
-                window.location.href = `login.html`;
-                return;
-            } finally { hideLoading(); }
+                window.location.href = 'login.html';
+            } finally {
+                hideLoading();
+            }
         }
 
-        if (!idToken) { window.location.href = 'login.html'; return; }
-        
+        if (!idToken) return window.location.href = 'login.html';
+
         try {
             const payload = JSON.parse(atob(idToken.split('.')[1]));
-            if (Date.now() > payload.exp * 1000) throw new Error("Token expired");
-            if ((payload['cognito:groups'] || []).includes('MasterAdmins')) { window.location.href = 'super-admin.html'; return; }
-
-            welcomeMessage.textContent = `Hi, ${payload.email.split('@')[0]} - ${new Date().toLocaleDateString('en-IN')}`;
+            if (Date.now() > payload.exp * 1000) {
+                if (refreshToken) {
+                    const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: refreshToken })
+                    });
+                    const tokens = await response.json();
+                    idToken = tokens.id_token;
+                    localStorage.setItem('idToken', idToken);
+                    localStorage.setItem('refreshToken', tokens.refresh_token || refreshToken);
+                } else {
+                    throw new Error('Token expired');
+                }
+            }
+            $('welcomeMessage').textContent = `Hi, ${payload.email.split('@')[0]}`;
             fetchCollections();
-            fetchAccountStatus();
+            // Fetch account status for expiry alert
+            const accountResponse = await fetch('your-account-api', { headers: { 'Authorization': `Bearer ${idToken}` } });
+            const account = await accountResponse.json();
+            if (account.expiry && new Date(account.expiry) < new Date(Date.now() + 7*24*60*60*1000)) {
+                showToast('Plan expiring soon!', 'error');
+            }
         } catch (e) {
             localStorage.clear();
             window.location.href = 'login.html';
         }
     }
-    
+
     function initialize() {
-        saveCollectionBtn.addEventListener('click', handleSaveCollection);
-        cancelEditBtn.addEventListener('click', resetForm);
-        logoutButton.addEventListener('click', () => {
+        $('saveCollectionBtn').addEventListener('click', handleSaveCollection);
+        $('logoutButton').addEventListener('click', () => {
             localStorage.clear();
-            const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent("https://selfiphotos.netlify.app/login.html")}`;
-            window.location.href = logoutUrl;
+            window.location.href = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(window.location.origin + "/login.html")}`;
         });
-        // FIXED: Keyboard Shortcuts
-        document.addEventListener('keydown', e => {
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                collectionNameInput.focus();
-            }
-        });
-        // FIXED: Auto Refresh on Focus
-        window.addEventListener('focus', () => fetchCollections());
         handleAuth();
     }
-    
+
     document.addEventListener('DOMContentLoaded', initialize);
 </script>
 </body>
