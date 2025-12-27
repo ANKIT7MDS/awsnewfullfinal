@@ -389,7 +389,7 @@
     .empty-state i{font-size:44px;color:var(--brand);margin-bottom:12px;display:block}
 
     /* =========================================================
-      MODALS
+      MODALS (Including New Share Modal)
     ========================================================= */
     .modal{
       display:none;
@@ -425,6 +425,31 @@
     .tag.ai{background:rgba(16,185,129,.15);color:var(--success)}
     .tag.face{background:rgba(245,158,11,.15);color:var(--warning)}
     .tags-container{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+    /* Styles for Share Modal */
+    .share-section {
+      background: rgba(255,255,255,0.03); 
+      padding: 16px; 
+      border-radius: var(--radius-md); 
+      border: 1px solid var(--border); 
+      margin-bottom: 20px;
+    }
+    .share-title { margin: 0 0 10px 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
+    .share-desc { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; }
+    .link-box { display: flex; gap: 10px; }
+    .link-input { 
+      flex: 1; background: var(--bg-primary); border: 1px solid var(--border); 
+      color: #fff; padding: 10px; border-radius: var(--radius-sm); font-size: 0.9rem; 
+    }
+    .settings-grid { 
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; 
+      margin-bottom: 12px; font-size: 0.9rem; 
+    }
+    .checkbox-label { 
+      display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-secondary); 
+    }
+    .checkbox-label input { accent-color: var(--brand); width: 16px; height: 16px; }
+
   </style>
 </head>
 
@@ -444,6 +469,8 @@
 
     <div class="header-actions">
       <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+      <!-- NEW: SHARE BUTTON -->
+      <button class="btn btn-primary" id="openShareModalBtn" style="background:linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);"><i class="fas fa-share-nodes"></i> Share / Selection</button>
       <a href="#" id="assistantLink" target="_blank" class="btn btn-primary"><i class="fas fa-bolt"></i> Staff Upload Link</a>
     </div>
   </div>
@@ -454,7 +481,7 @@
       <div class="tab active" data-tab="galleryTab"><i class="fas fa-images"></i> Photos</div>
       <div class="tab" data-tab="eventsTab"><i class="fas fa-calendar-alt"></i> Events</div>
       <div class="tab" data-tab="uploadTab"><i class="fas fa-cloud-upload-alt"></i> Upload</div>
-      <div class="tab" data-tab="linksTab"><i class="fas fa-link"></i> Links</div>
+      <div class="tab" data-tab="linksTab"><i class="fas fa-link"></i> Guest Links</div>
       <div class="tab" data-tab="analyticsTab"><i class="fas fa-users"></i> Guests</div>
     </div>
   </div>
@@ -609,7 +636,7 @@
           <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:700">
             <i class="fas fa-tachometer-alt"></i> Quality (<span id="jpegQualityVal">0.85</span>)
           </label>
-          <input id="jpegQuality" type="range" min="0.5" max="0.95" step="0.01" value="0.85">
+          <input id="jpegQuality" type="range" min="0.5" max="0.95" step="0.1" value="0.85">
         </div>
       </div>
 
@@ -627,10 +654,10 @@
   <div id="linksTab" class="tab-content">
     <div class="card" style="max-width:700px;margin:0 auto;">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-link"></i> Generate Search Link</h3>
+        <h3 class="card-title"><i class="fas fa-link"></i> Guest Search Link</h3>
       </div>
       <p style="color:var(--text-secondary);margin-bottom:12px;">
-        Select events to include in guest search link.
+        Create a link for guests to find photos using their face (Selfie Search).
       </p>
 
       <div id="linkEventList" style="max-height:220px;overflow:auto;padding:14px;background:rgba(255,255,255,.03);border-radius:var(--radius-md);border:1px solid var(--border);"></div>
@@ -662,7 +689,7 @@
     </div>
   </div>
 
-  <!-- GUEST LEADS TAB (UPDATED UI) -->
+  <!-- GUEST LEADS TAB -->
   <div id="analyticsTab" class="tab-content">
     <div class="card">
       <div class="card-header">
@@ -731,11 +758,56 @@
   </div>
 </div>
 
+<!-- NEW SHARE & SELECTION MODAL -->
+<div class="modal" id="shareModal">
+  <div class="modal-content" style="max-width: 650px;">
+    <button class="modal-close" id="closeShareModalBtn"><i class="fas fa-times"></i></button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="margin:0"><i class="fas fa-share-nodes"></i> Share Collection</h3>
+    </div>
+
+    <!-- GUEST LINK -->
+    <div class="share-section">
+      <h4 class="share-title" style="color:#4facfe"><i class="fas fa-users"></i> Guest Link (Selfie Search)</h4>
+      <p class="share-desc">Send this to guests. They can find photos using face search.</p>
+      <div class="link-box">
+        <input type="text" id="guestLinkInput" readonly class="link-input">
+        <button id="copyGuestBtn" class="btn btn-secondary"><i class="fas fa-copy"></i></button>
+      </div>
+    </div>
+
+    <!-- CLIENT LINK -->
+    <div class="share-section">
+      <h4 class="share-title" style="color:#f6d365"><i class="fas fa-crown"></i> Client Link (VIP Gallery)</h4>
+      <p class="share-desc">Send to Bride/Groom for full view & selection (Selection Mode).</p>
+      
+      <!-- Permissions -->
+      <div class="settings-grid">
+        <label class="checkbox-label"><input type="checkbox" id="setWatermark" checked> Show Watermark</label>
+        <label class="checkbox-label"><input type="checkbox" id="setSelection" checked> Allow Selection</label>
+        <label class="checkbox-label"><input type="checkbox" id="setDownload"> Allow HD Download</label>
+      </div>
+
+      <div class="link-box">
+        <input type="text" id="clientLinkInput" readonly class="link-input">
+        <button id="copyClientBtn" class="btn btn-primary"><i class="fas fa-copy"></i></button>
+      </div>
+      
+      <div style="text-align:right;margin-top:10px">
+        <button id="saveClientSettingsBtn" style="background:none;border:none;color:var(--brand);cursor:pointer;font-size:0.9rem;font-weight:700">
+          <i class="fas fa-save"></i> Save Permissions to Database
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* =========================================================
   API CONFIG (IMPORTANT)
 ========================================================= */
 const API_BASE = localStorage.getItem("API_BASE") || "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
+const CLIENT_API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/client-api";
 const idToken = localStorage.getItem("idToken");
 
 // URL params
@@ -793,29 +865,6 @@ function photoHasFace(photo, faceId){
   const faces = Array.isArray(photo.faces) ? photo.faces : [];
   return faces.some(f => getFaceId(f) === faceId);
 }
-
-/* =========================================================
-  HINDI NOTE:
-  Photo me person_id search helper
-  - New pipeline: photo.person_ids / primary_person_id
-  - Fallback: face_ids (old pipeline)
-========================================================= */
-function photoHasPerson(photo, personId){
-  if(!personId) return true;
-
-  const pids = Array.isArray(photo.person_ids) ? photo.person_ids
-    : (Array.isArray(photo.personIds) ? photo.personIds : []);
-  if(pids.length && pids.includes(personId)) return true;
-
-  const primary = photo.primary_person_id || photo.primaryPersonId || null;
-  if(primary && primary === personId) return true;
-
-  // fallback: if this selection was actually a FaceId
-  if(Array.isArray(photo.face_ids) && photo.face_ids.includes(personId)) return true;
-
-  return false;
-}
-
 function setFaceBgCrop(wrapper, url, bbox){
   wrapper.style.backgroundImage = url ? `url("${url}")` : "none";
   wrapper.style.backgroundRepeat = "no-repeat";
@@ -1184,12 +1233,7 @@ function renderPhotos(){
 }
 
 /* =========================================================
-  PEOPLE (Face Icons) / Google Photos Style
-
-  HINDI NOTE:
-  - Backend se list_people API aata hai (FaceId + person_id + thumbnail + name)
-  - UI me hume person_id ke basis par UNIQUE icons dikhane hain
-  - Agar list_people fail ho jaye to fallback: allPhotos se people build
+  PEOPLE (Face Icons)
 ========================================================= */
 async function loadFaceGroups(){
   try{
@@ -1216,55 +1260,17 @@ async function loadFaceGroups(){
       const data = result.data || {};
       const people = data.people || data.items || data.faces || [];
       if(Array.isArray(people) && people.length){
-        faceGroups = (()=>{
-          /* =========================================================
-            HINDI NOTE:
-            list_people API ka data face-level ho sakta hai, lekin hume UI me
-            "People icons" person_id ke basis par dikhane hain.
-            - group key = person_id (agar ho), warna FaceId
-            - representative FaceId naming ke liye rakhenge
-          ========================================================= */
-          const g = new Map();
-
-          people.forEach(p=>{
-            const pid = p.person_id || p.PersonId || p.personId || null;
-            const fid = p.FaceId || p.face_id || p.faceId || null;
-            const key = pid || fid;
-            if(!key) return;
-
-            const name = p.FaceName || p.name || "Unknown";
-            const count = Number(p.photo_count || p.count || 0) || 0;
-            const thumb = p.face_thumbnail_url || p.thumbnail || p.thumb || null;
-            const sampleUrl = p.sample_url || p.sampleUrl || null;
-            const bbox = p.BoundingBox || p.bounding_box || null;
-
-            if(!g.has(key)){
-              g.set(key,{
-                PersonId: pid,
-                FaceId: fid || key,
-                FaceName: name,
-                photoCount: count,
-                thumbnail: thumb,
-                sampleUrl: sampleUrl,
-                BoundingBox: bbox
-              });
-            }else{
-              const cur = g.get(key);
-              // name: prefer non-Unknown
-              if((cur.FaceName === "Unknown" || !cur.FaceName) && name && name !== "Unknown") cur.FaceName = name;
-              // count: keep max / add
-              cur.photoCount = Math.max(cur.photoCount||0, count||0) || (cur.photoCount||0);
-              // thumb: prefer available
-              if(!cur.thumbnail && thumb) cur.thumbnail = thumb;
-              if(!cur.sampleUrl && sampleUrl) cur.sampleUrl = sampleUrl;
-              if(!cur.BoundingBox && bbox) cur.BoundingBox = bbox;
-              // FaceId: keep existing, else set
-              if(!cur.FaceId && fid) cur.FaceId = fid;
-            }
-          });
-
-          return [...g.values()];
-        })();
+        faceGroups = people.map(p=>{
+          const fid = p.FaceId || p.face_id || p.faceId;
+          return {
+            FaceId: fid,
+            FaceName: p.FaceName || p.name || "Unknown",
+            photoCount: p.photo_count || p.count || 0,
+            thumbnail: p.face_thumbnail_url || p.thumbnail || p.thumb || null,
+            sampleUrl: p.sample_url || p.sampleUrl || null,
+            BoundingBox: p.BoundingBox || p.bounding_box || null
+          };
+        }).filter(x=>x.FaceId);
 
         if(faceGroups.every(x=>!x.thumbnail)){
           faceGroups = buildFacesFromPhotos();
@@ -1286,94 +1292,77 @@ async function loadFaceGroups(){
   }
 }
 
-
 function buildFacesFromPhotos(){
-  /* =========================================================
-    HINDI NOTE:
-    Yeh function "Google Photos type People icons" ke liye
-    allPhotos se unique PEOPLE (person_id) nikalta hai.
-    - 1 icon = 1 person_id
-    - Har person ke saath representative FaceId rakhenge (naming/save ke liye)
-    - photoCount = us person ke kitne photos me aaya
-  ========================================================= */
-
-  const map = new Map(); // key = person_id, value = group object
+  const map = new Map();
 
   allPhotos.forEach(photo=>{
-    const sampleUrl = photo.thumbnail_url || photo.url || "";
-    const personIds = Array.isArray(photo.person_ids) ? photo.person_ids
-      : (Array.isArray(photo.personIds) ? photo.personIds : []);
-    const faceIds = Array.isArray(photo.face_ids) ? photo.face_ids
-      : (Array.isArray(photo.faceIds) ? photo.faceIds
-      : (Array.isArray(photo.FaceIds) ? photo.FaceIds : []));
+    const sampleUrl = photo.thumbnail_url || photo.url;
 
-    // Representative face id for naming / list_people compatibility
-    const primaryPerson = photo.primary_person_id || photo.primaryPersonId || null;
-    const primaryFaceId = photo.primary_face_id || photo.primaryFaceId || null;
+// DynamoDB item me kabhi `faces` aata hai, kabhi sirf `face_ids`.
+// People icons ko hamesha build karne ke liye dono support:
+const faces = Array.isArray(photo.faces) ? photo.faces : [];
+const faceIdsFallback = Array.isArray(photo.face_ids) ? photo.face_ids
+  : (Array.isArray(photo.faceIds) ? photo.faceIds
+  : (Array.isArray(photo.FaceIds) ? photo.FaceIds : []));
 
-    // 1) Prefer person_ids (new pipeline)
-    if(personIds.length){
-      personIds.forEach((pid, idx)=>{
-        if(!pid) return;
-        if(!map.has(pid)){
-          // Choose a representative faceId:
-          // - If this pid is primary_person_id, use primary_face_id
-          // - else fallback to same-index face_id if possible
-          let repFaceId = null;
-          if(primaryPerson && primaryFaceId && pid === primaryPerson){
-            repFaceId = primaryFaceId;
-          }else{
-            repFaceId = faceIds[idx] || faceIds[0] || null;
-          }
+    faces.forEach(f=>{
+      const fid = getFaceId(f);
+      if(!fid) return;
 
-          map.set(pid,{
-            PersonId: pid,
-            // Keep these keys for existing UI code (FaceId/FaceName) – but now it's person-centric
-            FaceId: repFaceId || pid,        // fallback (rare): if face id missing, use person id
+      if(!map.has(fid)){
+        map.set(fid, {
+          FaceId: fid,
+          FaceName: "Unknown",
+          sampleUrl,
+          BoundingBox: getBBox(f) || null,
+          photoCount: 1
+        });
+      }else{
+        map.get(fid).photoCount++;
+        if(!map.get(fid).BoundingBox && getBBox(f)) map.get(fid).BoundingBox = getBBox(f);
+      }
+    });
+
+    const faceIds = Array.isArray(photo.face_ids) ? photo.face_ids : [];
+    faceIds.forEach(fid=>{
+      if(!fid) return;
+      if(!map.has(fid)){
+        map.set(fid,{
+          FaceId: fid,
+          FaceName:"Unknown",
+          sampleUrl,
+          BoundingBox: null,
+          photoCount:1
+        });
+      }else{
+        map.get(fid).photoCount++;
+      }
+    });
+
+    // Fallback: agar `faces` nahi aaya, but `face_ids` aaya hai
+    if(faceIdsFallback && faceIdsFallback.length){
+      faceIdsFallback.forEach(fid=>{
+        if(!fid) return;
+        if(!map.has(fid)){
+          map.set(fid,{
+            FaceId: fid,
             FaceName: "Unknown",
-            thumbnail: null,                 // if list_people gives face crop, it will override
             sampleUrl,
             BoundingBox: null,
             photoCount: 1
           });
         }else{
-          map.get(pid).photoCount++;
+          map.get(fid).photoCount++;
         }
       });
-      return; // done for this photo
     }
 
-    // 2) Fallback: old pipeline only face_ids available
-    faceIds.forEach(fid=>{
-      if(!fid) return;
-      const key = fid; // no person id, treat face id as person key
-      if(!map.has(key)){
-        map.set(key,{
-          PersonId: null,
-          FaceId: fid,
-          FaceName: "Unknown",
-          thumbnail: null,
-          sampleUrl,
-          BoundingBox: null,
-          photoCount: 1
-        });
-      }else{
-        map.get(key).photoCount++;
-      }
-    });
   });
 
-  return [...map.values()];
+  return Array.from(map.values());
 }
 
 function renderFaceIcons(){
-  /* =========================================================
-    HINDI NOTE:
-    People icons render
-    - 1 icon = 1 person_id (faceGroups me PersonId aata hai)
-    - click => filter photos by person_id
-    - double click => name edit (FaceId ke through)
-  ========================================================= */
   const bar = $("faceIconsBar");
   bar.innerHTML = "";
 
@@ -1425,7 +1414,7 @@ function renderFaceIcons(){
 
     wrap.onclick = (e)=>{
       e.stopPropagation();
-      toggleFaceSelection(face.PersonId || face.FaceId);
+      toggleFaceSelection(face.FaceId);
     };
 
     wrap.ondblclick = (e)=>{
@@ -1457,33 +1446,21 @@ function renderFaceIcons(){
   });
 }
 
-function toggleFaceSelection(selectedId){
-  /* =========================================================
-    HINDI NOTE:
-    People icon select logic
-    - selectedId = PersonId (preferred) OR FaceId (fallback)
-    - Filter photos by person_ids first
-    - Agar photo me person_ids nahi hain to face_ids se fallback
-  ========================================================= */
-  if(!selectedId){
+function toggleFaceSelection(faceId){
+  if(!faceId){
     currentSelectedFaceId = null;
     filteredPhotos = [...allPhotos];
-  }else if(currentSelectedFaceId === selectedId){
+  }else if(currentSelectedFaceId === faceId){
     currentSelectedFaceId = null;
     filteredPhotos = [...allPhotos];
   }else{
-    currentSelectedFaceId = selectedId;
-
-    // Person-first filtering
-    filteredPhotos = allPhotos.filter(p => photoHasPerson(p, selectedId) || photoHasFace(p, selectedId));
+    currentSelectedFaceId = faceId;
+    filteredPhotos = allPhotos.filter(p => photoHasFace(p, faceId));
   }
-
-  console.log("People selected:", currentSelectedFaceId, "photos:", filteredPhotos.length);
+  console.log("Face selected:", currentSelectedFaceId, "photos:", filteredPhotos.length);
   renderFaceIcons();
   renderPhotos();
 }
-
-
 
 /* =========================================================
   FACE NAMING
@@ -1630,18 +1607,7 @@ async function loadLeads(){
   }
 }
 
-
 function renderLeads(){
-  /* =========================================================
-    HINDI NOTE:
-    Guests/Leads UI rendering
-    - Group by mobile/phone
-    - Expand/collapse history
-    - IMPORTANT: Base64 selfie ko innerHTML me kabhi inject nahi karna
-      (Chrome me decode/abort issues aate hain)
-    - Isliye <img> DOM API se create karke img.src set kar rahe hain
-  ========================================================= */
-
   const grid = $("leadsGrid");
   const empty = $("noLeadsMessage");
   grid.innerHTML = "";
@@ -1652,36 +1618,6 @@ function renderLeads(){
   }
   empty.style.display = "none";
 
-  // Selfie helper (Handle base64 data:image + plain base64 + urls)
-  const PLACEHOLDER_SELFIE_70 = "https://via.placeholder.com/70x70?text=NA";
-  const PLACEHOLDER_SELFIE_50 = "https://via.placeholder.com/50x50?text=NA";
-  const getSelfie = (item) => {
-    try{
-      if(!item) return PLACEHOLDER_SELFIE_70;
-
-      const raw = (item.selfie_b64 || item.selfie_image || item.selfieImage || item.selfie || item.image || "").toString();
-      if(!raw) return PLACEHOLDER_SELFIE_70;
-
-      // DynamoDB/JSON ke wajah se kabhi-kabhi whitespace/newlines aa jate hain
-      const cleaned = raw.replace(/\s+/g, "");
-
-      // 1) Already a data URI
-      if(cleaned.startsWith("data:image")) return cleaned;
-
-      // 2) Sometimes only base64 is stored (without prefix)
-      if((cleaned.startsWith("/9j") || cleaned.startsWith("iVBOR")) && cleaned.length > 100){
-        return `data:image/jpeg;base64,${cleaned}`;
-      }
-
-      // 3) Normal URL
-      if(/^https?:\/\//i.test(cleaned)) return cleaned;
-
-      return PLACEHOLDER_SELFIE_70;
-    }catch(e){
-      return PLACEHOLDER_SELFIE_70;
-    }
-  };
-
   // GROUPING LOGIC (Mobile Number)
   const grouped = allLeads.reduce((acc, lead) => {
     const phone = lead.mobile || lead.phone || "Unknown";
@@ -1690,113 +1626,73 @@ function renderLeads(){
     return acc;
   }, {});
 
-  // Ensure latest first inside each group
-  Object.values(grouped).forEach(g=>{
-    g.entries.sort((a,b)=>{
-      const da = new Date(a.created_at || a.timestamp || 0);
-      const db = new Date(b.created_at || b.timestamp || 0);
-      return db - da;
-    });
-  });
-
   Object.keys(grouped).forEach(phone => {
     const group = grouped[phone];
     const latestEntry = group.entries[0];
+    
+    // Selfie helper (Handle base64 data:image + plain base64 + urls)
+// NOTE: data:image/... ko kabhi fetch/new URL/encode mat karo. Direct <img src> me lagao.
+const PLACEHOLDER_SELFIE_70 = "https://via.placeholder.com/70x70?text=NA";
+const PLACEHOLDER_SELFIE_50 = "https://via.placeholder.com/50x50?text=NA";
+const getSelfie = (item) => {
+  try{
+    if(!item) return PLACEHOLDER_SELFIE_70;
+
+    const raw = (item.selfie_b64 || item.selfie_image || item.selfieImage || item.selfie || item.image || "").toString();
+    if(!raw) return PLACEHOLDER_SELFIE_70;
+
+    // DynamoDB/JSON ke wajah se kabhi-kabhi whitespace/newlines aa jate hain
+    const cleaned = raw.replace(/\s+/g, "");
+
+    // 1) Already a data URI
+    if(cleaned.startsWith("data:image")) return cleaned;
+
+    // 2) Sometimes only base64 is stored (without prefix)
+    //    (Most JPEG base64 starts with /9j/)
+    if((cleaned.startsWith("/9j") || cleaned.startsWith("iVBOR")) && cleaned.length > 100){
+      return `data:image/jpeg;base64,${cleaned}`;
+    }
+
+    // 3) Normal URL
+    if(/^https?:\/\//i.test(cleaned)) return cleaned;
+
+    return PLACEHOLDER_SELFIE_70;
+  }catch(e){
+    return PLACEHOLDER_SELFIE_70;
+  }
+};
 
     const groupCard = document.createElement("div");
     groupCard.className = "lead-group-card";
-
-    // HEADER
-    const header = document.createElement("div");
-    header.className = "lead-header";
-    header.onclick = ()=> groupCard.classList.toggle("open");
-
-    const headerImg = document.createElement("img");
-    headerImg.className = "group-selfie";
-    headerImg.alt = "Selfie";
-    headerImg.src = getSelfie(latestEntry);
-    headerImg.onerror = ()=>{ headerImg.onerror=null; headerImg.src = PLACEHOLDER_SELFIE_70; };
-
-    const info = document.createElement("div");
-    info.className = "lead-info";
-
-    const nameEl = document.createElement("div");
-    nameEl.className = "lead-name";
-    nameEl.textContent = (group.name || "Guest");
-
-    const mobileEl = document.createElement("div");
-    mobileEl.className = "lead-mobile";
-    mobileEl.textContent = String(phone);
-
-    info.appendChild(nameEl);
-    info.appendChild(mobileEl);
-
-    const badge = document.createElement("div");
-    badge.className = "lead-badge";
-    badge.textContent = `${group.entries.length} Sessions`;
-
-    const chev = document.createElement("i");
-    chev.className = "fas fa-chevron-down chevron";
-
-    header.appendChild(headerImg);
-    header.appendChild(info);
-    header.appendChild(badge);
-    header.appendChild(chev);
-
-    // HISTORY
-    const history = document.createElement("div");
-    history.className = "lead-history";
-
-    group.entries.forEach(entry=>{
-      const item = document.createElement("div");
-      item.className = "history-item";
-
-      const sImg = document.createElement("img");
-      sImg.className = "history-selfie";
-      sImg.alt = "Selfie";
-      const sSrc = getSelfie(entry);
-      sImg.src = sSrc;
-      sImg.onerror = ()=>{ sImg.onerror=null; sImg.src = PLACEHOLDER_SELFIE_50; };
-
-      const meta = document.createElement("div");
-      meta.className = "history-meta";
-
-      const time = document.createElement("div");
-      const ts = entry.timestamp || entry.created_at || entry.createdAt || "";
-      const dt = ts ? new Date(ts) : null;
-      time.innerHTML = `<b>Time:</b> ${dt && !isNaN(dt) ? dt.toLocaleString() : "NA"}`;
-
-      const matches = document.createElement("div");
-      matches.className = "history-matches";
-      matches.textContent = `${entry.match_count || entry.photo_count || 0} Matches`;
-
-      meta.appendChild(time);
-      meta.appendChild(matches);
-
-      const btn = document.createElement("button");
-      btn.className = "btn btn-sm btn-secondary";
-      btn.textContent = "View Selfie";
-      btn.onclick = (e)=>{
-        e.stopPropagation();
-        window.open(sSrc, "_blank");
-      };
-
-      item.appendChild(sImg);
-      item.appendChild(meta);
-      item.appendChild(btn);
-
-      history.appendChild(item);
-    });
-
-    groupCard.appendChild(header);
-    groupCard.appendChild(history);
-
+    
+    groupCard.innerHTML = `
+      <div class="lead-header" onclick="this.parentElement.classList.toggle('open')">
+        <img src="${getSelfie(latestEntry)}" class="group-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/70x70?text=NA'">
+        <div class="lead-info">
+          <div class="lead-name">${escapeHtml(group.name)}</div>
+          <div class="lead-mobile">${escapeHtml(phone)}</div>
+        </div>
+        <div class="lead-badge">${group.entries.length} Sessions</div>
+        <i class="fas fa-chevron-down chevron"></i>
+      </div>
+      <div class="lead-history">
+        ${group.entries.map(entry => `
+            <div class="history-item">
+              <img src="${getSelfie(entry)}" class="history-selfie" onerror="this.onerror=null;this.src='https://via.placeholder.com/50x50?text=NA'">
+              <div class="history-meta">
+                <div><b>Time:</b> ${new Date(entry.timestamp || entry.created_at).toLocaleString()}</div>
+                <div class="history-matches">${entry.match_count || entry.photo_count || 0} Matches</div>
+              </div>
+              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); window.open('${getSelfie(entry)}', '_blank')">View Selfie</button>
+            </div>
+          `).join('')}
+      </div>
+    `;
     grid.appendChild(groupCard);
   });
 }
 
-function escapeHtml(
-str){
+function escapeHtml(str){
   return String(str||"").replace(/[&<>"']/g, s=>({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[s]));
@@ -1851,6 +1747,76 @@ function copyLink(){
   navigator.clipboard.writeText(link)
     .then(()=>showToast("Copied"))
     .catch(()=>showToast("Copy failed","error"));
+}
+
+/* =========================================================
+  SHARE / CLIENT LINK FUNCTIONS
+========================================================= */
+function openShareModal() {
+  const baseUrl = window.location.origin;
+
+  // A. Guest Link (Search Page) - Defaults to search page with collection ID
+  const guestUrl = `${baseUrl}/index.html?s=${collectionId}`;
+  $('guestLinkInput').value = guestUrl;
+
+  // B. Client Link (New Gallery) - Defaults to client gallery with collection ID
+  const clientUrl = `${baseUrl}/client-gallery.html?cid=${collectionId}`;
+  $('clientLinkInput').value = clientUrl;
+
+  // Open Modal
+  $('shareModal').classList.add('active');
+}
+
+function closeShareModal() {
+  $('shareModal').classList.remove('active');
+}
+
+function copyInputText(inputId) {
+  const copyText = $(inputId);
+  if(!copyText.value) return;
+  copyText.select();
+  copyText.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(copyText.value)
+    .then(()=>showToast("Link Copied"))
+    .catch(()=>showToast("Copy failed", "error"));
+}
+
+async function saveClientSettings() {
+  const btn = $('saveClientSettingsBtn');
+  const originalContent = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+  // Prepare Payload
+  const payload = {
+    action: 'save_settings', // Action for new Lambda
+    payload: {
+      collection_id: collectionId,
+      settings: {
+        showWatermark: $('setWatermark').checked,
+        allowSelection: $('setSelection').checked,
+        allowDownload: $('setDownload').checked
+      }
+    }
+  };
+
+  try {
+    const res = await fetch(CLIENT_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    if(res.ok) {
+      showToast("Permissions Saved Successfully!");
+    } else {
+      showToast("Error saving settings.", "error");
+    }
+  } catch(e) {
+    console.error(e);
+    showToast("Network Error: Could not save settings.", "error");
+  } finally {
+    btn.innerHTML = originalContent;
+  }
 }
 
 /* =========================================================
@@ -2343,6 +2309,13 @@ function setupEventListeners(){
 
   $("genLinkBtn").addEventListener("click", generateLink);
   $("copyLinkBtn").addEventListener("click", copyLink);
+
+  // NEW SHARE LISTENERS
+  $("openShareModalBtn").addEventListener("click", openShareModal);
+  $("closeShareModalBtn").addEventListener("click", closeShareModal);
+  $("copyGuestBtn").addEventListener("click", ()=>copyInputText("guestLinkInput"));
+  $("copyClientBtn").addEventListener("click", ()=>copyInputText("clientLinkInput"));
+  $("saveClientSettingsBtn").addEventListener("click", saveClientSettings);
 
   $("reloadLeadsBtn").addEventListener("click", loadLeads);
   $("dateFilter").addEventListener("change", loadLeads);
