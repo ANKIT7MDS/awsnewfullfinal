@@ -1359,16 +1359,31 @@ function buildFacesFromPhotos(photos){
   });
 
   // map -> array
-  const out = Array.from(map.values()).map((x, idx)=>({
-    // UI expects these keys
-    personId: x.personId || (x.faceId ? ("person_"+x.faceId.slice(0,8)) : ("person_"+idx)),
-    label: x.label || "Unknown",
-    photoCount: x.photoCount || 0,
-    sampleUrl: x.sampleUrl || "",
-    // ✅ crop data
-    bbox: x.bbox || null,
-    faceId: x.faceId || null,
-  }));
+  const out = Array.from(map.values()).map((x, idx)=> {
+    const personId = x.personId || (x.faceId ? ("person_"+x.faceId.slice(0,8)) : ("person_"+idx));
+    const faceId = x.faceId || null;
+    const name = x.label || "Unknown";
+    const sampleUrl = x.sampleUrl || "";
+    const bbox = x.bbox || null;
+
+    // ✅ Normalize keys so renderFaceIcons() works without changes
+    return {
+      // preferred keys used by UI
+      PersonId: personId,
+      FaceId: faceId || personId,          // fallback
+      FaceName: name,
+      photoCount: x.photoCount || 0,
+      thumbnail: "",                       // if you later add a real thumbnail URL
+      sampleUrl: sampleUrl,
+      BoundingBox: bbox,
+
+      // keep alternates for safety (other code paths)
+      personId,
+      faceId,
+      label: name,
+      bbox,
+    };
+  });
 
   // stable ordering: more photos first
   out.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
@@ -1668,10 +1683,31 @@ function renderLeads(){
     try{
       if(!item) return PLACEHOLDER_SELFIE_70;
 
-      const raw = (item.selfie_b64 || item.selfie_image || item.selfieImage || item.selfie || item.image || "").toString();
+      // ✅ Prefer direct URL stored by backend
+      const directUrl = (
+        item.selfie_url || item.selfieUrl ||
+        item.selfie_s3_url || item.selfieS3Url ||
+        item.selfie_link || item.selfieLink ||
+        item.url || item.photo_url || item.photoUrl ||
+        ""
+      ).toString().trim();
+
+      if(directUrl){
+        // if it's already a normal URL, return it
+        if(/^https?:\/\//i.test(directUrl)) return directUrl;
+        // if backend ever sends data uri
+        if(directUrl.startsWith("data:image")) return directUrl;
+      }
+
+      // ✅ Fallback: base64 fields (older versions)
+      const raw = (
+        item.selfie_b64 || item.selfie_b64_url ||
+        item.selfie_image || item.selfieImage ||
+        item.selfie || item.image || ""
+      ).toString();
+
       if(!raw) return PLACEHOLDER_SELFIE_70;
 
-      // DynamoDB/JSON ke wajah se kabhi-kabhi whitespace/newlines aa jate hain
       const cleaned = raw.replace(/\s+/g, "");
 
       // 1) Already a data URI
@@ -1679,11 +1715,15 @@ function renderLeads(){
 
       // 2) Sometimes only base64 is stored (without prefix)
       if((cleaned.startsWith("/9j") || cleaned.startsWith("iVBOR")) && cleaned.length > 100){
-        return `data:image/jpeg;base64,${cleaned}`;
+        // detect png vs jpeg quickly
+        const mime = cleaned.startsWith("iVBOR") ? "image/png" : "image/jpeg";
+        return `data:${mime};base64,${cleaned}`;
       }
 
-      // 3) Normal URL
-      if(/^https?:\/\//i.test(cleaned)) return cleaned;
+      // 3) If a URL was stored without protocol (rare)
+      if(cleaned.includes(".amazonaws.com/") || cleaned.includes(".cloudfront.net/")){
+        return cleaned.startsWith("http") ? cleaned : ("https://" + cleaned.replace(/^\/+/, ""));
+      }
 
       return PLACEHOLDER_SELFIE_70;
     }catch(e){
