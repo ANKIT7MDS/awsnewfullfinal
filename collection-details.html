@@ -807,7 +807,7 @@
   API CONFIG (IMPORTANT)
 ========================================================= */
 const API_BASE = localStorage.getItem("API_BASE") || "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod";
-const CLIENT_API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/client-api";
+const CLIENT_API_URL = `${API_BASE}/client-api`; // Updated to be dynamic
 const idToken = localStorage.getItem("idToken");
 
 // URL params
@@ -1802,14 +1802,18 @@ async function saveClientSettings() {
   try {
     const res = await fetch(CLIENT_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Authorization': `Bearer ${idToken}`, // Added Authorization Header
+        'Content-Type': 'application/json' 
+      },
       body: JSON.stringify(payload)
     });
     
     if(res.ok) {
       showToast("Permissions Saved Successfully!");
     } else {
-      showToast("Error saving settings.", "error");
+      const err = await res.json().catch(()=>({}));
+      showToast(`Error: ${err.message || res.status}`, "error");
     }
   } catch(e) {
     console.error(e);
