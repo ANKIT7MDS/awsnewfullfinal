@@ -1324,6 +1324,7 @@ async function loadFaceGroups(){
   }catch(e){
     console.error("loadFaceGroups error:", e);
     faceGroups = buildFacesFromPhotos(allPhotos);
+    if(!Array.isArray(faceGroups)) faceGroups = [];
     renderFaceIcons();
   }
 }
@@ -1331,60 +1332,54 @@ async function loadFaceGroups(){
 
 function buildFacesFromPhotos(photos){
   /* =========================================================
-    FRONTEND-ONLY GOOGLE-PHOTOS STYLE
+    FRONTEND-ONLY GOOGLE PHOTOS STYLE (NO BACKEND CHANGE)
     ✅ 1 person_id = 1 icon
-    - We group faces across ALL photos by person_id
-    - Representative photo_url picked as: first occurrence (usually most recent because photos list is newest-first)
-    - Count badge uses how many photos contain that person_id
-    NOTE: No backend change needed.
+    We return faceGroups[] in the SAME schema used by renderFaceIcons():
+      { PersonId, FaceId, FaceName, thumbnail, sampleUrl, BoundingBox, photoCount }
   ========================================================= */
   const list = Array.isArray(photos) ? photos : (Array.isArray(allPhotos) ? allPhotos : []);
   const map = {}; // person_id -> group
 
   for(const p of list){
-    const url = p.url || p.photo_url || p.s3_url || p.image_url;
-    const faces = p.faces_v2 || p.faces || p.Faces || [];
-    for(const f of faces){
+    const url = p.url || p.photo_url || p.s3_url || p.image_url || p.thumbnail_url || "";
+    const pidFaces = p.faces_v2 || p.faces || p.Faces || [];
+    for(const f of pidFaces){
       const pid = f.person_id || f.PersonId || f.personId;
       if(!pid) continue;
 
+      const fid = f.face_id || f.FaceId || f.faceId || pid;
+      const bbox = f.bounding_box || f.BoundingBox || f.bbox || null;
+
       if(!map[pid]){
         map[pid] = {
-          person_id: pid,
-          // representative image for icon (no crop, just zoom via CSS)
-          photo_url: url,
-          // store any available face_id for rename (optional)
-          face_id: f.face_id || f.FaceId || f.faceId || null,
-          // keep bbox if present (future crop)
-          bbox: f.bounding_box || f.BoundingBox || f.bbox || null,
-          count: 0,
-          photoCount: 0
+          PersonId: pid,
+          FaceId: fid,
+          FaceName: (f.name || f.FaceName || "Unknown"),
+          thumbnail: null,              // if backend gives thumbnail later, it will be used
+          sampleUrl: url,               // representative image for icon
+          BoundingBox: bbox,            // optional
+          photoCount: 0,
+          __seen: {}
         };
       }
 
-      // Count unique photos: increment once per photo per person
-      // We'll track seen key on the group temporarily
-      const key = p.photo_id || p.id || p.ExternalImageId || url;
-      map[pid].__seen = map[pid].__seen || {};
-      if(!map[pid].__seen[key]){
-        map[pid].__seen[key] = 1;
-        map[pid].count += 1;
+      const photoKey = p.photo_id || p.id || p.ExternalImageId || url || (Math.random()+"");
+      if(!map[pid].__seen[photoKey]){
+        map[pid].__seen[photoKey] = 1;
         map[pid].photoCount += 1;
       }
     }
   }
 
-  faceGroups = Object.values(map).map(g=>{
-    // cleanup temp
-    if(g.__seen) delete g.__seen;
+  const groups = Object.values(map).map(g=>{
+    delete g.__seen;
     return g;
   });
 
-  // Sort: highest count first (Google Photos feel)
-  faceGroups.sort((a,b)=>(b.count||0)-(a.count||0));
+  // Sort by photoCount desc (Google Photos feel)
+  groups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
 
-  // Re-render icons with new groups
-  if(typeof renderFaceIcons === "function") renderFaceIcons();
+  return groups;
 }
 
 function renderFaceIcons(){
