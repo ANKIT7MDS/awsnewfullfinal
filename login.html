@@ -1,4 +1,4 @@
-login file deta hu me lekin dekhna isse koi gadbad na ho dura logic tute na baaki sab chalta rahe <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
@@ -35,18 +35,11 @@ login file deta hu me lekin dekhna isse koi gadbad na ho dura logic tute na baak
             width: 100%;
             max-width: 400px;
         }
-        h1 { 
-            background: linear-gradient(to right, #fff, #bbb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px; 
-            margin: 0 0 10px; 
-            font-weight: 700;
-        }
-        p { color: var(--muted); margin-bottom: 30px; font-size: 14px; }
+        h1 { margin: 0 0 10px; font-size: 28px; letter-spacing: -0.5px; }
+        p { color: var(--muted); margin: 0 0 40px; font-size: 15px; }
         
         .btn { 
-            background: var(--accent); 
+            background-color: var(--accent); 
             color: #000; 
             border: none; 
             border-radius: 50px; 
@@ -75,14 +68,14 @@ login file deta hu me lekin dekhna isse koi gadbad na ho dura logic tute na baak
 <script>
     const loginButton = document.getElementById('loginButton');
 
-    loginButton.addEventListener('click', () => {
-        const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
-        const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-        const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html"; // Ensure this matches Cognito settings
+    // CONFIGURATION (Must match dashboard.html)
+    const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
+    const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367"; 
+    const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html";
 
-        const SCOPES = "openid profile email aws.cognito.signin.user.admin";
-        const loginUrl = `${COGNITO_DOMAIN}/login?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
-        
+    loginButton.addEventListener('click', () => {
+        // Using response_type=code to match dashboard.html logic
+        const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${CLIENT_ID}&response_type=code&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
         window.location.href = loginUrl;
     });
 </script>
