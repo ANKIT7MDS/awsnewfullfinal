@@ -425,6 +425,46 @@
     .tag.ai{background:rgba(16,185,129,.15);color:var(--success)}
     .tag.face{background:rgba(245,158,11,.15);color:var(--warning)}
     .tags-container{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  
+    /* Sticky People bar */
+    #faceIconsBar{
+      position: sticky;
+      top: 14px;
+      z-index: 9;
+      background: rgba(10,12,20,.65);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding: 12px 10px;
+      margin-top: 10px;
+    }
+    .face-icon-wrapper{position:relative}
+    .face-badge{
+      position:absolute;
+      right:-6px; top:-6px;
+      min-width:22px; height:22px;
+      padding:0 6px;
+      border-radius:999px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:800;
+      background: rgba(124,58,237,.95);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: 0 6px 16px rgba(0,0,0,.35);
+    }
+
+    /* Guest matches modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;z-index:999}
+    .modal-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1100px,92vw);height:min(82vh,720px);
+      background:rgba(14,16,24,.92);border:1px solid rgba(255,255,255,.10);border-radius:22px;overflow:hidden;display:none;z-index:1000;
+      box-shadow:0 30px 80px rgba(0,0,0,.6)}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .modal-title{font-weight:800;font-size:16px}
+    .modal-body{padding:14px 16px;overflow:auto;height:calc(100% - 56px)}
+    .match-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    .match-item{border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.03)}
+    .match-item img{width:100%;height:160px;object-fit:cover;display:block}
+    .match-meta{padding:10px 10px 12px;font-size:12px;opacity:.9;display:flex;justify-content:space-between;gap:10px}
+
   </style>
 </head>
 
@@ -753,7 +793,9 @@ const GENERATE_LINK_API   = `${API_BASE}/generate-search-link`;  // POST
 const LIST_PEOPLE_API     = `${API_BASE}/list_people`;           // POST
 const LIST_PEOPLE_API_ALT = `${API_BASE}/list-people`;           // fallback
 const SAVE_FACE_NAME_API  = `${API_BASE}/save-face-name`;        // POST
-const SAVE_DETAILS_API    = `${API_BASE}/save-details`;          // GET/POST (leads)
+const SAVE_DETAILS_API    = `${API_BASE}/save-details`;
+const SEARCH_API          = `${API_BASE}/search`;               // POST (guest/selfie matches)
+          // GET/POST (leads)
 
 // utils
 const $ = (id) => document.getElementById(id);
@@ -1267,13 +1309,13 @@ async function loadFaceGroups(){
         })();
 
         if(faceGroups.every(x=>!x.thumbnail)){
-          faceGroups = buildFacesFromPhotos();
+          faceGroups = buildFacesFromPhotos(allPhotos);
         }
       }else{
-        faceGroups = buildFacesFromPhotos();
+        faceGroups = buildFacesFromPhotos(allPhotos);
       }
     }else{
-      faceGroups = buildFacesFromPhotos();
+      faceGroups = buildFacesFromPhotos(allPhotos);
     }
 
     faceGroups.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
@@ -1281,7 +1323,7 @@ async function loadFaceGroups(){
     renderFaceIcons();
   }catch(e){
     console.error("loadFaceGroups error:", e);
-    faceGroups = buildFacesFromPhotos();
+    faceGroups = buildFacesFromPhotos(allPhotos);
     renderFaceIcons();
   }
 }
@@ -1677,8 +1719,8 @@ function renderLeads(){
   empty.style.display = "none";
 
   // Selfie helper (Handle base64 data:image + plain base64 + urls)
-  const PLACEHOLDER_SELFIE_70 = "https://via.placeholder.com/70x70?text=NA";
-  const PLACEHOLDER_SELFIE_50 = "https://via.placeholder.com/50x50?text=NA";
+  const PLACEHOLDER_SELFIE_70 = "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2770%27%20height%3D%2770%27%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20x2%3D%271%27%20y1%3D%270%27%20y2%3D%271%27%3E%0A%3Cstop%20offset%3D%270%27%20stop-color%3D%27%237c3aed%27%20stop-opacity%3D%270.55%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%2322d3ee%27%20stop-opacity%3D%270.35%27/%3E%0A%3C/linearGradient%3E%3C/defs%3E%0A%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2735%27%20fill%3D%27url%28%23g%29%27/%3E%0A%3Ccircle%20cx%3D%2735%27%20cy%3D%2731%27%20r%3D%2711%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.85%29%27/%3E%0A%3Crect%20x%3D%2723%27%20y%3D%2737%27%20width%3D%2723%27%20height%3D%2717%27%20rx%3D%278%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.85%29%27/%3E%0A%3Ctext%20x%3D%2750%25%27%20y%3D%2760%27%20font-size%3D%2711%27%20text-anchor%3D%27middle%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.9%29%27%20font-family%3D%27Arial%27%3ENA%3C/text%3E%0A%3C/svg%3E";
+  const PLACEHOLDER_SELFIE_50 = "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2750%27%20height%3D%2750%27%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20x2%3D%271%27%20y1%3D%270%27%20y2%3D%271%27%3E%0A%3Cstop%20offset%3D%270%27%20stop-color%3D%27%237c3aed%27%20stop-opacity%3D%270.55%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%2322d3ee%27%20stop-opacity%3D%270.35%27/%3E%0A%3C/linearGradient%3E%3C/defs%3E%0A%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20rx%3D%2725%27%20fill%3D%27url%28%23g%29%27/%3E%0A%3Ccircle%20cx%3D%2725%27%20cy%3D%2721%27%20r%3D%278%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.85%29%27/%3E%0A%3Crect%20x%3D%2716%27%20y%3D%2727%27%20width%3D%2716%27%20height%3D%2712%27%20rx%3D%276%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.85%29%27/%3E%0A%3Ctext%20x%3D%2750%25%27%20y%3D%2740%27%20font-size%3D%2710%27%20text-anchor%3D%27middle%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.9%29%27%20font-family%3D%27Arial%27%3ENA%3C/text%3E%0A%3C/svg%3E";
   const getSelfie = (item) => {
     try{
       if(!item) return PLACEHOLDER_SELFIE_70;
@@ -2415,6 +2457,170 @@ function debounce(fn, wait){
     t = setTimeout(()=>fn(...args), wait);
   };
 }
+
+/* =========================================================
+  GUEST -> MATCHED PHOTOS (click on guest row)
+========================================================= */
+let __lastGuestMatches = null;
+
+function openGuestMatchesModal(title, info, matches){
+  __lastGuestMatches = matches || [];
+  $("guestMatchesTitle").textContent = title || "Guest Matches";
+  $("guestMatchesInfo").textContent = info || "";
+  const grid = $("guestMatchesGrid");
+  grid.innerHTML = "";
+  (__lastGuestMatches || []).forEach((m, idx)=>{
+    const card = document.createElement("div");
+    card.className = "match-item";
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.src = m.thumbnail_url || m.thumbnail || m.url;
+    img.alt = "match";
+    img.onerror = ()=>{ img.style.opacity = "0.25"; };
+    const meta = document.createElement("div");
+    meta.className = "match-meta";
+    const left = document.createElement("div");
+    left.textContent = `#${idx+1}`;
+    const right = document.createElement("a");
+    right.href = m.url;
+    right.target = "_blank";
+    right.rel = "noreferrer";
+    right.textContent = "Open";
+    meta.appendChild(left); meta.appendChild(right);
+    card.appendChild(img); card.appendChild(meta);
+    grid.appendChild(card);
+  });
+
+  $("guestMatchesBackdrop").style.display = "block";
+  $("guestMatchesModal").style.display = "block";
+}
+
+function closeGuestMatchesModal(){
+  $("guestMatchesBackdrop").style.display = "none";
+  $("guestMatchesModal").style.display = "none";
+}
+
+async function urlToBase64NoPrefix(url){
+  const res = await fetch(url, { mode: "cors" });
+  if(!res.ok) throw new Error("Failed to fetch selfie url");
+  const blob = await res.blob();
+  return await new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=> {
+      const s = String(reader.result || "");
+      const b64 = s.includes(",") ? s.split(",")[1] : s;
+      resolve(b64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function fetchGuestMatchesByEntry(entry){
+  if(!entry) return [];
+  // cache by (link_id + selfie_url)
+  const cacheKey = `${entry.link_id || entry.linkId || ""}::${entry.selfie_url || entry.selfieUrl || ""}`;
+  if(window.__guestMatchesCache && window.__guestMatchesCache[cacheKey]) return window.__guestMatchesCache[cacheKey];
+
+  const linkId = entry.link_id || entry.linkId || entry.search_link_id || entry.searchLinkId;
+  const selfieUrl = entry.selfie_url || entry.selfieUrl || entry.selfie_s3_url || entry.selfieS3Url;
+  if(!linkId || !selfieUrl) return [];
+
+  const selfieBase64 = await urlToBase64NoPrefix(selfieUrl);
+  const res = await fetch(SEARCH_API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ linkId, selfie_image: selfieBase64 })
+  });
+  const data = await res.json().catch(()=>({}));
+  const matches = (data.matches || data.photos || []).map(p=>({
+    ...p,
+    url: p.url || p.photo_url || p.s3_url || p.image_url,
+    thumbnail_url: p.thumbnail_url || p.thumbnail || p.url || p.photo_url
+  })).filter(x=>x.url);
+
+  window.__guestMatchesCache = window.__guestMatchesCache || {};
+  window.__guestMatchesCache[cacheKey] = matches;
+  return matches;
+}
+
+function applyGuestMatchesToMainPhotos(matches){
+  // render photos grid using matches instead of allPhotos
+  const normalized = (matches||[]).map((p,i)=>({
+    ...p,
+    url: p.url,
+    thumbnail_url: p.thumbnail_url || p.thumbnail || p.url,
+    photo_id: p.photo_id || p.id || p.ExternalImageId || ("match_"+i),
+  }));
+  filteredPhotos = normalized;
+  renderPhotos();
+  // scroll to photos section
+  const photosCard = document.getElementById("photosCard") || document.querySelector("#photosGrid")?.closest(".card");
+  if(photosCard) photosCard.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+(function wireGuestMatchesModal(){
+  const closeBtn = document.getElementById("guestMatchesCloseBtn");
+  const backdrop = document.getElementById("guestMatchesBackdrop");
+  const applyBtn = document.getElementById("guestMatchesApplyBtn");
+  if(closeBtn) closeBtn.addEventListener("click", closeGuestMatchesModal);
+  if(backdrop) backdrop.addEventListener("click", closeGuestMatchesModal);
+  if(applyBtn) applyBtn.addEventListener("click", ()=>{
+    applyGuestMatchesToMainPhotos(__lastGuestMatches || []);
+    closeGuestMatchesModal();
+  });
+})();
+
+/* =========================================================
+  Face Icon: add badge count inside wrapper
+========================================================= */
+(function patchFaceIconBadges(){
+  // If renderFaceIcons exists, wrap it to inject badge after it renders
+  if(typeof window.renderFaceIcons !== "function") return;
+  const original = window.renderFaceIcons;
+  window.renderFaceIcons = function(){
+    original();
+    // Add badge onto each face-icon-wrapper (except All)
+    const items = document.querySelectorAll("#faceIconsBar .face-item");
+    items.forEach((it, idx)=>{
+      const wrap = it.querySelector(".face-icon-wrapper");
+      if(!wrap) return;
+      // remove old
+      wrap.querySelectorAll(".face-badge").forEach(b=>b.remove());
+      // All chip uses idx=0
+      let count = null;
+      if(idx===0){
+        return; // no badge on All
+      }else{
+        const g = faceGroups[idx-1];
+        count = (g && (g.photoCount || g.count)) ? (g.photoCount || g.count) : null;
+      }
+      if(count==null) return;
+      const b = document.createElement("div");
+      b.className = "face-badge";
+      b.textContent = String(count);
+      wrap.appendChild(b);
+    });
+  };
+})();
+
 </script>
+
+<!-- Guest Matches Modal -->
+<div id="guestMatchesBackdrop" class="modal-backdrop"></div>
+<div id="guestMatchesModal" class="modal-card" role="dialog" aria-modal="true">
+  <div class="modal-head">
+    <div class="modal-title" id="guestMatchesTitle">Guest Matches</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-outline" id="guestMatchesApplyBtn"><i class="fas fa-filter"></i> Apply to Photos</button>
+      <button class="btn" id="guestMatchesCloseBtn"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+  <div class="modal-body">
+    <div id="guestMatchesInfo" style="margin-bottom:10px;opacity:.9"></div>
+    <div id="guestMatchesGrid" class="match-grid"></div>
+  </div>
+</div>
+
 </body>
 </html>
