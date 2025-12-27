@@ -515,9 +515,25 @@
         const faceMap = new Map();
         photos.forEach(p => {
             if(p.faces && Array.isArray(p.faces)) {
-                p.faces.forEach(fid => {
-                    if(!faceMap.has(fid)) {
-                        faceMap.set(fid, { id: fid, name: "Person " + fid.substr(0,4), img: "https://via.placeholder.com/100" });
+                p.faces.forEach(faceObj => {
+                    // Handle both direct ID and object structure
+                    let fid = typeof faceObj === 'string' ? faceObj : (faceObj.FaceId || faceObj.face_id);
+                    
+                    if(fid) {
+                        fid = String(fid); // Ensure string
+                        if(!faceMap.has(fid)) {
+                            // Extract name safely
+                            let name = "Person " + fid.substr(0,4);
+                            if (typeof faceObj === 'object' && (faceObj.Name || faceObj.name)) {
+                                name = faceObj.Name || faceObj.name;
+                            }
+                            
+                            faceMap.set(fid, { 
+                                id: fid, 
+                                name: name, 
+                                img: "https://via.placeholder.com/100" // Placeholder until face crop logic
+                            });
+                        }
                     }
                 });
             }
@@ -559,7 +575,14 @@
         let temp = (currentEventFilter === 'all') ? allPhotos : allPhotos.filter(p => p.event === currentEventFilter);
         
         if(activeFaceFilters.length > 0) {
-            temp = temp.filter(p => p.faces && p.faces.some(fid => activeFaceFilters.includes(fid)));
+            temp = temp.filter(p => {
+                if (!p.faces) return false;
+                // Handle mixed types in p.faces (strings or objects)
+                return p.faces.some(faceObj => {
+                    const fid = typeof faceObj === 'string' ? faceObj : (faceObj.FaceId || faceObj.face_id);
+                    return fid && activeFaceFilters.includes(String(fid));
+                });
+            });
         }
         
         filteredPhotos = temp;
