@@ -1287,83 +1287,92 @@ async function loadFaceGroups(){
 }
 
 
-function buildFacesFromPhotos(){
-  /* =========================================================
-    HINDI NOTE:
-    Yeh function "Google Photos type People icons" ke liye
-    allPhotos se unique PEOPLE (person_id) nikalta hai.
-    - 1 icon = 1 person_id
-    - Har person ke saath representative FaceId rakhenge (naming/save ke liye)
-    - photoCount = us person ke kitne photos me aaya
-  ========================================================= */
+function buildFacesFromPhotos(photos){
+  /**
+   * ✅ ONE PERSON = ONE ICON (Google Photos style)
+   * हम photos table के data से एक "people list" बनाते हैं:
+   * - person_id available हो तो उसी के हिसाब से group करेंगे
+   * - हर person के लिए 1 representative thumbnail बनेगा (face crop via bbox)
+   *
+   * Backend से photo item में ये fields आते हैं:
+   * - url
+   * - face_ids: [FaceId...]
+   * - person_ids: [person_x...]
+   * - faces: [{FaceId, BoundingBox, ...}]  ✅ यही bbox हमें crop के लिए चाहिए
+   *
+   * IMPORTANT:
+   * - अगर bbox न मिले तो हम fallback में normal cover center दिखाएंगे
+   * - existing flow (guest selfie search / photo search) पर कोई impact नहीं
+   */
+  const map = new Map(); // key = person_id OR face_id
 
-  const map = new Map(); // key = person_id, value = group object
+  (photos||[]).forEach(p=>{
+    const url = p.url || p.s3_url || p.photo_url || p.image_url;
+    const faceIds = Array.isArray(p.face_ids) ? p.face_ids : [];
+    const personIds = Array.isArray(p.person_ids) ? p.person_ids : [];
+    const facesArr = Array.isArray(p.faces) ? p.faces : []; // [{FaceId, BoundingBox, ...}] OR {face_id,bbox,...}
 
-  allPhotos.forEach(photo=>{
-    const sampleUrl = photo.thumbnail_url || photo.url || "";
-    const personIds = Array.isArray(photo.person_ids) ? photo.person_ids
-      : (Array.isArray(photo.personIds) ? photo.personIds : []);
-    const faceIds = Array.isArray(photo.face_ids) ? photo.face_ids
-      : (Array.isArray(photo.faceIds) ? photo.faceIds
-      : (Array.isArray(photo.FaceIds) ? photo.FaceIds : []));
-
-    // Representative face id for naming / list_people compatibility
-    const primaryPerson = photo.primary_person_id || photo.primaryPersonId || null;
-    const primaryFaceId = photo.primary_face_id || photo.primaryFaceId || null;
-
-    // 1) Prefer person_ids (new pipeline)
-    if(personIds.length){
-      personIds.forEach((pid, idx)=>{
-        if(!pid) return;
-        if(!map.has(pid)){
-          // Choose a representative faceId:
-          // - If this pid is primary_person_id, use primary_face_id
-          // - else fallback to same-index face_id if possible
-          let repFaceId = null;
-          if(primaryPerson && primaryFaceId && pid === primaryPerson){
-            repFaceId = primaryFaceId;
-          }else{
-            repFaceId = faceIds[idx] || faceIds[0] || null;
-          }
-
-          map.set(pid,{
-            PersonId: pid,
-            // Keep these keys for existing UI code (FaceId/FaceName) – but now it's person-centric
-            FaceId: repFaceId || pid,        // fallback (rare): if face id missing, use person id
-            FaceName: "Unknown",
-            thumbnail: null,                 // if list_people gives face crop, it will override
-            sampleUrl,
-            BoundingBox: null,
-            photoCount: 1
-          });
-        }else{
-          map.get(pid).photoCount++;
-        }
-      });
-      return; // done for this photo
+    // faceId -> bbox quick lookup
+    const bboxByFaceId = {};
+    for(const f of facesArr){
+      const fid = f.FaceId || f.face_id || f.faceId;
+      const bb = f.BoundingBox || f.bbox || f.boundingBox;
+      if(fid && bb) bboxByFaceId[fid] = bb;
     }
 
-    // 2) Fallback: old pipeline only face_ids available
-    faceIds.forEach(fid=>{
-      if(!fid) return;
-      const key = fid; // no person id, treat face id as person key
-      if(!map.has(key)){
-        map.set(key,{
-          PersonId: null,
-          FaceId: fid,
-          FaceName: "Unknown",
-          thumbnail: null,
-          sampleUrl,
-          BoundingBox: null,
-          photoCount: 1
+    for(let i=0;i<faceIds.length;i++){
+      const fid = faceIds[i];
+      const pid = personIds[i] || null;
+
+      // ✅ group key
+      const key = pid || fid || "unknown";
+      if(!fid) continue;
+
+      // ✅ representative bbox (prefer largest area)
+      const bb = bboxByFaceId[fid] || null;
+      const area = bb ? (Number(bb.Width||0)*Number(bb.Height||0)) : 0;
+
+      const prev = map.get(key);
+      if(!prev){
+        map.set(key, {
+          personId: pid || null,
+          faceId: fid,
+          sampleUrl: url || "",
+          bbox: bb,
+          area,
+          photoCount: 1,      // इस person के कितने photos (approx)
+          faceCount: 1,       // fallback
+          label: "Unknown"
         });
       }else{
-        map.get(key).photoCount++;
+        prev.photoCount += 1;
+
+        // अगर नई bbox बड़ी है तो thumbnail update कर दो
+        if(area > (prev.area||0)){
+          prev.faceId = fid;
+          prev.sampleUrl = url || prev.sampleUrl;
+          prev.bbox = bb;
+          prev.area = area;
+        }
       }
-    });
+    }
   });
 
-  return [...map.values()];
+  // map -> array
+  const out = Array.from(map.values()).map((x, idx)=>({
+    // UI expects these keys
+    personId: x.personId || (x.faceId ? ("person_"+x.faceId.slice(0,8)) : ("person_"+idx)),
+    label: x.label || "Unknown",
+    photoCount: x.photoCount || 0,
+    sampleUrl: x.sampleUrl || "",
+    // ✅ crop data
+    bbox: x.bbox || null,
+    faceId: x.faceId || null,
+  }));
+
+  // stable ordering: more photos first
+  out.sort((a,b)=>(b.photoCount||0)-(a.photoCount||0));
+  return out;
 }
 
 function renderFaceIcons(){
