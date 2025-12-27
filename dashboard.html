@@ -1,338 +1,218 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photographer Dashboard</title>
-    <style>
-        :root {
-            --bg: #050505;
-            --card: #101010;
-            --border: #262626;
-            --text: #ffffff;
-            --muted: #a0a0a0;
-            --brand: #00e676; /* Green Accent */
-            --brand-hover: #00c853;
-            --danger: #ff5252;
-            --secondary: #333;
-        }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
-        a { color: var(--brand); text-decoration: none; }
-        
-        .wrap { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        
-        /* HEADER */
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-        .header h1 { font-size: 26px; margin: 0; font-weight: 700; background: linear-gradient(to right, #fff, #bbb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .user-info { display: flex; align-items: center; gap: 15px; }
-        .badge { background: #1a1a1a; color: var(--brand); padding: 6px 12px; border: 1px solid var(--border); border-radius: 50px; font-size: 13px; }
-        
-        /* BUTTONS */
-        .btn { background: var(--brand); color: #000; border: none; border-radius: 50px; padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
-        .btn:hover { background-color: var(--brand-hover); transform: translateY(-2px); }
-        .btn.danger { background-color: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-        .btn.danger:hover { background-color: var(--danger); color: #fff; }
-        .btn.secondary { background-color: var(--card); color: var(--text); border: 1px solid var(--border); }
-        .btn.secondary:hover { border-color: var(--brand); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
-        /* CARDS */
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: box-shadow 0.3s; }
-        .card:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
-        .card h3 { margin: 0 0 20px; font-size: 18px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photographer Dashboard</title>
 
-        /* STATS GRID */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .stat-box { background: #151515; padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        .stat-icon { font-size: 24px; color: var(--brand); margin-bottom: 10px; }
-        .stat-label { font-size: 13px; color: var(--muted); display: block; }
-        .stat-val { font-size: 24px; font-weight: 700; color: var(--brand); margin-top: 5px; }
+<style>
+:root{
+  --bg:#050505;
+  --card:#101010;
+  --border:#262626;
+  --text:#ffffff;
+  --muted:#a0a0a0;
+  --brand:#00e676;
+  --brand-hover:#00c853;
+  --danger:#ff5252;
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+a{color:var(--brand);text-decoration:none}
 
-        /* FORM */
-        .form-group label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 14px; }
-        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #000; color: #fff; outline: none; margin-bottom: 15px; transition: border-color 0.3s; }
-        .form-group input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
-        #form-status { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; color: var(--brand); font-size: 12px; border: 1px solid var(--brand-soft); }
+.wrap{max-width:1200px;margin:30px auto;padding:0 20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;border-bottom:1px solid var(--border);padding-bottom:20px}
+.header h1{font-size:26px;margin:0;background:linear-gradient(to right,#fff,#bbb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.user-info{display:flex;gap:15px;align-items:center}
+.badge{background:#1a1a1a;border:1px solid var(--border);border-radius:50px;padding:6px 14px;font-size:13px;color:var(--brand)}
 
-        /* TABLE */
-        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 600px; }
-        th { text-align: left; padding: 12px; color: var(--muted); font-size: 13px; border-bottom: 1px solid var(--border); }
-        td { padding: 16px 12px; border-bottom: 1px solid #1a1a1a; font-size: 14px; }
-        tr:hover td { background: #151515; }
-        .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-        .edit-btn { background: var(--brand); color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
-        .delete-btn { background: var(--danger); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+.btn{border:none;border-radius:50px;padding:10px 20px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--brand);color:#000}
+.btn.primary:hover{background:var(--brand-hover)}
+.btn.danger{background:rgba(255,82,82,.1);border:1px solid var(--danger);color:var(--danger)}
+.btn.danger:hover{background:var(--danger);color:#fff}
 
-        /* FIXED: Loading Overlay */
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 999; align-items: center; justify-content: center; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--muted); border-top: 4px solid var(--brand); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 
-        /* FIXED: Search Input */
-        #collectionSearch { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #000; color: #fff; margin-bottom: 15px; }
-        
-        /* FIXED: Mobile */
-        @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .action-btns { flex-direction: column; gap: 4px; }
-            .header { flex-direction: column; gap: 15px; text-align: center; }
-        }
-    </style>
+.toast{position:fixed;top:20px;right:20px;padding:12px 18px;border-radius:8px;font-weight:600;z-index:999;transform:translateX(400px);transition:.3s}
+.toast.show{transform:translateX(0)}
+.toast.success{background:var(--brand);color:#000}
+.toast.error{background:var(--danger);color:#fff}
+
+#loading{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:998}
+.spinner{width:40px;height:40px;border:4px solid #555;border-top:4px solid var(--brand);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
+
 <body>
-    <div class="wrap">
-        <div class="header">
-            <div>
-                <h1 id="welcomeMessage">Loading...</h1>
-            </div>
-            <div class="user-info">
-                <span class="badge" id="accountStatus">Loading...</span>
-                <button id="logoutButton" class="btn danger">Logout</button>
-            </div>
-        </div>
+<div id="loading"><div class="spinner"></div></div>
+<div id="toast" class="toast"></div>
 
-        <div class="card">
-            <h3>Create New Collection</h3>
-            <div class="form-group">
-                <label for="collectionName">Collection Name</label>
-                <input type="text" id="collectionName" placeholder="Enter collection name">
-            </div>
-            <button id="saveCollectionBtn" class="btn">Create Collection</button>
-            <button id="cancelEditBtn" class="btn secondary" style="display:none;">Cancel</button>
-            <div id="form-status"><span id="editingName"></span></div>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-box">
-                <span class="stat-icon">📁</span>
-                <span class="stat-label">Collections</span>
-                <span class="stat-val" id="totalCollections">0</span>
-            </div>
-            <!-- Add more stats as needed -->
-        </div>
-
-        <input type="text" id="collectionSearch" placeholder="Search collections...">
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Created</th>
-                        <th>Photos</th>
-                        <th>Leads</th>
-                        <th>Storage</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="collectionsTbody">
-                    <!-- Rows loaded dynamically -->
-                </tbody>
-            </table>
-        </div>
-
-        <div id="loadingOverlay">
-            <div class="spinner"></div>
-        </div>
+<div class="wrap">
+  <div class="header">
+    <h1>Photographer Dashboard</h1>
+    <div class="user-info">
+      <span id="welcome" class="badge">Loading...</span>
+      <button id="logoutBtn" class="btn danger">Logout</button>
     </div>
+  </div>
+
+  <div class="card">
+    <h3>My Collections</h3>
+    <div id="collections">Loading collections...</div>
+  </div>
+
+  <div class="card">
+    <h3>Account Usage</h3>
+    <div id="usage">Loading usage...</div>
+  </div>
+</div>
 
 <script>
-    const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
-    const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
-    const REDIRECT_URI = window.location.origin + "/dashboard.html";
-    const UPSERT_COLLECTION_API = "https://your-api-endpoint/prod/upsert-collection"; // Replace with real API
-    const DELETE_COLLECTION_API = "https://your-api-endpoint/prod/delete-collection"; // Replace
-    let idToken = localStorage.getItem('idToken');
-    let refreshToken = localStorage.getItem('refreshToken'); // New: Store refresh token
+/* ================= CONFIG ================= */
+const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
+const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
+const REDIRECT_URI = "https://selfiphotos.netlify.app/dashboard.html";
+const TOKEN_ENDPOINT = COGNITO_DOMAIN + "/oauth2/token";
 
-    const $ = id => document.getElementById(id);
+/* ====== CHANGE ONLY IF YOUR API BASE IS DIFFERENT ====== */
+const API_BASE = "https://YOUR_API_GATEWAY_URL";
+const GET_COLLECTIONS_API = API_BASE + "/get-collections";
+const ACCOUNT_STATUS_API = API_BASE + "/get-account-status";
 
-    function showLoading() { $('loadingOverlay').style.display = 'flex'; }
-    function hideLoading() { $('loadingOverlay').style.display = 'none'; }
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
 
-    function showToast(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.style.position = 'fixed'; toast.style.bottom = '20px'; toast.style.right = '20px';
-        toast.style.padding = '10px 20px'; toast.style.borderRadius = '5px';
-        toast.style.background = type === 'error' ? '#ff5252' : '#00e676'; toast.style.color = '#fff';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+function showToast(msg,type='success'){
+  const t=$('toast');
+  t.textContent=msg;
+  t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function showLoading(v){$('loading').style.display=v?'flex':'none'}
+
+function parseJwt(token){
+  return JSON.parse(atob(token.split('.')[1]));
+}
+
+/* ================= AUTH ================= */
+async function exchangeCode(code){
+  const body=new URLSearchParams({
+    grant_type:"authorization_code",
+    client_id:CLIENT_ID,
+    redirect_uri:REDIRECT_URI,
+    code
+  });
+
+  const r=await fetch(TOKEN_ENDPOINT,{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body
+  });
+  if(!r.ok) throw new Error("Token exchange failed");
+  return r.json();
+}
+
+async function handleAuth(){
+  const params=new URLSearchParams(location.search);
+  const code=params.get("code");
+
+  if(code){
+    try{
+      showLoading(true);
+      const t=await exchangeCode(code);
+      localStorage.setItem("idToken",t.id_token);
+      localStorage.setItem("accessToken",t.access_token);
+      localStorage.setItem("refreshToken",t.refresh_token);
+      history.replaceState({},document.title,REDIRECT_URI);
+      initDashboard(t.id_token);
+      return;
+    }catch(e){
+      localStorage.clear();
+      showToast("Login failed","error");
+      setTimeout(()=>location.href="login.html",800);
+      return;
     }
+  }
 
-    async function fetchCollections() {
-        showLoading();
-        try {
-            const response = await fetch(UPSERT_COLLECTION_API, { // Assume API for list
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-            const data = await response.json();
-            const tbody = $('collectionsTbody');
-            tbody.innerHTML = '';
-            data.collections.forEach(coll => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${sanitize(coll.name)}</td> <!-- Sanitize input -->
-                    <td>${coll.created_at}</td>
-                    <td>${coll.photo_count}</td>
-                    <td>${coll.leads_count}</td>
-                    <td>${formatBytes(coll.storage_bytes)}</td>
-                    <td class="action-btns">
-                        <button class="edit-btn" onclick="editCollection('${coll.collection_id}', '${coll.name}')">Edit</button>
-                        <button class="delete-btn" onclick="confirmDeleteCollection('${coll.collection_id}', '${coll.name}')">Delete</button>
-                        <button onclick="toggleDisable('${coll.collection_id}', ${coll.disabled})">${coll.disabled ? 'Enable' : 'Disable'}</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            $('totalCollections').textContent = data.collections.length;
-            showToast('Collections loaded');
-        } catch (error) {
-            showToast('Error loading collections', 'error');
-        } finally {
-            hideLoading();
-        }
-    }
+  const token=localStorage.getItem("idToken");
+  if(!token){location.href="login.html";return;}
 
-    function sanitize(input) {
-        const div = document.createElement('div');
-        div.textContent = input;
-        return div.innerHTML; // Basic sanitization
-    }
+  try{
+    const p=parseJwt(token);
+    if(Date.now()>p.exp*1000) throw "expired";
+    initDashboard(token);
+  }catch{
+    localStorage.clear();
+    showToast("Session expired","error");
+    setTimeout(()=>location.href="login.html",800);
+  }
+}
 
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
+/* ================= DASHBOARD ================= */
+function initDashboard(idToken){
+  const p=parseJwt(idToken);
 
-    async function handleSaveCollection() {
-        const name = sanitize($('collectionName').value.trim());
-        if (!name) return showToast('Name required', 'error');
-        const payload = { name };
-        if ($('collectionIdToEdit').value) payload.collection_id = $('collectionIdToEdit').value;
-        // Add disable/expiry if needed
-        showLoading();
-        try {
-            const response = await fetch(UPSERT_COLLECTION_API, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) throw new Error('Save failed');
-            fetchCollections();
-            showToast('Collection saved');
-        } catch (error) {
-            showToast('Error saving', 'error');
-        } finally {
-            hideLoading();
-        }
-    }
+  if((p["cognito:groups"]||[]).includes("MasterAdmins")){
+    location.href="super-admin.html";
+    return;
+  }
 
-    function editCollection(id, name) {
-        $('collectionName').value = name;
-        $('collectionIdToEdit').value = id;
-        // Add disable/expiry fields if needed
-    }
+  $('welcome').textContent="Hi, "+p.email.split("@")[0];
+  loadCollections(idToken);
+  loadAccountStatus(idToken);
+}
 
-    async function confirmDeleteCollection(id, name) {
-        if (!confirm(`Delete ${name}?`)) return;
-        showLoading();
-        try {
-            await fetch(DELETE_COLLECTION_API, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collection_id: id })
-            });
-            fetchCollections();
-            showToast('Deleted');
-        } catch (error) {
-            showToast('Delete failed', 'error');
-        } finally {
-            hideLoading();
-        }
-    }
+async function loadCollections(token){
+  try{
+    const r=await fetch(GET_COLLECTIONS_API,{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+token,
+        "Content-Type":"application/json"
+      }
+    });
+    const d=await r.json();
+    $('collections').innerHTML =
+      d.collections?.map(c=>`
+        <div style="margin-bottom:10px">
+          <b>${c.name}</b> —
+          ${c.event_count} events —
+          ${c.photo_count} photos
+        </div>
+      `).join("") || "No collections";
+  }catch{
+    $('collections').textContent="Failed to load collections";
+  }
+}
 
-    async function toggleDisable(id, current) {
-        const payload = { collection_id: id, disabled: !current };
-        // Similar to save, call API
-        showToast('Toggled');
-        fetchCollections();
-    }
+async function loadAccountStatus(token){
+  try{
+    const r=await fetch(ACCOUNT_STATUS_API,{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+token,
+        "Content-Type":"application/json"
+      }
+    });
+    const d=await r.json();
+    $('usage').innerHTML=`
+      Used: ${d.used_gb} GB<br>
+      Limit: ${d.limit_gb} GB<br>
+      Expiry: ${d.expiry_date || "N/A"}
+    `;
+  }catch{
+    $('usage').textContent="Failed to load usage";
+  }
+}
 
-    async function handleAuth() {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        idToken = localStorage.getItem('idToken');
-        refreshToken = localStorage.getItem('refreshToken');
+/* ================= LOGOUT ================= */
+$('logoutBtn').onclick=()=>{
+  localStorage.clear();
+  location.href="login.html";
+};
 
-        if (code) {
-            showLoading();
-            try {
-                const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ grant_type: 'authorization_code', client_id: CLIENT_ID, code, redirect_uri: REDIRECT_URI })
-                });
-                const tokens = await response.json();
-                idToken = tokens.id_token;
-                refreshToken = tokens.refresh_token;
-                localStorage.setItem('idToken', idToken);
-                localStorage.setItem('refreshToken', refreshToken);
-            } catch (error) {
-                window.location.href = 'login.html';
-            } finally {
-                hideLoading();
-            }
-        }
-
-        if (!idToken) return window.location.href = 'login.html';
-
-        try {
-            const payload = JSON.parse(atob(idToken.split('.')[1]));
-            if (Date.now() > payload.exp * 1000) {
-                if (refreshToken) {
-                    const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: refreshToken })
-                    });
-                    const tokens = await response.json();
-                    idToken = tokens.id_token;
-                    localStorage.setItem('idToken', idToken);
-                    localStorage.setItem('refreshToken', tokens.refresh_token || refreshToken);
-                } else {
-                    throw new Error('Token expired');
-                }
-            }
-            $('welcomeMessage').textContent = `Hi, ${payload.email.split('@')[0]}`;
-            fetchCollections();
-            // Fetch account status for expiry alert
-            const accountResponse = await fetch('your-account-api', { headers: { 'Authorization': `Bearer ${idToken}` } });
-            const account = await accountResponse.json();
-            if (account.expiry && new Date(account.expiry) < new Date(Date.now() + 7*24*60*60*1000)) {
-                showToast('Plan expiring soon!', 'error');
-            }
-        } catch (e) {
-            localStorage.clear();
-            window.location.href = 'login.html';
-        }
-    }
-
-    function initialize() {
-        $('saveCollectionBtn').addEventListener('click', handleSaveCollection);
-        $('logoutButton').addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(window.location.origin + "/login.html")}`;
-        });
-        handleAuth();
-    }
-
-    document.addEventListener('DOMContentLoaded', initialize);
+document.addEventListener("DOMContentLoaded",handleAuth);
 </script>
 </body>
 </html>
