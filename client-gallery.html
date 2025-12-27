@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Wedding Gallery Selection</title>
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       THEME & BASICS
+    ========================================= */
+    :root {
+      --bg-dark: #0f0f13;
+      --bg-card: #181820;
+      --text-main: #ffffff;
+      --text-muted: #a0a0b0;
+      --accent: #6366f1; /* Indigo */
+      --danger: #ef4444; /* Red for Heart/Trash */
+      --video: #f59e0b;  /* Amber for Video */
+      --success: #10b981;
+      --ai-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      padding-bottom: 80px;
+    }
+
+    /* =========================================
+       HEADER
+    ========================================= */
+    header {
+      background: rgba(24, 24, 32, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .header-info h1 { margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; }
+    .header-info p { margin: 2px 0 0; font-size: 0.75rem; color: var(--text-muted); }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    /* AI Button */
+    .ai-chat-btn {
+        background: var(--bg-card);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1rem;
+        background-image: var(--ai-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        position: relative;
+    }
+    .ai-chat-btn::after {
+        content: '';
+        position: absolute; inset: -2px; border-radius: 50%;
+        padding: 2px;
+        background: var(--ai-gradient);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    /* Status Badge in Header */
+    .save-status {
+      font-size: 0.75rem;
+      padding: 5px 10px;
+      border-radius: 15px;
+      background: rgba(255,255,255,0.05);
+      color: #aaa;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .save-status.saving { color: var(--video); }
+    .save-status.saved { color: var(--success); }
+
+
+    /* =========================================
+       FILTERS & FACES
+    ========================================= */
+    .filters-section {
+      position: sticky;
+      top: 60px;
+      z-index: 90;
+      background: var(--bg-dark);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 5px;
+    }
+
+    .event-filters {
+      display: flex; gap: 10px; overflow-x: auto; padding: 10px 15px;
+      scrollbar-width: none;
+    }
+    .event-filters::-webkit-scrollbar { display: none; }
+
+    .filter-chip {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 0.85rem; color: var(--text-muted);
+      white-space: nowrap; cursor: pointer; transition: all 0.2s;
+    }
+    .filter-chip.active {
+      background: var(--text-main); color: var(--bg-dark);
+      font-weight: 600; border-color: var(--text-main);
+    }
+
+    .face-filters {
+      display: flex; gap: 15px; overflow-x: auto; padding: 5px 15px 15px 15px;
+      scrollbar-width: none;
+    }
+    .face-filters::-webkit-scrollbar { display: none; }
+
+    .face-item {
+      display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; min-width: 60px; position: relative;
+    }
+    .face-img-wrapper {
+      width: 55px; height: 55px; border-radius: 50%; overflow: hidden;
+      border: 2px solid transparent; transition: all 0.2s; position: relative;
+    }
+    .face-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .face-item.active .face-img-wrapper {
+      border-color: var(--accent); transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    }
+    .face-check {
+      position: absolute; bottom: 0; right: 0;
+      background: var(--accent); color: white;
+      font-size: 0.6rem; width: 18px; height: 18px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bg-dark); opacity: 0; transition: 0.2s;
+    }
+    .face-item.active .face-check { opacity: 1; }
+    .face-name {
+      margin-top: 5px; font-size: 0.7rem; color: var(--text-muted);
+      text-align: center; max-width: 60px; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+    }
+    .face-item.active .face-name { color: var(--accent); font-weight: 500; }
+
+    /* =========================================
+       GRID
+    ========================================= */
+    .gallery-container {
+      padding: 10px;
+      column-count: 2; column-gap: 10px;
+    }
+    @media (min-width: 768px) { .gallery-container { column-count: 4; } }
+
+    .photo-card {
+      background: var(--bg-card); break-inside: avoid;
+      margin-bottom: 10px; border-radius: 8px;
+      overflow: hidden; position: relative; cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .photo-card img { width: 100%; height: auto; display: block; }
+
+    .card-overlays {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.8) 100%);
+      opacity: 0; transition: opacity 0.2s;
+      display: flex; flex-direction: column; justify-content: space-between; padding: 8px;
+    }
+    .photo-card.has-selection .card-overlays,
+    .photo-card:hover .card-overlays { opacity: 1; }
+
+    .top-badges { display: flex; justify-content: flex-end; gap: 5px; }
+    .badge-icon {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; background: rgba(0,0,0,0.6); color: #fff;
+      display: none;
+    }
+    .photo-card.is-fav .badge-icon.fav { display: flex; background: var(--danger); }
+    .photo-card.is-video .badge-icon.vid { display: flex; background: var(--video); }
+    .photo-card.is-trash { opacity: 0.4; filter: grayscale(100%); }
+    .photo-card.is-trash .badge-icon.del { display: flex; background: #555; }
+
+    /* =========================================
+       LIGHTBOX
+    ========================================= */
+    .lightbox {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 2000; display: none;
+      flex-direction: column;
+    }
+    .lb-header {
+      padding: 15px; display: flex; justify-content: space-between; align-items: center;
+      position: absolute; top: 0; width: 100%; z-index: 10;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    }
+    .lb-image-area {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .lb-image-area img {
+      max-width: 100%; max-height: 100%; object-fit: contain;
+    }
+    .nav-zone {
+      position: absolute; top: 0; bottom: 0; width: 20%; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; opacity: 0; transition: opacity 0.2s;
+      font-size: 2rem; color: white; text-shadow: 0 0 10px black;
+    }
+    .nav-zone:hover { opacity: 1; }
+    .nav-left { left: 0; }
+    .nav-right { right: 0; }
+
+    .lb-controls {
+      height: 90px; background: #121212;
+      display: flex; justify-content: space-evenly; align-items: center;
+      padding-bottom: 10px;
+    }
+    .action-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      background: none; border: none; color: #666; cursor: pointer; transition: 0.2s;
+    }
+    .action-btn .icon-circle {
+      width: 45px; height: 45px; border-radius: 50%;
+      background: #1e1e24; display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; transition: 0.2s;
+    }
+    .action-btn span { font-size: 0.7rem; font-weight: 500; }
+    
+    .action-btn.ai-magic .icon-circle {
+        background: var(--bg-card); color: white; border: 1px solid rgba(255,255,255,0.2);
+    }
+    .action-btn.ai-magic .icon-circle i {
+        background: var(--ai-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .action-btn.active-fav .icon-circle { background: var(--danger); color: white; transform: scale(1.1); }
+    .action-btn.active-fav span { color: var(--danger); }
+    .action-btn.active-vid .icon-circle { background: var(--video); color: white; transform: scale(1.1); }
+    .action-btn.active-vid span { color: var(--video); }
+    .action-btn.active-del .icon-circle { background: #555; color: #fff; text-decoration: line-through; }
+
+    /* =========================================
+       AI MODAL
+    ========================================= */
+    .ai-modal {
+        position: fixed; bottom: 0; left: 0; width: 100%;
+        background: #181820; border-top-left-radius: 20px; border-top-right-radius: 20px;
+        z-index: 3000; transform: translateY(100%); transition: transform 0.3s ease-out;
+        padding: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        border-top: 1px solid rgba(255,255,255,0.1);
+        display: flex; flex-direction: column; max-height: 70vh;
+    }
+    .ai-modal.open { transform: translateY(0); }
+    .ai-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .ai-modal-title { font-weight: 600; font-size: 1.1rem; display: flex; gap: 8px; align-items: center; }
+    .ai-modal-title i { background: var(--ai-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .ai-content {
+        background: #0f0f13; padding: 15px; border-radius: 12px;
+        color: #ddd; font-size: 0.95rem; line-height: 1.5;
+        max-height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05);
+    }
+    .ai-input-area { display: flex; gap: 10px; margin-top: 15px; }
+    .ai-input { flex: 1; background: #0f0f13; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; }
+    .ai-send-btn { background: var(--accent); color: white; border: none; width: 40px; border-radius: 8px; cursor: pointer; }
+
+    /* API Key Modal */
+    .key-modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center;
+    }
+    .key-box {
+        background: #181820; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center;
+    }
+
+    /* Loading & Toasts */
+    .loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent); font-size: 2rem; }
+    .toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: rgba(30, 30, 30, 0.9); color: white; padding: 10px 20px;
+      border-radius: 30px; font-size: 0.9rem; z-index: 3000; opacity: 0;
+      transition: opacity 0.3s; pointer-events: none; border: 1px solid rgba(255,255,255,0.1);
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING -->
+  <div id="pageLoader" class="loader"><i class="fa fa-circle-notch fa-spin"></i></div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-info">
+      <h1 id="collectionTitle">Loading Gallery...</h1>
+      <p id="photoStats">Waiting for server...</p>
+    </div>
+    <div class="header-actions">
+        <div id="saveStatus" class="save-status"><i class="fa fa-check-circle"></i> Saved</div>
+        <button class="ai-chat-btn" onclick="openAIChat()">
+            <i class="fa fa-sparkles"></i>
+        </button>
+    </div>
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters-section">
+    <div class="event-filters" id="eventFilters">
+      <!-- Events injected JS -->
+    </div>
+    <div class="face-filters" id="faceFilters">
+      <!-- Faces injected JS -->
+    </div>
+  </div>
+
+  <!-- GRID -->
+  <div class="gallery-container" id="galleryGrid"></div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox">
+    <div class="lb-header">
+      <div style="color:white; font-size:0.9rem;">
+        <span id="lbCurrentIndex">0</span> / <span id="lbTotalIndex">0</span>
+      </div>
+      <button onclick="closeLightbox()" style="background:none; border:none; color:white; font-size:1.5rem; padding:10px;">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+
+    <div class="lb-image-area">
+      <div class="nav-zone nav-left" onclick="prevPhoto()"><i class="fa fa-chevron-left"></i></div>
+      <img id="lbImage" src="" alt="View" crossorigin="anonymous">
+      <div class="nav-zone nav-right" onclick="nextPhoto()"><i class="fa fa-chevron-right"></i></div>
+    </div>
+
+    <div class="lb-controls">
+      <button class="action-btn" id="btnTrash" onclick="toggleAction('trash')">
+        <div class="icon-circle"><i class="fa fa-ban"></i></div>
+        <span>Reject</span>
+      </button>
+      <button class="action-btn" id="btnVideo" onclick="toggleAction('video')">
+        <div class="icon-circle"><i class="fa fa-clapperboard"></i></div>
+        <span>Reel</span>
+      </button>
+      <button class="action-btn ai-magic" onclick="magicCaption()">
+        <div class="icon-circle"><i class="fa fa-wand-magic-sparkles"></i></div>
+        <span>Caption</span>
+      </button>
+      <button class="action-btn" id="btnFav" onclick="toggleAction('fav')">
+        <div class="icon-circle"><i class="fa fa-heart"></i></div>
+        <span>Select</span>
+      </button>
+      <button class="action-btn" id="btnDownload" onclick="downloadCurrent()" style="display:none;">
+        <div class="icon-circle"><i class="fa fa-download"></i></div>
+        <span>Save</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- AI MODAL -->
+  <div class="ai-modal" id="aiModal">
+    <div class="ai-modal-header">
+        <div class="ai-modal-title"><i class="fa fa-sparkles"></i> <span id="aiTitle">Gemini Assistant</span></div>
+        <button onclick="closeAIModal()" style="background:none; border:none; color:#aaa; font-size:1.2rem;"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="ai-content" id="aiContent"></div>
+    <div class="ai-input-area" id="aiInputArea">
+        <input type="text" class="ai-input" id="chatInput" placeholder="Ask anything...">
+        <button class="ai-send-btn" onclick="sendAIChat()"><i class="fa fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- API KEY MODAL -->
+  <div class="key-modal" id="keyModal">
+    <div class="key-box">
+        <h3>Enable AI Features ✨</h3>
+        <p style="color:#aaa; font-size:0.9rem;">Enter Gemini API Key (Saved in browser)</p>
+        <input type="password" id="apiKeyInput" placeholder="Paste API Key" style="width:100%; padding:10px; margin:10px 0; background:#0f0f13; border:1px solid #444; color:white; border-radius:5px;">
+        <button onclick="saveApiKey()" style="background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:5px; width:100%;">Start</button>
+        <button onclick="document.getElementById('keyModal').style.display='none'" style="background:transparent; color:#888; border:none; margin-top:5px;">Cancel</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Saved</div>
+
+  <script>
+    // --- API CONFIGURATION ---
+    const API_URL = "https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod/client-api";
+    
+    // --- STATE ---
+    let allPhotos = [];
+    let filteredPhotos = [];
+    let detectedFaces = [];
+    let currentEventFilter = 'all';
+    let activeFaceFilters = [];
+    let currentIndex = 0;
+    let clientSettings = { allowDownload: false, showWatermark: true, allowSelection: true };
+    
+    // GEMINI KEY
+    let GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || "";
+
+    // URL PARAMS
+    const urlParams = new URLSearchParams(window.location.search);
+    const COLLECTION_ID = urlParams.get('cid'); 
+    
+    // DOM
+    const grid = document.getElementById('galleryGrid');
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lbImage');
+
+    // --- INIT ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        if(!COLLECTION_ID) {
+            document.body.innerHTML = "<h3 style='color:white;text-align:center;margin-top:50px;'>No Collection ID Provided</h3>";
+            return;
+        }
+        await loadCollectionData();
+    });
+
+    // --- DATA FETCHING ---
+    async function loadCollectionData() {
+        try {
+            // Call Backend API
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'get_client_view',
+                    payload: { collection_id: COLLECTION_ID }
+                })
+            });
+            
+            const data = await res.json();
+            
+            if(res.status !== 200) throw new Error(data.message || "Failed to load");
+            
+            // Set Data
+            allPhotos = data.photos || [];
+            clientSettings = data.settings || clientSettings;
+            
+            // UI Update
+            document.getElementById('collectionTitle').textContent = data.collection_name || "Wedding Gallery";
+            
+            // Detect unique faces from photos (Mocking names as backend sends only IDs mostly)
+            // Ideally backend should send a 'faces_metadata' map. For now assuming simple ID usage.
+            extractFaces(allPhotos);
+            
+            // Initial Render
+            filteredPhotos = allPhotos;
+            renderEventFilters();
+            renderFaceFilters();
+            renderGrid();
+            updateStats();
+            document.getElementById('pageLoader').style.display = 'none';
+
+        } catch (e) {
+            console.error(e);
+            document.getElementById('pageLoader').style.display = 'none';
+            alert("Error loading gallery: " + e.message);
+        }
+    }
+
+    // --- FILTERING ---
+    function renderEventFilters() {
+        // Extract unique events
+        const events = ['all', ...new Set(allPhotos.map(p => p.event))];
+        const container = document.getElementById('eventFilters');
+        container.innerHTML = '';
+        
+        events.forEach(evt => {
+            const chip = document.createElement('div');
+            chip.className = `filter-chip ${evt === 'all' ? 'active' : ''}`;
+            chip.textContent = evt === 'all' ? 'All Photos' : evt;
+            chip.onclick = () => setEventFilter(evt);
+            container.appendChild(chip);
+        });
+    }
+
+    function setEventFilter(evt) {
+        currentEventFilter = evt;
+        document.querySelectorAll('.filter-chip').forEach(c => {
+            c.classList.toggle('active', c.textContent === (evt === 'all' ? 'All Photos' : evt));
+        });
+        applyAllFilters();
+    }
+
+    function extractFaces(photos) {
+        // Create unique face list. 
+        // Note: Real implementation needs Name mapping from backend.
+        // Here we just use Face ID as name or placeholder.
+        const faceMap = new Map();
+        photos.forEach(p => {
+            if(p.faces && Array.isArray(p.faces)) {
+                p.faces.forEach(fid => {
+                    if(!faceMap.has(fid)) {
+                        faceMap.set(fid, { id: fid, name: "Person " + fid.substr(0,4), img: "https://via.placeholder.com/100" });
+                    }
+                });
+            }
+        });
+        detectedFaces = Array.from(faceMap.values());
+    }
+
+    function renderFaceFilters() {
+        const container = document.getElementById('faceFilters');
+        container.innerHTML = '';
+        if(detectedFaces.length === 0) return;
+
+        detectedFaces.forEach(face => {
+            const item = document.createElement('div');
+            item.className = 'face-item';
+            item.onclick = () => toggleFaceFilter(face.id, item);
+            item.innerHTML = `
+                <div class="face-img-wrapper"><img src="${face.img}">
+                    <div class="face-check"><i class="fa fa-check"></i></div>
+                </div>
+                <div class="face-name">${face.name}</div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function toggleFaceFilter(fid, el) {
+        if(activeFaceFilters.includes(fid)) {
+            activeFaceFilters = activeFaceFilters.filter(id => id !== fid);
+            el.classList.remove('active');
+        } else {
+            activeFaceFilters.push(fid);
+            el.classList.add('active');
+        }
+        applyAllFilters();
+    }
+
+    function applyAllFilters() {
+        let temp = (currentEventFilter === 'all') ? allPhotos : allPhotos.filter(p => p.event === currentEventFilter);
+        
+        if(activeFaceFilters.length > 0) {
+            temp = temp.filter(p => p.faces && p.faces.some(fid => activeFaceFilters.includes(fid)));
+        }
+        
+        filteredPhotos = temp;
+        renderGrid();
+    }
+
+    // --- RENDER GRID ---
+    function renderGrid() {
+        grid.innerHTML = '';
+        if(filteredPhotos.length === 0) {
+            grid.innerHTML = '<div style="color:#aaa;padding:20px;">No photos found.</div>';
+            return;
+        }
+
+        filteredPhotos.forEach((photo, index) => {
+            const card = document.createElement('div');
+            let classes = 'photo-card';
+            if(photo.status.fav) classes += ' is-fav has-selection';
+            if(photo.status.video) classes += ' is-video has-selection';
+            if(photo.status.trash) classes += ' is-trash has-selection';
+            
+            card.className = classes;
+            card.onclick = () => openLightbox(index);
+            card.innerHTML = `
+                <img src="${photo.thumb}" loading="lazy">
+                <div class="card-overlays">
+                    <div class="top-badges">
+                        <div class="badge-icon fav"><i class="fa fa-heart"></i></div>
+                        <div class="badge-icon vid"><i class="fa fa-video"></i></div>
+                        <div class="badge-icon del"><i class="fa fa-ban"></i></div>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // --- ACTIONS & API SAVE ---
+    async function toggleAction(type) {
+        if(!clientSettings.allowSelection) {
+            alert("Selection is currently disabled by the photographer.");
+            return;
+        }
+
+        const photo = filteredPhotos[currentIndex];
+        
+        // Optimistic UI Update
+        if(type === 'fav') {
+            photo.status.fav = !photo.status.fav;
+            if(photo.status.fav) photo.status.trash = false;
+        } else if(type === 'video') {
+            photo.status.video = !photo.status.video;
+        } else if(type === 'trash') {
+            photo.status.trash = !photo.status.trash;
+            if(photo.status.trash) { photo.status.fav = false; photo.status.video = false; }
+        }
+
+        updateLightboxUI();
+        updateStats();
+        
+        // Background API Call
+        updateSaveStatus('saving');
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update_selection',
+                    payload: {
+                        collection_id: COLLECTION_ID,
+                        photo_id: photo.id,
+                        status: photo.status
+                    }
+                })
+            });
+            updateSaveStatus('saved');
+        } catch(e) {
+            console.error("Save failed", e);
+            updateSaveStatus('error');
+            // Revert UI if needed, but keeping simple for now
+        }
+    }
+
+    function updateSaveStatus(state) {
+        const el = document.getElementById('saveStatus');
+        if(state === 'saving') {
+            el.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i> Saving...';
+            el.className = 'save-status saving';
+        } else if (state === 'saved') {
+            el.innerHTML = '<i class="fa fa-check-circle"></i> Saved';
+            el.className = 'save-status saved';
+        } else {
+            el.innerHTML = '<i class="fa fa-exclamation-circle"></i> Error';
+            el.className = 'save-status';
+            el.style.color = 'red';
+        }
+    }
+
+    // --- LIGHTBOX ---
+    function openLightbox(index) {
+        currentIndex = index;
+        updateLightboxUI();
+        lb.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+        lb.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        renderGrid(); // Refresh grid badges
+    }
+    function updateLightboxUI() {
+        const photo = filteredPhotos[currentIndex];
+        lbImg.src = photo.url;
+        document.getElementById('lbCurrentIndex').textContent = currentIndex + 1;
+        document.getElementById('lbTotalIndex').textContent = filteredPhotos.length;
+        
+        setBtn('btnFav', photo.status.fav, 'active-fav');
+        setBtn('btnVideo', photo.status.video, 'active-video');
+        setBtn('btnTrash', photo.status.trash, 'active-del');
+        
+        document.getElementById('btnDownload').style.display = clientSettings.allowDownload ? 'flex' : 'none';
+    }
+    function setBtn(id, active, cls) {
+        const btn = document.getElementById(id);
+        if(active) btn.classList.add(cls); else btn.classList.remove(cls);
+    }
+    function nextPhoto() { if(currentIndex < filteredPhotos.length-1) { currentIndex++; updateLightboxUI(); } }
+    function prevPhoto() { if(currentIndex > 0) { currentIndex--; updateLightboxUI(); } }
+
+    // --- GEMINI AI ---
+    function checkApiKey() {
+        if(!GEMINI_API_KEY) { document.getElementById('keyModal').style.display='flex'; return false; }
+        return true;
+    }
+    function saveApiKey() {
+        const k = document.getElementById('apiKeyInput').value.trim();
+        if(k) { GEMINI_API_KEY = k; localStorage.setItem('gemini_api_key', k); document.getElementById('keyModal').style.display='none'; }
+    }
+    
+    async function magicCaption() {
+        if(!checkApiKey()) return;
+        const photo = filteredPhotos[currentIndex];
+        openAIModal("Magic Caption", "Analyzing... ✨");
+        try {
+            const b64 = await getBase64(photo.url);
+            const res = await callGeminiVision("Write a short, romantic wedding caption for Instagram with hashtags.", b64);
+            document.getElementById('aiContent').innerHTML = `<strong>Caption:</strong><br>${res.replace(/\n/g,'<br>')}`;
+        } catch(e) { document.getElementById('aiContent').textContent = "Error: "+e.message; }
+    }
+    
+    function openAIChat() {
+        if(!checkApiKey()) return;
+        openAIModal("Assistant", "Ask me about songs, planning, or thank you notes!");
+        document.getElementById('aiInputArea').style.display='flex';
+    }
+    
+    async function sendAIChat() {
+        const txt = document.getElementById('chatInput').value;
+        if(!txt) return;
+        document.getElementById('aiContent').innerHTML += `<br><strong>You:</strong> ${txt}<br>Thinking...`;
+        try {
+            const res = await callGeminiText(txt);
+            document.getElementById('aiContent').innerHTML += `<br><strong>AI:</strong> ${res}`;
+        } catch(e) { document.getElementById('aiContent').innerHTML += "<br>Error."; }
+    }
+
+    async function callGeminiText(prompt) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}]}) });
+        const d = await res.json();
+        return d.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+    }
+
+    async function callGeminiVision(prompt, b64) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:"image/jpeg",data:b64.split(',')[1]}}]}]}) });
+        const d = await res.json();
+        return d.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+    }
+
+    function openAIModal(t, c) { document.getElementById('aiTitle').textContent=t; document.getElementById('aiContent').innerHTML=c; document.getElementById('aiModal').classList.add('open'); }
+    function closeAIModal() { document.getElementById('aiModal').classList.remove('open'); }
+    
+    async function getBase64(url) {
+        const res = await fetch(url); const blob = await res.blob();
+        return new Promise(r => { const rd = new FileReader(); rd.onload=()=>r(rd.result); rd.readAsDataURL(blob); });
+    }
+    function updateStats() {
+        const sel = allPhotos.filter(p=>p.status.fav).length;
+        document.getElementById('photoStats').textContent = `${allPhotos.length} Photos • ${sel} Selected`;
+    }
+  </script>
+</body>
+</html>
