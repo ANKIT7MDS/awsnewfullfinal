@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer">
   <title>Wedding Gallery</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -25,6 +26,8 @@
 
     .btn-action { @apply p-2 rounded-full bg-white/90 text-gray-700 hover:text-indigo-600 hover:bg-white transition shadow-sm; }
     .btn-action.active { @apply text-red-500 bg-white; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="antialiased min-h-screen flex flex-col">
@@ -83,7 +86,7 @@
     <!-- Main Image -->
     <div class="flex-grow flex items-center justify-center relative overflow-hidden">
       <button onclick="prevPhoto()" class="absolute left-4 p-4 text-white hover:bg-white/10 rounded-full z-20"><i class="fa fa-chevron-left text-2xl"></i></button>
-      <img id="lbImage" src="" class="max-h-[85vh] max-w-[95vw] object-contain shadow-2xl rounded-sm transition-transform duration-300">
+      <img id="lbImage" src="" referrerpolicy="no-referrer" class="max-h-[85vh] max-w-[95vw] object-contain shadow-2xl rounded-sm transition-transform duration-300">
       <button onclick="nextPhoto()" class="absolute right-4 p-4 text-white hover:bg-white/10 rounded-full z-20"><i class="fa fa-chevron-right text-2xl"></i></button>
     </div>
 
@@ -136,7 +139,7 @@
             (p.faces || []).forEach(f => {
                 const id = typeof f === 'string' ? f : (f.FaceId || f.face_id);
                 if(id && !faceMap.has(id)) {
-                    faceMap.set(id, { id, name: f.Name || f.name || "Guest", img: p.thumb }); // Use first photo as thumb
+                    faceMap.set(id, { id, name: f.Name || f.name || "Guest", img: p.thumb || p.url }); // Use first photo as thumb
                 }
             });
         });
@@ -174,7 +177,7 @@
           fcContainer.innerHTML = state.faces.map(f => `
             <div onclick="toggleFace('${f.id}')" title="${f.name}"
                  class="face-avatar w-8 h-8 rounded-full overflow-hidden cursor-pointer bg-gray-200 ${state.activeFaces.includes(f.id) ? 'active' : ''}">
-                 <img src="${f.img}" class="w-full h-full object-cover">
+                 <img src="${f.img}" referrerpolicy="no-referrer" class="w-full h-full object-cover">
             </div>
           `).join('');
       }
@@ -211,7 +214,7 @@
       
       grid.innerHTML = state.filteredPhotos.map((p, i) => `
         <div class="photo-item group cursor-pointer" onclick="openLightbox(${i})">
-          <img src="${p.thumb}" loading="lazy" class="w-full h-auto block">
+          <img src="${p.thumb || p.url}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-auto block">
           <div class="absolute inset-0 overlays p-2 flex flex-col justify-between">
             <div class="flex justify-end gap-2">
                ${p.status?.fav ? '<span class="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md"><i class="fa fa-heart"></i></span>' : ''}
@@ -242,7 +245,7 @@
 
     function updateLightbox() {
       const p = state.filteredPhotos[state.idx];
-      document.getElementById('lbImage').src = p.url;
+      document.getElementById('lbImage').src = p.url || p.thumb;
       document.getElementById('lbCurrent').innerText = state.idx + 1;
       document.getElementById('lbTotal').innerText = state.filteredPhotos.length;
       

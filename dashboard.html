@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Dashboard • EventLens</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
@@ -11,11 +12,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; }
         
         /* Navigation & Sidebar */
-        .nav-item { @apply flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition-all cursor-pointer; }
-        .nav-item.active { @apply bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-200; }
+        .nav-item { @apply flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all cursor-pointer mb-1; }
+        .nav-item.active { @apply bg-white text-indigo-600 shadow-sm ring-1 ring-slate-100; }
         
         /* Buttons */
         .btn { @apply inline-flex items-center justify-center px-4 py-2 border text-sm font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all; }
@@ -29,35 +30,39 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Tabs */
-        .tab-btn { @apply pb-3 px-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors; }
+        .tab-btn { @apply pb-3 px-4 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors; }
         .tab-btn.active { @apply border-indigo-600 text-indigo-600; }
 
         /* Photo Grid */
         .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem; }
-        .photo-card { @apply relative aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer; }
+        .photo-card { @apply relative aspect-[4/3] bg-white rounded-lg overflow-hidden border border-slate-200 group transition-all hover:shadow-lg hover:border-indigo-200 cursor-pointer; }
         .photo-card img { @apply w-full h-full object-cover transition-transform duration-500 group-hover:scale-105; }
         .photo-overlay { @apply absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3; }
         
         /* Table Styles */
         .table-container { @apply overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm; }
-        .table-head { @apply bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3 text-left; }
-        .table-cell { @apply px-6 py-4 whitespace-nowrap text-sm text-slate-700; }
+        .table-head { @apply bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-3 text-left border-b border-slate-200; }
+        .table-cell { @apply px-6 py-4 whitespace-nowrap text-sm text-slate-700 border-b border-slate-100 last:border-0; }
 
         /* Card */
         .card { @apply bg-white rounded-xl border border-slate-200 shadow-sm p-6; }
+        
+        /* Custom Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20 hidden md:flex">
-        <div class="h-16 flex items-center px-6 border-b border-slate-100">
+    <aside class="w-64 bg-slate-50 border-r border-slate-200 flex flex-col z-20 hidden md:flex">
+        <div class="h-16 flex items-center px-6 border-b border-slate-200 bg-white">
              <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-lg shadow-indigo-200">E</div>
              <span class="font-bold text-lg tracking-tight text-slate-800">EventLens</span>
         </div>
         
-        <div class="flex-1 overflow-y-auto p-4 space-y-1">
-            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-3 mt-2">Workspace</div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-3 mt-2">Main Menu</div>
             <div onclick="router('collections')" class="nav-item active" id="nav-collections">
                 <i class="fas fa-folder-open w-5 text-center"></i> Collections
             </div>
@@ -66,14 +71,14 @@
             </div>
         </div>
 
-        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+        <div class="p-4 border-t border-slate-200 bg-white">
             <div class="flex items-center gap-3 mb-4 px-2">
                 <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px] shadow-sm">
                     <div class="w-full h-full rounded-full bg-white flex items-center justify-center text-indigo-700 font-bold text-xs" id="userAvatar">U</div>
                 </div>
                 <div class="overflow-hidden">
-                    <p class="text-sm font-bold text-slate-700 truncate" id="userName">User</p>
-                    <p class="text-xs text-slate-500">Pro Plan</p>
+                    <p class="text-sm font-bold text-slate-700 truncate" id="userName">Photographer</p>
+                    <p class="text-xs text-slate-500">Pro Account</p>
                 </div>
             </div>
             <button onclick="logout()" class="w-full btn btn-secondary text-xs h-9">
@@ -83,7 +88,7 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col min-w-0 bg-slate-50">
+    <div class="flex-1 flex flex-col min-w-0 bg-slate-50/50">
         
         <!-- Mobile Header -->
         <header class="md:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30">
@@ -102,7 +107,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                     <div>
                         <h1 class="text-2xl font-bold text-slate-900">Collections</h1>
-                        <p class="text-sm text-slate-500 mt-1">Manage all your client events and galleries.</p>
+                        <p class="text-sm text-slate-500 mt-1">Manage and organize your client galleries.</p>
                     </div>
                     <button onclick="openModal('createCollectionModal')" class="btn btn-primary">
                         <i class="fas fa-plus mr-2"></i> New Collection
@@ -110,7 +115,7 @@
                 </div>
 
                 <!-- Empty State -->
-                <div id="emptyCollections" class="hidden flex flex-col items-center justify-center py-24 bg-white rounded-xl border-2 border-slate-200 border-dashed">
+                <div id="emptyCollections" class="hidden flex flex-col items-center justify-center py-24 bg-white rounded-xl border border-slate-200 border-dashed">
                     <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 text-3xl mb-4 shadow-inner"><i class="fas fa-images"></i></div>
                     <h3 class="text-lg font-bold text-slate-900">No collections yet</h3>
                     <p class="text-slate-500 text-sm mb-6 max-w-xs text-center">Create your first collection to start uploading and sharing photos.</p>
@@ -142,17 +147,17 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="openClientGallery()" class="btn btn-secondary text-xs md:text-sm"><i class="fas fa-external-link-alt md:mr-2"></i> <span class="hidden md:inline">View</span></button>
+                                <button onclick="openClientGallery()" class="btn btn-secondary text-xs md:text-sm"><i class="fas fa-external-link-alt md:mr-2"></i> <span class="hidden md:inline">View Gallery</span></button>
                                 <button onclick="openModal('uploadModal')" class="btn btn-primary text-xs md:text-sm"><i class="fas fa-cloud-upload-alt md:mr-2"></i> Upload</button>
                             </div>
                         </div>
 
                         <!-- Tabs -->
                         <div class="flex gap-6 overflow-x-auto no-scrollbar">
-                            <button onclick="switchDetailTab('photos')" class="tab-btn active" id="tab-photos"><i class="far fa-images mr-1"></i> Photos</button>
-                            <button onclick="switchDetailTab('events')" class="tab-btn" id="tab-events"><i class="far fa-calendar-alt mr-1"></i> Events</button>
-                            <button onclick="switchDetailTab('links')" class="tab-btn" id="tab-links"><i class="fas fa-link mr-1"></i> Links</button>
-                            <button onclick="switchDetailTab('analytics')" class="tab-btn" id="tab-analytics"><i class="fas fa-chart-line mr-1"></i> Analytics</button>
+                            <button onclick="switchDetailTab('photos')" class="tab-btn active" id="tab-photos"><i class="far fa-images mr-2"></i>Photos</button>
+                            <button onclick="switchDetailTab('events')" class="tab-btn" id="tab-events"><i class="far fa-calendar-alt mr-2"></i>Events</button>
+                            <button onclick="switchDetailTab('links')" class="tab-btn" id="tab-links"><i class="fas fa-link mr-2"></i>Links</button>
+                            <button onclick="switchDetailTab('analytics')" class="tab-btn" id="tab-analytics"><i class="fas fa-chart-line mr-2"></i>Analytics</button>
                         </div>
                     </div>
                 </div>
@@ -169,10 +174,10 @@
                                     <i class="fas fa-filter"></i> <span class="hidden md:inline">Filters</span>
                                 </div>
                                 <div class="flex flex-wrap gap-3 flex-1 justify-end">
-                                    <select id="filterEvent" class="bg-slate-50 border border-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <select id="filterEvent" class="bg-slate-50 border border-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
                                         <option value="">All Events</option>
                                     </select>
-                                    <button class="btn btn-secondary text-xs" onclick="downloadAllPhotos()"><i class="fas fa-download mr-1"></i> Zip</button>
+                                    <button class="btn btn-secondary text-xs" onclick="downloadAllPhotos()"><i class="fas fa-download mr-1"></i> Download Zip</button>
                                 </div>
                             </div>
 
@@ -180,21 +185,25 @@
                             <div id="detailPhotosGrid" class="photo-grid"></div>
                             
                             <!-- Loading/Empty -->
-                            <div id="detailLoading" class="hidden py-20 text-center">
+                            <div id="detailLoading" class="hidden py-32 text-center">
                                 <i class="fas fa-circle-notch fa-spin text-3xl text-indigo-500"></i>
-                                <p class="text-slate-500 mt-2">Loading content...</p>
+                                <p class="text-slate-500 mt-2 font-medium">Loading photos...</p>
                             </div>
-                            <div id="detailEmpty" class="hidden py-20 text-center bg-white rounded-xl border border-dashed border-slate-300">
-                                <div class="text-slate-300 text-4xl mb-4"><i class="fas fa-cloud-upload-alt"></i></div>
-                                <p class="text-slate-500 mb-4">No photos found.</p>
-                                <button onclick="openModal('uploadModal')" class="text-indigo-600 font-semibold hover:underline">Upload Photos</button>
+                            <div id="detailEmpty" class="hidden py-32 text-center bg-white rounded-xl border-2 border-dashed border-slate-200">
+                                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 text-3xl mb-4 mx-auto"><i class="fas fa-cloud-upload-alt"></i></div>
+                                <h3 class="text-lg font-bold text-slate-900">No photos yet</h3>
+                                <p class="text-slate-500 mb-6">Upload photos to get started with this collection.</p>
+                                <button onclick="openModal('uploadModal')" class="btn btn-primary">Upload Photos</button>
                             </div>
                         </div>
 
                         <!-- TAB: EVENTS -->
                         <div id="content-events" class="tab-content hidden space-y-6">
                             <div class="flex justify-between items-center">
-                                <h2 class="text-lg font-bold text-slate-800">Sub-Events</h2>
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-800">Sub-Events</h2>
+                                    <p class="text-sm text-slate-500">Organize photos into specific events (e.g. Wedding, Reception)</p>
+                                </div>
                                 <button onclick="openModal('eventModal')" class="btn btn-primary text-xs"><i class="fas fa-plus mr-1"></i> Add Event</button>
                             </div>
                             <div class="table-container">
@@ -215,7 +224,7 @@
                         <div id="content-links" class="tab-content hidden max-w-2xl mx-auto space-y-6">
                             <div class="card">
                                 <h2 class="text-lg font-bold text-slate-800 mb-4">Generate Search Link</h2>
-                                <p class="text-sm text-slate-500 mb-6">Create a unique link for a specific sub-event to share with specific guests.</p>
+                                <p class="text-sm text-slate-500 mb-6">Create a unique link for a specific sub-event. This allows you to share only relevant photos with specific groups.</p>
                                 
                                 <div class="space-y-4">
                                     <div>
@@ -240,17 +249,17 @@
                         <!-- TAB: ANALYTICS -->
                         <div id="content-analytics" class="tab-content hidden space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div class="card p-4">
+                                <div class="card p-5 border-l-4 border-indigo-500">
                                     <div class="text-slate-500 text-xs font-bold uppercase mb-2">Total Leads</div>
-                                    <div class="text-2xl font-bold text-slate-800" id="statLeads">0</div>
+                                    <div class="text-3xl font-bold text-slate-800" id="statLeads">0</div>
                                 </div>
-                                <div class="card p-4">
+                                <div class="card p-5 border-l-4 border-emerald-500">
                                     <div class="text-slate-500 text-xs font-bold uppercase mb-2">Total Downloads</div>
-                                    <div class="text-2xl font-bold text-slate-800" id="statDownloads">0</div>
+                                    <div class="text-3xl font-bold text-slate-800" id="statDownloads">0</div>
                                 </div>
-                                <div class="card p-4">
+                                <div class="card p-5 border-l-4 border-purple-500">
                                     <div class="text-slate-500 text-xs font-bold uppercase mb-2">Storage Used</div>
-                                    <div class="text-2xl font-bold text-slate-800" id="statStorage">0 MB</div>
+                                    <div class="text-3xl font-bold text-slate-800" id="statStorage">0 MB</div>
                                 </div>
                             </div>
                         </div>
@@ -333,7 +342,7 @@
                 <!-- Event Selector for Upload -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Assign to Event</label>
-                    <select id="uploadEventSelect" class="w-full border-slate-300 rounded-lg p-2 text-sm border">
+                    <select id="uploadEventSelect" class="w-full border-slate-300 rounded-lg p-2 text-sm border bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
                         <option value="">Main Collection (Default)</option>
                     </select>
                 </div>
@@ -463,9 +472,9 @@
             } else {
                 empty.classList.add('hidden');
                 list.innerHTML = collections.map(c => `
-                    <div onclick="router('details', '${c.collection_id}')" class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer group hover:-translate-y-1">
+                    <div onclick="router('details', '${c.collection_id}')" class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer group hover:-translate-y-1 relative">
                         <div class="flex justify-between items-start mb-4">
-                            <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-lg group-hover:bg-indigo-600 group-hover:text-white transition">
+                            <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-lg group-hover:bg-indigo-600 group-hover:text-white transition shadow-sm">
                                 <i class="fas fa-folder"></i>
                             </div>
                             <span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 font-medium">${c.total_photo_count || 0} Photos</span>
@@ -544,12 +553,16 @@
     function renderPhotoGrid(photos) {
         const grid = document.getElementById('detailPhotosGrid');
         grid.innerHTML = photos.map(p => {
-             const thumb = p.thumb ? p.thumb.replace('http://', 'https://') : (p.url || 'https://via.placeholder.com/300');
+             // Robust URL handling
+             let src = p.url || p.thumb;
+             if(!src) src = 'https://via.placeholder.com/300?text=No+Link';
+             else if(src.startsWith('http://')) src = src.replace('http://', 'https://');
+             
              return `
-                <div class="photo-card">
-                    <img src="${thumb}" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/300?text=Error';">
+                <div class="photo-card" onclick="window.open('${src}', '_blank')">
+                    <img src="${src}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://via.placeholder.com/300?text=Error';">
                     <div class="photo-overlay">
-                        <span class="text-xs bg-black/50 text-white px-2 py-1 rounded inline-block w-max">${p.event || 'Main'}</span>
+                        <span class="text-xs bg-black/50 text-white px-2 py-1 rounded inline-block w-max backdrop-blur-sm">${p.event || 'Main'}</span>
                     </div>
                 </div>
              `;
@@ -569,9 +582,9 @@
         tbody.innerHTML = events.map(ev => `
             <tr class="table-row">
                 <td class="table-cell font-medium">${ev}</td>
-                <td class="table-cell">${currentPhotos.filter(p => (p.event || 'Main Event') === ev).length}</td>
+                <td class="table-cell text-center">${currentPhotos.filter(p => (p.event || 'Main Event') === ev).length}</td>
                 <td class="table-cell text-right">
-                    <button class="text-slate-400 hover:text-slate-600 text-xs" onclick="showToast('Manage in Upload')">Manage</button>
+                    <button class="text-slate-400 hover:text-indigo-600 text-xs font-medium" onclick="showToast('Feature coming soon')">Manage</button>
                 </td>
             </tr>
         `).join('');
@@ -580,10 +593,8 @@
     async function createSubEvent() {
         const name = document.getElementById('subEventName').value;
         if(name) {
-            // In a real app we would create a DB entry. Here we simulate availability for the upload dropdown.
             showToast(`Event "${name}" ready for uploads`);
             closeModal('eventModal');
-            // Force refresh of upload dropdowns if open
             const select = document.getElementById('uploadEventSelect');
             if(select) {
                 const opt = document.createElement('option');
@@ -618,7 +629,7 @@
 
     // --- Analytics ---
     function loadAnalytics() {
-        // Mock Data
+        // Mock Data for demonstration
         document.getElementById('statLeads').innerText = Math.floor(Math.random() * 50); 
         const size = currentPhotos.reduce((a,b) => a + (b.size || 1024*1024*2), 0);
         document.getElementById('statStorage').innerText = formatBytes(size);
@@ -629,10 +640,8 @@
     function handleFiles(files) {
         if(!files.length) return;
         
-        // Populate Upload Event Select from existing photos + default
         const events = [...new Set(currentPhotos.map(p => p.event || 'Main Event'))];
         const select = document.getElementById('uploadEventSelect');
-        // Keep existing options if user added new ones via modal, otherwise reset
         if(select.options.length <= 1) {
              select.innerHTML = '<option value="">Main Collection</option>' + events.map(e => `<option value="${e}">${e}</option>`).join('');
         }
@@ -735,31 +744,37 @@
     async function downloadAllPhotos() {
         if(currentPhotos.length === 0) return showToast("No photos to download");
         
-        const zip = new JSZip();
-        const folder = zip.folder(currentCollection.name || "Photos");
-        let count = 0;
+        showToast("Starting Download...");
         
-        showToast("Preparing Zip...");
-        
-        // Limit to first 20 for demo/performance in browser
-        const limit = Math.min(currentPhotos.length, 20); 
-        
-        for(let i=0; i<limit; i++) {
-            const p = currentPhotos[i];
-            const url = p.url; // Ensure CORS allows fetching
-            if(url) {
-                try {
-                    const blob = await fetch(url).then(r => r.blob());
+        try {
+            // Check if we can fetch the first image
+            await fetch(currentPhotos[0].url, { method: 'HEAD' });
+            
+            const zip = new JSZip();
+            const folder = zip.folder(currentCollection.name || "Photos");
+            let count = 0;
+            const limit = Math.min(currentPhotos.length, 50); // increased limit
+            
+            for(let i=0; i<limit; i++) {
+                const p = currentPhotos[i];
+                if(p.url) {
+                    const blob = await fetch(p.url).then(r => r.blob());
                     folder.file(`photo_${i+1}.jpg`, blob);
                     count++;
-                } catch(e) { console.error("Zip fetch error", e); }
+                }
             }
+            
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                saveAs(content, `${currentCollection.name}.zip`);
+                showToast("Download Complete!");
+            });
+
+        } catch(e) {
+            console.error("CORS Error on Download", e);
+            alert("Download blocked by browser security (CORS). Opening images in new tabs instead.");
+            // Fallback: Open first 5 images
+            currentPhotos.slice(0, 5).forEach(p => window.open(p.url, '_blank'));
         }
-        
-        zip.generateAsync({type:"blob"}).then(function(content) {
-            saveAs(content, `${currentCollection.name}.zip`);
-            showToast("Download started!");
-        });
     }
 
     // --- Helpers ---
