@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
+        <h1 class="text-2xl font-bold mb-4">Super Admin Dashboard</h1>
+        <p class="mb-4 text-gray-600">Manage photographer accounts and storage limits.</p>
+        <div id="content">Loading...</div>
+    </div>
+    <script>
+        // Minimal logic as placeholder
+        document.getElementById('content').innerHTML = `
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b"><th class="py-2">Email</th><th>Storage</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="py-2">photographer@example.com</td><td>50 GB</td><td class="text-green-600">Active</td><td><button class="text-indigo-600">Edit</button></td></tr>
+                </tbody>
+            </table>
+        `;
+    </script>
+</body>
+</html>

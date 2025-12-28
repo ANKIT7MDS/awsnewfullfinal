@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard • EventLens</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .sidebar-link { @apply flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-indigo-600 transition font-medium; }
+        .sidebar-link.active { @apply bg-indigo-50 text-indigo-700; }
+        .card { @apply bg-white border border-gray-200 rounded-xl shadow-sm p-6; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+            <span class="text-xl font-bold text-gray-900 tracking-tight">EventLens</span>
+        </div>
+        <div class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+            <a href="#" onclick="showSection('collections')" class="sidebar-link active" id="nav-collections">
+                <i class="fas fa-folder"></i> Collections
+            </a>
+            <a href="#" onclick="showSection('upload')" class="sidebar-link" id="nav-upload">
+                <i class="fas fa-cloud-upload-alt"></i> Upload
+            </a>
+            <a href="#" onclick="showSection('account')" class="sidebar-link" id="nav-account">
+                <i class="fas fa-user-circle"></i> Account
+            </a>
+        </div>
+        <div class="p-4 border-t border-gray-100">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 py-2 rounded-lg text-sm font-medium transition">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Header (Mobile) -->
+        <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 md:px-8">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden text-gray-500"><i class="fas fa-bars text-xl"></i></button>
+                <h2 class="text-lg font-semibold text-gray-800" id="pageTitle">Collections</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-sm text-right hidden sm:block">
+                    <div class="font-medium text-gray-900" id="userName">Loading...</div>
+                    <div class="text-xs text-gray-500" id="dataUsage">...</div>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            
+            <!-- Collections Section -->
+            <div id="section-collections" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div class="relative max-w-sm w-full">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" placeholder="Search collections..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+                    </div>
+                    <button onclick="openModal('createCollectionModal')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+                        <i class="fas fa-plus"></i> New Collection
+                    </button>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stats</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="collectionsTable">
+                            <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500"><i class="fas fa-circle-notch fa-spin mr-2"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="section-upload" class="hidden max-w-3xl mx-auto space-y-6">
+                <div class="card text-center py-10 border-dashed border-2 border-gray-300 hover:border-indigo-500 transition cursor-pointer" id="dropZone">
+                    <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 text-2xl mx-auto mb-4">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900">Upload Photos</h3>
+                    <p class="text-gray-500 text-sm mt-1 mb-4">Drag & drop files here or click to browse</p>
+                    <button class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">Select Files</button>
+                    <input type="file" id="fileInput" multiple class="hidden" accept="image/*">
+                </div>
+                
+                <div id="uploadList" class="space-y-2"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Create Collection Modal -->
+    <div id="createCollectionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all scale-100">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Create New Collection</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Collection Name</label>
+                    <input type="text" id="newCollectionName" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="closeModal('createCollectionModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium">Cancel</button>
+                <button onclick="createCollection()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i class="fas fa-info-circle text-indigo-400"></i>
+        <span id="toastMsg">Notification</span>
+    </div>
+
+<script>
+    // --- Config & Auth ---
+    const API_BASE = 'https://oel3deh9q3.execute-api.ap-south-1.amazonaws.com/prod';
+    const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
+    const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
+    const REDIRECT_URI = window.location.origin + "/dashboard.html";
+    let idToken = localStorage.getItem('idToken');
+
+    // --- Init ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Handle Code Callback
+        const code = new URLSearchParams(window.location.search).get('code');
+        if(code) {
+            try {
+                const res = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({ grant_type: 'authorization_code', client_id: CLIENT_ID, code, redirect_uri: REDIRECT_URI })
+                });
+                const data = await res.json();
+                if(data.id_token) {
+                    idToken = data.id_token;
+                    localStorage.setItem('idToken', idToken);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        if(!idToken) window.location.href = 'login.html';
+        
+        loadAccount();
+        loadCollections();
+    });
+
+    // --- Logic ---
+    async function loadCollections() {
+        try {
+            const res = await fetch(`${API_BASE}/get-collections`, { headers: { Authorization: `Bearer ${idToken}` } });
+            const data = await res.json();
+            const tbody = document.getElementById('collectionsTable');
+            
+            if(!data.Items || data.Items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No collections yet. Create one to get started.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.Items.map(c => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 flex-shrink-0 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${c.name}</div>
+                                <div class="text-xs text-gray-500">ID: ${c.collection_id.substr(0,8)}...</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${new Date(c.created_at).toLocaleDateString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            ${c.total_photo_count || 0} Photos
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="index.html?cid=${c.collection_id}" target="_blank" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
+                        <button onclick="alert('Manage feature coming next')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-cog"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    async function createCollection() {
+        const name = document.getElementById('newCollectionName').value;
+        if(!name) return showToast('Please enter a name');
+        
+        try {
+            await fetch(`${API_BASE}/upsert-collection`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            closeModal('createCollectionModal');
+            showToast('Collection Created');
+            loadCollections();
+        } catch(e) { showToast('Error creating collection'); }
+    }
+
+    // --- Helpers ---
+    function showSection(id) {
+        ['collections', 'upload', 'account'].forEach(s => {
+            document.getElementById(`section-${s}`).classList.add('hidden');
+            document.getElementById(`nav-${s}`)?.classList.remove('active');
+        });
+        document.getElementById(`section-${id}`).classList.remove('hidden');
+        document.getElementById(`nav-${id}`)?.classList.add('active');
+        document.getElementById('pageTitle').innerText = id.charAt(0).toUpperCase() + id.slice(1);
+    }
+
+    async function loadAccount() {
+        try {
+            // Simplified Claims parsing
+            const payload = JSON.parse(atob(idToken.split('.')[1]));
+            document.getElementById('userName').innerText = payload.email;
+        } catch(e) {}
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toastMsg').innerText = msg;
+        t.classList.remove('translate-y-20', 'opacity-0');
+        setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 3000);
+    }
+
+    window.logout = () => {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    };
+
+    window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+    window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+</script>
+</body>
+</html>

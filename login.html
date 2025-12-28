@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventLens - Professional Photo Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+
+    <!-- Navigation -->
+    <nav class="border-b border-gray-100 bg-white/80 backdrop-blur-md fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-600 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg">E</div>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">EventLens</span>
+                </div>
+                <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+                    <a href="#features" class="hover:text-indigo-600 transition">Features</a>
+                    <a href="#pricing" class="hover:text-indigo-600 transition">Pricing</a>
+                    <a href="#" class="hover:text-indigo-600 transition">Help</a>
+                </div>
+                <div>
+                    <button onclick="scrollToLogin()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-200">
+                        Login / Sign Up
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <div class="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-semibold mb-6">
+                    <span class="w-2 h-2 bg-indigo-600 rounded-full"></span> New: AI Face Search 2.0
+                </div>
+                <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
+                    Deliver photos <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">at the speed of light.</span>
+                </h1>
+                <p class="text-xl text-gray-500 mb-8">
+                    The premium gallery platform for professional photographers. Unlimited storage, AI face recognition, and instant delivery.
+                </p>
+            </div>
+
+            <!-- Login Card (Centered) -->
+            <div id="login-section" class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 transform transition hover:scale-[1.01] duration-300">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-900">Welcome Back</h3>
+                    <p class="text-sm text-gray-500">Access your dashboard</p>
+                </div>
+                
+                <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/90 z-20 flex items-center justify-center rounded-2xl">
+                    <i class="fas fa-circle-notch fa-spin text-indigo-600 text-3xl"></i>
+                </div>
+
+                <div class="space-y-4">
+                    <button class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-xl transition">
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
+                        Continue with Google
+                    </button>
+                    
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-200"></div>
+                        <span class="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase">Or with email</span>
+                        <div class="flex-grow border-t border-gray-200"></div>
+                    </div>
+
+                    <!-- Simplified for Cognito flow -->
+                    <button id="loginButton" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-4 rounded-xl transition shadow-lg flex justify-center items-center gap-2">
+                        <i class="fas fa-envelope"></i> Continue via Secure Login
+                    </button>
+                </div>
+                <p class="text-xs text-center text-gray-400 mt-6">
+                    By continuing, you agree to our Terms of Service and Privacy Policy.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Background Decor -->
+        <div class="absolute top-0 left-1/2 w-full -translate-x-1/2 -z-10 h-full">
+            <div class="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div class="absolute top-20 right-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div id="features" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-900">Why Top Photographers Choose Us</h2>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 mb-6">
+                        <i class="fas fa-robot text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">AI Face Search</h3>
+                    <p class="text-gray-500 leading-relaxed">Guests find their photos instantly by uploading a selfie. No more scrolling through thousands of images.</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 mb-6">
+                        <i class="fas fa-infinity text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Unlimited Storage</h3>
+                    <p class="text-gray-500 leading-relaxed">Upload full resolution JPEGs. We optimize them for web viewing while keeping the originals safe.</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600 mb-6">
+                        <i class="fas fa-bolt text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Instant Delivery</h3>
+                    <p class="text-gray-500 leading-relaxed">Share galleries via QR code or Link. Let guests select favorites and download directly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing -->
+    <div id="pricing" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h2>
+                <p class="text-gray-500 mt-4">Start for free, upgrade when you grow.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Free -->
+                <div class="p-8 rounded-2xl border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Starter</h3>
+                    <div class="my-4"><span class="text-4xl font-bold">$0</span>/mo</div>
+                    <p class="text-gray-500 mb-6">Perfect for trying out the platform.</p>
+                    <ul class="space-y-3 mb-8 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> 1 Active Event</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> 100 Photos Limit</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Basic AI Search</li>
+                    </ul>
+                    <button class="w-full py-2 rounded-lg border border-gray-300 font-semibold hover:bg-gray-50">Get Started</button>
+                </div>
+                <!-- Pro -->
+                <div class="p-8 rounded-2xl border-2 border-indigo-600 relative shadow-xl">
+                    <div class="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">POPULAR</div>
+                    <h3 class="text-lg font-semibold text-indigo-600">Pro</h3>
+                    <div class="my-4"><span class="text-4xl font-bold">$29</span>/mo</div>
+                    <p class="text-gray-500 mb-6">For professional wedding photographers.</p>
+                    <ul class="space-y-3 mb-8 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600"></i> Unlimited Events</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600"></i> 50GB Storage</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600"></i> Priority AI Processing</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600"></i> No Watermark</li>
+                    </ul>
+                    <button class="w-full py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Start Free Trial</button>
+                </div>
+                <!-- Studio -->
+                <div class="p-8 rounded-2xl border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Studio</h3>
+                    <div class="my-4"><span class="text-4xl font-bold">$99</span>/mo</div>
+                    <p class="text-gray-500 mb-6">For large studios and agencies.</p>
+                    <ul class="space-y-3 mb-8 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> 1TB Storage</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Multiple Users</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Custom Domain</li>
+                    </ul>
+                    <button class="w-full py-2 rounded-lg border border-gray-300 font-semibold hover:bg-gray-50">Contact Sales</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function scrollToLogin() {
+            document.getElementById('login-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        const loginButton = document.getElementById('loginButton');
+        loginButton.addEventListener('click', () => {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            const COGNITO_DOMAIN = "https://ap-south-1mva8s6f3w.auth.ap-south-1.amazoncognito.com";
+            const CLIENT_ID = "6j3gec3kk0q0ktkals8cr8s367";
+            // Redirects to Dashboard upon success
+            const REDIRECT_URI = window.location.origin + "/dashboard.html";
+            const SCOPES = "openid profile email aws.cognito.signin.user.admin";
+            
+            const loginUrl = `${COGNITO_DOMAIN}/login?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
+            
+            window.location.href = loginUrl;
+        });
+    </script>
+</body>
+</html>
