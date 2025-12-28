@@ -8,28 +8,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #111827; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
         
         /* Navigation & Sidebar */
-        .nav-item { @apply flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition-colors cursor-pointer; }
-        .nav-item.active { @apply bg-indigo-50 text-indigo-700; }
+        .nav-item { @apply flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition-all cursor-pointer; }
+        .nav-item.active { @apply bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-200; }
         
         /* Buttons */
         .btn { @apply inline-flex items-center justify-center px-4 py-2 border text-sm font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all; }
-        .btn-primary { @apply border-transparent text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500; }
-        .btn-white { @apply border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-indigo-500; }
+        .btn-primary { @apply border-transparent text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 shadow-indigo-200; }
+        .btn-white { @apply border-slate-300 text-slate-700 bg-white hover:bg-slate-50 focus:ring-indigo-500; }
         
         /* Layouts */
-        .view-section { @apply animate-fade-in; }
         .hidden { display: none !important; }
-        
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Photo Grid */
-        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem; }
-        .photo-card { @apply relative aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group transition-shadow hover:shadow-md; }
+        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+        .photo-card { @apply relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group transition-all hover:shadow-md cursor-pointer; }
         .photo-card img { @apply w-full h-full object-cover transition-transform duration-500 group-hover:scale-105; }
         .photo-actions { @apply absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2; }
     </style>
@@ -37,31 +34,35 @@
 <body class="h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">
-        <div class="h-16 flex items-center px-6 border-b border-gray-100">
-             <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold mr-3">E</div>
-             <span class="font-bold text-lg tracking-tight">EventLens</span>
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20 hidden md:flex">
+        <div class="h-16 flex items-center px-6 border-b border-slate-100">
+             <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-lg shadow-indigo-200">E</div>
+             <span class="font-bold text-lg tracking-tight text-slate-800">EventLens</span>
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 space-y-1">
-            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3">Main</div>
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-3 mt-2">Workspace</div>
             <div onclick="router('collections')" class="nav-item active" id="nav-collections">
-                <i class="fas fa-folder w-5 text-center"></i> Collections
+                <i class="fas fa-folder-open w-5 text-center"></i> Collections
             </div>
             <div onclick="router('account')" class="nav-item" id="nav-account">
-                <i class="fas fa-user-cog w-5 text-center"></i> Settings
+                <i class="fas fa-sliders-h w-5 text-center"></i> Settings
             </div>
         </div>
 
-        <div class="p-4 border-t border-gray-100">
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
             <div class="flex items-center gap-3 mb-4 px-2">
-                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs" id="userAvatar">U</div>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px] shadow-sm">
+                    <div class="w-full h-full rounded-full bg-white flex items-center justify-center text-indigo-700 font-bold text-xs" id="userAvatar">U</div>
+                </div>
                 <div class="overflow-hidden">
-                    <p class="text-sm font-medium text-gray-900 truncate" id="userName">User</p>
-                    <p class="text-xs text-gray-500">Free Plan</p>
+                    <p class="text-sm font-bold text-slate-700 truncate" id="userName">User</p>
+                    <p class="text-xs text-slate-500">Pro Plan</p>
                 </div>
             </div>
-            <button onclick="logout()" class="w-full btn btn-white text-xs">Sign Out</button>
+            <button onclick="logout()" class="w-full btn btn-white text-xs h-9">
+                <i class="fas fa-sign-out-alt mr-2"></i> Sign Out
+            </button>
         </div>
     </aside>
 
@@ -69,20 +70,23 @@
     <div class="flex-1 flex flex-col min-w-0 bg-white">
         
         <!-- Mobile Header -->
-        <header class="md:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
-            <span class="font-bold text-lg">EventLens</span>
-            <button class="text-gray-500"><i class="fas fa-bars"></i></button>
+        <header class="md:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30">
+            <div class="flex items-center gap-2">
+                <div class="bg-indigo-600 text-white w-7 h-7 rounded flex items-center justify-center font-bold text-sm">E</div>
+                <span class="font-bold text-slate-800">EventLens</span>
+            </div>
+            <button class="text-slate-500"><i class="fas fa-bars"></i></button>
         </header>
 
         <!-- Dynamic View Area -->
-        <main class="flex-1 overflow-y-auto bg-gray-50/50">
+        <main class="flex-1 overflow-y-auto bg-slate-50" id="main-container">
             
             <!-- VIEW: COLLECTIONS LIST -->
-            <div id="view-collections" class="view-section p-8 max-w-7xl mx-auto">
-                <div class="flex justify-between items-center mb-8">
+            <div id="view-collections" class="view-section p-6 md:p-10 max-w-7xl mx-auto hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Collections</h1>
-                        <p class="text-sm text-gray-500 mt-1">Manage your client galleries</p>
+                        <h1 class="text-2xl font-bold text-slate-900">Collections</h1>
+                        <p class="text-sm text-slate-500 mt-1">Manage all your client events and galleries.</p>
                     </div>
                     <button onclick="openModal('createCollectionModal')" class="btn btn-primary">
                         <i class="fas fa-plus mr-2"></i> New Collection
@@ -90,144 +94,157 @@
                 </div>
 
                 <!-- Empty State -->
-                <div id="emptyCollections" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-gray-200 border-dashed">
-                    <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 text-2xl mb-4"><i class="far fa-folder-open"></i></div>
-                    <h3 class="text-lg font-medium text-gray-900">No collections yet</h3>
-                    <p class="text-gray-500 text-sm mb-6">Create your first collection to start uploading photos.</p>
+                <div id="emptyCollections" class="hidden flex flex-col items-center justify-center py-24 bg-white rounded-xl border-2 border-slate-200 border-dashed">
+                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 text-3xl mb-4 shadow-inner"><i class="fas fa-images"></i></div>
+                    <h3 class="text-lg font-bold text-slate-900">No collections yet</h3>
+                    <p class="text-slate-500 text-sm mb-6 max-w-xs text-center">Create your first collection to start uploading and sharing photos.</p>
                     <button onclick="openModal('createCollectionModal')" class="btn btn-white">Create Collection</button>
                 </div>
 
                 <!-- List -->
-                <div id="collectionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div id="collectionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     <!-- Cards injected here -->
                 </div>
             </div>
 
             <!-- VIEW: COLLECTION DETAILS -->
-            <div id="view-details" class="view-section hidden h-full flex flex-col">
+            <div id="view-details" class="view-section hidden h-full flex flex-col bg-white">
                 
                 <!-- Detail Header -->
-                <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="border-b border-slate-200 px-6 py-6 bg-white sticky top-0 z-10 shadow-sm">
                     <div class="max-w-7xl mx-auto">
-                        <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                            <span onclick="router('collections')" class="hover:text-indigo-600 cursor-pointer">Collections</span>
-                            <i class="fas fa-chevron-right text-xs"></i>
-                            <span class="text-gray-900 font-medium" id="detailBreadcrumb">...</span>
-                        </div>
+                        <nav class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+                            <span onclick="router('collections')" class="hover:text-indigo-600 cursor-pointer hover:underline">Collections</span>
+                            <i class="fas fa-chevron-right text-[10px] text-slate-300"></i>
+                            <span class="text-slate-900 font-medium" id="detailBreadcrumb">...</span>
+                        </nav>
                         
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div class="flex items-start gap-4">
-                                <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white shadow-sm">
-                                    <i class="fas fa-camera text-2xl"></i>
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                                    <i class="fas fa-folder text-2xl"></i>
                                 </div>
                                 <div>
-                                    <h1 class="text-2xl font-bold text-gray-900" id="detailName">Wedding</h1>
-                                    <div class="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                                        <span id="detailDate">...</span>
-                                        <span>&bull;</span>
+                                    <h1 class="text-2xl font-bold text-slate-900 leading-tight" id="detailName">Wedding</h1>
+                                    <div class="flex items-center gap-3 text-sm text-slate-500 mt-1">
+                                        <span id="detailDate" class="flex items-center gap-1"><i class="far fa-calendar"></i> ...</span>
+                                        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
                                         <span id="detailCount">0 items</span>
-                                        <span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-xs font-medium">Published</span>
+                                        <span class="px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100 text-[10px] font-bold uppercase tracking-wide">Published</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <button onclick="openClientGallery()" class="btn btn-white">
-                                    <i class="fas fa-external-link-alt mr-2 text-gray-400"></i> View
+                            <div class="flex items-center gap-3 self-end md:self-auto">
+                                <button onclick="openClientGallery()" class="btn btn-white text-slate-600">
+                                    <i class="fas fa-external-link-alt mr-2"></i> View
                                 </button>
-                                <button onclick="copyShareLink()" class="btn btn-white">
-                                    <i class="fas fa-share mr-2 text-gray-400"></i> Share
+                                <button onclick="copyShareLink()" class="btn btn-white text-slate-600">
+                                    <i class="fas fa-share mr-2"></i> Share
                                 </button>
-                                <button onclick="openModal('uploadModal')" class="btn btn-primary shadow-lg shadow-indigo-100">
-                                    <i class="fas fa-cloud-upload-alt mr-2"></i> Upload Photos
+                                <button onclick="openModal('uploadModal')" class="btn btn-primary">
+                                    <i class="fas fa-cloud-upload-alt mr-2"></i> Upload
                                 </button>
                             </div>
                         </div>
 
                         <!-- Tabs -->
-                        <div class="flex gap-8 mt-8 border-b border-gray-200 -mb-6">
-                            <button class="pb-6 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600">Photos</button>
-                            <button class="pb-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 transition">Settings</button>
-                            <button class="pb-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 transition">Analytics</button>
+                        <div class="flex gap-8 mt-8 -mb-6">
+                            <button class="pb-5 text-sm font-semibold text-indigo-600 border-b-2 border-indigo-600">All Photos</button>
+                            <button class="pb-5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 transition">Highlights</button>
+                            <button class="pb-5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 transition">Settings</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Detail Content -->
-                <div class="flex-1 overflow-y-auto p-8 bg-gray-50">
+                <div class="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50">
                     <div class="max-w-7xl mx-auto">
                         <div id="detailPhotosGrid" class="photo-grid"></div>
-                        <div id="detailLoading" class="hidden py-20 text-center">
-                            <i class="fas fa-circle-notch fa-spin text-3xl text-indigo-600"></i>
-                            <p class="text-gray-500 mt-3">Loading photos...</p>
+                        
+                        <div id="detailLoading" class="hidden py-32 text-center">
+                            <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-500 font-medium">Loading your beautiful photos...</p>
                         </div>
-                        <div id="detailEmpty" class="hidden text-center py-20">
-                            <p class="text-gray-500 mb-4">This collection is empty.</p>
-                            <button onclick="openModal('uploadModal')" class="text-indigo-600 font-medium hover:underline">Upload your first photos</button>
+                        
+                        <div id="detailEmpty" class="hidden text-center py-32 flex flex-col items-center">
+                            <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 text-4xl mb-6"><i class="fas fa-cloud-upload-alt"></i></div>
+                            <h3 class="text-xl font-bold text-slate-900">It's empty here!</h3>
+                            <p class="text-slate-500 mb-6 max-w-sm">This collection has no photos yet. Upload some to get started.</p>
+                            <button onclick="openModal('uploadModal')" class="btn btn-primary">Upload Photos</button>
                         </div>
                     </div>
                 </div>
             </div>
             
             <!-- VIEW: ACCOUNT -->
-            <div id="view-account" class="view-section hidden p-8 max-w-7xl mx-auto">
-                <h1 class="text-2xl font-bold text-gray-900 mb-4">Account Settings</h1>
-                <div class="bg-white p-6 rounded-xl border border-gray-200">
-                    <p class="text-gray-500">Account management features are coming soon.</p>
+            <div id="view-account" class="view-section hidden p-10 max-w-4xl mx-auto">
+                <h1 class="text-2xl font-bold text-slate-900 mb-6">Account Settings</h1>
+                <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <i class="fas fa-tools text-4xl text-slate-300 mb-4"></i>
+                    <h3 class="font-bold text-slate-800 mb-2">Under Construction</h3>
+                    <p class="text-slate-500">Profile and subscription management coming soon.</p>
                 </div>
             </div>
 
         </main>
     </div>
 
-    <!-- Create Modal -->
-    <div id="createCollectionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md transform transition-all">
-            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="font-bold text-gray-900">New Collection</h3>
-                <button onclick="closeModal('createCollectionModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+    <!-- Create Collection Modal -->
+    <div id="createCollectionModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-100 transition-transform">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800">New Collection</h3>
+                <button onclick="closeModal('createCollectionModal')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Collection Name</label>
-                    <input type="text" id="newCollectionName" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border" placeholder="e.g. Smith Wedding">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Collection Name</label>
+                    <input type="text" id="newCollectionName" class="w-full border-slate-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2.5 border text-sm" placeholder="e.g. Sarah & Mike Wedding">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Event Date</label>
+                    <input type="date" class="w-full border-slate-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2.5 border text-sm text-slate-500">
                 </div>
             </div>
-            <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end gap-3">
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
                 <button onclick="closeModal('createCollectionModal')" class="btn btn-white">Cancel</button>
-                <button onclick="createCollection()" class="btn btn-primary">Create</button>
+                <button onclick="createCollection()" class="btn btn-primary">Create Collection</button>
             </div>
         </div>
     </div>
 
     <!-- Upload Modal -->
-    <div id="uploadModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl transform transition-all h-[80vh] flex flex-col">
-            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="font-bold text-gray-900">Upload Photos</h3>
-                <button onclick="closeModal('uploadModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+    <div id="uploadModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                <div>
+                    <h3 class="font-bold text-slate-800">Upload Photos</h3>
+                    <p class="text-xs text-slate-500">Add memories to this collection</p>
+                </div>
+                <button onclick="closeModal('uploadModal')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="flex-1 overflow-y-auto p-6">
-                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition">
-                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-300 mb-3"></i>
-                    <p class="font-medium text-gray-900">Click to select files</p>
-                    <p class="text-sm text-gray-500 mt-1">JPG, PNG supported</p>
+            <div class="flex-1 overflow-y-auto p-6 bg-white">
+                <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition group">
+                    <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500 text-3xl mx-auto mb-4 group-hover:scale-110 transition"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <p class="font-bold text-slate-800 text-lg">Click to upload or drag & drop</p>
+                    <p class="text-sm text-slate-500 mt-2">Supports high-res JPG, PNG (Max 50MB per file)</p>
                     <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
                 </div>
-                <div id="uploadList" class="mt-6 space-y-3"></div>
+                <div id="uploadList" class="mt-8 space-y-3"></div>
             </div>
 
-            <div class="px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-100 flex justify-between items-center">
-                <span class="text-sm text-gray-500" id="uploadStatus">0 files selected</span>
-                <button id="startUploadBtn" onclick="startUpload()" class="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed" disabled>Start Upload</button>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center shrink-0">
+                <span class="text-sm font-medium text-slate-600" id="uploadStatus">No files selected</span>
+                <button id="startUploadBtn" onclick="startUpload()" class="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed shadow-none" disabled>Start Upload</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 text-sm font-medium">
-        <i class="fas fa-check-circle text-green-400"></i>
-        <span id="toastMsg">Success</span>
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-4 py-3 rounded-lg shadow-xl transform translate-y-24 opacity-0 transition-all duration-300 z-[100] flex items-center gap-3 text-sm font-medium border border-slate-700">
+        <i class="fas fa-check-circle text-green-400 text-lg"></i>
+        <span id="toastMsg">Action Successful</span>
     </div>
 
 <script>
@@ -272,25 +289,34 @@
             document.getElementById('userAvatar').innerText = payload.email.charAt(0).toUpperCase();
         } catch(e) {}
 
-        loadCollections();
+        // Initial Route
+        router('collections');
 
         // Upload Handlers
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'); );
+        
+        dropZone.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-50'); 
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        }); // FIXED: Removed Syntax Error Semicolon here
+
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('border-indigo-500');
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
             handleFiles(e.dataTransfer.files);
         });
     });
 
     // --- Routing ---
     window.router = function(view, id) {
-        // Safe check for elements
+        // Hide All
         ['collections', 'details', 'account'].forEach(v => {
             const el = document.getElementById(`view-${v}`);
             const nav = document.getElementById(`nav-${v}`);
@@ -298,12 +324,14 @@
             if(nav) nav.classList.remove('active');
         });
 
+        // Show Target
         const target = document.getElementById(`view-${view}`);
         const targetNav = document.getElementById(`nav-${view}`);
         
         if(target) target.classList.remove('hidden');
         if(targetNav) targetNav.classList.add('active');
 
+        // Logic
         if(view === 'details' && id) {
             loadCollectionDetails(id);
         } else if (view === 'collections') {
@@ -327,27 +355,31 @@
             } else {
                 empty.classList.add('hidden');
                 list.innerHTML = collections.map(c => `
-                    <div onclick="router('details', '${c.collection_id}')" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg transition cursor-pointer group">
+                    <div onclick="router('details', '${c.collection_id}')" class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1 relative">
                         <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-xl group-hover:bg-indigo-600 group-hover:text-white transition">
-                                <i class="far fa-folder"></i>
+                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-xl group-hover:bg-indigo-600 group-hover:text-white transition shadow-sm">
+                                <i class="fas fa-folder-open"></i>
                             </div>
-                            <i class="fas fa-ellipsis-h text-gray-300 hover:text-gray-600 p-1"></i>
+                            <div class="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-full group-hover:bg-white group-hover:text-indigo-600 transition">
+                                ${c.total_photo_count || 0} Photos
+                            </div>
                         </div>
-                        <h3 class="font-bold text-gray-900 truncate">${c.name}</h3>
-                        <p class="text-sm text-gray-500 mt-1">${c.total_photo_count || 0} Photos &bull; ${new Date(c.created_at).toLocaleDateString()}</p>
+                        <h3 class="font-bold text-slate-900 truncate text-lg">${c.name}</h3>
+                        <p class="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                             <i class="far fa-clock text-xs"></i> ${new Date(c.created_at).toLocaleDateString()}
+                        </p>
                     </div>
                 `).join('');
             }
         } catch(e) {
             console.error(e);
-            list.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load collections.</div>';
+            list.innerHTML = '<div class="col-span-full text-center text-red-500 py-10 bg-red-50 rounded-lg">Failed to load collections. Please check your connection.</div>';
         }
     }
 
     async function createCollection() {
         const name = document.getElementById('newCollectionName').value;
-        if(!name) return showToast('Enter a name');
+        if(!name) return showToast('Please enter a collection name');
         try {
             await fetch(`${API_BASE}/upsert-collection`, {
                 method: 'POST',
@@ -355,9 +387,9 @@
                 body: JSON.stringify({ name })
             });
             closeModal('createCollectionModal');
-            showToast('Collection created');
+            showToast('Collection created successfully');
             loadCollections();
-        } catch(e) { showToast('Error creating'); }
+        } catch(e) { showToast('Error creating collection'); }
     }
 
     // --- Logic: Details ---
@@ -368,8 +400,8 @@
         // Setup Header
         document.getElementById('detailBreadcrumb').innerText = currentCollection.name;
         document.getElementById('detailName').innerText = currentCollection.name;
-        document.getElementById('detailDate').innerText = new Date(currentCollection.created_at).toLocaleDateString();
-        document.getElementById('detailCount').innerText = `${currentCollection.total_photo_count || 0} items`;
+        document.getElementById('detailDate').innerHTML = `<i class="far fa-calendar-alt mr-1"></i> ${new Date(currentCollection.created_at).toLocaleDateString()}`;
+        document.getElementById('detailCount').innerText = `${currentCollection.total_photo_count || 0} photos`;
 
         // Load Photos
         const grid = document.getElementById('detailPhotosGrid');
@@ -382,7 +414,7 @@
         loader.classList.remove('hidden');
 
         try {
-            // Using client-api to get photos. 
+            // Using client-api as proxy for fetching photos
             const res = await fetch(`${API_BASE}/client-api`, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'get_client_view', payload: { collection_id: id } })
@@ -397,17 +429,14 @@
             } else {
                 grid.classList.remove('hidden');
                 grid.innerHTML = photos.map(p => {
-                    // Fix mixed content errors by forcing HTTPS
-                    const secureThumb = p.thumb ? p.thumb.replace('http://', 'https://') : null;
-                    // Fallback image if source is bad
-                    const imgSrc = secureThumb || 'https://via.placeholder.com/300x300?text=No+Image';
-                    
+                    // Safety check for thumbnails and broken links
+                    const safeThumb = p.thumb ? p.thumb.replace('http://', 'https://') : 'https://via.placeholder.com/300?text=No+Image';
                     return `
                     <div class="photo-card">
-                        <img src="${imgSrc}" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/300x300?text=Error';">
+                        <img src="${safeThumb}" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/300?text=Error';">
                         <div class="photo-actions">
-                            <button class="bg-white text-gray-800 w-8 h-8 rounded-full shadow hover:bg-gray-100"><i class="fas fa-search-plus"></i></button>
-                            <button class="bg-white text-red-600 w-8 h-8 rounded-full shadow hover:bg-red-50"><i class="fas fa-trash-alt"></i></button>
+                            <button class="bg-white text-slate-800 w-9 h-9 rounded-full shadow hover:bg-slate-50 transition"><i class="fas fa-expand-alt"></i></button>
+                            <button class="bg-white text-red-600 w-9 h-9 rounded-full shadow hover:bg-red-50 transition"><i class="far fa-trash-alt"></i></button>
                         </div>
                     </div>
                 `}).join('');
@@ -415,7 +444,7 @@
         } catch(e) {
             console.error(e);
             loader.classList.add('hidden');
-            grid.innerHTML = '<div class="col-span-full text-center text-red-500">Error loading photos</div>';
+            grid.innerHTML = '<div class="col-span-full text-center text-red-500 py-10">Error loading photos.</div>';
             grid.classList.remove('hidden');
         }
     }
@@ -432,13 +461,16 @@
     function renderUploadList() {
         const list = document.getElementById('uploadList');
         const btn = document.getElementById('startUploadBtn');
-        document.getElementById('uploadStatus').innerText = `${uploadQueue.length} files pending`;
+        document.getElementById('uploadStatus').innerText = `${uploadQueue.length} files queued`;
         btn.disabled = uploadQueue.length === 0;
 
         list.innerHTML = uploadQueue.map(item => `
-            <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg text-sm">
-                <span class="truncate max-w-[200px] text-gray-700">${item.file.name}</span>
-                <span class="${item.status === 'done' ? 'text-green-600' : 'text-gray-400'}">
+            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg text-sm border border-slate-100">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-8 h-8 bg-white rounded flex items-center justify-center text-slate-400 border border-slate-200"><i class="fas fa-image"></i></div>
+                    <span class="truncate max-w-[180px] font-medium text-slate-700">${item.file.name}</span>
+                </div>
+                <span class="${item.status === 'done' ? 'text-green-600' : 'text-slate-400'}">
                     ${item.status === 'pending' ? '<i class="far fa-clock"></i>' : 
                       item.status === 'uploading' ? '<i class="fas fa-spinner fa-spin text-indigo-600"></i>' : 
                       '<i class="fas fa-check-circle"></i>'}
@@ -479,14 +511,14 @@
             renderUploadList();
         }
 
-        btn.innerText = "Done";
+        btn.innerText = "Complete";
         setTimeout(() => {
             closeModal('uploadModal');
             uploadQueue = [];
             renderUploadList();
             btn.innerText = "Start Upload";
             loadCollectionDetails(currentCollection.collection_id); // Refresh view
-        }, 1000);
+        }, 1200);
     }
 
     // --- Helpers ---
@@ -506,7 +538,7 @@
         if(!currentCollection) return;
         const url = `${window.location.origin}/index.html?cid=${currentCollection.collection_id}`;
         navigator.clipboard.writeText(url);
-        showToast('Link copied!');
+        showToast('Gallery Link Copied!');
     };
 </script>
 </body>
